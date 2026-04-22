@@ -2,7 +2,7 @@
 
 Curated AI skills pack for Claude Code and OpenCode. Extends [gstack](https://github.com/garrytan/gstack) with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
-26 focused skills, each solving one specific problem well.
+27 focused skills, each solving one specific problem well.
 
 ## Install
 
@@ -16,7 +16,7 @@ Setup will:
 - Check for optional dependencies (clearwing, ffuf)
 - Symlink all skills into Claude Code and OpenCode
 
-## Skills (26)
+## Skills (27)
 
 ### Dev Methodology (from [superpowers](https://github.com/obra/superpowers))
 | Command | Description |
@@ -64,13 +64,14 @@ Setup will:
 |---------|-------------|
 | `/playwright` | E2E testing with Playwright |
 
-### Codebase Context (from [ariadoss/repomap](https://github.com/ariadoss/repomap))
+### Codebase Context (from [ariadoss/repomap](https://github.com/ariadoss/repomap), [safishamsi/graphify](https://github.com/safishamsi/graphify))
 | Command | Description |
 |---------|-------------|
 | `/repomap` | Generate structural map of the codebase (REPOMAP.md) |
 | `/dbmap` | Generate database schema map (DBMAP.md) |
 | `/repomap-auto-on` | Auto-update REPOMAP.md on every code change |
 | `/repomap-auto-off` | Disable automatic repo map updates |
+| `/graphify` | Turn any folder into a queryable knowledge graph — HTML, JSON, audit report |
 
 ## Knowledge Bases
 
