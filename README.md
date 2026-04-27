@@ -1,6 +1,6 @@
-# Superskills `v2.1.0`
+# Superskills `v2.2.0`
 
-Curated AI skills pack for Claude Code and OpenCode. Bundles [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
+Curated AI skills pack for Claude Code, OpenCode, Codex CLI, Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Bundles [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
 30 core skills + 43 gstack skills + 172 marketing skills + 35 design skills. gstack is installed automatically and vendored in this repo so skills are available even if the upstream repo is removed.
 
@@ -19,7 +19,14 @@ Setup will:
 - Install `bun` if needed (required by gstack's browser tool)
 - Prompt you to connect knowledge base repos (optional)
 - Check for optional dependencies (clearwing, ffuf)
-- Symlink all skills into Claude Code and OpenCode
+- Auto-detect and install into: **Claude Code**, **OpenCode**, **Codex CLI**, **Continue.dev**, **Augment Code**, **Windsurf**
+- Offer to add the developer workflow guide to `~/.claude/CLAUDE.md`
+
+**Project-level installs** (run from your project root):
+```bash
+~/.claude/skills/superskills/setup --cursor   # Cursor (.cursor/rules/)
+~/.claude/skills/superskills/setup --cline    # Cline / Roo Code (.clinerules)
+```
 
 ## Skills (27)
 
