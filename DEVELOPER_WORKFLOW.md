@@ -52,7 +52,23 @@ Each agent works independently and spawns subagents. Exponentially faster than p
 | `/verify` | Require passing verification commands before any agent can finish |
 | `/finish-branch` | Guide branch cleanup and merge decisions when implementation is complete |
 
-### 4. Security layer (runs alongside development and again after every merge)
+### 4. Performance & database optimization
+
+> **DB performance should be audited early and often** — not discovered in production under load.
+>
+> - Run `/dbmap` first to map the schema; it will automatically flag missing indexes on foreign keys and common query patterns
+> - Run `/db-optimize` on any feature that adds or modifies DB queries — catches N+1s, join opportunities, and slow queries before they ship
+> - Run `/perf-profile` when response times degrade or before a launch to establish a baseline
+> - Implement `/cache-strategy` for any data that is read far more than it is written
+
+| Command | Role |
+|---------|------|
+| `/dbmap` | Map database schema and automatically flag missing indexes (FK columns, common query patterns) |
+| `/db-optimize` | N+1 detection, EXPLAIN analysis, slow query log review, join opportunities, per-endpoint DB call audit |
+| `/perf-profile` | Code execution time, DB call time, bottleneck identification across app and DB layers |
+| `/cache-strategy` | Permanent cache-first strategy — read from cache, write on first miss, invalidate only on data change (no TTL) |
+
+### 6. Security layer (runs alongside development and again after every merge)
 
 > **Security and QA should run at multiple points — not just once.**
 >
@@ -72,7 +88,7 @@ Each agent works independently and spawns subagents. Exponentially faster than p
 | `/pentest` | Scan source code and network for vulnerabilities |
 | `/fuzz` | Web fuzzing to surface unexpected attack surfaces before shipping |
 
-### 5. Ship
+### 7. Ship
 
 | Command | Role |
 |---------|------|

@@ -21,6 +21,14 @@
 | `/verify` | Pre-merge validation — requires running verification commands and confirming output before success claims |
 | `/write-plan` | Detailed implementation planning from a spec or requirements |
 
+### Performance & Database
+
+| Command | Description |
+|---------|-------------|
+| `/db-optimize` | Database performance audit — N+1 detection, EXPLAIN analysis, slow query log, join opportunities, per-endpoint DB call counts, missing index flags |
+| `/perf-profile` | Application performance profiling — code execution time, DB call time, bottleneck identification across app and DB layers |
+| `/cache-strategy` | Implement permanent cache-first strategy — check cache before DB, write on first read, invalidate only on data change (Play Framework model, no TTL) |
+
 ### Security
 
 | Command | Description |
