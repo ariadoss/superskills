@@ -9,7 +9,7 @@ Steps:
 1. Ask the user which DSN to use. Either run detection:
 
    ```bash
-   PYTHONPATH=/Users/danilosapad/claude-repomap-command python3.11 -m dbmap --list
+   "${REPOMAP_HOME:-$HOME/claude-repomap-command}/scripts/run.sh" dbmap --list
    ```
 
    …and have the user confirm one of the detected connections, or ask them to provide a DSN directly.
