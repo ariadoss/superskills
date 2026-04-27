@@ -1,8 +1,11 @@
-# Superskills
+# Superskills `v2.0.0`
 
-Curated AI skills pack for Claude Code and OpenCode. Extends [gstack](https://github.com/garrytan/gstack) with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
+Curated AI skills pack for Claude Code and OpenCode. Bundles [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
-27 focused skills, each solving one specific problem well.
+27 core skills + 43 gstack skills + 172 marketing skills + 35 design skills. gstack is installed automatically and vendored in this repo so skills are available even if the upstream repo is removed.
+
+> **[Full command reference →](COMMANDS.md)** — all skills with descriptions and overlap notes
+> **[10x+ Engineering Workflow →](DEVELOPER_WORKFLOW.md)** — run 10+ parallel AI agents, each with a full quality pipeline
 
 ## Install
 
@@ -12,6 +15,8 @@ cd ~/.claude/skills/superskills && ./setup
 ```
 
 Setup will:
+- Install gstack (Garry Tan's virtual engineering team skills) — required, auto-installed
+- Install `bun` if needed (required by gstack's browser tool)
 - Prompt you to connect knowledge base repos (optional)
 - Check for optional dependencies (clearwing, ffuf)
 - Symlink all skills into Claude Code and OpenCode
@@ -118,15 +123,58 @@ Your overlay repo can:
 cd ~/.claude/skills/superskills && git pull && ./setup
 ```
 
+## Marketing Skills (172)
+
+From [kostja94/marketing-skills](https://github.com/kostja94/marketing-skills) — stored directly in this repo. SEO, content, paid ads, pages, channels, and strategies:
+
+| Category | Examples |
+|----------|---------|
+| **SEO** | `/seo-strategy`, `/keyword-research`, `/title-tag`, `/core-web-vitals`, `/backlink-analysis`, `/local-seo` |
+| **Content** | `/copywriting`, `/article-content`, `/video-marketing`, `/visual-content`, `/podcast-marketing` |
+| **Paid Ads** | `/google-ads`, `/meta-ads`, `/linkedin-ads`, `/tiktok-ads`, `/paid-ads-strategy` |
+| **Pages** | `/landing-page-generator`, `/homepage-generator`, `/pricing-page-generator`, `/blog-page-generator` |
+| **Channels** | `/email-marketing`, `/affiliate-marketing`, `/influencer-marketing`, `/distribution-channels` |
+| **Strategies** | `/branding`, `/content-marketing`, `/gtm-strategy`, `/pmf-strategy`, `/growth-funnel` |
+| **Platforms** | `/linkedin-posts`, `/twitter-x-posts`, `/reddit-posts`, `/tiktok-captions`, `/youtube-seo` |
+| **Analytics** | `/google-search-console`, `/seo-monitoring`, `/traffic-analysis`, `/analytics-tracking` |
+
+## Design Skills (35)
+
+
+| Category | Skills |
+|----------|--------|
+| **UX Frameworks** | `/ux-heuristics`, `/hooked-ux`, `/design-sprint` |
+| **Visual Design** | `/high-end-visual-design`, `/minimalist-ui`, `/design-taste-frontend`, `/redesign-existing-projects`, `/ui-refactor`, `/interface-design` |
+| **Design Process** | `/design-audit`, `/ux-designer`, `/emil-design-eng` |
+| **Typography** | `/typography` |
+| **React / Next.js** | `/react-best-practices`, `/react-view-transitions`, `/composition-patterns`, `/react-native-skills` |
+| **Vercel** | `/deploy-to-vercel`, `/vercel-cli-with-tokens`, `/web-design-guidelines` |
+| **Swift / iOS** | `/ios-dev`, `/swiftui-toolbars`, `/swiftui-charts-3d`, `/swiftui-alarmkit`, `/swiftui-text-editing`, `/swiftui-webkit` |
+| **App Marketing** | `/app-store-screenshots` |
+| **Architecture** | `/renaissance-architecture`, `/human-architect-mindset`, `/negentropy-lens`, `/relationship-design` |
+| **Engineering** | `/bencium-code-conventions`, `/full-output-enforcement`, `/adaptive-communication` |
+| **Campaigns** | `/organic-first-campaign` |
+
 ## Credits
 
 Skills curated from:
+- [garrytan/gstack](https://github.com/garrytan/gstack) — virtual engineering team (QA, review, ship, security, planning, browser automation)
 - [obra/superpowers](https://github.com/obra/superpowers) — TDD, debugging, worktrees, planning
 - [buildbetter-app/BB-Skills](https://github.com/buildbetter-app/BB-Skills) — spec workflow
 - [slavingia/skills](https://github.com/slavingia/skills) — startup methodology
 - [tapestry](https://github.com/michalparkola/tapestry-skills-for-claude-code) — content extraction
 - [clearwing](https://github.com/Lazarus-AI/clearwing) — security scanning
 - [ffuf](https://github.com/ffuf/ffuf) — web fuzzing
+- [kostja94/marketing-skills](https://github.com/kostja94/marketing-skills) — 172 marketing skills
+- [wondelai/skills](https://github.com/wondelai/skills) — UX heuristics, Hook Model, Design Sprint
+- [emilkowalski/skill](https://github.com/emilkowalski/skill) — design engineering philosophy
+- [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) — React, Next.js, Vercel deployment
+- [rshankras/claude-code-apple-skills](https://github.com/rshankras/claude-code-apple-skills) — Swift/iOS/SwiftUI
+- [bencium/bencium-marketplace](https://github.com/bencium/bencium-marketplace) — design audit, typography, architecture
+- [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) — premium UI design systems
+- [LovroPodobnik/refactoring-ui-skill](https://github.com/LovroPodobnik/refactoring-ui-skill) — UI refactoring
+- [Dammyjay93/interface-design](https://github.com/Dammyjay93/interface-design) — interface design craft
+- [ParthJadhav/app-store-screenshots](https://github.com/ParthJadhav/app-store-screenshots) — app store screenshot generator
 
 ## License
 

@@ -21,8 +21,8 @@ log() { [ "$QUIET" -eq 0 ] && echo "$@" || true; }
 
 # ── Banner ─────────────────────────────────────────────────────────────────────
 log ""
-log "  superskills setup"
-log "  ─────────────────"
+log "  superskills setup  (v$(cat "$(dirname "$0")/VERSION" 2>/dev/null | tr -d '[:space:]'))"
+log "  ──────────────────────────────"
 log ""
 
 # ── Directories ────────────────────────────────────────────────────────────────
@@ -112,6 +112,47 @@ else
 fi
 log ""
 
+# ── gstack (Garry Tan) ────────────────────────────────────────────────────────
+GSTACK_DIR="$HOME/.claude/skills/gstack"
+GSTACK_VENDOR_DIR="$SOURCE_DIR/vendor/gstack"
+
+if [ -d "$GSTACK_DIR" ] && [ -f "$GSTACK_DIR/VERSION" ]; then
+  log "  [ok] gstack already installed ($(cat "$GSTACK_DIR/VERSION" 2>/dev/null))"
+else
+  log "  [install] gstack (Garry Tan) — virtual engineering team skills"
+
+  # Ensure bun is installed (required by gstack's browser tool)
+  if ! command -v bun >/dev/null 2>&1; then
+    log "  [install] bun (required by gstack)..."
+    curl -fsSL https://bun.sh/install | bash >/dev/null 2>&1 || {
+      log "  [warn] bun install failed — gstack browse tool may not work"
+      log "         Install manually: curl -fsSL https://bun.sh/install | bash"
+    }
+    # Reload PATH to pick up bun
+    export PATH="$HOME/.bun/bin:$PATH"
+  fi
+
+  if git clone --single-branch --depth 1 --quiet \
+       https://github.com/garrytan/gstack.git "$GSTACK_DIR" 2>/dev/null; then
+    log "  [ok] gstack cloned"
+    (cd "$GSTACK_DIR" && ./setup -q 2>/dev/null) || {
+      log "  [warn] gstack setup failed — skills may need manual activation"
+    }
+    log "  [ok] gstack installed ($(cat "$GSTACK_DIR/VERSION" 2>/dev/null))"
+  else
+    log "  [warn] gstack clone failed — using vendor copy"
+    if [ -d "$GSTACK_VENDOR_DIR" ]; then
+      cp -r "$GSTACK_VENDOR_DIR" "$GSTACK_DIR"
+      (cd "$GSTACK_DIR" && ./setup -q 2>/dev/null) || true
+      log "  [ok] gstack installed from vendor copy"
+    else
+      log "  [error] vendor copy not found — gstack not installed"
+      log "          Manual install: git clone https://github.com/garrytan/gstack.git ~/.claude/skills/gstack && cd ~/.claude/skills/gstack && ./setup"
+    fi
+  fi
+fi
+log ""
+
 # ── Dependency checks ─────────────────────────────────────────────────────────
 if command -v clearwing >/dev/null 2>&1; then
   log "  [ok] clearwing found"
@@ -133,23 +174,24 @@ log ""
 log "  Linking skills (Claude Code)..."
 LINKED=()
 
-for skill_md in "$SKILLS_SRC_DIR"/*/SKILL.md; do
-  [ -f "$skill_md" ] || continue
+link_skill_claude() {
+  local skill_md="$1"
+  local fallback_name="$2"
 
+  local skill_dir
   skill_dir="$(dirname "$skill_md")"
-  dir_name="$(basename "$skill_dir")"
-  [ "$dir_name" = "node_modules" ] && continue
-
+  local skill_name
   skill_name=$(grep -m1 '^name:' "$skill_md" 2>/dev/null | sed 's/^name:[[:space:]]*//' | tr -d '[:space:]')
-  [ -z "$skill_name" ] && skill_name="$dir_name"
+  [ -z "$skill_name" ] && skill_name="$fallback_name"
+  [ -z "$skill_name" ] && return
 
-  target="$CLAUDE_SKILLS_DIR/$skill_name"
+  local target="$CLAUDE_SKILLS_DIR/$skill_name"
   mkdir -p "$target"
   [ -L "$target/SKILL.md" ] && rm "$target/SKILL.md"
   ln -snf "$skill_md" "$target/SKILL.md"
 
-  # Symlink supporting files
   for extra in "$skill_dir"/*; do
+    local extra_name
     extra_name="$(basename "$extra")"
     [ "$extra_name" = "SKILL.md" ] && continue
     [ -L "$target/$extra_name" ] && rm "$target/$extra_name"
@@ -157,29 +199,87 @@ for skill_md in "$SKILLS_SRC_DIR"/*/SKILL.md; do
   done
 
   LINKED+=("$skill_name")
+}
+
+# Marketing skills (processed first; design and superskills override any name conflicts)
+MARKETING_SRC_DIR="$SOURCE_DIR/marketing-skills"
+if [ -d "$MARKETING_SRC_DIR" ]; then
+  while IFS= read -r skill_md; do
+    skill_dir="$(dirname "$skill_md")"
+    rel_path="${skill_dir#$MARKETING_SRC_DIR/}"
+    fallback_name=$(echo "$rel_path" | tr '/' '-')
+    link_skill_claude "$skill_md" "$fallback_name"
+  done < <(find "$MARKETING_SRC_DIR" -name "SKILL.md" -type f | sort)
+fi
+
+# Design skills (override any marketing-skills name conflicts)
+DESIGN_SRC_DIR="$SOURCE_DIR/design-skills"
+if [ -d "$DESIGN_SRC_DIR" ]; then
+  for skill_md in "$DESIGN_SRC_DIR"/*/SKILL.md; do
+    [ -f "$skill_md" ] || continue
+    skill_dir="$(dirname "$skill_md")"
+    dir_name="$(basename "$skill_dir")"
+    [ "$dir_name" = "node_modules" ] && continue
+    link_skill_claude "$skill_md" "$dir_name"
+  done
+fi
+
+# Superskills (override any design/marketing-skills name conflicts)
+for skill_md in "$SKILLS_SRC_DIR"/*/SKILL.md; do
+  [ -f "$skill_md" ] || continue
+  skill_dir="$(dirname "$skill_md")"
+  dir_name="$(basename "$skill_dir")"
+  [ "$dir_name" = "node_modules" ] && continue
+  link_skill_claude "$skill_md" "$dir_name"
 done
 
-log "  linked: ${LINKED[*]}"
+log "  linked: ${#LINKED[@]} skills"
 log ""
 
 # ── Link skills into OpenCode ─────────────────────────────────────────────────
 log "  Linking skills (OpenCode)..."
 mkdir -p "$OPENCODE_SKILLS_DIR"
 
-for skill_md in "$SKILLS_SRC_DIR"/*/SKILL.md; do
-  [ -f "$skill_md" ] || continue
+link_skill_opencode() {
+  local skill_md="$1"
+  local fallback_name="$2"
 
-  skill_dir="$(dirname "$skill_md")"
-  dir_name="$(basename "$skill_dir")"
-  [ "$dir_name" = "node_modules" ] && continue
-
+  local skill_name
   skill_name=$(grep -m1 '^name:' "$skill_md" 2>/dev/null | sed 's/^name:[[:space:]]*//' | tr -d '[:space:]')
-  [ -z "$skill_name" ] && skill_name="$dir_name"
+  [ -z "$skill_name" ] && skill_name="$fallback_name"
+  [ -z "$skill_name" ] && return
 
-  target="$OPENCODE_SKILLS_DIR/superskills-$skill_name"
+  local target="$OPENCODE_SKILLS_DIR/superskills-$skill_name"
   mkdir -p "$target"
   [ -L "$target/SKILL.md" ] && rm "$target/SKILL.md"
   ln -snf "$skill_md" "$target/SKILL.md"
+}
+
+if [ -d "$MARKETING_SRC_DIR" ]; then
+  while IFS= read -r skill_md; do
+    skill_dir="$(dirname "$skill_md")"
+    rel_path="${skill_dir#$MARKETING_SRC_DIR/}"
+    fallback_name=$(echo "$rel_path" | tr '/' '-')
+    link_skill_opencode "$skill_md" "$fallback_name"
+  done < <(find "$MARKETING_SRC_DIR" -name "SKILL.md" -type f | sort)
+fi
+
+if [ -d "$DESIGN_SRC_DIR" ]; then
+  for skill_md in "$DESIGN_SRC_DIR"/*/SKILL.md; do
+    [ -f "$skill_md" ] || continue
+    skill_dir="$(dirname "$skill_md")"
+    dir_name="$(basename "$skill_dir")"
+    [ "$dir_name" = "node_modules" ] && continue
+    link_skill_opencode "$skill_md" "$dir_name"
+  done
+fi
+
+for skill_md in "$SKILLS_SRC_DIR"/*/SKILL.md; do
+  [ -f "$skill_md" ] || continue
+  skill_dir="$(dirname "$skill_md")"
+  dir_name="$(basename "$skill_dir")"
+  [ "$dir_name" = "node_modules" ] && continue
+  link_skill_opencode "$skill_md" "$dir_name"
 done
 
 log "  done"
@@ -188,6 +288,8 @@ log ""
 # ── Summary ────────────────────────────────────────────────────────────────────
 log "  superskills ready"
 log "  ${#LINKED[@]} skills linked (Claude Code + OpenCode)"
+log "  includes marketing-skills: SEO, content, pages, ads, channels, strategies"
+log "  includes design-skills: UX, frontend engineering, animation, Swift/iOS, Vercel"
 if [ -f "$KB_CONF" ] && [ -s "$KB_CONF" ]; then
   kb_count=$(grep -c '.' "$KB_CONF" 2>/dev/null || echo 0)
   log "  $kb_count knowledge base(s) configured"
