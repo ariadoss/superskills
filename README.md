@@ -1,11 +1,11 @@
-# Superskills `v2.2.0`
+# Superskills `v2.4.0`
 
 Curated AI skills pack for Claude Code, OpenCode, Codex CLI, Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Bundles [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
-30 core skills + 43 gstack skills + 172 marketing skills + 35 design skills. gstack is installed automatically and vendored in this repo so skills are available even if the upstream repo is removed.
+33 core skills + 43 gstack skills + 173 marketing skills + 35 design skills. gstack is installed automatically and vendored in this repo so skills are available even if the upstream repo is removed.
 
 > **[Full command reference →](COMMANDS.md)** — all skills with descriptions and overlap notes
-> **[10x+ Engineering Workflow →](DEVELOPER_WORKFLOW.md)** — run 10+ parallel AI agents, each with a full quality pipeline
+> **[10x+ Engineering Workflow →](DEVELOPER_WORKFLOW.md)** — run 10+ parallel AI agents, each with a full quality pipeline ([deep dive](https://hyperion360.com/blog/parallel-ai-agents-engineering-workflow/))
 
 ## Install
 
@@ -130,14 +130,14 @@ Your overlay repo can:
 cd ~/.claude/skills/superskills && git pull && ./setup
 ```
 
-## Marketing Skills (172)
+## Marketing Skills (173)
 
 From [kostja94/marketing-skills](https://github.com/kostja94/marketing-skills) — stored directly in this repo. SEO, content, paid ads, pages, channels, and strategies:
 
 | Category | Examples |
 |----------|---------|
 | **SEO** | `/seo-strategy`, `/keyword-research`, `/title-tag`, `/core-web-vitals`, `/backlink-analysis`, `/local-seo` |
-| **Content** | `/copywriting`, `/article-content`, `/video-marketing`, `/visual-content`, `/podcast-marketing` |
+| **Content** | `/copywriting`, `/article-content`, `/video-marketing`, `/video-editing`, `/visual-content`, `/podcast-marketing` |
 | **Paid Ads** | `/google-ads`, `/meta-ads`, `/linkedin-ads`, `/tiktok-ads`, `/paid-ads-strategy` |
 | **Pages** | `/landing-page-generator`, `/homepage-generator`, `/pricing-page-generator`, `/blog-page-generator` |
 | **Channels** | `/email-marketing`, `/affiliate-marketing`, `/influencer-marketing`, `/distribution-channels` |
@@ -182,6 +182,7 @@ Skills curated from:
 - [LovroPodobnik/refactoring-ui-skill](https://github.com/LovroPodobnik/refactoring-ui-skill) — UI refactoring
 - [Dammyjay93/interface-design](https://github.com/Dammyjay93/interface-design) — interface design craft
 - [ParthJadhav/app-store-screenshots](https://github.com/ParthJadhav/app-store-screenshots) — app store screenshot generator
+- [browser-use/video-use](https://github.com/browser-use/video-use) — conversation-driven video editor (cut, grade, subtitle, animate)
 
 ## License
 

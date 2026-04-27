@@ -7,6 +7,8 @@ Run 10+ features simultaneously — each built, tested, reviewed, documented, an
 
 Engineers who master this don't just move faster — they operate at a different level entirely.
 
+> **Deep dive:** [Parallel AI Agents Engineering Workflow](https://hyperion360.com/blog/parallel-ai-agents-engineering-workflow/) — full write-up with rationale, examples, and pitfalls.
+
 ---
 
 ## The Workflow
@@ -35,6 +37,7 @@ Each agent works independently and spawns subagents. Exponentially faster than p
 |---------|------|
 | `/worktrees` | Create isolated git worktrees so each agent works on its own branch without interfering with others |
 | `/repomap-auto-on` | Automatically keep the codebase map updated as each agent makes changes |
+| `/dbmap-auto-on` | Automatically regenerate DBMAP.md after migration commands run, so agents always see the live schema |
 | `/gstack-pair-agent` | Coordinate multiple AI agents sharing browser and context across workspaces |
 
 ### 3. Each agent runs the full quality pipeline simultaneously

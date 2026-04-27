@@ -78,6 +78,8 @@
 | `/dbmap` | Generate a database schema map (DBMAP.md) |
 | `/repomap-auto-on` | Auto-update REPOMAP.md incrementally on every code change |
 | `/repomap-auto-off` | Disable automatic repo map updates |
+| `/dbmap-auto-on` | Auto-regenerate DBMAP.md after migration commands run (Rails, Django, Alembic, Prisma, Knex, Sequelize, Goose, Dbmate, Flyway, Liquibase, TypeORM, Drizzle) |
+| `/dbmap-auto-off` | Disable automatic database schema map updates |
 | `/graphify` | Turn any folder into a queryable knowledge graph — HTML, JSON, audit report |
 
 ---
@@ -316,6 +318,7 @@
 | `/copywriting` | Write or optimize short-form marketing copy — headlines, CTAs, ad copy |
 | `/podcast-marketing` | Plan, create, or market a podcast (strategy, SEO, show notes, distribution) |
 | `/translation` | Translate content, manage terminology, and optimize translation quality |
+| `/video-editing` | Edit raw video by conversation — cut filler/dead space, color grade, burn subtitles, generate overlay animations. Wraps [browser-use/video-use](https://github.com/browser-use/video-use). Requires ffmpeg + uv + a transcription backend (ElevenLabs Scribe key OR local mlx-whisper on Apple Silicon — auto-selected) |
 | `/video-marketing` | Plan video marketing, create video scripts, and optimize short/long-form video |
 | `/visual-content` | Plan, create, or repurpose visual content across channels |
 
