@@ -108,11 +108,13 @@ if [ "$NO_KNOWLEDGE" -eq 0 ]; then
 fi
 
 # ── Repomap tool ──────────────────────────────────────────────────────────────
-REPOMAP_DIR="$HOME/claude-repomap-command"
+# Honor $REPOMAP_HOME if set (matches scripts/run.sh in the upstream repo);
+# otherwise default to ~/claude-repomap-command.
+REPOMAP_DIR="${REPOMAP_HOME:-$HOME/claude-repomap-command}"
 if [ -d "$REPOMAP_DIR/.git" ]; then
-  log "  [ok] repomap tool already installed"
+  log "  [ok] repomap tool already installed at $REPOMAP_DIR"
 else
-  log "  [clone] repomap tool"
+  log "  [clone] repomap tool → $REPOMAP_DIR"
   git clone --quiet https://github.com/ariadoss/repomap.git "$REPOMAP_DIR" 2>/dev/null || {
     log "  [warn] Failed to clone repomap tool"
   }

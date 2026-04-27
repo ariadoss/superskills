@@ -20,6 +20,16 @@ Two patterns are valid — pick the one that matches the skill's runtime needs:
 
 Never reference an external repo as a live dependency without one of these two backups in place. Record the upstream URL in the skill's frontmatter (e.g. `metadata.upstream: https://...`) so the source is traceable.
 
+### Keeping in-tree mirrors current
+
+The `dbmap`, `repomap`, `dbmap-auto-on`, `dbmap-auto-off`, `repomap-auto-on`, and `repomap-auto-off` skills are in-tree mirrors of the upstream [ariadoss/repomap](https://github.com/ariadoss/repomap) repo. Before bumping VERSION on any release, run:
+
+```bash
+./scripts/sync-mirrors.sh
+```
+
+This pulls the latest upstream and copies each `<name>.md` into `skills/<name>/SKILL.md`. The setup script does **not** auto-modify the source tree — syncing is an explicit maintainer step so end users never see surprise diffs after running `setup`. The script resolves the upstream from `$REPOMAP_HOME` or the standard locations (`~/claude-repomap-command`, `~/.claude-repomap-command`, `~/.local/share/claude-repomap-command`).
+
 <!-- superskills-workflow-rule -->
 ## Superskills Developer Workflow
 
