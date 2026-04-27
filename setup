@@ -421,7 +421,7 @@ if [ -d "$HOME/.codeium/windsurf" ]; then
       name=$(grep -m1 '^name:' "$skill_md" 2>/dev/null | sed 's/^name:[[:space:]]*//' | tr -d '[:space:]')
       [ -z "$name" ] && name="$dir_name"
       desc=$(_skill_desc "$skill_md")
-      printf '- `/%s` — %s\n' "$name" "$desc"
+      echo "- \`/$name\` — $desc"
     done
   } > "$WINDSURF_MEM_DIR/superskills.md"
   log "  written: $WINDSURF_MEM_DIR/superskills.md"
@@ -465,7 +465,7 @@ if [ "$INSTALL_CLINE" -eq 1 ]; then
       name=$(grep -m1 '^name:' "$skill_md" 2>/dev/null | sed 's/^name:[[:space:]]*//' | tr -d '[:space:]')
       [ -z "$name" ] && name="$dir_name"
       desc=$(_skill_desc "$skill_md")
-      printf '- `/%s` — %s\n' "$name" "$desc"
+      echo "- \`/$name\` — $desc"
     done
   } > "$CLINE_FILE"
   log "  written: $CLINE_FILE"
