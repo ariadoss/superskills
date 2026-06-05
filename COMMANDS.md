@@ -16,6 +16,7 @@
 |---------|-------------|
 | `/tdd` | Test-Driven Development — RED-GREEN-REFACTOR enforcement |
 | `/debug` | Systematic debugging — 4-phase root cause analysis before proposing fixes |
+| `/daily-qa` | Daily repo health check — scans recent commits, CI failures, dep/SDK drift, perf regressions, and untested paths. Always auto-runs `/defense` (basic OWASP) on changed files; auto-runs `/db-optimize` when DB code changed; recommends `/pentest`, `/qa`, and `/debug` for heavier follow-up. Evidence-only (no speculation). |
 | `/worktrees` | Creates isolated git worktrees for parallel feature development |
 | `/finish-branch` | Guides branch cleanup and merge decisions when implementation is complete |
 | `/verify` | Pre-merge validation — requires running verification commands and confirming output before success claims |

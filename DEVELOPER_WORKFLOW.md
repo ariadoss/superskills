@@ -100,6 +100,32 @@ Each agent works independently and spawns subagents. Exponentially faster than p
 
 ---
 
+## Background cadence (runs independently of any feature branch)
+
+> The 7-step pipeline above is **per feature branch**. Some checks need to run continuously across the whole repo, regardless of which branch anyone is on — to catch drift, regressions, and new vulnerabilities introduced by *merged* code from other branches.
+>
+> `/daily-qa` is that continuous layer. Wire it into a cron job or `/loop` so it runs once per day. It does **not** replace the per-branch pipeline — it produces a dated report that surfaces *new work* (bugs, flakes, dep drift, perf regressions, untested paths, OWASP issues), which then flows into normal fix branches that go through the full 7-step pipeline.
+
+```
+Per-branch pipeline (7 steps above)        Background cadence (daily)
+  spec → plan → tdd → code → debug  ←─┐      /daily-qa
+       → verify → defense → ship       │       ├─ auto: /defense (basic OWASP)
+                                       │       ├─ auto: /db-optimize (if DB changed)
+   New fix branches start here  ───────┘       ├─ recommends: /pentest, /qa, /debug, /verify
+                                               └─ writes daily-qa-reports/YYYY-MM-DD.md
+```
+
+| Command | Role |
+|---------|------|
+| `/daily-qa` | Daily evidence-grounded sweep — commits → CI → deps → perf → coverage. Always auto-runs `/defense` (basic OWASP on changed files); auto-runs `/db-optimize` when DB/ORM/SQL changed. Recommends heavier follow-ups (`/pentest`, `/qa`, `/debug`, `/perf-profile`, `/verify`) with exact commands — never auto-runs them. Output: dated report under `daily-qa-reports/`. |
+
+**Why some commands are recommend-only:**
+- `/pentest` uses [clearwing](https://github.com/Lazarus-AI/clearwing) — external scanner that requires authorization confirmation per run.
+- `/qa` launches a browser interactively — wrong shape for unattended runs.
+- `/debug`, `/verify`, `/perf-profile` are per-issue deep-dives — auto-running them on every finding would be slow and noisy.
+
+---
+
 ## What is a vertical slice?
 
 A vertical slice means one branch contains every layer a feature needs to work — UI, API, business logic, database, and tests — all together, all shippable as a unit.
