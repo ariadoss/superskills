@@ -245,7 +245,36 @@ Output the exact command the user should run, e.g.
 `/qa --scope src/components/Checkout.tsx` (use the project's actual
 flag/syntax — check `skills/qa/SKILL.md` if unsure).
 
-### 7e. Other related commands — recommend only
+### 7e. `/web-perf` — recommend only (do not auto-run)
+
+`/web-perf` uses Chrome DevTools MCP to measure Core Web Vitals (LCP, INP,
+CLS) and trace render-blocking resources, layout shifts, and network
+dependency chains against a **live running app**. It requires the
+`chrome-devtools` MCP server and a URL to hit — wrong shape for unattended
+runs, but high-signal when frontend code changed.
+
+**Trigger** — recommend when any of:
+- changed files include frontend code (`**/*.tsx`, `**/*.jsx`, `**/*.vue`,
+  `**/*.svelte`, `**/components/**`, `**/pages/**`, `**/styles/**`,
+  `**/*.css`, `**/*.scss`, layout/routing files)
+- new images, fonts, or static assets added in the diff
+- `next.config.*`, `vite.config.*`, `webpack.config.*`, or other bundler
+  config changed (can affect bundle size and load time)
+- §2 surfaced a bug-signature in a render path or data-fetching hook
+
+**Output** — recommend the exact command:
+
+```
+/web-perf
+```
+
+Include the list of changed frontend files so the user can scope the audit
+to the affected routes. If the project has a local dev URL (check
+`CLAUDE.md` or common config like `package.json` `"dev"` script), include it
+as context: e.g. _"Run `/web-perf` against `http://localhost:3000` — changed
+files: `src/components/Hero.tsx`, `app/page.tsx`"_.
+
+### 7f. Other related commands — recommend only
 
 - `/debug` — when §2 or §3 has a single high-value failure to root-cause.
 - `/perf-profile` — when §4 flags a regression but lacks measurements.
@@ -300,6 +329,11 @@ CI runs scanned: N
 ## Recommended next actions
 1. …
 2. …
+
+## Recommended follow-up commands
+- `/web-perf` — (only if frontend files changed; include affected routes and dev URL)
+- `/pentest` — (only if /defense found CRITICAL/HIGH or auth/crypto changed)
+- `/qa` — (only if UI changed or e2e tests failed)
 ```
 
 Print the report path and a 5-line executive summary to the chat.
@@ -323,6 +357,7 @@ Auto-invoked (see Step 7):
 Recommend-only (never auto-run):
 - `/pentest` — heavy external scanner (clearwing) with auth confirmation; recommend when `/defense` finds HIGH/CRITICAL or sensitive code paths changed.
 - `/qa` — interactive browser QA; recommend when UI changed.
+- `/web-perf` — Core Web Vitals + render trace against a live app (Chrome DevTools MCP); recommend when frontend files, assets, or bundler config changed.
 - `/debug` — root-cause investigation for a specific failure.
 - `/perf-profile` — drill into a perf regression flagged in §4.
 - `/verify` — confirm a proposed fix works in the running app.

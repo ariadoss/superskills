@@ -57,10 +57,11 @@ Each agent works independently and spawns subagents. Exponentially faster than p
 
 ### 4. Performance & database optimization
 
-> **DB performance should be audited early and often** — not discovered in production under load.
+> **Performance should be audited across every layer — DB and frontend — not just discovered in production under load.**
 >
 > - Run `/dbmap` first to map the schema; it will automatically flag missing indexes on foreign keys and common query patterns
 > - Run `/db-optimize` on any feature that adds or modifies DB queries — catches N+1s, join opportunities, and slow queries before they ship
+> - Run `/web-perf` on any feature that adds or changes frontend code — measures Core Web Vitals (LCP, INP, CLS), render-blocking resources, bundle impact, and layout shifts against a live dev server
 > - Run `/perf-profile` when response times degrade or before a launch to establish a baseline
 > - Implement `/cache-strategy` for any data that is read far more than it is written
 
@@ -68,6 +69,7 @@ Each agent works independently and spawns subagents. Exponentially faster than p
 |---------|------|
 | `/dbmap` | Map database schema and automatically flag missing indexes (FK columns, common query patterns) |
 | `/db-optimize` | N+1 detection, EXPLAIN analysis, slow query log review, join opportunities, per-endpoint DB call audit |
+| `/web-perf` | Core Web Vitals (LCP, INP, CLS) measurement, render-blocking resource detection, bundle size analysis, layout shift tracing — runs against a live dev URL via Chrome DevTools MCP |
 | `/perf-profile` | Code execution time, DB call time, bottleneck identification across app and DB layers |
 | `/cache-strategy` | Permanent cache-first strategy — read from cache, write on first miss, invalidate only on data change (no TTL) |
 
@@ -104,22 +106,36 @@ Each agent works independently and spawns subagents. Exponentially faster than p
 
 > The 7-step pipeline above is **per feature branch**. Some checks need to run continuously across the whole repo, regardless of which branch anyone is on — to catch drift, regressions, and new vulnerabilities introduced by *merged* code from other branches.
 >
-> `/daily-qa` is that continuous layer. Wire it into a cron job or `/loop` so it runs once per day. It does **not** replace the per-branch pipeline — it produces a dated report that surfaces *new work* (bugs, flakes, dep drift, perf regressions, untested paths, OWASP issues), which then flows into normal fix branches that go through the full 7-step pipeline.
+> `/daily-qa` is that continuous layer. **Run it every morning** — manually (`/daily-qa` in your terminal) or on autopilot with `/loop 24h /daily-qa` to have it fire once per day without thinking about it. It does **not** replace the per-branch pipeline — it produces a dated report that surfaces *new work* (bugs, flakes, dep drift, perf regressions, frontend slowness, untested paths, OWASP issues), which then flows into normal fix branches that go through the full 7-step pipeline.
 
 ```
 Per-branch pipeline (7 steps above)        Background cadence (daily)
   spec → plan → tdd → code → debug  ←─┐      /daily-qa
        → verify → defense → ship       │       ├─ auto: /defense (basic OWASP)
                                        │       ├─ auto: /db-optimize (if DB changed)
-   New fix branches start here  ───────┘       ├─ recommends: /pentest, /qa, /debug, /verify
+   New fix branches start here  ───────┘       ├─ recommends: /web-perf (if frontend changed)
+                                               ├─ recommends: /pentest, /qa, /debug, /verify
                                                └─ writes daily-qa-reports/YYYY-MM-DD.md
 ```
 
+> **Frontend perf regressions are easy to miss.** A change to a React component, bundler config, or CSS file can silently inflate bundle size or tank LCP. `/daily-qa` detects frontend file changes and recommends `/web-perf` with the affected routes — run it against your local dev server before the slowness reaches production.
+
 | Command | Role |
 |---------|------|
-| `/daily-qa` | Daily evidence-grounded sweep — commits → CI → deps → perf → coverage. Always auto-runs `/defense` (basic OWASP on changed files); auto-runs `/db-optimize` when DB/ORM/SQL changed. Recommends heavier follow-ups (`/pentest`, `/qa`, `/debug`, `/perf-profile`, `/verify`) with exact commands — never auto-runs them. Output: dated report under `daily-qa-reports/`. |
+| `/daily-qa` | Daily evidence-grounded sweep — commits → CI → deps → perf → coverage. Always auto-runs `/defense` (basic OWASP on changed files); auto-runs `/db-optimize` when DB/ORM/SQL changed; recommends `/web-perf` when frontend files changed. Recommends heavier follow-ups (`/pentest`, `/qa`, `/debug`, `/perf-profile`, `/verify`) with exact commands — never auto-runs them. Output: dated report under `daily-qa-reports/`. |
+
+**Run it daily — two options:**
+
+```bash
+# Manual: run once in your terminal each morning
+/daily-qa
+
+# Autopilot: keep a Claude Code session running the loop
+/loop 24h /daily-qa
+```
 
 **Why some commands are recommend-only:**
+- `/web-perf` requires Chrome DevTools MCP and a live dev URL — must be run interactively against a running app.
 - `/pentest` uses [clearwing](https://github.com/Lazarus-AI/clearwing) — external scanner that requires authorization confirmation per run.
 - `/qa` launches a browser interactively — wrong shape for unattended runs.
 - `/debug`, `/verify`, `/perf-profile` are per-issue deep-dives — auto-running them on every finding would be slow and noisy.

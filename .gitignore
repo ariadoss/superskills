@@ -1,2 +1,4 @@
 .DS_Store
 .claude/settings.local.json
+.daily-qa-last-run
+daily-qa-reports/
