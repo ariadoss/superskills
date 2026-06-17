@@ -1,6 +1,6 @@
 ---
 name: typography
-description: Apply professional typographic rules to screen-based UI. Use when generating any UI with visible text, auditing typography violations, or when the user asks about font sizing, line height, spacing, quotes, dashes, or text formatting in interfaces.
+description: Apply professional typographic rules to screen-based UI, including font selection that escapes the generic AI monoculture (no Inter/Roboto/Geist/Fraunces) using only open-licensed, free-for-commercial fonts. Use when generating any UI with visible text, choosing or replacing fonts, avoiding generic/AI-looking type, auditing typography violations, or when the user asks about font sizing, line height, spacing, quotes, dashes, or text formatting.
 metadata:
   author: bencium
 ---
@@ -14,6 +14,49 @@ Professional typographic rules for screen-based interfaces. Based on Matthew But
 **Enforcement** — when generating ANY UI with visible text, apply every rule automatically and silently.
 
 **Audit** — when reviewing existing code, flag violations.
+
+---
+
+## Font Selection
+
+Font choice is the single biggest signal of whether an interface looks designed or auto-generated. Two filters must **both** pass: the face must be **non-generic** (escape the AI monoculture) and it must be **open-licensed** (free for commercial use). These are independent — many open fonts are also the most overused.
+
+### Register first
+
+- **Product UI** (dashboards, admin panels, tools): system stacks and familiar sans are legitimate. One well-tuned family carries the whole UI. Fixed `rem` scale, 1.125–1.2 ratio. Don't over-brand a utility.
+- **Brand / marketing / content**: the design *is* the product. Generic type here reads as mediocre. Run the selection procedure below.
+
+### Selection procedure (brand register — never skip)
+
+1. **Voice words.** Write three concrete, physical-object brand-voice words — "warm and mechanical and opinionated", not "modern" or "elegant".
+2. **Reject your reflex.** List the three fonts you'd reach for first. If any appear on the ban list below, drop them — they're training-data defaults and create monoculture.
+3. **Search by physical object.** Browse a real **open-license** catalog with the voice words in mind. Find the face for the brand as a thing: a 1970s terminal manual, a fabric label, a concert poster, a museum caption. Reject the first thing that "looks designy".
+4. **Cross-check.** "Elegant" is not necessarily serif. "Technical" is not necessarily sans. "Warm" is not Fraunces. If the final pick matches your original reflex, start over.
+
+### Ban list — overused faces (do not use as primary)
+
+Two waves of monoculture. Reflex-reject all of these:
+
+- **Older**: Inter, Roboto, Open Sans, Lato, Montserrat, Arial, Helvetica
+- **Newer** (the AI-skill / Vercel / GitHub default wave): Fraunces, Geist, Mona Sans, Plus Jakarta Sans, Space Grotesk / Space Mono, Instrument Sans / Instrument Serif, DM Sans / DM Serif, Outfit, Recoleta, Newsreader, Lora, Crimson, Playfair Display, Cormorant, Syne, IBM Plex (any)
+
+Also reject the **editorial-typographic *lane***, not just the fonts: oversized italic serif headline + tiny uppercase tracked labels + ruled separators + monochrome restraint. It reads as taste in isolation but is now the universal AI landing-page hero. Use it only for a brief that is *literally* editorial.
+
+### Open-license only — never recommend a font that needs a paid license
+
+Pull exclusively from free, commercially-usable sources (SIL OFL / Apache / ITF Free License):
+
+- **Google Fonts** — OFL/Apache. Use the *deep* catalog, not the front-page defaults (which are the overused faces above).
+- **Fontshare** (Indian Type Foundry) — free for commercial use; rich source of distinctive, non-monoculture faces.
+- **Velvetyne**, **The League of Moveable Type**, **Collletttivo**, **Open Foundry** — open-source type.
+
+If a face you want requires a commercial license (Klim, ABC Dinamo, Pangram Pangram, Adobe Fonts subscription faces, etc.), **do not use it** — find the closest open-licensed equivalent and note the substitution. Never replace one default with a new default: the goal is a face that fits *this* brand, not a fresh monoculture.
+
+### Pairing & hierarchy
+
+- You often need only **one** family in multiple weights — cleaner than two competing faces. Add a second only for genuine contrast (serif + sans, geometric + humanist).
+- Never exceed 2–3 families. Never use a decorative/display face for body text.
+- Build hierarchy with a modular scale (≥1.25 ratio for brand display; 1.125–1.2 for dense product UI). Flat scales (sizes 1.1× apart) read as uncommitted.
 
 ---
 
@@ -144,6 +187,11 @@ Always use `max-width` on text containers. Use `clamp()` for fluid scaling.
 | `text-decoration: underline` | Remove | Only for links |
 | Line height 1.0 | Line height 1.35 | 120–145% |
 | Width: 100% on text | `max-width: 65ch` | Line length |
+| Inter / Roboto / Geist / Fraunces as primary | Open-license non-monoculture face | Font selection |
+| Sizes 14/15/16/18px (muddy) | Fewer sizes, ≥1.25 ratio | Flat hierarchy is an AI tell |
+| Italic serif hero + uppercase eyebrow | Roman headline, integrated kicker | Editorial-lane AI tell |
+| All-caps body paragraph | Caps for short labels only | All-caps body is an AI tell |
+| Gradient text on headings | Solid color | Gradient text is an AI tell |
 
 ---
 

@@ -190,11 +190,12 @@
 | `/composition-patterns` | React composition patterns that scale — compound components, render props, context providers |
 | `/deploy-to-vercel` | Deploy applications and websites to Vercel |
 | `/design-audit` | Conduct systematic visual audits and produce phased, implementation-ready design plans |
+| `/design-drift` | Detect and fix design drift — consolidate one-off colors/spacing/type into tokens, collapse duplicate component variants |
 | `/design-sprint` | Run a structured 5-day GV design sprint to prototype, test, and validate product ideas |
 | `/design-taste-frontend` | Senior UI/UX engineering system enforcing metric-based design rules and CSS hardware acceleration |
 | `/emil-design-eng` | UI polish, animation decisions, and invisible details that make software feel great (Emil Kowalski's philosophy) |
 | `/full-output-enforcement` | Override LLM truncation behavior to enforce complete code generation |
-| `/high-end-visual-design` | Design like a high-end agency with exact fonts, spacing, shadows, and animations |
+| `/high-end-visual-design` | Design like a high-end agency — premium fonts, spacing, shadows, animations — while avoiding AI-slop tells and using only open-licensed fonts |
 | `/hooked-ux` | Design habit-forming product loops using the Hook Model (Trigger, Action, Variable Reward, Investment) |
 | `/human-architect-mindset` | Systematic architectural thinking emphasizing irreplaceable human capabilities in system design |
 | `/interface-design` | Interface design for dashboards, admin panels, and SaaS apps focused on craft and consistency |
@@ -213,7 +214,7 @@
 | `/swiftui-text-editing` | SwiftUI text styling and rich text editing patterns with AttributedString |
 | `/swiftui-toolbars` | Modern SwiftUI toolbar patterns including customizable toolbars and search integration |
 | `/swiftui-webkit` | Embed and control web content in SwiftUI apps using WebView and WebPage (iOS/macOS 26+) |
-| `/typography` | Apply professional typographic rules to screen-based UI |
+| `/typography` | Apply professional typographic rules to screen-based UI + non-generic, open-licensed font selection (escapes the AI font monoculture) |
 | `/ui-refactor` | Tactical UI design guide for fixing layouts, selecting colors and fonts |
 | `/ux-designer` | Expert UI/UX design collaboration — asks before making design decisions |
 | `/ux-heuristics` | Evaluate and improve interface usability using heuristic analysis (Nielsen) |

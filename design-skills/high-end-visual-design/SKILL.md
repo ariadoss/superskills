@@ -1,6 +1,6 @@
 ---
 name: high-end-visual-design
-description: Design like a high-end agency with exact fonts, spacing, shadows, card structures, and animations that make websites feel expensive. Use when the user wants premium visual quality, "make it look expensive", agency-level design, or cinematic spatial rhythm.
+description: Design like a high-end agency with exact fonts, spacing, shadows, card structures, and animations that make websites feel expensive — while avoiding the recognizable tells of AI-generated UI (side-tab borders, purple/cyan palettes, cream backgrounds, gradient text, icon-tile stacks) and using only open-licensed fonts. Use when the user wants premium visual quality, "make it look expensive", agency-level design, work that doesn't look AI-generated, or cinematic spatial rhythm.
 metadata:
   author: Leonxlnx
 ---
@@ -16,7 +16,8 @@ You are a **Principal UI/UX Architect** who engineers premium digital experience
 ## Critical Prohibitions
 
 Never use:
-- Generic fonts: Inter, Roboto, Open Sans, Lato as primary typeface
+- **Monoculture fonts as primary** — both the older wave (Inter, Roboto, Open Sans, Lato, Montserrat) and the newer "AI default" wave (Geist, Fraunces, Plus Jakarta Sans, Space Grotesk, Instrument Sans/Serif, DM Sans/Serif, Mona Sans, Recoleta). See `typography` for the full ban list and selection procedure.
+- **Fonts that require a commercial license** — recommend only open-licensed faces (Google Fonts deep catalog, Fontshare, Velvetyne, SIL OFL). Free for commercial use, always.
 - Standard icon libraries without customization
 - Harsh drop shadows (`box-shadow: 0 4px 6px rgba(0,0,0,0.1)`)
 - Edge-to-edge sticky navbars with full opacity
@@ -24,6 +25,23 @@ Never use:
 - Pure black (`#000000`) backgrounds
 - Three equal-column card layouts
 - Emojis
+
+## AI Slop Tells — Never Ship These
+
+The most recognizable fingerprints of auto-generated UI. Each one alone marks a design as "AI made that":
+
+- **Side-tab accent border** — thick colored stripe on one side of a card. The #1 tell. Remove it.
+- **AI color palette** — purple/violet gradients, cyan-on-dark. Pick a distinctive, intentional palette instead.
+- **Cream / beige reflex background** — the default "tasteful" AI surface. Choose a deliberate ground.
+- **Gradient text** on headings/metrics — use solid color.
+- **Dark mode + colored glow shadows** — the default "cool" AI look. Use subtle, purposeful lighting or skip dark mode.
+- **Icon tile stacked above every heading** — the universal AI feature-card template. Try side-by-side, or no container.
+- **Nested cards** (cards inside cards) — flatten with spacing, type, and dividers.
+- **Numbered section markers** (01 / 02 / 03) and **repeated uppercase tracked eyebrow labels** — AI editorial scaffolding.
+- **Oversized italic serif hero + tiny uppercase kicker** — the universal AI landing-page hero. Use only on a literally editorial brief.
+- **Bounce / elastic easing** — dated. Real objects decelerate smoothly (ease-out-quart/quint/expo).
+- **Monotonous spacing** — same value everywhere. Tight groupings for related items, generous gaps between sections.
+- **Marketing buzzwords** in copy (streamline / empower / supercharge / world-class) and **em-dash overuse** (>2 in body) — instant AI tells.
 
 ## Design Methodology — The Variance Engine
 
@@ -83,13 +101,15 @@ Any asymmetric layout must aggressively fall back:
 ## Pre-Output Checklist
 
 Before delivering any design:
-1. No generic fonts used
-2. Custom cubic-bezier on all transitions
-3. No pure black backgrounds
-4. Animations only on transform/opacity
-5. Three-column equal grids eliminated
-6. Mobile fallback aggressive and complete
-7. No emojis
-8. Shadows use soft, multi-layer approach
-9. Color palette coherent (1 accent max)
-10. Typography hierarchy clear at first glance
+1. No monoculture fonts (old or new wave); primary face is distinctive
+2. Every font is open-licensed / free for commercial use
+3. No AI slop tells (side-tab border, purple-gradient/cyan palette, cream reflex, gradient text, icon-tile stacks, nested cards, 01/02/03 markers)
+4. Custom cubic-bezier on all transitions (no bounce/elastic)
+5. No pure black backgrounds
+6. Animations only on transform/opacity
+7. Three-column equal grids eliminated
+8. Mobile fallback aggressive and complete
+9. No emojis
+10. Shadows use soft, multi-layer approach
+11. Color palette coherent (1 accent max)
+12. Typography hierarchy clear at first glance
