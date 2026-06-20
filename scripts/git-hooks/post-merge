@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# superskills post-merge hook
+# Re-runs ./setup -q after every `git pull`/`git merge` so that NEW skills
+# added upstream get symlinked into the target tools. Existing skills are live
+# symlinks (edits propagate instantly), but a brand-new skill is invisible
+# until setup runs again to create its link. This hook closes that gap.
+set -e
+
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+[ -x "$REPO_ROOT/setup" ] || exit 0
+
+echo "superskills: re-running setup after merge to link any new skills..."
+"$REPO_ROOT/setup" -q || echo "superskills: setup failed; run ./setup manually"

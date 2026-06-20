@@ -9,6 +9,25 @@ Always increment VERSION before committing and pushing any change:
 
 Update the version badge in README.md to match (e.g. `v2.1.0` → `v2.2.0`).
 
+## Always re-run `./setup` after a pull or after adding a skill
+
+Skills are exposed to the tools as symlinks created by `./setup`. Edits to an
+**existing** skill propagate instantly (the symlink points at the live file),
+but a **new** skill is invisible until `./setup` runs again to create its link.
+
+So:
+- **After every `git pull`** in this repo — run `./setup` (a `post-merge` git
+  hook does this automatically once you've run setup once; if you cloned fresh,
+  run it manually the first time).
+- **After adding a new skill locally, before you push** — run `./setup` so the
+  new skill is linked and testable in your own environment.
+
+End users get the same guarantee via `/superskills-upgrade`, which fetches,
+force-syncs to `origin/main` even across a rewritten history, and re-runs setup.
+Because of that force-sync, **never rewrite published `main`** (no force-push /
+history squash of released commits) unless unavoidable — keep releases
+forward-only so existing installs always fast-forward cleanly.
+
 ## Always keep a local copy of imported skills
 
 Whenever you add a skill that originates from an external GitHub repo (or any other remote source), commit a local copy of its full contents into this repository. The remote could be deleted, renamed, or made private at any time, and the skill must keep working without it.

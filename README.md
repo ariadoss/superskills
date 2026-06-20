@@ -1,4 +1,4 @@
-# Superskills `v2.9.0`
+# Superskills `v2.10.0`
 
 Curated AI skills pack for Claude Code, OpenCode, Codex CLI, Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Bundles [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
@@ -130,6 +130,13 @@ Your overlay repo can:
 ```bash
 cd ~/.claude/skills/superskills && git pull && ./setup
 ```
+
+> **Always re-run `./setup` after pulling — `git pull` alone is not enough.**
+> Existing skills are live symlinks, so edits to them show up instantly. But a
+> **new** skill only becomes visible once `./setup` runs again to create its
+> symlink. `setup` installs a git `post-merge` hook that does this automatically
+> on every pull, so after your first run you can just `git pull`. The
+> `/superskills-upgrade` command also handles this for you.
 
 ## Marketing Skills (173)
 

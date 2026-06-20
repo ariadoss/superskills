@@ -493,6 +493,26 @@ if ! grep -qF "$WORKFLOW_MARKER" "$GLOBAL_CLAUDE_MD" 2>/dev/null; then
 fi
 log ""
 
+# ── Git post-merge hook ───────────────────────────────────────────────────────
+# If this is a git checkout, install a post-merge hook so a plain `git pull`
+# re-runs setup and links any NEW skills. Without this, new skills stay
+# invisible until setup is run again (existing skills are live symlinks).
+HOOK_SRC="$SOURCE_DIR/scripts/git-hooks/post-merge"
+HOOKS_DIR="$(git -C "$SOURCE_DIR" rev-parse --git-path hooks 2>/dev/null || echo "")"
+if [ -n "$HOOKS_DIR" ] && [ -f "$HOOK_SRC" ]; then
+  # rev-parse may return a path relative to SOURCE_DIR — resolve it
+  case "$HOOKS_DIR" in /*) : ;; *) HOOKS_DIR="$SOURCE_DIR/$HOOKS_DIR" ;; esac
+  mkdir -p "$HOOKS_DIR"
+  if [ ! -e "$HOOKS_DIR/post-merge" ] || grep -qF "superskills post-merge hook" "$HOOKS_DIR/post-merge" 2>/dev/null; then
+    cp "$HOOK_SRC" "$HOOKS_DIR/post-merge"
+    chmod +x "$HOOKS_DIR/post-merge"
+    log "  [ok] git post-merge hook installed (auto-links new skills on pull)"
+  else
+    log "  [skip] post-merge hook exists and is not ours — leaving it alone"
+  fi
+fi
+log ""
+
 # ── Summary ────────────────────────────────────────────────────────────────────
 log "  superskills ready"
 log "  ${#LINKED[@]} skills linked"
