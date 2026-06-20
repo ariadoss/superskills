@@ -15,7 +15,7 @@ triggers:
   - daily health report
   - check recent commits for bugs
   - daily ci review
-argument-hint: <optional: since timestamp, e.g. "24h", "last-run", "2026-06-01">
+argument-hint: '<optional: since timestamp, e.g. "24h", "last-run", "2026-06-01">'
 allowed-tools:
   - Bash
   - Read
@@ -59,37 +59,11 @@ After the report is written, update `.daily-qa-last-run` to the current
 timestamp so the next run picks up cleanly. (Add to `.gitignore` if not
 already present; do not commit it.)
 
-## Step 2: Recent-commit bug scan
-
-Goal: surface likely bugs introduced in the window; propose minimal fixes.
-
-1. `git log --since=<window> --oneline --no-merges` → list candidate SHAs.
-2. For each SHA, `git show --stat <sha>` then read the diff hunks that
-   touch logic (skip pure docs/config-only changes unless they touch
-   build/CI config).
-3. Look for concrete bug signatures only:
-   - off-by-one, inverted conditions, swapped args, dropped error handling,
-     unhandled null/undefined, race-prone async, accidental `await` removal,
-     resource leaks, missing cleanup, regex backtracking, SQL with missing
-     parameter binding, auth/permission checks removed.
-4. Cross-reference with failing tests or CI jobs from Step 3 — if a commit
-   coincides with a new failure, escalate confidence.
-5. For each finding, output:
-   - **SHA + file:line** evidence
-   - **Observed** (what the diff actually does)
-   - **Suspected impact** (only if you can name a concrete failure mode)
-   - **Minimal fix** (the smallest diff that addresses it)
-
-If no concrete bug signatures appear, write: *"No bug-signature findings in
-window N commits scanned."* — do not fill space with speculation.
-
-Consider delegating wide commit scans to an `Explore` subagent when the
-window spans >30 commits.
-
-## Step 3: CI failures and flaky tests
+## Step 2: CI failures and flaky tests
 
 Goal: summarize CI failures in the window; group by likely root cause;
-suggest top fixes.
+suggest top fixes. (Run this **before** the commit bug scan so the bug scan
+in Step 3 can cross-reference live test/CI signal.)
 
 1. Try, in order:
    - `gh run list --limit 50 --json databaseId,conclusion,headSha,createdAt,name,workflowName`
@@ -112,6 +86,44 @@ suggest top fixes.
 
 If CI is unreachable, write: *"CI signals unavailable — skipped"* and the
 reason (no `gh`, no token, no remote).
+
+## Step 3: Recent-commit bug scan
+
+Goal: surface likely bugs introduced in the window; propose minimal fixes.
+
+1. `git log --since=<window> --oneline --no-merges` → list candidate SHAs and
+   resolve the window's commit range (oldest..HEAD within the window).
+2. **Primary engine — delegate to `/code-review`.** Run `/code-review` scoped
+   to the window's diff/range at a local tier:
+   - `low`/`medium` for a quick daily pass; `high` when the window is large
+     (>30 commits) or touches auth/crypto/payments/data paths.
+   - `/code-review` reads the diff only — no browser, no external tools, no
+     auth prompt — so it is **safe to auto-run**, exactly like `/defense`.
+   - The **`ultra` tier is cloud-based, billed, and user-triggered** — never
+     auto-run it. Recommend it (see §7f) only when a finding here is
+     high-stakes and warrants a deep multi-agent cloud review.
+   Fold `/code-review`'s correctness findings into report §2.
+3. **Fallback (only if `/code-review` is unavailable):** read the diff hunks
+   that touch logic (skip pure docs/config-only changes unless they touch
+   build/CI config) and look for concrete bug signatures only:
+   - off-by-one, inverted conditions, swapped args, dropped error handling,
+     unhandled null/undefined, race-prone async, accidental `await` removal,
+     resource leaks, missing cleanup, regex backtracking, SQL with missing
+     parameter binding, auth/permission checks removed.
+4. Cross-reference findings with failing tests or CI jobs from **Step 2** — if
+   a commit coincides with a new failure, escalate confidence.
+5. For each finding, output:
+   - **SHA + file:line** evidence
+   - **Observed** (what the diff actually does)
+   - **Suspected impact** (only if you can name a concrete failure mode)
+   - **Minimal fix** (the smallest diff that addresses it)
+
+If no findings appear, write: *"No bug-signature findings in window — N
+commits scanned."* — do not fill space with speculation.
+
+`/code-review` already fans out internally; only delegate a separate wide scan
+to an `Explore` subagent if `/code-review` is unavailable and the window spans
+>30 commits.
 
 ## Step 4: Dependency / SDK drift
 
@@ -151,7 +163,8 @@ Goal: compare recent changes to existing benchmarks/traces; flag regressions.
    - CI artifacts containing timings, flamegraphs, or `criterion`/`pytest-benchmark` output
    - traces stored under `traces/` or referenced in `CLAUDE.md`
 2. If found, diff the latest run's numbers against the previous baseline
-   for files touched in Step 2. Report each regression as:
+   for files touched in the window (the changed-file list from Step 3).
+   Report each regression as:
    - metric name, baseline, current, delta %, commit SHA suspected
 3. If no benchmarks/traces exist for the touched code paths, write:
    *"No measurements found for: <paths>"*. Suggest 1–2 specific things
@@ -238,8 +251,8 @@ confirms authorization and runs it themselves.
 shape for an unattended daily sweep. Instead, **recommend** it when:
 - changed files include UI/frontend code (`**/*.tsx`, `**/*.vue`,
   `**/components/**`, route handlers serving HTML)
-- §2 surfaced a bug-signature finding in a user-facing path
-- §3 surfaced a failing e2e/browser test
+- Step 3 (bug scan) surfaced a bug-signature finding in a user-facing path
+- Step 2 (CI) surfaced a failing e2e/browser test
 
 Output the exact command the user should run, e.g.
 `/qa --scope src/components/Checkout.tsx` (use the project's actual
@@ -260,7 +273,7 @@ runs, but high-signal when frontend code changed.
 - new images, fonts, or static assets added in the diff
 - `next.config.*`, `vite.config.*`, `webpack.config.*`, or other bundler
   config changed (can affect bundle size and load time)
-- §2 surfaced a bug-signature in a render path or data-fetching hook
+- Step 3 (bug scan) surfaced a bug-signature in a render path or data-fetching hook
 
 **Output** — recommend the exact command:
 
@@ -276,10 +289,15 @@ files: `src/components/Hero.tsx`, `app/page.tsx`"_.
 
 ### 7f. Other related commands — recommend only
 
-- `/debug` — when §2 or §3 has a single high-value failure to root-cause.
-- `/perf-profile` — when §4 flags a regression but lacks measurements.
+- `/code-review ultra` — when Step 3's local `/code-review` (or a CI failure)
+  surfaced a high-stakes correctness concern that warrants a deep multi-agent
+  cloud review. The `ultra` tier is billed and user-triggered, so never
+  auto-run it — output the exact command and let the user launch it.
+- `/debug` — when Step 2 (CI) or Step 3 (bug scan) has a single high-value
+  failure to root-cause.
+- `/perf-profile` — when Step 5 flags a regression but lacks measurements.
 - `/verify` — when a fix from this report is ready to confirm.
-- `/tdd` — when expanding §6 coverage into a real feature.
+- `/tdd` — when expanding Step 6 coverage into a real feature.
 - `/finish-branch` / `/ship` — when a fix is ready to land.
 
 ## Step 8: Report format
@@ -294,15 +312,15 @@ Window: <from> → <to>
 Commits scanned: N
 CI runs scanned: N
 
-## 1. Recent-commit bug scan
-- Observed: …
-- Suspected: …
-- (or) No findings.
-
-## 2. CI failures & flaky tests
+## 1. CI failures & flaky tests
 - Observed failures: …
 - Suspected flakes: …
 - Top fixes: …
+
+## 2. Recent-commit bug scan (auto-run /code-review)
+- Observed: …
+- Suspected: …
+- (or) No findings.
 
 ## 3. Dependency / SDK drift
 - Safe bumps: …
@@ -331,6 +349,7 @@ CI runs scanned: N
 2. …
 
 ## Recommended follow-up commands
+- `/code-review ultra` — (only if Step 3 found a high-stakes correctness concern)
 - `/web-perf` — (only if frontend files changed; include affected routes and dev URL)
 - `/pentest` — (only if /defense found CRITICAL/HIGH or auth/crypto changed)
 - `/qa` — (only if UI changed or e2e tests failed)
@@ -350,16 +369,18 @@ Update `.daily-qa-last-run`.
 
 ## Related commands
 
-Auto-invoked (see Step 7):
-- `/defense` — always run on changed files (basic OWASP / secrets / auth / crypto sweep). No external tools, no auth prompt — safe for daily.
+Auto-invoked (local, diff-only — no external tools or auth prompt, safe for daily):
+- `/code-review` — the engine of the Step 3 commit bug scan (local `low`/`medium`/`high` tiers); findings populate report §2.
+- `/defense` — always run on changed files (basic OWASP / secrets / auth / crypto sweep).
 - `/db-optimize` — when DB/ORM/SQL files changed.
 
 Recommend-only (never auto-run):
+- `/code-review ultra` — deep multi-agent cloud review; billed + user-triggered. Recommend when Step 3 surfaces a high-stakes correctness concern.
 - `/pentest` — heavy external scanner (clearwing) with auth confirmation; recommend when `/defense` finds HIGH/CRITICAL or sensitive code paths changed.
 - `/qa` — interactive browser QA; recommend when UI changed.
 - `/web-perf` — Core Web Vitals + render trace against a live app (Chrome DevTools MCP); recommend when frontend files, assets, or bundler config changed.
 - `/debug` — root-cause investigation for a specific failure.
-- `/perf-profile` — drill into a perf regression flagged in §4.
+- `/perf-profile` — drill into a perf regression flagged in Step 5.
 - `/verify` — confirm a proposed fix works in the running app.
-- `/tdd` — write the failing test first when expanding §6 coverage.
+- `/tdd` — write the failing test first when expanding Step 6 coverage.
 - `/finish-branch` / `/ship` — when a fix from this report is ready to land.

@@ -21,10 +21,10 @@ Each feature is scoped end-to-end on its own isolated branch. Nothing touches th
 |---------|------|
 | `/specify` | Turn a natural language description into a structured feature spec |
 | `/clarify` | Identify gaps and ambiguities in the spec before planning |
-| `/write-plan` | Generate a detailed implementation plan from the spec |
+| `/write-plan` | Generate a detailed implementation plan from the spec — TDD tasks, DRY/SOLID/YAGNI principles, a required Test Plan & Verification section + coverage target; auto-chains to `/plan-eng-review` to double-check and emit the Test Plan Artifact |
 | `/analyze` | Verify consistency across spec, plan, and tasks so nothing conflicts |
 | `/autoplan` | Run automated CEO, design, and eng review chain on the plan |
-| `/gstack-plan-eng-review` | Architecture, data flow, and test planning review |
+| `/plan-eng-review` | Architecture, data flow, and test planning review |
 | `/repomap` | Generate a structural map of the codebase so agents understand context |
 | `/dbmap` | Map the database schema so agents work with accurate data models |
 | `/graphify` | Turn any folder into a queryable knowledge graph so agents and engineers can navigate complex codebases |
@@ -38,7 +38,7 @@ Each agent works independently and spawns subagents. Exponentially faster than p
 | `/worktrees` | Create isolated git worktrees so each agent works on its own branch without interfering with others |
 | `/repomap-auto-on` | Automatically keep the codebase map updated as each agent makes changes |
 | `/dbmap-auto-on` | Automatically regenerate DBMAP.md after migration commands run, so agents always see the live schema |
-| `/gstack-pair-agent` | Coordinate multiple AI agents sharing browser and context across workspaces |
+| `/pair-agent` | Coordinate multiple AI agents sharing browser and context across workspaces |
 
 ### 3. Each agent runs the full quality pipeline simultaneously
 
@@ -47,10 +47,12 @@ Each agent works independently and spawns subagents. Exponentially faster than p
 | `/tdd` | Enforce Red-Green-Refactor so tests are written before code, not as an afterthought |
 | `/checklist` | Generate a custom quality checklist for the specific feature being built |
 | `/playwright` | Run end-to-end tests with Playwright, automate UI verification |
-| `/gstack-qa` | Browser-based testing and bug fixing using real Chromium |
-| `/gstack-browse` | Direct Chromium browser control for manual-style automated QA |
-| `/gstack-review` | Staff engineer-level code review focused on production readiness |
-| `/gstack-investigate` | Root cause analysis with hypothesis testing when something breaks |
+| `/qa` | Browser-based testing and bug fixing using real Chromium |
+| `/browse` | Direct Chromium browser control for manual-style automated QA |
+| `/review` | Staff engineer-level code review focused on production readiness |
+| `/code-review` | Review the working diff for correctness bugs + reuse/simplification cleanups (local `low`→`max` tiers; `ultra` for a deep multi-agent cloud review). `--fix` applies findings; `--comment` posts inline PR comments |
+| `/simplify` | Apply reuse, simplification, efficiency, and altitude cleanups to the diff (quality only — no bug hunting; use `/code-review` for bugs) |
+| `/investigate` | Root cause analysis with hypothesis testing when something breaks |
 | `/debug` | Systematic 4-phase debugging before proposing any fix |
 | `/verify` | Require passing verification commands before any agent can finish |
 | `/finish-branch` | Guide branch cleanup and merge decisions when implementation is complete |
@@ -73,47 +75,66 @@ Each agent works independently and spawns subagents. Exponentially faster than p
 | `/perf-profile` | Code execution time, DB call time, bottleneck identification across app and DB layers |
 | `/cache-strategy` | Permanent cache-first strategy — read from cache, write on first miss, invalidate only on data change (no TTL) |
 
-### 6. Security layer (runs alongside development and again after every merge)
+### 5. Security layer (runs alongside development and again after every merge)
 
 > **Security and QA should run at multiple points — not just once.**
 >
 > New code introduced after an initial review can reintroduce vulnerabilities or break functionality. The right model is:
 >
-> 1. **Before writing code** — `/gstack-cso` and `/defense` surface threat model concerns that shape the design
+> 1. **Before writing code** — `/cso` and `/defense` surface threat model concerns that shape the design
 > 2. **During development** — security checks catch issues while context is fresh and before bad patterns spread
-> 3. **In the PR pipeline** — `/gstack-review` re-runs on every diff, so new code is always checked
+> 3. **In the PR pipeline** — `/review` re-runs on every diff, so new code is always checked
 > 4. **After each merge to main** — run `/pentest` and `/fuzz` again; merged code from other branches may create new attack surfaces when combined
 >
 > Treating security as a one-time gate at the end is the mistake. Continuous checks are cheap; a post-ship breach is not.
 
 | Command | Role |
 |---------|------|
-| `/gstack-cso` | OWASP Top 10 and STRIDE threat modeling |
+| `/cso` | OWASP Top 10 and STRIDE threat modeling |
 | `/defense` | Enforce secrets management, auth, and encryption standards |
 | `/pentest` | Scan source code and network for vulnerabilities |
 | `/fuzz` | Web fuzzing to surface unexpected attack surfaces before shipping |
 
-### 7. Ship
+### 6. Ship
+
+> **Gate the feature before you ship it.** The commands in steps 3–5 are run
+> individually during development. `/qa-full` is the single orchestrator that
+> re-runs the relevant subset — scoped to the branch diff (`base..HEAD`) — and
+> emits one pass/fail ship-readiness verdict. Run it when the feature is done,
+> *before* `/finish-branch` and `/ship`:
+>
+> ```
+> implement → /qa-full → /finish-branch → /ship
+> ```
+>
+> It reuses `/daily-qa`'s trigger matrix but is branch-scoped, present-human
+> (so it auto-runs the interactive checks `/daily-qa` only recommends —
+> `/web-perf`, browser QA), and **blocking**: CRITICAL/HIGH findings and failing
+> tests stop the gate. It does not mutate code — it reports blockers with
+> minimal fixes; you fix and re-run.
 
 | Command | Role |
 |---------|------|
-| `/gstack-ship` | Sync tests, automate CI/CD, and submit the PR |
-| `/gstack-land-and-deploy` | Merge, deploy, and verify production |
+| `/qa-full` | Per-feature QA gate — full fan-out (tests, `/code-review`, `/defense`, `/db-optimize`, `/web-perf`, `/qa-only`, coverage) on the branch diff → pass/fail ship-readiness verdict. Run before `/finish-branch` and `/ship` |
+| `/ship` | Sync tests, automate CI/CD, and submit the PR |
+| `/land-and-deploy` | Merge, deploy, and verify production |
 
 ---
 
 ## Background cadence (runs independently of any feature branch)
 
-> The 7-step pipeline above is **per feature branch**. Some checks need to run continuously across the whole repo, regardless of which branch anyone is on — to catch drift, regressions, and new vulnerabilities introduced by *merged* code from other branches.
+> The 6-step pipeline above is **per feature branch**. Some checks need to run continuously across the whole repo, regardless of which branch anyone is on — to catch drift, regressions, and new vulnerabilities introduced by *merged* code from other branches.
 >
-> `/daily-qa` is that continuous layer. **Run it every morning** — manually (`/daily-qa` in your terminal) or on autopilot with `/loop 24h /daily-qa` to have it fire once per day without thinking about it. It does **not** replace the per-branch pipeline — it produces a dated report that surfaces *new work* (bugs, flakes, dep drift, perf regressions, frontend slowness, untested paths, OWASP issues), which then flows into normal fix branches that go through the full 7-step pipeline.
+> `/daily-qa` is that continuous layer. **Run it every morning** — manually (`/daily-qa` in your terminal) or on autopilot with `/loop 24h /daily-qa` to have it fire once per day without thinking about it. It does **not** replace the per-branch pipeline — it produces a dated report that surfaces *new work* (bugs, flakes, dep drift, perf regressions, frontend slowness, untested paths, OWASP issues), which then flows into normal fix branches that go through the full 6-step pipeline.
 
 ```
-Per-branch pipeline (7 steps above)        Background cadence (daily)
+Per-branch pipeline (6 steps above)        Background cadence (daily)
   spec → plan → tdd → code → debug  ←─┐      /daily-qa
-       → verify → defense → ship       │       ├─ auto: /defense (basic OWASP)
+       → verify → defense → ship       │       ├─ auto: /code-review (commit bug scan, local tier)
+                                       │       ├─ auto: /defense (basic OWASP)
                                        │       ├─ auto: /db-optimize (if DB changed)
-   New fix branches start here  ───────┘       ├─ recommends: /web-perf (if frontend changed)
+   New fix branches start here  ───────┘       ├─ recommends: /code-review ultra (high-stakes findings)
+                                               ├─ recommends: /web-perf (if frontend changed)
                                                ├─ recommends: /pentest, /qa, /debug, /verify
                                                └─ writes daily-qa-reports/YYYY-MM-DD.md
 ```
@@ -122,7 +143,7 @@ Per-branch pipeline (7 steps above)        Background cadence (daily)
 
 | Command | Role |
 |---------|------|
-| `/daily-qa` | Daily evidence-grounded sweep — commits → CI → deps → perf → coverage. Always auto-runs `/defense` (basic OWASP on changed files); auto-runs `/db-optimize` when DB/ORM/SQL changed; recommends `/web-perf` when frontend files changed. Recommends heavier follow-ups (`/pentest`, `/qa`, `/debug`, `/perf-profile`, `/verify`) with exact commands — never auto-runs them. Output: dated report under `daily-qa-reports/`. |
+| `/daily-qa` | Daily evidence-grounded sweep — CI → commits → deps → perf → coverage. The commit bug scan is powered by `/code-review` (local tier, auto-run); also always auto-runs `/defense` (basic OWASP on changed files) and `/db-optimize` when DB/ORM/SQL changed; recommends `/web-perf` when frontend files changed. Recommends heavier follow-ups (`/code-review ultra`, `/pentest`, `/qa`, `/debug`, `/perf-profile`, `/verify`) with exact commands — never auto-runs them. Output: dated report under `daily-qa-reports/`. |
 
 **Run it daily — two options:**
 
@@ -135,6 +156,7 @@ Per-branch pipeline (7 steps above)        Background cadence (daily)
 ```
 
 **Why some commands are recommend-only:**
+- `/code-review ultra` runs a deep multi-agent review in the cloud — billed and user-triggered, so it can't auto-run. The local `/code-review` tiers (which power the daily commit bug scan) read the diff only and are safe to run unattended.
 - `/web-perf` requires Chrome DevTools MCP and a live dev URL — must be run interactively against a running app.
 - `/pentest` uses [clearwing](https://github.com/Lazarus-AI/clearwing) — external scanner that requires authorization confirmation per run.
 - `/qa` launches a browser interactively — wrong shape for unattended runs.
@@ -289,4 +311,4 @@ This is what makes parallel agents safe at scale. Ten agents can each add new ta
 
 Running security late is a known failure mode. Late-stage findings require expensive rearchitecting. Running it early means the threat model informs the design. Running it again after every merge catches the regression case — new code from other branches that wasn't in scope for the original review.
 
-The `/gstack-review` command is designed for this: it runs on every PR diff automatically, so security and correctness checks are always current.
+The `/review` command is designed for this: it runs on every PR diff automatically, so security and correctness checks are always current.

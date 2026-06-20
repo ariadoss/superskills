@@ -145,7 +145,7 @@ else
   if git clone --single-branch --depth 1 --quiet \
        https://github.com/garrytan/gstack.git "$GSTACK_DIR" 2>/dev/null; then
     log "  [ok] gstack cloned"
-    (cd "$GSTACK_DIR" && ./setup -q 2>/dev/null) || {
+    (cd "$GSTACK_DIR" && ./setup -q --no-prefix 2>/dev/null) || {
       log "  [warn] gstack setup failed — skills may need manual activation"
     }
     log "  [ok] gstack installed ($(cat "$GSTACK_DIR/VERSION" 2>/dev/null))"
@@ -153,7 +153,7 @@ else
     log "  [warn] gstack clone failed — using vendor copy"
     if [ -d "$GSTACK_VENDOR_DIR" ]; then
       cp -r "$GSTACK_VENDOR_DIR" "$GSTACK_DIR"
-      (cd "$GSTACK_DIR" && ./setup -q 2>/dev/null) || true
+      (cd "$GSTACK_DIR" && ./setup -q --no-prefix 2>/dev/null) || true
       log "  [ok] gstack installed from vendor copy"
     else
       log "  [error] vendor copy not found — gstack not installed"

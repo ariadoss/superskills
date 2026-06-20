@@ -1,13 +1,13 @@
 ---
 name: write-plan
-description: Use when you have a spec or requirements for a multi-step task, before touching code
+description: Use when you have a spec or requirements for a multi-step task, before touching code. Produces an engineering plan complete with TDD tasks, DRY/SOLID/YAGNI principles, a required Test Plan & Verification section, and a coverage target — then auto-runs /plan-eng-review as an independent double-check before execution.
 ---
 
 # Writing Plans
 
 ## Overview
 
-Write comprehensive implementation plans assuming the engineer has zero context for our codebase and questionable taste. Document everything they need to know: which files to touch for each task, code, testing, docs they might need to check, how to test it. Give them the whole plan as bite-sized tasks. DRY. YAGNI. TDD. Frequent commits.
+Write comprehensive implementation plans assuming the engineer has zero context for our codebase and questionable taste. Document everything they need to know: which files to touch for each task, code, testing, docs they might need to check, how to test it. Give them the whole plan as bite-sized tasks. DRY. SOLID. YAGNI. TDD. Frequent commits. Every plan ends with a required **Test Plan & Verification** section and a coverage target, then gets an automatic second-pass engineering review (`/plan-eng-review`) before any code is written.
 
 Assume they are a skilled developer, but know almost nothing about our toolset or problem domain. Assume they don't know good test design very well.
 
@@ -32,6 +32,16 @@ Before defining tasks, map out which files will be created or modified and what 
 - In existing codebases, follow established patterns. If the codebase uses large files, don't unilaterally restructure - but if a file you're modifying has grown unwieldy, including a split in the plan is reasonable.
 
 This structure informs the task decomposition. Each task should produce self-contained changes that make sense independently.
+
+## Design Principles (call these out explicitly in the plan)
+
+The plan must *show* it respects these — not as a checkbox, but by naming where each applies in the File Structure and tasks:
+
+- **DRY** — before adding code, name the existing helper/module to reuse (Grep for it). If two tasks introduce similar logic, factor the shared piece into its own earlier task. Flag any duplication you knowingly accept and why.
+- **SOLID** — each unit has one reason to change (SRP); depend on interfaces/abstractions, not concretions (DIP); keep interfaces narrow (ISP); extend via new code rather than editing stable cores (OCP). For each new unit in the File Structure, note its single responsibility and the seam (interface/boundary) it exposes.
+- **YAGNI** — build only what the spec requires. No speculative extensibility, no "might need it later" hooks.
+
+If satisfying these requires restructuring existing code, scope that restructure as its own task — don't smuggle it into a feature task.
 
 ## Bite-Sized Task Granularity
 
@@ -113,11 +123,41 @@ Every step must contain the actual content an engineer needs. These are **plan f
 - Steps that describe what to do without showing how (code blocks required for code steps)
 - References to types, functions, or methods not defined in any task
 
+## Test Plan & Verification (required section in every plan)
+
+After the tasks, every plan **MUST** end with a `## Test Plan & Verification` section. A plan without it is incomplete. This is the rollup that `/qa-full`, `/qa`, `/qa-only`, and `/verify` consume, and the artifact `/plan-eng-review` double-checks. The per-task TDD steps stay where they are; this section ties them to coverage, critical paths, and acceptance criteria.
+
+```markdown
+## Test Plan & Verification
+
+**Coverage target:** [concrete, e.g. "≥90% lines on new modules; every new public function and error path has a test"]
+
+**Critical paths (must pass before ship):**
+- [end-to-end flow] → [how it's verified]
+
+**Edge cases & error paths:**
+- [input/state] → [expected handling] → [test that covers it]
+
+**Regression guards:**
+- [existing behavior that must not break] → [test protecting it]
+
+**Verification commands:**
+- Unit: `[exact command]` — expected: all pass
+- Coverage: `[exact command]` — expected: ≥ target above
+- E2E (if applicable): `[exact command]`
+
+**Acceptance criteria (from spec):**
+- [ ] [criterion] → covered by [task / test name]
+```
+
+The coverage-target line is exactly what `/qa-full` Step 9 checks and `/verify` confirms — make it concrete, not "good coverage."
+
 ## Remember
 - Exact file paths always
 - Complete code in every step — if a step changes code, show the code
 - Exact commands with expected output
-- DRY, YAGNI, TDD, frequent commits
+- DRY, SOLID, YAGNI, TDD, frequent commits
+- Every plan ends with a `## Test Plan & Verification` section and a coverage target
 
 ## Self-Review
 
@@ -129,7 +169,21 @@ After writing the complete plan, look at the spec with fresh eyes and check the 
 
 **3. Type consistency:** Do the types, method signatures, and property names you used in later tasks match what you defined in earlier tasks? A function called `clearLayers()` in Task 3 but `clearFullLayers()` in Task 7 is a bug.
 
+**4. TDD & test-plan completeness:** Does every task that writes code have a failing-test-first step? Is the `## Test Plan & Verification` section present with a concrete coverage target, critical paths, edge cases, and exact verification commands? If any task ships code with no test, fix it.
+
+**5. Principles check (DRY / SOLID / YAGNI):** For each new unit, can you name its single responsibility (SRP) and the existing helper it reuses (DRY)? Any duplicated logic across tasks, god-object, or speculative extensibility (YAGNI)? Fix or justify inline.
+
 If you find issues, fix them inline. No need to re-review — just fix and move on. If you find a spec requirement with no task, add the task.
+
+## Engineering Review (automatic second pass — do not skip)
+
+Once the plan passes self-review, hand it to `/plan-eng-review` for an independent engineering double-check **before any code is written**. This is automatic — don't ask permission, just run it:
+
+1. Invoke `/plan-eng-review` on the saved plan file. It locks in architecture and data flow, pressure-tests edge cases and **test coverage**, and writes a **Test Plan Artifact** that `/qa`, `/qa-only`, and `/qa-full` consume as primary test input.
+2. It raises issues interactively (one at a time) with opinionated recommendations. Work through each and fold the resolutions back into the plan file — including any gaps it finds in the `## Test Plan & Verification` section or the DRY/SOLID structure.
+3. Only after `/plan-eng-review` is satisfied do you offer the execution handoff below.
+
+Full chain: **/write-plan (DRY · SOLID · YAGNI · TDD · Test Plan · coverage) → self-review → /plan-eng-review (double-check + Test Plan Artifact) → execution.**
 
 ## Execution Handoff
 

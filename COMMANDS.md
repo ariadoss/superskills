@@ -16,11 +16,14 @@
 |---------|-------------|
 | `/tdd` | Test-Driven Development — RED-GREEN-REFACTOR enforcement |
 | `/debug` | Systematic debugging — 4-phase root cause analysis before proposing fixes |
-| `/daily-qa` | Daily repo health check — scans recent commits, CI failures, dep/SDK drift, perf regressions, and untested paths. Always auto-runs `/defense` (basic OWASP) on changed files; auto-runs `/db-optimize` when DB code changed; recommends `/pentest`, `/qa`, and `/debug` for heavier follow-up. Evidence-only (no speculation). |
+| `/code-review` | Review the current diff for **correctness bugs** + reuse/simplification/efficiency cleanups. Tiers: `low`/`medium` (fewer, high-confidence), `high`→`max` (broader), `ultra` (deep multi-agent cloud review). `--fix` applies findings; `--comment` posts inline PR comments. The DRY/reuse axis catches duplicated logic. |
+| `/simplify` | Apply reuse, simplification, efficiency, and **altitude** (right abstraction level) cleanups to the changed code — and apply the fixes. **Quality only — does not hunt for bugs** (use `/code-review` for that). The reuse axis is DRY enforcement; altitude is the nearest proxy for SOLID-style abstraction. |
+| `/daily-qa` | Daily repo health check — scans recent commits, CI failures, dep/SDK drift, perf regressions, and untested paths. Commit bug scan is powered by `/code-review` (local tier); always auto-runs `/defense` (basic OWASP) on changed files; auto-runs `/db-optimize` when DB code changed; recommends `/code-review ultra`, `/pentest`, `/qa`, and `/web-perf` for heavier follow-up. Evidence-only (no speculation). |
+| `/qa-full` | Per-feature QA gate — runs the full multi-dimensional fan-out (tests, `/code-review`, `/defense`, `/db-optimize`, `/web-perf`, `/qa-only`, coverage) scoped to the branch diff, then emits a **pass/fail ship-readiness verdict**. Same trigger matrix as `/daily-qa` but branch-scoped, present-human (interactive checks auto-run), and blocking. Run it when a feature is done, before `/finish-branch` and `/ship`. |
 | `/worktrees` | Creates isolated git worktrees for parallel feature development |
 | `/finish-branch` | Guides branch cleanup and merge decisions when implementation is complete |
 | `/verify` | Pre-merge validation — requires running verification commands and confirming output before success claims |
-| `/write-plan` | Detailed implementation planning from a spec or requirements |
+| `/write-plan` | Detailed implementation planning from a spec — embeds TDD tasks, DRY/SOLID/YAGNI principles, a required **Test Plan & Verification** section, and a concrete coverage target. Auto-chains to `/plan-eng-review` for an independent double-check (which emits the Test Plan Artifact `/qa-full` consumes) before execution. |
 
 ### Performance & Database
 
@@ -88,95 +91,95 @@
 ## gstack (by Garry Tan)
 
 > **Prerequisites:** `bun` v1.0+, Claude Code. Installed automatically by `./setup`.
-> **Commands use a `gstack-` prefix by default** (e.g. `/gstack-review`, `/gstack-investigate`). Run `~/.claude/skills/gstack/setup --no-prefix` after install to use short names instead — but see overlap notes below before doing so.
+> **Commands install with short names** (e.g. `/review`, `/investigate`, `/qa`) — superskills runs gstack's setup with `--no-prefix`. A few names overlap with superskills' own skills (notably `/repomap` and `/dbmap`); where they collide, superskills' version is symlinked last and wins. To keep the `gstack-` prefix instead (avoiding all collisions), re-run `~/.claude/skills/gstack/setup --prefix`.
 > **Vendor copy:** `vendor/gstack/` in this repo backs up all skill definitions in case the upstream repo is removed.
 
 ### Planning & Strategy
 
 | Command | Description | Overlaps with |
 |---------|-------------|---------------|
-| `/gstack-office-hours` | YC-style startup validation — six forcing questions that expose assumptions before writing any code | `/validate-idea` (similar intent; gstack is more aggressive/Socratic, superskills is framework-based) |
-| `/gstack-plan-ceo-review` | Founder-mode plan review — rethinks the problem, finds the 10-star product | `/minimalist-review` (both challenge plans; gstack focuses on product scope, superskills on lean principles) |
-| `/gstack-plan-eng-review` | Engineering architecture review — locks in data flow, testing strategy, and execution plan | `/write-plan` (both produce implementation plans; gstack is interactive review of an existing plan, superskills generates from scratch) |
-| `/gstack-plan-design-review` | Designer's eye plan review — rates design dimensions 0–10 before implementation | `/design-audit` (design-skills) (audit vs. pre-implementation review) |
-| `/gstack-plan-devex-review` | Developer experience plan review — evaluates DX personas and integration surfaces | — |
-| `/gstack-autoplan` | Automated pipeline — runs CEO → design → eng → DX review chain with auto-decisions | `/analyze` (both check cross-artifact consistency; gstack runs full review chain, superskills checks spec/plan/tasks) |
-| `/gstack-plan-tune` | Self-tuning question sensitivity for gstack reviews based on developer psychographic | — |
+| `/office-hours` | YC-style startup validation — six forcing questions that expose assumptions before writing any code | `/validate-idea` (similar intent; gstack is more aggressive/Socratic, superskills is framework-based) |
+| `/plan-ceo-review` | Founder-mode plan review — rethinks the problem, finds the 10-star product | `/minimalist-review` (both challenge plans; gstack focuses on product scope, superskills on lean principles) |
+| `/plan-eng-review` | Engineering architecture review — locks in data flow, testing strategy, and execution plan | `/write-plan` (both produce implementation plans; gstack is interactive review of an existing plan, superskills generates from scratch) |
+| `/plan-design-review` | Designer's eye plan review — rates design dimensions 0–10 before implementation | `/design-audit` (design-skills) (audit vs. pre-implementation review) |
+| `/plan-devex-review` | Developer experience plan review — evaluates DX personas and integration surfaces | — |
+| `/autoplan` | Automated pipeline — runs CEO → design → eng → DX review chain with auto-decisions | `/analyze` (both check cross-artifact consistency; gstack runs full review chain, superskills checks spec/plan/tasks) |
+| `/plan-tune` | Self-tuning question sensitivity for gstack reviews based on developer psychographic | — |
 
 ### Development & Review
 
 | Command | Description | Overlaps with |
 |---------|-------------|---------------|
-| `/gstack-review` | Pre-landing PR review — checks SQL safety, LLM trust boundaries, rate limiting, and production readiness | `/verify` (**different focus**: gstack reviews the diff for security/correctness, superskills enforces running verification commands before declaring done — use both) |
-| `/gstack-investigate` | Systematic root-cause debugging — four phases: investigate, hypothesize, test, confirm | `/debug` (**very similar**: both 4-phase systematic debugging. gstack uses browser for live investigation; superskills is code-only. **Prefer `/gstack-investigate` if browser access matters, `/debug` for pure code issues**) |
-| `/gstack-health` | Code quality dashboard — runs type checker, linter, test suite, and scores 0–10 with trends | — |
-| `/gstack-codex` | Cross-model code review — runs the same diff through Claude + OpenAI Codex independently | — |
+| `/review` | Pre-landing PR review — checks SQL safety, LLM trust boundaries, rate limiting, and production readiness | `/verify` (**different focus**: gstack reviews the diff for security/correctness, superskills enforces running verification commands before declaring done — use both) |
+| `/investigate` | Systematic root-cause debugging — four phases: investigate, hypothesize, test, confirm | `/debug` (**very similar**: both 4-phase systematic debugging. gstack uses browser for live investigation; superskills is code-only. **Prefer `/investigate` if browser access matters, `/debug` for pure code issues**) |
+| `/health` | Code quality dashboard — runs type checker, linter, test suite, and scores 0–10 with trends | — |
+| `/codex` | Cross-model code review — runs the same diff through Claude + OpenAI Codex independently | — |
 
 ### QA & Testing
 
 | Command | Description | Overlaps with |
 |---------|-------------|---------------|
-| `/gstack-qa` | Browser-based QA — tests a web app with headless Chromium and auto-fixes bugs found | `/playwright` (**complementary**: playwright is test scripting; gstack-qa is exploratory QA with auto-fix) |
-| `/gstack-qa-only` | Same as `/gstack-qa` but report-only — no automatic fixes | `/verify` (both report before declaring done; gstack-qa-only is browser-based, verify is command-output-based) |
-| `/gstack-browse` | Fast headless Chromium control (~100ms/command) — navigate, click, screenshot, assert | — |
-| `/gstack-open-gstack-browser` | Launch visible Chromium with the gstack sidebar extension for manual-style automated testing | — |
-| `/gstack-setup-browser-cookies` | Import real browser cookies into the headless session for authenticated testing | — |
-| `/gstack-benchmark` | Performance regression detection — establishes baselines and detects regressions | — |
-| `/gstack-benchmark-models` | Cross-model benchmark — runs the same prompt through Claude, OpenAI, and others | — |
+| `/qa` | Browser-based QA — tests a web app with headless Chromium and auto-fixes bugs found | `/playwright` (**complementary**: playwright is test scripting; gstack-qa is exploratory QA with auto-fix) |
+| `/qa-only` | Same as `/qa` but report-only — no automatic fixes | `/verify` (both report before declaring done; gstack-qa-only is browser-based, verify is command-output-based) |
+| `/browse` | Fast headless Chromium control (~100ms/command) — navigate, click, screenshot, assert | — |
+| `/open-gstack-browser` | Launch visible Chromium with the gstack sidebar extension for manual-style automated testing | — |
+| `/setup-browser-cookies` | Import real browser cookies into the headless session for authenticated testing | — |
+| `/benchmark` | Performance regression detection — establishes baselines and detects regressions | — |
+| `/benchmark-models` | Cross-model benchmark — runs the same prompt through Claude, OpenAI, and others | — |
 
 ### Security
 
 | Command | Description | Overlaps with |
 |---------|-------------|---------------|
-| `/gstack-cso` | Chief Security Officer mode — OWASP Top 10, STRIDE threat modeling, secrets archaeology | `/defense` (**very similar**: both cover OWASP Top 10 and secrets/auth. gstack-cso adds STRIDE threat modeling and is more systematic; `/defense` is a lighter checklist pass. **Prefer `/gstack-cso` for a deep audit, `/defense` for a quick review**) |
-| `/gstack-careful` | Safety guardrails — warns before `rm -rf`, `DROP TABLE`, force-push, and other destructive commands | — |
-| `/gstack-freeze` | Lock edits to a specific directory for the session — blocks `Edit` and `Write` outside the boundary | — |
-| `/gstack-unfreeze` | Remove the freeze boundary set by `/gstack-freeze` | — |
-| `/gstack-guard` | Combined safety mode: destructive command warnings + directory-scoped edits | — |
+| `/cso` | Chief Security Officer mode — OWASP Top 10, STRIDE threat modeling, secrets archaeology | `/defense` (**very similar**: both cover OWASP Top 10 and secrets/auth. gstack-cso adds STRIDE threat modeling and is more systematic; `/defense` is a lighter checklist pass. **Prefer `/cso` for a deep audit, `/defense` for a quick review**) |
+| `/careful` | Safety guardrails — warns before `rm -rf`, `DROP TABLE`, force-push, and other destructive commands | — |
+| `/freeze` | Lock edits to a specific directory for the session — blocks `Edit` and `Write` outside the boundary | — |
+| `/unfreeze` | Remove the freeze boundary set by `/freeze` | — |
+| `/guard` | Combined safety mode: destructive command warnings + directory-scoped edits | — |
 
 ### Shipping & Deployment
 
 | Command | Description | Overlaps with |
 |---------|-------------|---------------|
-| `/gstack-ship` | Full ship workflow — sync base branch, run tests, review diff, bump VERSION, create PR | `/finish-branch` (**similar end goal**: gstack-ship is automated and opinionated (VERSION bump, CI); finish-branch is interactive and guides the decision. **Use `/gstack-ship` when you want automation, `/finish-branch` when you want to think it through**) |
-| `/gstack-land-and-deploy` | Merge PR, wait for CI, verify production | — |
-| `/gstack-canary` | Post-deploy canary monitoring — watches live app for console errors and regressions | — |
-| `/gstack-setup-deploy` | Configure deployment settings for `/gstack-land-and-deploy` | — |
-| `/gstack-landing-report` | Read-only dashboard showing VERSION slots and ship queue status | — |
-| `/gstack-gstack-upgrade` | Upgrade gstack to the latest version from upstream | — |
+| `/ship` | Full ship workflow — sync base branch, run tests, review diff, bump VERSION, create PR | `/finish-branch` (**similar end goal**: gstack-ship is automated and opinionated (VERSION bump, CI); finish-branch is interactive and guides the decision. **Use `/ship` when you want automation, `/finish-branch` when you want to think it through**) |
+| `/land-and-deploy` | Merge PR, wait for CI, verify production | — |
+| `/canary` | Post-deploy canary monitoring — watches live app for console errors and regressions | — |
+| `/setup-deploy` | Configure deployment settings for `/land-and-deploy` | — |
+| `/landing-report` | Read-only dashboard showing VERSION slots and ship queue status | — |
+| `/gstack-upgrade` | Upgrade gstack to the latest version from upstream | — |
 
 ### Context & Memory
 
 | Command | Description | Overlaps with |
 |---------|-------------|---------------|
-| `/gstack-context-save` | Save working context — captures git state, decisions made, remaining work | — |
-| `/gstack-context-restore` | Restore a saved context from `/gstack-context-save` | — |
-| `/gstack-setup-gbrain` | Set up gbrain — persistent knowledge base that survives session resets | — |
-| `/gstack-learn` | Manage project learnings — review, search, prune, and export what gstack has stored | — |
+| `/context-save` | Save working context — captures git state, decisions made, remaining work | — |
+| `/context-restore` | Restore a saved context from `/context-save` | — |
+| `/setup-gbrain` | Set up gbrain — persistent knowledge base that survives session resets | — |
+| `/learn` | Manage project learnings — review, search, prune, and export what gstack has stored | — |
 
 ### Codebase Context
 
 | Command | Description | Overlaps with |
 |---------|-------------|---------------|
-| `/gstack-repomap` | Generate a repository structure map | `/repomap` (**exact duplicate in function** — if using `--no-prefix`, these will collide. superskills `/repomap` generates `REPOMAP.md`; gstack's version may format differently. **Keep prefix to avoid conflict**) |
-| `/gstack-dbmap` | Generate a database schema map | `/dbmap` (**exact duplicate in function** — same collision risk as above. **Keep prefix**) |
+| `/repomap` | Generate a repository structure map | Shadowed by superskills' own `/repomap` (Codebase Context above), which is installed last and wins. Both generate `REPOMAP.md`; you get superskills' version. |
+| `/dbmap` | Generate a database schema map | Shadowed by superskills' own `/dbmap` (Codebase Context above), which is installed last and wins. Both generate `DBMAP.md`; you get superskills' version. |
 
 ### Multi-Agent & Collaboration
 
 | Command | Description | Overlaps with |
 |---------|-------------|---------------|
-| `/gstack-pair-agent` | Coordinate a remote AI agent with shared browser access — generates a setup key | `/worktrees` (**different layer**: worktrees isolate code branches; pair-agent shares browser state between agents) |
-| `/gstack-autoplan` | Automated multi-phase review pipeline (CEO → design → eng → DX) with auto-decisions | See Planning section above |
+| `/pair-agent` | Coordinate a remote AI agent with shared browser access — generates a setup key | `/worktrees` (**different layer**: worktrees isolate code branches; pair-agent shares browser state between agents) |
+| `/autoplan` | Automated multi-phase review pipeline (CEO → design → eng → DX) with auto-decisions | See Planning section above |
 
 ### Utilities
 
 | Command | Description |
 |---------|-------------|
-| `/gstack-retro` | Weekly engineering retrospective — analyzes commit history and work patterns |
-| `/gstack-devex-review` | Live developer experience audit using the browse tool to actually test the DX |
-| `/gstack-document-release` | Post-ship doc update — reads all project docs and cross-references with the release |
-| `/gstack-make-pdf` | Turn any markdown file into a publication-quality PDF with 1in margins |
-| `/gstack-openclaw` | OpenClaw integration skills |
+| `/retro` | Weekly engineering retrospective — analyzes commit history and work patterns |
+| `/devex-review` | Live developer experience audit using the browse tool to actually test the DX |
+| `/document-release` | Post-ship doc update — reads all project docs and cross-references with the release |
+| `/make-pdf` | Turn any markdown file into a publication-quality PDF with 1in margins |
+| `/openclaw` | OpenClaw integration skills |
 
 ---
 
