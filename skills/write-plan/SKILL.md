@@ -35,10 +35,11 @@ This structure informs the task decomposition. Each task should produce self-con
 
 ## Design Principles (call these out explicitly in the plan)
 
-> The canonical definitions of TDD, DRY, SOLID, and YAGNI — and the hard gates a
-> plan's work must eventually pass — live in `ENGINEERING_STANDARDS.md` at the
-> repo root. This skill operationalizes that standard at plan time; `/qa-full`
-> enforces it at ship time. Don't restate the standard here — satisfy it.
+> This skill operationalizes the superskills quality standard (TDD, DRY, SOLID,
+> YAGNI) at plan time; `/qa-full` enforces it at ship time. The principles are
+> defined inline in the sections below — work from those. The canonical written
+> copy is `ENGINEERING_STANDARDS.md` in the superskills install (not in the
+> project you're planning for), so you don't need to fetch it.
 
 The plan must *show* it respects these — not as a checkbox, but by naming where each applies in the File Structure and tasks:
 

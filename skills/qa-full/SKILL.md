@@ -50,10 +50,13 @@ changed) with three deliberate differences:
 
 ## Hard rules
 
-- **The bar is `ENGINEERING_STANDARDS.md`** (repo root) — the canonical
-  TDD/DRY/SOLID/YAGNI definition and the authoritative hard-gate list. This
-  gate's Step 10 verdict is exactly "does the diff meet those standards." If
-  this skill and that file ever disagree, the file wins.
+- **The bar is the superskills quality standard** — TDD/DRY/SOLID/YAGNI plus the
+  hard-gate list, both spelled out in full in this skill (Step 10), so you do
+  **not** need to open any external file. The canonical written copy is
+  `ENGINEERING_STANDARDS.md` in the superskills install (a plugin install exposes
+  it at `${CLAUDE_PLUGIN_ROOT}/ENGINEERING_STANDARDS.md`); it is **not** expected
+  to exist in the project you're reviewing, so don't flag it as missing. Step 10's
+  verdict is exactly "does the diff meet those standards."
 - **This is a gate, not a fixer.** Detect and report blockers with the
   smallest viable fix; do **not** mutate source, open PRs, or push. The user
   fixes, then re-runs `/qa-full`. (For an auto-fixing flow, that's a future
@@ -187,8 +190,9 @@ Roll everything up into a single gate verdict.
   file:line/test-name evidence and the smallest fix. Tell the user to fix and
   re-run `/qa-full`.
 
-Blocker set (any one ⇒ NOT READY — this mirrors the hard gates in
-`ENGINEERING_STANDARDS.md`; keep the two in sync):
+Blocker set (any one ⇒ NOT READY — this is the authoritative list for the gate;
+it mirrors the superskills `ENGINEERING_STANDARDS.md`, kept in sync by the
+maintainer — you do not need to read that file to run this gate):
 - failing test or broken build (Step 2)
 - `/code-review` CRITICAL/HIGH correctness finding (Step 3)
 - `/defense` CRITICAL/HIGH security finding (Step 4)
