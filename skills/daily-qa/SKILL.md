@@ -241,6 +241,11 @@ confirmation, and is much slower. Wrong shape for unattended daily runs.
 - dependency manifest changes in Step 4 introduced unfamiliar packages
 - auth, crypto, session, token, deserialization, or file-upload code paths
   changed in the window
+- **infrastructure / deploy config** changed (`Dockerfile`, `docker-compose*`,
+  `**/*.tf`, `k8s`/`helm` manifests, `.github/workflows/**`, nginx/caddy/cloud
+  config) — a commonly-forgotten attack surface (exposed ports, broad IAM,
+  baked-in secrets). `/defense` (§4b) already sweeps these files for secrets;
+  `/pentest` is the deeper misconfig check.
 
 Output the exact command (`/pentest`) plus the scoped path list. User
 confirms authorization and runs it themselves.
@@ -287,12 +292,48 @@ to the affected routes. If the project has a local dev URL (check
 as context: e.g. _"Run `/web-perf` against `http://localhost:3000` — changed
 files: `src/components/Hero.tsx`, `app/page.tsx`"_.
 
-### 7f. Other related commands — recommend only
+### 7f. `/cso` — recommend only (threat-model backstop)
+
+`/cso` is OWASP Top 10 + STRIDE **threat modeling** — a **design-time** activity
+whose real home is `/write-plan`. daily-qa is post-merge, so this is only a
+**backstop**: it catches a trust-boundary change that shipped without a threat
+model.
+
+**Recommend** `/cso` when a commit in the window introduces a new trust boundary
+and the commit/PR shows no sign threat modeling happened:
+- new auth/authz flow, new public endpoint, new external integration or webhook
+- new deserialization, file upload, or handling of PII/payments/credentials
+- a new service-to-service or cross-tenant path
+
+Output the exact command and note: *"threat modeling belongs at plan time
+(`/write-plan` → `/cso`) — run it now if it was skipped."* Don't recommend it for
+changes that cross no trust boundary.
+
+### 7g. `/design-audit` — recommend only (visual + accessibility), alongside `/qa`
+
+Visual consistency, hierarchy, AI-slop tells, and **accessibility** are an
+easily-forgotten layer. For any **frontend feature**, the design pass belongs
+*alongside* the functional pass: recommend **`/design-audit`** (read-only visual
++ a11y audit → design plan) **together with `/qa`** (§7d, functional browser QA)
+— *does it look right* + *does it work*. Trigger when changed files include UI
+(`**/*.tsx`, `**/*.jsx`, `**/*.vue`, `**/*.svelte`, `**/components/**`,
+`**/pages/**`, `**/styles/**`, `**/*.css`). Output both commands scoped to the
+changed UI files, and pair with `/web-perf` (§7e) — together they cover
+work + perf + a11y + visual.
+
+`/design-audit` only *finds and plans* (read-only). To **fix** what it flags,
+recommend **`/design-review`** as the follow-up — it edits source and commits
+atomically, so the user runs it deliberately, not as part of the sweep.
+
+### 7h. Other related commands — recommend only
 
 - `/code-review ultra` — when Step 3's local `/code-review` (or a CI failure)
   surfaced a high-stakes correctness concern that warrants a deep multi-agent
   cloud review. The `ultra` tier is billed and user-triggered, so never
   auto-run it — output the exact command and let the user launch it.
+- `/review` — staff-level production-readiness review; heavier and more
+  architectural than the Step 3 `/code-review` pass. Recommend when a commit in
+  the window is architecturally significant or touches a critical path.
 - `/debug` — when Step 2 (CI) or Step 3 (bug scan) has a single high-value
   failure to root-cause.
 - `/perf-profile` — when Step 5 flags a regression but lacks measurements.
@@ -350,8 +391,12 @@ CI runs scanned: N
 
 ## Recommended follow-up commands
 - `/code-review ultra` — (only if Step 3 found a high-stakes correctness concern)
+- `/review` — (only if a change is architecturally significant / critical-path)
+- `/cso` — (only if a trust-boundary change shipped without a threat model)
 - `/web-perf` — (only if frontend files changed; include affected routes and dev URL)
-- `/pentest` — (only if /defense found CRITICAL/HIGH or auth/crypto changed)
+- `/design-audit` + `/qa` — (only if UI changed; visual/a11y audit alongside functional QA)
+- `/design-review` — (to fix what `/design-audit` flags; mutates + commits)
+- `/pentest` — (only if /defense found CRITICAL/HIGH, auth/crypto, or infra config changed)
 - `/qa` — (only if UI changed or e2e tests failed)
 ```
 
@@ -376,9 +421,13 @@ Auto-invoked (local, diff-only — no external tools or auth prompt, safe for da
 
 Recommend-only (never auto-run):
 - `/code-review ultra` — deep multi-agent cloud review; billed + user-triggered. Recommend when Step 3 surfaces a high-stakes correctness concern.
-- `/pentest` — heavy external scanner (clearwing) with auth confirmation; recommend when `/defense` finds HIGH/CRITICAL or sensitive code paths changed.
+- `/review` — staff-level production-readiness review; recommend for architecturally significant / critical-path changes (heavier than the Step 3 `/code-review`).
+- `/cso` — OWASP+STRIDE threat modeling; design-time (home is `/write-plan`). Backstop-recommend when a trust-boundary change shipped without a threat model.
+- `/pentest` — heavy external scanner (clearwing) with auth confirmation; recommend when `/defense` finds HIGH/CRITICAL, sensitive code paths, or infra/deploy config changed.
 - `/qa` — interactive browser QA; recommend when UI changed.
 - `/web-perf` — Core Web Vitals + render trace against a live app (Chrome DevTools MCP); recommend when frontend files, assets, or bundler config changed.
+- `/design-audit` — read-only visual/a11y audit → design plan; recommend alongside `/qa` when UI changed.
+- `/design-review` — *fixes and commits* visual issues (mutates); recommend as the follow-up to apply what `/design-audit` flags.
 - `/debug` — root-cause investigation for a specific failure.
 - `/perf-profile` — drill into a perf regression flagged in Step 5.
 - `/verify` — confirm a proposed fix works in the running app.

@@ -93,7 +93,7 @@ specific checks to actually run writes something like:
 
 - Mandatory checks (must RUN with evidence — a skip is a blocker): `/pentest`, `/defense`
 - Hard perf gate: LCP ≤ 2.5s and INP ≤ 200ms on `/` and `/checkout` (breach blocks)
-- Design is a gate: run `/design-review` on any UI change, don't just recommend it
+- Design is a gate: run `/design-audit` on any UI change, don't just recommend it
 - Dev URL: http://localhost:3000   (for `/web-perf`)
 - Test/build: `pnpm test` and `pnpm build`
 ```
@@ -103,8 +103,8 @@ Recognized settings (all optional; absence = the defaults in the steps below):
   blocker (Step 4/10). Use for compliance-critical surfaces (payments, auth, PII).
 - **Hard perf gate** — turns a `/web-perf` budget breach from a warning into a
   blocker (Step 6).
-- **Design is a gate** — auto-runs `/design-review` and blocks on its findings
-  instead of recommending (Step 8).
+- **Design is a gate** — auto-runs `/design-audit` (read-only) and blocks on its
+  findings instead of recommending (Step 8).
 - **Dev URL / Test+build commands** — feed Steps 6 and 2 so they don't have to
   guess.
 
@@ -209,12 +209,19 @@ steps into the report.
 - If the user wants the test→fix→re-verify loop instead, recommend `/qa`
   (interactive, mutates code) as a follow-up — outside this gate.
 
-## Step 8: Design review — recommend (auto-run optional)
+## Step 8: Design audit — recommend (auto-run optional)
 
-When the diff includes UI changes, **recommend `/design-review`** for visual
-consistency, hierarchy, and AI-slop tells. This is a quality warning layer, not
-a blocker. Auto-run it only if the project treats design as a gate (per
-`CLAUDE.md`); otherwise output the command.
+When the diff includes UI changes, **recommend `/design-audit`** for visual
+consistency, hierarchy, accessibility, and AI-slop tells. `/design-audit` is
+**read-only** — it audits and produces a design plan, so it's the gate-correct
+visual counterpart to `/qa-only` (Step 7): together they cover *does it work* +
+*does it look right* on a frontend change without mutating source. This is a
+quality warning layer, not a blocker. Auto-run it only if the project treats
+design as a gate (per `CLAUDE.md`); otherwise output the command.
+
+- **Do NOT auto-run `/design-review`** here — it *fixes and commits* code, which
+  a gate must not do. Recommend it as a **follow-up** to fix what `/design-audit`
+  flags, run by the user after the gate.
 
 ## Step 9: Coverage — untested paths
 
@@ -301,7 +308,7 @@ Base: <base>  Range: <base>..HEAD  Changed files: N  Working tree: clean|dirty
 | /web-perf (Step 6)      | 4     | RAN / SKIPPED(reason) / NOT-TRIGGERED | dev URL / "no server" |
 | /perf-profile (Step 6)  | 4     | RAN / SKIPPED(reason) / NOT-TRIGGERED | pre-launch / hot path? |
 | /qa-only (Step 7)       | 4     | RAN / NOT-TRIGGERED | health score |
-| /design-review (Step 8) | 4     | RAN / SKIPPED(reason) / NOT-TRIGGERED | UI changed? |
+| /design-audit (Step 8)  | 4     | RAN / SKIPPED(reason) / NOT-TRIGGERED | UI changed? |
 | Coverage (Step 9)       | 5-pre | RAN | N gaps, drafted tests |
 
 > No row may be blank or "recommend" for a check whose trigger fired — that is an
@@ -309,11 +316,20 @@ Base: <base>  Range: <base>..HEAD  Changed files: N  Working tree: clean|dirty
 
 ## Recommended follow-up commands
 - `/code-review ultra` — (only if a high-stakes correctness concern)
+- `/review` — (heavier staff-level production-readiness pass; distinct from the
+  diff-bug focus of `/code-review` — recommend when the change is architecturally
+  significant or touches a critical path)
+- `/cso` — (**backstop**: only if the diff crosses a new trust boundary — new
+  auth/endpoint/external-input/deserialization — and there's no evidence threat
+  modeling happened at plan time; threat modeling belongs in `/write-plan`, this
+  is the late catch)
 - `/pentest` — (only if /defense found CRITICAL/HIGH or sensitive paths changed)
 - `/perf-profile` — (app-level execution profiling; pre-launch or when a
   hot path / measured bottleneck needs localizing)
 - `/qa` — (interactive test→fix loop, if Step 7 found user-facing bugs)
-- `/design-review` — (if UI changed)
+- `/design-audit` — (if UI changed; read-only visual/a11y audit, alongside `/qa`)
+- `/design-review` — (to *fix* what `/design-audit` flags; mutates + commits, so
+  it runs after the gate, not during it)
 - `/finish-branch` → `/ship` — (only if VERDICT is SHIP-READY)
 ```
 
@@ -345,11 +361,20 @@ Auto-run (diff-scoped, non-mutating):
 
 Recommend-only:
 - `/code-review ultra` — deep multi-agent cloud review; billed + user-triggered.
+- `/review` — staff-level production-readiness review; heavier, architectural —
+  recommend for significant or critical-path changes (not a substitute for the
+  Step 3 `/code-review` pass).
+- `/cso` — OWASP+STRIDE **threat modeling**. Design-time by nature, so its real
+  home is `/write-plan`; here it's only a **backstop** when a trust-boundary
+  change reaches the gate without a threat model.
 - `/pentest` — external scanner needing auth confirmation.
 - `/perf-profile` — app-level execution profiling; needs a representative
   workload, so it's a pre-launch / bottleneck-localizing follow-up, not a gate.
 - `/qa` — interactive test→fix→re-verify loop (mutates code).
-- `/design-review` — visual QA (unless project gates on design).
+- `/design-audit` — read-only visual/a11y audit → design plan; the gate-correct
+  design check, paired with `/qa-only` on any UI change.
+- `/design-review` — *fixes and commits* visual issues (mutates); a post-gate
+  follow-up to apply what `/design-audit` found, never run inside the gate.
 - `/verify`, `/debug`, `/investigate`, `/tdd` — per-issue follow-ups.
 
 Hand-off (only when SHIP-READY):

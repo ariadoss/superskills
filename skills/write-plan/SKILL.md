@@ -49,6 +49,22 @@ The plan must *show* it respects these — not as a checkbox, but by naming wher
 
 If satisfying these requires restructuring existing code, scope that restructure as its own task — don't smuggle it into a feature task.
 
+## Security & threat model (when the feature crosses a trust boundary)
+
+Threat modeling is a **design-time** activity — it must shape the plan, not be discovered at the ship gate. If this feature does any of the following, run `/cso` (OWASP Top 10 + STRIDE) on the design *before* writing tasks, and fold the result in:
+
+- handles authentication, authorization, sessions, or tokens
+- accepts untrusted input (user input, uploads, webhooks, external APIs)
+- reads/writes sensitive or regulated data (PII, payments, credentials, health)
+- adds a new public endpoint, a new external integration, or deserialization
+- changes a trust boundary (new service-to-service call, new cross-tenant path)
+
+What to fold into the plan:
+- **Design tasks** for each material threat — input validation, authz checks at the boundary, rate limiting, output encoding, least-privilege, secrets handling. Name them as their own tasks (don't bury them inside feature tasks).
+- **Test Plan entries** — abuse/negative cases per threat (e.g. "rejects forged JWT", "blocks IDOR on `/orders/:id`"), so `/qa-full`'s `/defense` step has something concrete to verify against.
+
+If the feature crosses **no** trust boundary, state that in one line and skip — don't manufacture security tasks (YAGNI applies here too).
+
 ## Bite-Sized Task Granularity
 
 **Each step is one action (2-5 minutes):**
@@ -178,6 +194,8 @@ After writing the complete plan, look at the spec with fresh eyes and check the 
 **4. TDD & test-plan completeness:** Does every task that writes code have a failing-test-first step? Is the `## Test Plan & Verification` section present with a concrete coverage target, critical paths, edge cases, and exact verification commands? If any task ships code with no test, fix it.
 
 **5. Principles check (DRY / SOLID / YAGNI):** For each new unit, can you name its single responsibility (SRP) and the existing helper it reuses (DRY)? Any duplicated logic across tasks, god-object, or speculative extensibility (YAGNI)? Fix or justify inline.
+
+**6. Trust-boundary check:** Does the feature cross any trust boundary (auth, untrusted input, sensitive data, new endpoint/integration, deserialization)? If yes, did you run `/cso` and turn each material threat into a design task **and** a negative test? If it crosses none, is that stated? Fix gaps — a trust-boundary feature with no security tasks is an incomplete plan.
 
 If you find issues, fix them inline. No need to re-review — just fix and move on. If you find a spec requirement with no task, add the task.
 
