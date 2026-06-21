@@ -1,4 +1,4 @@
-# Superskills `v2.11.0`
+# Superskills `v2.12.0`
 
 Curated AI skills pack for Claude Code, OpenCode, Codex CLI, Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Bundles [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
@@ -124,6 +124,15 @@ Your overlay repo can:
 - `uv tool install clearwing` — for `/pentest` (source code + network scanning)
 - `brew install ffuf` — for `/fuzz` (web fuzzing)
 - Playwright — for `/playwright` (`npm install -D @playwright/test`)
+
+## Engineering standards & tests
+
+All executable code in this repo holds to [`ENGINEERING_STANDARDS.md`](ENGINEERING_STANDARDS.md)
+(TDD · DRY · SOLID · YAGNI). Shell code is unit-tested with [bats](https://github.com/bats-core/bats-core):
+
+```bash
+./tests/run.sh    # runs tests/*.bats
+```
 
 ## Updating
 

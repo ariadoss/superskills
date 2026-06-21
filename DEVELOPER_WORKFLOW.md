@@ -11,6 +11,18 @@ Engineers who master this don't just move faster — they operate at a different
 
 ---
 
+## The quality bar (enforced, not aspirational)
+
+Every stage below is in service of one standard: **code indistinguishable from
+what a strong Google/Meta engineer would land — correct, tested, simple, built
+to change.** That bar is defined once in
+**[`ENGINEERING_STANDARDS.md`](ENGINEERING_STANDARDS.md)** (TDD · DRY · SOLID ·
+YAGNI + the hard-gate list) and referenced — never restated — by the skills
+that enforce it: `/write-plan` bakes it into plans, `/tdd` drives the loop,
+`/code-review` + `/simplify` check the diff, **`/qa-full` blocks the ship** on
+its hard gates, and `/verify` proves "done" with fresh evidence. Read that file
+first; the workflow below is how it gets enforced per branch.
+
 ## The Workflow
 
 ### 1. Spec and plan work as vertical slices

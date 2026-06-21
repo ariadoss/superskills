@@ -32,6 +32,11 @@ log ""
 # ── Directories ────────────────────────────────────────────────────────────────
 SOURCE_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 SKILLS_SRC_DIR="$SOURCE_DIR/skills"
+
+# Shared skill name/desc/body resolution + symlink helpers (unit-tested in
+# tests/skills-lib.bats). Single source of truth for all per-tool linkers.
+# shellcheck source=scripts/lib/skills-lib.sh
+. "$SOURCE_DIR/scripts/lib/skills-lib.sh"
 CLAUDE_SKILLS_DIR="$HOME/.claude/skills"
 OPENCODE_SKILLS_DIR="$HOME/.config/opencode/skills"
 CODEX_SKILLS_DIR="$HOME/.codex/skills"
@@ -185,30 +190,9 @@ log "  Linking skills (Claude Code)..."
 LINKED=()
 
 link_skill_claude() {
-  local skill_md="$1"
-  local fallback_name="$2"
-
-  local skill_dir
-  skill_dir="$(dirname "$skill_md")"
   local skill_name
-  skill_name=$(grep -m1 '^name:' "$skill_md" 2>/dev/null | sed 's/^name:[[:space:]]*//' | tr -d '[:space:]')
-  [ -z "$skill_name" ] && skill_name="$fallback_name"
-  [ -z "$skill_name" ] && return
-
-  local target="$CLAUDE_SKILLS_DIR/$skill_name"
-  mkdir -p "$target"
-  [ -L "$target/SKILL.md" ] && rm "$target/SKILL.md"
-  ln -snf "$skill_md" "$target/SKILL.md"
-
-  for extra in "$skill_dir"/*; do
-    local extra_name
-    extra_name="$(basename "$extra")"
-    [ "$extra_name" = "SKILL.md" ] && continue
-    [ -L "$target/$extra_name" ] && rm "$target/$extra_name"
-    ln -snf "$extra" "$target/$extra_name"
-  done
-
-  LINKED+=("$skill_name")
+  skill_name="$(link_skill_into "$CLAUDE_SKILLS_DIR" "$1" "$2" 1)" || return
+  [ -n "$skill_name" ] && LINKED+=("$skill_name")
 }
 
 # Marketing skills (processed first; design and superskills override any name conflicts)
@@ -251,18 +235,7 @@ log "  Linking skills (OpenCode)..."
 mkdir -p "$OPENCODE_SKILLS_DIR"
 
 link_skill_opencode() {
-  local skill_md="$1"
-  local fallback_name="$2"
-
-  local skill_name
-  skill_name=$(grep -m1 '^name:' "$skill_md" 2>/dev/null | sed 's/^name:[[:space:]]*//' | tr -d '[:space:]')
-  [ -z "$skill_name" ] && skill_name="$fallback_name"
-  [ -z "$skill_name" ] && return
-
-  local target="$OPENCODE_SKILLS_DIR/superskills-$skill_name"
-  mkdir -p "$target"
-  [ -L "$target/SKILL.md" ] && rm "$target/SKILL.md"
-  ln -snf "$skill_md" "$target/SKILL.md"
+  link_skill_into "$OPENCODE_SKILLS_DIR" "$1" "$2" 0 "superskills-" >/dev/null
 }
 
 if [ -d "$MARKETING_SRC_DIR" ]; then
@@ -295,27 +268,8 @@ done
 log "  done"
 log ""
 
-# ── Shared helper: extract first line of description from a SKILL.md ─────────
-_skill_desc() {
-  local skill_md="$1"
-  local desc
-  desc=$(grep -m1 '^description:' "$skill_md" 2>/dev/null \
-        | sed 's/^description:[[:space:]]*//' \
-        | sed 's/[[:space:]]*|[[:space:]]*$//')
-  if [ -z "$desc" ] || [ "$desc" = "|" ]; then
-    desc=$(awk '
-      /^description:/ { found=1; next }
-      found && /^[[:space:]]/ { gsub(/^[[:space:]]+/, ""); if (length > 0) { print; exit } }
-      found && /^[^[:space:]]/ { exit }
-    ' "$skill_md" 2>/dev/null)
-  fi
-  printf '%s' "${desc:-skill}"
-}
-
-# ── Shared helper: extract body (after second ---) from a SKILL.md ───────────
-_skill_body() {
-  awk 'BEGIN{n=0}/^---/{n++;next}n>=2{print}' "$1"
-}
+# Description/body extraction now live in scripts/lib/skills-lib.sh as
+# skill_desc_from / skill_body_from (sourced above) — single source of truth.
 
 # ── OpenAI Codex CLI ──────────────────────────────────────────────────────────
 if [ -d "$HOME/.codex" ]; then
@@ -324,23 +278,7 @@ if [ -d "$HOME/.codex" ]; then
   CODEX_LINKED=0
 
   link_skill_codex() {
-    local skill_md="$1" fallback_name="$2"
-    local skill_dir skill_name target extra_name
-    skill_dir="$(dirname "$skill_md")"
-    skill_name=$(grep -m1 '^name:' "$skill_md" 2>/dev/null | sed 's/^name:[[:space:]]*//' | tr -d '[:space:]')
-    [ -z "$skill_name" ] && skill_name="$fallback_name"
-    [ -z "$skill_name" ] && return
-    target="$CODEX_SKILLS_DIR/$skill_name"
-    mkdir -p "$target"
-    [ -L "$target/SKILL.md" ] && rm "$target/SKILL.md"
-    ln -snf "$skill_md" "$target/SKILL.md"
-    for extra in "$skill_dir"/*; do
-      extra_name="$(basename "$extra")"
-      [ "$extra_name" = "SKILL.md" ] && continue
-      [ -L "$target/$extra_name" ] && rm "$target/$extra_name"
-      ln -snf "$extra" "$target/$extra_name"
-    done
-    CODEX_LINKED=$((CODEX_LINKED + 1))
+    link_skill_into "$CODEX_SKILLS_DIR" "$1" "$2" 1 >/dev/null && CODEX_LINKED=$((CODEX_LINKED + 1))
   }
 
   for skill_md in "$SKILLS_SRC_DIR"/*/SKILL.md; do
@@ -362,11 +300,10 @@ if [ -d "$HOME/.continue" ]; then
   link_skill_continue() {
     local skill_md="$1" fallback_name="$2"
     local name desc body
-    name=$(grep -m1 '^name:' "$skill_md" 2>/dev/null | sed 's/^name:[[:space:]]*//' | tr -d '[:space:]')
-    [ -z "$name" ] && name="$fallback_name"
+    name="$(skill_name_from "$skill_md" "$fallback_name")"
     [ -z "$name" ] && return
-    desc=$(_skill_desc "$skill_md")
-    body=$(_skill_body "$skill_md")
+    desc=$(skill_desc_from "$skill_md")
+    body=$(skill_body_from "$skill_md")
     printf 'name: %s\ndescription: %s\n---\n%s\n' "$name" "$desc" "$body" \
       > "$CONTINUE_PROMPTS_DIR/$name.prompt"
     CONTINUE_LINKED=$((CONTINUE_LINKED + 1))
@@ -391,10 +328,9 @@ if [ -d "$HOME/.augment" ]; then
   link_skill_augment() {
     local skill_md="$1" fallback_name="$2"
     local name body
-    name=$(grep -m1 '^name:' "$skill_md" 2>/dev/null | sed 's/^name:[[:space:]]*//' | tr -d '[:space:]')
-    [ -z "$name" ] && name="$fallback_name"
+    name="$(skill_name_from "$skill_md" "$fallback_name")"
     [ -z "$name" ] && return
-    body=$(_skill_body "$skill_md")
+    body=$(skill_body_from "$skill_md")
     printf '# /%s\n\n%s\n' "$name" "$body" > "$AUGMENT_COMMANDS_DIR/$name.md"
     AUGMENT_LINKED=$((AUGMENT_LINKED + 1))
   }
@@ -420,9 +356,8 @@ if [ -d "$HOME/.codeium/windsurf" ]; then
       [ -f "$skill_md" ] || continue
       dir_name="$(basename "$(dirname "$skill_md")")"
       [ "$dir_name" = "node_modules" ] && continue
-      name=$(grep -m1 '^name:' "$skill_md" 2>/dev/null | sed 's/^name:[[:space:]]*//' | tr -d '[:space:]')
-      [ -z "$name" ] && name="$dir_name"
-      desc=$(_skill_desc "$skill_md")
+      name="$(skill_name_from "$skill_md" "$dir_name")"
+      desc=$(skill_desc_from "$skill_md")
       echo "- \`/$name\` — $desc"
     done
   } > "$WINDSURF_MEM_DIR/superskills.md"
@@ -441,10 +376,9 @@ if [ "$INSTALL_CURSOR" -eq 1 ]; then
     [ -f "$skill_md" ] || continue
     dir_name="$(basename "$(dirname "$skill_md")")"
     [ "$dir_name" = "node_modules" ] && continue
-    name=$(grep -m1 '^name:' "$skill_md" 2>/dev/null | sed 's/^name:[[:space:]]*//' | tr -d '[:space:]')
-    [ -z "$name" ] && name="$dir_name"
-    desc=$(_skill_desc "$skill_md")
-    body=$(_skill_body "$skill_md")
+    name="$(skill_name_from "$skill_md" "$dir_name")"
+    desc=$(skill_desc_from "$skill_md")
+    body=$(skill_body_from "$skill_md")
     printf -- '---\nname: %s\ndescription: %s\nalwaysApply: false\n---\n%s\n' \
       "$name" "$desc" "$body" > "$CURSOR_RULES_DIR/superskills-$name.mdc"
     CURSOR_LINKED=$((CURSOR_LINKED + 1))
@@ -464,9 +398,8 @@ if [ "$INSTALL_CLINE" -eq 1 ]; then
       [ -f "$skill_md" ] || continue
       dir_name="$(basename "$(dirname "$skill_md")")"
       [ "$dir_name" = "node_modules" ] && continue
-      name=$(grep -m1 '^name:' "$skill_md" 2>/dev/null | sed 's/^name:[[:space:]]*//' | tr -d '[:space:]')
-      [ -z "$name" ] && name="$dir_name"
-      desc=$(_skill_desc "$skill_md")
+      name="$(skill_name_from "$skill_md" "$dir_name")"
+      desc=$(skill_desc_from "$skill_md")
       echo "- \`/$name\` — $desc"
     done
   } > "$CLINE_FILE"

@@ -50,6 +50,10 @@ changed) with three deliberate differences:
 
 ## Hard rules
 
+- **The bar is `ENGINEERING_STANDARDS.md`** (repo root) — the canonical
+  TDD/DRY/SOLID/YAGNI definition and the authoritative hard-gate list. This
+  gate's Step 10 verdict is exactly "does the diff meet those standards." If
+  this skill and that file ever disagree, the file wins.
 - **This is a gate, not a fixer.** Detect and report blockers with the
   smallest viable fix; do **not** mutate source, open PRs, or push. The user
   fixes, then re-runs `/qa-full`. (For an auto-fixing flow, that's a future
@@ -136,6 +140,11 @@ Trigger when the diff includes frontend code (`**/*.tsx`, `**/*.jsx`,
 - A measured regression past budget is a **warning** by default (perf is rarely
   a hard ship-blocker) unless `CLAUDE.md` defines a hard perf gate, in which
   case treat a breach as a blocker.
+- **Recommend `/perf-profile`** (do not auto-run — it needs a representative
+  workload, not a diff) when the diff touches hot server-side paths, the change
+  is pre-launch, or `/db-optimize`/`/web-perf` point at a bottleneck that needs
+  application-level execution timing to localize. This is the app-layer
+  counterpart to `/web-perf` (frontend) and `/db-optimize` (DB).
 
 ## Step 7: Browser QA — `/qa-only` (auto-run if UI changed)
 
@@ -178,7 +187,8 @@ Roll everything up into a single gate verdict.
   file:line/test-name evidence and the smallest fix. Tell the user to fix and
   re-run `/qa-full`.
 
-Blocker set (any one ⇒ NOT READY):
+Blocker set (any one ⇒ NOT READY — this mirrors the hard gates in
+`ENGINEERING_STANDARDS.md`; keep the two in sync):
 - failing test or broken build (Step 2)
 - `/code-review` CRITICAL/HIGH correctness finding (Step 3)
 - `/defense` CRITICAL/HIGH security finding (Step 4)
@@ -221,6 +231,8 @@ Base: <base>  Range: <base>..HEAD  Changed files: N  Working tree: clean|dirty
 ## Recommended follow-up commands
 - `/code-review ultra` — (only if a high-stakes correctness concern)
 - `/pentest` — (only if /defense found CRITICAL/HIGH or sensitive paths changed)
+- `/perf-profile` — (app-level execution profiling; pre-launch or when a
+  hot path / measured bottleneck needs localizing)
 - `/qa` — (interactive test→fix loop, if Step 7 found user-facing bugs)
 - `/design-review` — (if UI changed)
 - `/finish-branch` → `/ship` — (only if VERDICT is SHIP-READY)
@@ -255,6 +267,8 @@ Auto-run (diff-scoped, non-mutating):
 Recommend-only:
 - `/code-review ultra` — deep multi-agent cloud review; billed + user-triggered.
 - `/pentest` — external scanner needing auth confirmation.
+- `/perf-profile` — app-level execution profiling; needs a representative
+  workload, so it's a pre-launch / bottleneck-localizing follow-up, not a gate.
 - `/qa` — interactive test→fix→re-verify loop (mutates code).
 - `/design-review` — visual QA (unless project gates on design).
 - `/verify`, `/debug`, `/investigate`, `/tdd` — per-issue follow-ups.

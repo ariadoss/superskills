@@ -1,5 +1,19 @@
 # Superskills
 
+## Engineering standards (applies to all code in this repo)
+
+All code here — `setup`, `scripts/`, skill helpers, anything executable — follows
+[`ENGINEERING_STANDARDS.md`](ENGINEERING_STANDARDS.md): TDD, DRY, SOLID, YAGNI,
+to a Google/Meta-quality bar. Concretely:
+
+- **Shell/library code is tested with `bats`.** Run `./tests/run.sh` before
+  committing any change to `setup`, `scripts/`, or `tests/`. New behavior gets a
+  failing test first (TDD); logic shared across call sites lives in one place
+  (`scripts/lib/skills-lib.sh`), not copy-pasted (DRY).
+- **Skills that generate or review code must enforce the same bar** by
+  referencing `ENGINEERING_STANDARDS.md`, not by restating it. When you add or
+  edit a code-producing or quality-gate skill, point it at that file.
+
 ## Versioning
 
 Always increment VERSION before committing and pushing any change:

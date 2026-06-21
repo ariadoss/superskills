@@ -35,6 +35,11 @@ This structure informs the task decomposition. Each task should produce self-con
 
 ## Design Principles (call these out explicitly in the plan)
 
+> The canonical definitions of TDD, DRY, SOLID, and YAGNI — and the hard gates a
+> plan's work must eventually pass — live in `ENGINEERING_STANDARDS.md` at the
+> repo root. This skill operationalizes that standard at plan time; `/qa-full`
+> enforces it at ship time. Don't restate the standard here — satisfy it.
+
 The plan must *show* it respects these — not as a checkbox, but by naming where each applies in the File Structure and tasks:
 
 - **DRY** — before adding code, name the existing helper/module to reuse (Grep for it). If two tasks introduce similar logic, factor the shared piece into its own earlier task. Flag any duplication you knowingly accept and why.
