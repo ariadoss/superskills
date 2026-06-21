@@ -1,0 +1,25 @@
+{
+  "name": "superskills",
+  "description": "Superskills marketplace — the superskills plugin, installable directly from this repo.",
+  "owner": {
+    "name": "Danilo Stern-Sapad",
+    "email": "danilosapad@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "superskills",
+      "displayName": "Superskills",
+      "source": "./",
+      "version": "2.13.0",
+      "description": "Core + design skills with a Google/Meta-quality workflow (TDD, DRY, SOLID). Full marketing-skills set via ./setup.",
+      "author": {
+        "name": "Danilo Stern-Sapad",
+        "email": "danilosapad@gmail.com"
+      },
+      "homepage": "https://github.com/ariadoss/superskills",
+      "repository": "https://github.com/ariadoss/superskills",
+      "license": "MIT",
+      "keywords": ["skills", "agents", "tdd", "design", "marketing", "workflow"]
+    }
+  ]
+}

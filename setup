@@ -37,6 +37,12 @@ SKILLS_SRC_DIR="$SOURCE_DIR/skills"
 # tests/skills-lib.bats). Single source of truth for all per-tool linkers.
 # shellcheck source=scripts/lib/skills-lib.sh
 . "$SOURCE_DIR/scripts/lib/skills-lib.sh"
+
+# Canonical version, stamped into artifacts for tools that have no native
+# update detection (Windsurf/Cursor/Cline/Continue) so the active version is
+# visible in the model's context. Claude Code and Codex get it natively via the
+# plugin manifests (kept in sync by scripts/sync-version.sh).
+SS_VERSION="$(tr -d '[:space:]' < "$SOURCE_DIR/VERSION" 2>/dev/null || echo "unknown")"
 CLAUDE_SKILLS_DIR="$HOME/.claude/skills"
 OPENCODE_SKILLS_DIR="$HOME/.config/opencode/skills"
 CODEX_SKILLS_DIR="$HOME/.codex/skills"
@@ -356,6 +362,7 @@ if [ -d "$HOME/.codeium/windsurf" ]; then
   mkdir -p "$WINDSURF_MEM_DIR"
   {
     printf '# Superskills — Available Slash Commands\n\n'
+    printf '**Superskills v%s** — re-run `./setup` after updating.\n\n' "$SS_VERSION"
     printf 'These commands are available. Suggest them when relevant to the task.\n\n'
     for skill_md in "$SKILLS_SRC_DIR"/*/SKILL.md; do
       [ -f "$skill_md" ] || continue
@@ -388,6 +395,10 @@ if [ "$INSTALL_CURSOR" -eq 1 ]; then
       "$name" "$desc" "$body" > "$CURSOR_RULES_DIR/superskills-$name.mdc"
     CURSOR_LINKED=$((CURSOR_LINKED + 1))
   done
+  # Always-applied marker so the active superskills version is in context (Cursor
+  # has no native update detection).
+  printf -- '---\nname: superskills-version\ndescription: Active Superskills version\nalwaysApply: true\n---\nSuperskills v%s is installed. Re-run `./setup` after updating to refresh these rules.\n' \
+    "$SS_VERSION" > "$CURSOR_RULES_DIR/superskills-version.mdc"
   log "  linked: $CURSOR_LINKED skills"
   log ""
 fi
@@ -398,6 +409,7 @@ if [ "$INSTALL_CLINE" -eq 1 ]; then
   log "  Writing skills reference (Cline/Roo → $CLINE_FILE)..."
   {
     printf '# Superskills — Available Commands\n\n'
+    printf '**Superskills v%s** — re-run `./setup` after updating.\n\n' "$SS_VERSION"
     printf 'The following slash commands are available. Suggest them when relevant.\n\n'
     for skill_md in "$SKILLS_SRC_DIR"/*/SKILL.md; do
       [ -f "$skill_md" ] || continue

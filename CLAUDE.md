@@ -23,6 +23,13 @@ Always increment VERSION before committing and pushing any change:
 
 Update the version badge in README.md to match (e.g. `v2.1.0` → `v2.2.0`).
 
+After bumping VERSION, **run `./scripts/sync-version.sh`** to propagate it into the
+plugin manifests (`.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`,
+`.codex-plugin/plugin.json`). These `version` fields are what trigger the native
+"plugins updated" alert in Claude Code and Codex — a bump that doesn't reach them
+means existing plugin installs never see the update. VERSION is the single source
+of truth; the manifests are generated from it, never hand-edited.
+
 ## Always re-run `./setup` after a pull or after adding a skill
 
 Skills are exposed to the tools as symlinks created by `./setup`. Edits to an

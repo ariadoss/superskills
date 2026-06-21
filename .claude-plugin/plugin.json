@@ -1,0 +1,16 @@
+{
+  "name": "superskills",
+  "displayName": "Superskills",
+  "version": "2.13.0",
+  "description": "Curated AI engineering + design + marketing skills with a Google/Meta-quality workflow (TDD, DRY, SOLID). The plugin install exposes the core and design skills; the full marketing-skills set installs via ./setup.",
+  "author": {
+    "name": "Danilo Stern-Sapad",
+    "email": "danilosapad@gmail.com",
+    "url": "https://github.com/ariadoss"
+  },
+  "homepage": "https://github.com/ariadoss/superskills",
+  "repository": "https://github.com/ariadoss/superskills",
+  "license": "MIT",
+  "keywords": ["skills", "agents", "tdd", "code-review", "design", "marketing", "workflow"],
+  "skills": ["./skills", "./design-skills"]
+}

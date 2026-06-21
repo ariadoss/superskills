@@ -1,4 +1,4 @@
-# Superskills `v2.12.1`
+# Superskills `v2.13.0`
 
 Curated AI skills pack for Claude Code, OpenCode, Codex CLI, Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Bundles [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
@@ -27,6 +27,33 @@ Setup will:
 ~/.claude/skills/superskills/setup --cursor   # Cursor (.cursor/rules/)
 ~/.claude/skills/superskills/setup --cline    # Cline / Roo Code (.clinerules)
 ```
+
+### Install as a plugin (native update alerts)
+
+Claude Code and Codex can install superskills as a versioned **plugin**, which
+gives you a native "updated" notification when a new version ships — no manual
+`git pull` needed.
+
+**Claude Code** (exposes the core + design skills; run `./setup` for the full
+marketing-skills set):
+```bash
+/plugin marketplace add ariadoss/superskills
+/plugin install superskills@superskills
+/reload-plugins
+```
+On a new release you'll see *"Plugins updated — run `/reload-plugins`"* at startup
+(with auto-update enabled for the marketplace).
+
+**Codex CLI:**
+```bash
+codex plugin marketplace add ariadoss/superskills
+codex plugin install superskills
+```
+
+The plugin `version` is driven by the repo's `VERSION` file via
+`scripts/sync-version.sh`, so every release bumps the version the plugin systems
+watch. The `./setup` install above remains the way to get **all** skills across
+every supported tool.
 
 ## Skills (28)
 
