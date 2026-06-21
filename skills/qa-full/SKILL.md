@@ -81,6 +81,36 @@ changed) with three deliberate differences:
   (e.g. `/pentest` on a payments service), and for those, SKIPPED is itself a
   blocker — only RAN with evidence passes.
 
+## Project configuration (`CLAUDE.md`)
+
+This gate reads the project's root `CLAUDE.md` for a few optional settings. They
+are plain prose (CLAUDE.md is agent instructions, not a config file) — look for a
+`## qa-full` section and honor whatever it states. A project that wants to *force*
+specific checks to actually run writes something like:
+
+```markdown
+## qa-full
+
+- Mandatory checks (must RUN with evidence — a skip is a blocker): `/pentest`, `/defense`
+- Hard perf gate: LCP ≤ 2.5s and INP ≤ 200ms on `/` and `/checkout` (breach blocks)
+- Design is a gate: run `/design-review` on any UI change, don't just recommend it
+- Dev URL: http://localhost:3000   (for `/web-perf`)
+- Test/build: `pnpm test` and `pnpm build`
+```
+
+Recognized settings (all optional; absence = the defaults in the steps below):
+- **Mandatory checks** — listed commands must read RAN in the ledger; SKIPPED is a
+  blocker (Step 4/10). Use for compliance-critical surfaces (payments, auth, PII).
+- **Hard perf gate** — turns a `/web-perf` budget breach from a warning into a
+  blocker (Step 6).
+- **Design is a gate** — auto-runs `/design-review` and blocks on its findings
+  instead of recommending (Step 8).
+- **Dev URL / Test+build commands** — feed Steps 6 and 2 so they don't have to
+  guess.
+
+If there is no `## qa-full` section, run with the built-in defaults — nothing here
+is required.
+
 ## Step 1: Establish the diff scope
 
 1. Detect the base branch: `gh repo view --json defaultBranchRef -q .defaultBranchRef.name`,
