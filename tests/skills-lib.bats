@@ -45,6 +45,7 @@ EOF
 
 @test "skill_name_from falls back when no name: field" {
   run skill_name_from "$FIX/beta/SKILL.md" "beta"
+  [ "$status" -eq 0 ]
   [ "$output" = "beta" ]
 }
 

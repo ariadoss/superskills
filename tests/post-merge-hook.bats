@@ -17,7 +17,13 @@ setup() {
 }
 
 @test "hook no-ops (exit 0) outside a git repo" {
-  run bash "$HOOK"  # BATS_TEST_TMPDIR is not a git repo
+  # Must cd OUT of the superskills repo first — otherwise git rev-parse resolves
+  # this repo and the hook runs the real ./setup against the real $HOME.
+  # BATS_TEST_TMPDIR (/var/folders/... on macOS) is not a git repo.
+  cd "$BATS_TEST_TMPDIR"
+  run git rev-parse --show-toplevel
+  [ "$status" -ne 0 ]  # assert we really are outside any git repo
+  run bash "$HOOK"
   [ "$status" -eq 0 ]
 }
 

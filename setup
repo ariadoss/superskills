@@ -191,7 +191,9 @@ LINKED=()
 
 link_skill_claude() {
   local skill_name
-  skill_name="$(link_skill_into "$CLAUDE_SKILLS_DIR" "$1" "$2" 1)" || return
+  # `|| return 0`: a skill with no resolvable name is skipped, not fatal — keeps
+  # the old skip-semantics so a standalone call can't abort setup under `set -e`.
+  skill_name="$(link_skill_into "$CLAUDE_SKILLS_DIR" "$1" "$2" 1)" || return 0
   [ -n "$skill_name" ] && LINKED+=("$skill_name")
 }
 
@@ -235,7 +237,7 @@ log "  Linking skills (OpenCode)..."
 mkdir -p "$OPENCODE_SKILLS_DIR"
 
 link_skill_opencode() {
-  link_skill_into "$OPENCODE_SKILLS_DIR" "$1" "$2" 0 "superskills-" >/dev/null
+  link_skill_into "$OPENCODE_SKILLS_DIR" "$1" "$2" 0 "superskills-" >/dev/null || return 0
 }
 
 if [ -d "$MARKETING_SRC_DIR" ]; then
@@ -278,7 +280,10 @@ if [ -d "$HOME/.codex" ]; then
   CODEX_LINKED=0
 
   link_skill_codex() {
-    link_skill_into "$CODEX_SKILLS_DIR" "$1" "$2" 1 >/dev/null && CODEX_LINKED=$((CODEX_LINKED + 1))
+    # `if` (not `&&`) so a skipped skill returns 0 — can't abort setup under set -e.
+    if link_skill_into "$CODEX_SKILLS_DIR" "$1" "$2" 1 >/dev/null; then
+      CODEX_LINKED=$((CODEX_LINKED + 1))
+    fi
   }
 
   for skill_md in "$SKILLS_SRC_DIR"/*/SKILL.md; do
