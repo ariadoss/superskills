@@ -10,7 +10,7 @@
       "name": "superskills",
       "displayName": "Superskills",
       "source": "./",
-      "version": "2.13.1",
+      "version": "2.14.0",
       "description": "Core + design skills with a Google/Meta-quality workflow (TDD, DRY, SOLID). Full marketing-skills set via ./setup.",
       "author": {
         "name": "Danilo Stern-Sapad",

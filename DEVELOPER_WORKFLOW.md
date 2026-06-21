@@ -124,10 +124,21 @@ Each agent works independently and spawns subagents. Exponentially faster than p
 > `/web-perf`, browser QA), and **blocking**: CRITICAL/HIGH findings and failing
 > tests stop the gate. It does not mutate code — it reports blockers with
 > minimal fixes; you fix and re-run.
+>
+> **It also enforces that the work was actually done, not just recommended.**
+> Every triggered Phase-4 check (security + perf — `/defense`, `/pentest`,
+> `/db-optimize`, `/web-perf`, `/perf-profile`, `/qa-only`) must resolve in the
+> gate's **accounting ledger** to RAN (with evidence) or SKIPPED (with a reason);
+> a triggered-but-unaccounted check is itself a blocker. Projects can mark a
+> check **MANDATORY** in `CLAUDE.md` (e.g. `/pentest` on a payments service) so
+> that "skipped" no longer passes. Phase-5 caveat: the gate runs *before*
+> `/finish-branch`/`/ship`, so it enforces the pre-ship half (fresh test/build
+> evidence) and is the hard precondition for ship — it cannot verify steps that
+> happen after it.
 
 | Command | Role |
 |---------|------|
-| `/qa-full` | Per-feature QA gate — full fan-out (tests, `/code-review`, `/defense`, `/db-optimize`, `/web-perf`, `/qa-only`, coverage) on the branch diff → pass/fail ship-readiness verdict. Run before `/finish-branch` and `/ship` |
+| `/qa-full` | Per-feature QA gate — full fan-out (tests, `/code-review`, `/defense`, `/db-optimize`, `/web-perf`, `/qa-only`, coverage) on the branch diff → pass/fail ship-readiness verdict, with an **accounting ledger** that blocks if a triggered Phase-4 check wasn't run or explicitly skipped-with-reason. Run before `/finish-branch` and `/ship` |
 | `/ship` | Sync tests, automate CI/CD, and submit the PR |
 | `/land-and-deploy` | Merge, deploy, and verify production |
 

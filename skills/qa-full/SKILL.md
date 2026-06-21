@@ -70,6 +70,16 @@ changed) with three deliberate differences:
   not the whole repo — keep it fast and signal-dense.
 - **Never claim SHIP-READY without receipts.** The verdict must cite the exact
   checks that ran, what passed, and what was skipped (and why).
+- **No silent skips — mandatory accounting.** Every Phase-4 check (security +
+  performance, Steps 4–7) must resolve to exactly one of: **RAN** (with evidence),
+  **SKIPPED** (with a stated reason — e.g. "no reachable dev server", "scanner
+  not authorized in this env"), or **NOT-TRIGGERED** (its diff trigger didn't
+  fire). A check whose trigger fired but that neither ran nor was explicitly
+  skipped-with-reason is an **unaccounted check ⇒ NOT READY**. "Recommend-only"
+  is not an allowed resting state for a *triggered* check — it must become RAN or
+  SKIPPED(reason). Projects may mark specific checks **MANDATORY** in `CLAUDE.md`
+  (e.g. `/pentest` on a payments service), and for those, SKIPPED is itself a
+  blocker — only RAN with evidence passes.
 
 ## Step 1: Establish the diff scope
 
@@ -111,9 +121,13 @@ Run `/defense` scoped to the changed files (OWASP Top 10 / secrets / auth /
 crypto / data-protection). Diff-only, no external tools, no auth prompt.
 
 - **CRITICAL/HIGH block.** MEDIUM/LOW are warnings.
-- **Recommend `/pentest`** (do not auto-run — external scanner, needs auth
-  confirmation) when `/defense` flags CRITICAL/HIGH, or auth/crypto/session/
-  token/deserialization/file-upload paths changed in the diff.
+- `/pentest` is an external scanner (needs auth confirmation), so it is **not**
+  auto-run — but when `/defense` flags CRITICAL/HIGH or auth/crypto/session/
+  token/deserialization/file-upload paths changed in the diff, it becomes a
+  **triggered, mandatory-accounting check**: either run it (record evidence) or
+  record it SKIPPED with a reason (e.g. "scanner unavailable in CI"). Leaving it
+  as a bare "recommend" when its trigger fired ⇒ unaccounted ⇒ NOT READY. If
+  `CLAUDE.md` marks `/pentest` MANDATORY, SKIPPED is a blocker.
 
 ## Step 5: Database — `/db-optimize` (auto-run if triggered)
 
@@ -123,7 +137,8 @@ Trigger when changed files match ORM models, migrations, query builders
 `.includes`, `.join`, `.preload`). Run `/db-optimize` scoped to matched files.
 
 - N+1s and missing indexes on hot paths are **blockers**; other suggestions are
-  warnings. If no trigger matched, skip silently.
+  warnings. If no trigger matched, record it **NOT-TRIGGERED** (no DB/ORM/SQL in
+  the diff) in the ledger rather than dropping it.
 
 ## Step 6: Frontend perf — `/web-perf` (auto-run if triggered)
 
@@ -136,8 +151,11 @@ Trigger when the diff includes frontend code (`**/*.tsx`, `**/*.jsx`,
 (`next.config.*`, `vite.config.*`, `webpack.config.*`).
 
 1. Find the dev URL (`CLAUDE.md`, or the `dev` script in `package.json`).
-   If no running app and none can be started, **downgrade to recommend-only**
-   and note it in the report — do not block on an environment you can't reach.
+   If no running app and none can be started, record the check as
+   **SKIPPED with the reason** ("no reachable dev server") in the accounting
+   ledger — do not block on an environment you can't reach, but do **not** let it
+   vanish silently. (A bare "recommend-only" with no reason for a *triggered*
+   frontend diff is unaccounted ⇒ NOT READY.)
 2. Run `/web-perf` against the affected routes. Report Core Web Vitals (LCP,
    INP, CLS) vs. any known budget.
 - A measured regression past budget is a **warning** by default (perf is rarely
@@ -180,26 +198,48 @@ without a corresponding assertion.
   as a code block — do not apply). Internal helpers without tests are warnings.
 - Recommend `/tdd` when a gap is large enough to warrant test-first follow-up.
 
-## Step 10: Ship-readiness verdict
+## Step 10: Accounting ledger + ship-readiness verdict
 
-Roll everything up into a single gate verdict.
+First build the **accounting ledger** — a row per Phase-4/Phase-5 check, each
+resolved to RAN (evidence) / SKIPPED (reason) / NOT-TRIGGERED / MANDATORY-FAIL.
+**The verdict cannot be SHIP-READY while any triggered check is unaccounted.**
 
-- **SHIP-READY** — zero blockers. List warnings + follow-ups. Hand off:
-  *"Proceed to `/finish-branch` then `/ship`."*
-- **NOT READY** — one or more blockers. List each blocker with its
-  file:line/test-name evidence and the smallest fix. Tell the user to fix and
-  re-run `/qa-full`.
+**Phase-4 accounting (security + performance — what this gate enforces "was done"):**
+- Steps 4–7 each get a ledger row. A triggered check with no RAN evidence and no
+  SKIPPED reason is an **unaccounted-check blocker**.
+- `/pentest`, `/perf-profile` are accounted the same way once their trigger fires.
+- Any check `CLAUDE.md` marks MANDATORY must be RAN with evidence — SKIPPED ⇒ blocker.
+
+**Phase-5 accounting (honest scope):** `/qa-full` *is* the entry to Phase 5, so it
+can only enforce the **pre-ship** half. It **cannot** verify `/finish-branch`,
+`/ship`, or `/land-and-deploy` — those run *after* this gate, so do not claim
+they're done. What it does enforce:
+- Tests + build were **freshly run this invocation** (Step 2) — no stale results
+  (the `/verify` discipline). Stale/absent fresh evidence ⇒ NOT READY.
+- A passing verdict is the **hard precondition** for ship: only on SHIP-READY do
+  you hand off *"Proceed to `/finish-branch` then `/ship`."*
+
+Then the verdict:
+
+- **SHIP-READY** — zero blockers **and** every triggered check accounted for.
+  List warnings + follow-ups, then hand off to `/finish-branch` → `/ship`.
+- **NOT READY** — one or more blockers (including any unaccounted/MANDATORY-FAIL
+  check). List each with its file:line/test-name/missing-check evidence and the
+  smallest fix. Tell the user to fix and re-run `/qa-full`.
 
 Blocker set (any one ⇒ NOT READY — this is the authoritative list for the gate;
 it mirrors the superskills `ENGINEERING_STANDARDS.md`, kept in sync by the
 maintainer — you do not need to read that file to run this gate):
-- failing test or broken build (Step 2)
+- failing test or broken build, or test/build not freshly run this invocation (Step 2)
 - `/code-review` CRITICAL/HIGH correctness finding (Step 3)
 - `/defense` CRITICAL/HIGH security finding (Step 4)
 - N+1 / missing index on a hot path (Step 5)
 - CRITICAL/HIGH browser-QA bug in a user-facing flow (Step 7)
 - new public surface with zero tests (Step 9)
 - a hard perf gate breach, only if `CLAUDE.md` defines one (Step 6)
+- **a triggered Phase-4 check left unaccounted** — neither RAN with evidence nor
+  SKIPPED with a stated reason (Steps 4–7)
+- **a `CLAUDE.md`-MANDATORY check that was SKIPPED** rather than run
 
 ## Report format
 
@@ -220,17 +260,22 @@ Base: <base>  Range: <base>..HEAD  Changed files: N  Working tree: clean|dirty
 ### Warnings (ship with a follow-up note)
 - …
 
-## Checks run
-| Check | Status | Notes |
-|-------|--------|-------|
-| Tests & build (Step 2) | pass / FAIL | … |
-| /code-review (Step 3)  | clean / N findings | tier used |
-| /defense (Step 4)      | clean / N findings | … |
-| /db-optimize (Step 5)  | ran / skipped | trigger |
-| /web-perf (Step 6)     | ran / recommend / skipped | dev URL |
-| /qa-only (Step 7)      | ran / skipped | health score |
-| /design-review (Step 8)| recommend / ran / skipped | … |
-| Coverage (Step 9)      | N gaps | drafted tests |
+## Accounting ledger (every triggered check must be RAN or SKIPPED-with-reason)
+| Check | Phase | Status | Evidence / reason |
+|-------|-------|--------|-------------------|
+| Tests & build (Step 2)  | 5-pre | RAN (fresh) / FAIL | exact command + result |
+| /code-review (Step 3)   | 3     | RAN | tier used, N findings |
+| /defense (Step 4)       | 4     | RAN | N findings |
+| /pentest (Step 4)       | 4     | RAN / SKIPPED(reason) / NOT-TRIGGERED | sensitive paths? |
+| /db-optimize (Step 5)   | 4     | RAN / NOT-TRIGGERED | DB/ORM/SQL in diff? |
+| /web-perf (Step 6)      | 4     | RAN / SKIPPED(reason) / NOT-TRIGGERED | dev URL / "no server" |
+| /perf-profile (Step 6)  | 4     | RAN / SKIPPED(reason) / NOT-TRIGGERED | pre-launch / hot path? |
+| /qa-only (Step 7)       | 4     | RAN / NOT-TRIGGERED | health score |
+| /design-review (Step 8) | 4     | RAN / SKIPPED(reason) / NOT-TRIGGERED | UI changed? |
+| Coverage (Step 9)       | 5-pre | RAN | N gaps, drafted tests |
+
+> No row may be blank or "recommend" for a check whose trigger fired — that is an
+> unaccounted-check blocker. `CLAUDE.md`-MANDATORY checks must read RAN.
 
 ## Recommended follow-up commands
 - `/code-review ultra` — (only if a high-stakes correctness concern)
