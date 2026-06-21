@@ -158,6 +158,12 @@ crypto / data-protection). Diff-only, no external tools, no auth prompt.
   record it SKIPPED with a reason (e.g. "scanner unavailable in CI"). Leaving it
   as a bare "recommend" when its trigger fired ⇒ unaccounted ⇒ NOT READY. If
   `CLAUDE.md` marks `/pentest` MANDATORY, SKIPPED is a blocker.
+- **Infra/deploy config — `/iac-scan`.** When the diff changes infrastructure
+  (`Dockerfile`, `docker-compose*`, `*.tf`, k8s/Helm manifests,
+  `.github/workflows/**`, nginx/cloud config), run `/iac-scan` (static, read-only,
+  safe in a gate) scoped to those files. CRITICAL/HIGH misconfigs (root container,
+  `0.0.0.0/0` ingress, wildcard IAM, privileged pod, untrusted CI trigger, baked-in
+  secret) **block**. It's the infra counterpart to `/defense`'s app-code sweep.
 
 ## Step 5: Database — `/db-optimize` (auto-run if triggered)
 
@@ -222,6 +228,13 @@ design as a gate (per `CLAUDE.md`); otherwise output the command.
 - **Do NOT auto-run `/design-review`** here — it *fixes and commits* code, which
   a gate must not do. Recommend it as a **follow-up** to fix what `/design-audit`
   flags, run by the user after the gate.
+- **Accessibility — `/a11y`.** When the UI change is *heavy and likely to affect
+  assistive tech* — new/changed interactive components, forms, ARIA/`role`/
+  `tabindex`, focus/keyboard handling, images, or color/contrast (not a pure
+  spacing/copy tweak) — run `/a11y`'s **static** pass (read-only, diff-scoped, safe
+  in a gate) and fold its CRITICAL/SERIOUS findings into the ledger. A control no
+  screen-reader or keyboard user can operate is a **blocker**. Recommend `/a11y`'s
+  dynamic axe pass when a dev URL is reachable.
 
 ## Step 9: Coverage — untested paths
 
@@ -272,6 +285,8 @@ maintainer — you do not need to read that file to run this gate):
 - `/defense` CRITICAL/HIGH security finding (Step 4)
 - N+1 / missing index on a hot path (Step 5)
 - CRITICAL/HIGH browser-QA bug in a user-facing flow (Step 7)
+- `/a11y` CRITICAL finding — a control unusable by screen-reader/keyboard (Step 8)
+- `/iac-scan` CRITICAL/HIGH infra misconfig (Step 4)
 - new public surface with zero tests (Step 9)
 - a hard perf gate breach, only if `CLAUDE.md` defines one (Step 6)
 - **a triggered Phase-4 check left unaccounted** — neither RAN with evidence nor
@@ -303,12 +318,14 @@ Base: <base>  Range: <base>..HEAD  Changed files: N  Working tree: clean|dirty
 | Tests & build (Step 2)  | 5-pre | RAN (fresh) / FAIL | exact command + result |
 | /code-review (Step 3)   | 3     | RAN | tier used, N findings |
 | /defense (Step 4)       | 4     | RAN | N findings |
+| /iac-scan (Step 4)      | 4     | RAN / NOT-TRIGGERED | infra/deploy files changed? |
 | /pentest (Step 4)       | 4     | RAN / SKIPPED(reason) / NOT-TRIGGERED | sensitive paths? |
 | /db-optimize (Step 5)   | 4     | RAN / NOT-TRIGGERED | DB/ORM/SQL in diff? |
 | /web-perf (Step 6)      | 4     | RAN / SKIPPED(reason) / NOT-TRIGGERED | dev URL / "no server" |
 | /perf-profile (Step 6)  | 4     | RAN / SKIPPED(reason) / NOT-TRIGGERED | pre-launch / hot path? |
 | /qa-only (Step 7)       | 4     | RAN / NOT-TRIGGERED | health score |
 | /design-audit (Step 8)  | 4     | RAN / SKIPPED(reason) / NOT-TRIGGERED | UI changed? |
+| /a11y (Step 8)          | 4     | RAN / SKIPPED(reason) / NOT-TRIGGERED | heavy UI / a11y-affecting? |
 | Coverage (Step 9)       | 5-pre | RAN | N gaps, drafted tests |
 
 > No row may be blank or "recommend" for a check whose trigger fired — that is an
@@ -328,6 +345,8 @@ Base: <base>  Range: <base>..HEAD  Changed files: N  Working tree: clean|dirty
   hot path / measured bottleneck needs localizing)
 - `/qa` — (interactive test→fix loop, if Step 7 found user-facing bugs)
 - `/design-audit` — (if UI changed; read-only visual/a11y audit, alongside `/qa`)
+- `/a11y` — (if heavy UI likely to affect screen-reader/keyboard/contrast; dynamic axe pass needs a dev URL)
+- `/iac-scan` — (if infra/deploy config changed; static, plus `/pentest` if HIGH/CRITICAL)
 - `/design-review` — (to *fix* what `/design-audit` flags; mutates + commits, so
   it runs after the gate, not during it)
 - `/finish-branch` → `/ship` — (only if VERDICT is SHIP-READY)
@@ -355,9 +374,12 @@ interactive checks auto-run.
 Auto-run (diff-scoped, non-mutating):
 - `/code-review` — correctness (Step 3); local tiers only.
 - `/defense` — OWASP/secrets/auth/crypto (Step 4).
+- `/iac-scan` — when infra/deploy config changed; static infra misconfig scan (Step 4).
 - `/db-optimize` — when DB/ORM/SQL changed (Step 5).
 - `/web-perf` — when frontend changed and a dev URL is reachable (Step 6).
 - `/qa-only` — when UI changed; report-only (Step 7).
+- `/a11y` — static pass when a heavy/a11y-affecting UI change landed (Step 8).
+- `/design-audit` — read-only visual/a11y audit when UI changed (Step 8).
 
 Recommend-only:
 - `/code-review ultra` — deep multi-agent cloud review; billed + user-triggered.

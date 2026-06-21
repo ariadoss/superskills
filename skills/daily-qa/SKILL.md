@@ -244,8 +244,9 @@ confirmation, and is much slower. Wrong shape for unattended daily runs.
 - **infrastructure / deploy config** changed (`Dockerfile`, `docker-compose*`,
   `**/*.tf`, `k8s`/`helm` manifests, `.github/workflows/**`, nginx/caddy/cloud
   config) — a commonly-forgotten attack surface (exposed ports, broad IAM,
-  baked-in secrets). `/defense` (§4b) already sweeps these files for secrets;
-  `/pentest` is the deeper misconfig check.
+  baked-in secrets). `/iac-scan` (§7i) auto-runs the static misconfig scan and
+  `/defense` (§4b) sweeps for secrets; recommend `/pentest` only as the deeper
+  **live** probe when those surface HIGH/CRITICAL.
 
 Output the exact command (`/pentest`) plus the scoped path list. User
 confirms authorization and runs it themselves.
@@ -325,7 +326,35 @@ work + perf + a11y + visual.
 recommend **`/design-review`** as the follow-up — it edits source and commits
 atomically, so the user runs it deliberately, not as part of the sweep.
 
-### 7h. Other related commands — recommend only
+### 7h. `/a11y` — recommend only (screen reader + WCAG)
+
+Accessibility regressions are silent — they don't fail a build, they fail a
+screen-reader or keyboard user. `/a11y`'s dynamic pass needs a running app (wrong
+shape for an unattended sweep), so **recommend** it — but only on **heavy frontend
+changes likely to break assistive tech**, not every style tweak. Trigger when the
+window's UI diff touches any of:
+- new/changed **interactive components** (buttons, menus, dialogs, tabs, comboboxes)
+- **forms** (inputs, labels, validation/error messaging)
+- **ARIA** / `role=` / `tabindex` / focus or keyboard handling (`onKeyDown`, `focus()`)
+- **images/icons** (alt text) or **color/contrast** changes conveying state
+
+Output `/a11y` scoped to the changed UI files, alongside the `/design-audit` + `/qa`
+recommendations (§7g, §7d). Skip it for pure spacing/copy CSS changes.
+
+### 7i. `/iac-scan` — auto-run if triggered (infra misconfig)
+
+Trigger when changed files include infrastructure/deploy config: `Dockerfile`,
+`docker-compose*`, `*.tf`/`*.tfvars`, Kubernetes/Helm manifests, `.github/workflows/**`,
+`Jenkinsfile`, nginx/cloud config.
+
+Action: invoke `/iac-scan` **scoped to the matched infra files** — it's static and
+read-only (uses tfsec/checkov/hadolint/actionlint if installed, signature checks
+otherwise), so it's safe to auto-run like `/defense`. Fold findings into the report
+under §4c "Infra misconfig (auto-run /iac-scan)" with severity and file:line. Only
+CRITICAL/HIGH go in the executive summary. If no infra files changed, skip silently.
+For a deeper live probe after HIGH/CRITICAL, recommend `/pentest` (§7c).
+
+### 7j. Other related commands — recommend only
 
 - `/code-review ultra` — when Step 3's local `/code-review` (or a CI failure)
   surfaced a high-stakes correctness concern that warrants a deep multi-agent
@@ -381,6 +410,10 @@ CI runs scanned: N
 - MEDIUM / LOW: …
 - (omit subsection only if no code files changed)
 
+### 4c. Infra misconfig (auto-run /iac-scan)
+- CRITICAL / HIGH: …
+- (only if infra/deploy config changed; otherwise omit section)
+
 ## 5. Untested paths
 - Drafted tests: file paths + summary
 - Coverage gaps without drafts: …
@@ -395,7 +428,8 @@ CI runs scanned: N
 - `/cso` — (only if a trust-boundary change shipped without a threat model)
 - `/web-perf` — (only if frontend files changed; include affected routes and dev URL)
 - `/design-audit` + `/qa` — (only if UI changed; visual/a11y audit alongside functional QA)
-- `/design-review` — (to fix what `/design-audit` flags; mutates + commits)
+- `/a11y` — (only if heavy UI likely to affect screen-reader/keyboard/contrast)
+- `/design-review` — (to fix what `/design-audit`/`/a11y` flag; mutates + commits)
 - `/pentest` — (only if /defense found CRITICAL/HIGH, auth/crypto, or infra config changed)
 - `/qa` — (only if UI changed or e2e tests failed)
 ```
@@ -417,6 +451,7 @@ Update `.daily-qa-last-run`.
 Auto-invoked (local, diff-only — no external tools or auth prompt, safe for daily):
 - `/code-review` — the engine of the Step 3 commit bug scan (local `low`/`medium`/`high` tiers); findings populate report §2.
 - `/defense` — always run on changed files (basic OWASP / secrets / auth / crypto sweep).
+- `/iac-scan` — when infra/deploy config changed (static misconfig scan); findings populate §4c.
 - `/db-optimize` — when DB/ORM/SQL files changed.
 
 Recommend-only (never auto-run):
@@ -427,7 +462,8 @@ Recommend-only (never auto-run):
 - `/qa` — interactive browser QA; recommend when UI changed.
 - `/web-perf` — Core Web Vitals + render trace against a live app (Chrome DevTools MCP); recommend when frontend files, assets, or bundler config changed.
 - `/design-audit` — read-only visual/a11y audit → design plan; recommend alongside `/qa` when UI changed.
-- `/design-review` — *fixes and commits* visual issues (mutates); recommend as the follow-up to apply what `/design-audit` flags.
+- `/a11y` — WCAG / screen-reader / keyboard audit; recommend on heavy UI changes likely to affect assistive tech (dynamic pass needs a dev URL).
+- `/design-review` — *fixes and commits* visual issues (mutates); recommend as the follow-up to apply what `/design-audit`/`/a11y` flags.
 - `/debug` — root-cause investigation for a specific failure.
 - `/perf-profile` — drill into a perf regression flagged in Step 5.
 - `/verify` — confirm a proposed fix works in the running app.
