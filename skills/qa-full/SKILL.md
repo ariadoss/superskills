@@ -71,7 +71,7 @@ changed) with three deliberate differences:
 - **Never claim SHIP-READY without receipts.** The verdict must cite the exact
   checks that ran, what passed, and what was skipped (and why).
 - **No silent skips — mandatory accounting.** Every Phase-4 check (security +
-  performance, Steps 4–7) must resolve to exactly one of: **RAN** (with evidence),
+  performance, Steps 4–8) must resolve to exactly one of: **RAN** (with evidence),
   **SKIPPED** (with a stated reason — e.g. "no reachable dev server", "scanner
   not authorized in this env"), or **NOT-TRIGGERED** (its diff trigger didn't
   fire). A check whose trigger fired but that neither ran nor was explicitly
@@ -159,9 +159,11 @@ crypto / data-protection). Diff-only, no external tools, no auth prompt.
   as a bare "recommend" when its trigger fired ⇒ unaccounted ⇒ NOT READY. If
   `CLAUDE.md` marks `/pentest` MANDATORY, SKIPPED is a blocker.
 - **Infra/deploy config — `/iac-scan`.** When the diff changes infrastructure
-  (`Dockerfile`, `docker-compose*`, `*.tf`, k8s/Helm manifests,
-  `.github/workflows/**`, nginx/cloud config), run `/iac-scan` (static, read-only,
-  safe in a gate) scoped to those files. CRITICAL/HIGH misconfigs (root container,
+  (`Dockerfile`, `docker-compose*`, `*.tf`/`*.tfvars`, k8s/Helm manifests,
+  `.github/workflows/**`, `.gitlab-ci.yml`, `Jenkinsfile`, nginx/cloud config —
+  see `/iac-scan`'s trigger section for the authoritative list), run `/iac-scan`
+  (auto-run path uses **local static linters only**, no network/auth — safe in a
+  gate) scoped to those files. CRITICAL/HIGH misconfigs (root container,
   `0.0.0.0/0` ingress, wildcard IAM, privileged pod, untrusted CI trigger, baked-in
   secret) **block**. It's the infra counterpart to `/defense`'s app-code sweep.
 
@@ -230,11 +232,16 @@ design as a gate (per `CLAUDE.md`); otherwise output the command.
   flags, run by the user after the gate.
 - **Accessibility — `/a11y`.** When the UI change is *heavy and likely to affect
   assistive tech* — new/changed interactive components, forms, ARIA/`role`/
-  `tabindex`, focus/keyboard handling, images, or color/contrast (not a pure
-  spacing/copy tweak) — run `/a11y`'s **static** pass (read-only, diff-scoped, safe
+  `tabindex`, focus/keyboard handling, images, color/contrast, or motion/animation
+  (not a pure spacing/copy tweak — see `/a11y`'s trigger section for the
+  authoritative list) — run `/a11y`'s **static** pass (read-only, diff-scoped, safe
   in a gate) and fold its CRITICAL/SERIOUS findings into the ledger. A control no
   screen-reader or keyboard user can operate is a **blocker**. Recommend `/a11y`'s
   dynamic axe pass when a dev URL is reachable.
+  - **Scope split with `/design-audit`:** `/design-audit` owns *visual* quality
+    (consistency, hierarchy, AI-slop); `/a11y` owns *WCAG / assistive-tech
+    correctness* (screen-reader, keyboard, contrast ratios). They overlap on
+    contrast only — treat `/a11y`'s measured contrast finding as authoritative.
 
 ## Step 9: Coverage — untested paths
 
@@ -255,7 +262,7 @@ resolved to RAN (evidence) / SKIPPED (reason) / NOT-TRIGGERED / MANDATORY-FAIL.
 **The verdict cannot be SHIP-READY while any triggered check is unaccounted.**
 
 **Phase-4 accounting (security + performance — what this gate enforces "was done"):**
-- Steps 4–7 each get a ledger row. A triggered check with no RAN evidence and no
+- Steps 4–8 each get a ledger row. A triggered check with no RAN evidence and no
   SKIPPED reason is an **unaccounted-check blocker**.
 - `/pentest`, `/perf-profile` are accounted the same way once their trigger fires.
 - Any check `CLAUDE.md` marks MANDATORY must be RAN with evidence — SKIPPED ⇒ blocker.
@@ -290,7 +297,7 @@ maintainer — you do not need to read that file to run this gate):
 - new public surface with zero tests (Step 9)
 - a hard perf gate breach, only if `CLAUDE.md` defines one (Step 6)
 - **a triggered Phase-4 check left unaccounted** — neither RAN with evidence nor
-  SKIPPED with a stated reason (Steps 4–7)
+  SKIPPED with a stated reason (Steps 4–8)
 - **a `CLAUDE.md`-MANDATORY check that was SKIPPED** rather than run
 
 ## Report format

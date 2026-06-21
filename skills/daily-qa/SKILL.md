@@ -337,9 +337,11 @@ window's UI diff touches any of:
 - **forms** (inputs, labels, validation/error messaging)
 - **ARIA** / `role=` / `tabindex` / focus or keyboard handling (`onKeyDown`, `focus()`)
 - **images/icons** (alt text) or **color/contrast** changes conveying state
+- **motion / animation** (autoplay, transitions, parallax — reduced-motion)
 
-Output `/a11y` scoped to the changed UI files, alongside the `/design-audit` + `/qa`
-recommendations (§7g, §7d). Skip it for pure spacing/copy CSS changes.
+(See `/a11y`'s trigger section for the authoritative list.) Output `/a11y` scoped to
+the changed UI files, alongside the `/design-audit` + `/qa` recommendations
+(§7g, §7d). Skip it for pure spacing/copy CSS changes.
 
 ### 7i. `/iac-scan` — auto-run if triggered (infra misconfig)
 
@@ -430,7 +432,7 @@ CI runs scanned: N
 - `/design-audit` + `/qa` — (only if UI changed; visual/a11y audit alongside functional QA)
 - `/a11y` — (only if heavy UI likely to affect screen-reader/keyboard/contrast)
 - `/design-review` — (to fix what `/design-audit`/`/a11y` flag; mutates + commits)
-- `/pentest` — (only if /defense found CRITICAL/HIGH, auth/crypto, or infra config changed)
+- `/pentest` — (only if /defense or /iac-scan found CRITICAL/HIGH, or auth/crypto changed — NOT on a bare infra change; /iac-scan §4c already covers that statically)
 - `/qa` — (only if UI changed or e2e tests failed)
 ```
 
@@ -458,7 +460,7 @@ Recommend-only (never auto-run):
 - `/code-review ultra` — deep multi-agent cloud review; billed + user-triggered. Recommend when Step 3 surfaces a high-stakes correctness concern.
 - `/review` — staff-level production-readiness review; recommend for architecturally significant / critical-path changes (heavier than the Step 3 `/code-review`).
 - `/cso` — OWASP+STRIDE threat modeling; design-time (home is `/write-plan`). Backstop-recommend when a trust-boundary change shipped without a threat model.
-- `/pentest` — heavy external scanner (clearwing) with auth confirmation; recommend when `/defense` finds HIGH/CRITICAL, sensitive code paths, or infra/deploy config changed.
+- `/pentest` — heavy external scanner (clearwing) with auth confirmation; recommend when `/defense` or `/iac-scan` finds HIGH/CRITICAL, or sensitive code paths changed (a bare infra change is handled statically by auto-run `/iac-scan` §7i — pentest is only the deeper live probe on HIGH/CRITICAL).
 - `/qa` — interactive browser QA; recommend when UI changed.
 - `/web-perf` — Core Web Vitals + render trace against a live app (Chrome DevTools MCP); recommend when frontend files, assets, or bundler config changed.
 - `/design-audit` — read-only visual/a11y audit → design plan; recommend alongside `/qa` when UI changed.

@@ -30,8 +30,16 @@ allowed-tools:
 # /iac-scan
 
 Scan changed infrastructure/deploy config for security misconfigurations and
-exposed secrets. **Static and read-only** — analyzes the files directly (safe to
-auto-run); shells out to dedicated scanners only if they're already installed.
+exposed secrets. **Static and read-only** — analyzes the files directly.
+
+**Auto-run safety envelope:** the auto-run path uses only **local static linters**
+that need no network and no auth — `hadolint`, `tfsec`, `checkov` (offline/local
+policy only), `kube-score`, `actionlint`, `zizmor`. That's why it's safe to
+auto-run, unlike `/pentest` (an authenticated, networked scanner that probes live
+targets). Anything that reaches the network — e.g. `trivy` pulling vulnerability
+DBs, or `checkov` fetching remote policies — is **opt-in / recommend-only**, never
+part of the auto-run. If only networked tools are available, run the signature
+checks instead and recommend the networked scan separately.
 
 ## Hard rules
 
@@ -42,9 +50,11 @@ auto-run); shells out to dedicated scanners only if they're already installed.
   secret-leaking misconfigs are CRITICAL/HIGH; style/pinning nits are LOW.
 - **Smallest correct fix**, shown as a diff; do not apply it.
 - **Scope to the changed infra files.** Don't re-scan the whole tree.
-- **Prefer real scanners when present** (tfsec, checkov, hadolint, kube-score,
-  actionlint, trivy); fall back to the signature checks below when they're absent —
-  and say which mode ran.
+- **Prefer real scanners when present.** Local static linters (`hadolint`,
+  `tfsec`, `kube-score`, `actionlint`, `zizmor`, offline `checkov`) are part of
+  the auto-run path; networked scanners (`trivy` DB pulls, remote-policy `checkov`)
+  are recommend-only. Fall back to the signature checks below when none are
+  present — and always say which mode ran (which tools, or signature mode).
 
 ## Trigger (what counts as infra/deploy config)
 
