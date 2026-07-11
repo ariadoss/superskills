@@ -17,7 +17,10 @@
 #     cookies; it goes stale when the browser sits idle). Never kills a browser
 #     you're actively driving in another window.
 #   - Graceful: SIGTERM first (lets Chrome tear down its own children), then
-#     SIGKILL only if it ignores the polite ask.
+#     SIGKILL only if the SAME browser ignores the polite ask (identity is
+#     re-checked to avoid killing a process that recycled the PID).
+#   - Serialized: an atomic ~/.gstack/qa-reaper.lock keeps a launchd tick and a
+#     SessionEnd hook from racing each other (stale locks >120s are stolen).
 #
 # Trigger it from a launchd agent (periodic safety net) and/or a Claude Code
 # SessionEnd hook. Both just exec this script.
@@ -46,6 +49,22 @@ mtime() { stat -f %m "$1" 2>/dev/null || echo 0; }
 log() { printf '%s %s\n' "$(ts)" "$1" >> "$LOG" 2>/dev/null; }
 
 reaped=0
+
+# Single-run lock (real runs only; --dry-run is read-only and safe to overlap).
+# The launchd interval and the Claude SessionEnd hook can fire concurrently;
+# without this they'd race on the same PIDs. mkdir is atomic. A lock older than
+# 120s is stolen from a crashed run so it can never wedge permanently.
+LOCK="$GHOME/qa-reaper.lock"
+if [ "$DRY_RUN" -eq 0 ]; then
+  if [ -d "$LOCK" ] && [ "$(( now - $(mtime "$LOCK") ))" -gt 120 ]; then
+    rmdir "$LOCK" 2>/dev/null || true
+  fi
+  if ! mkdir "$LOCK" 2>/dev/null; then
+    log "another reaper holds the lock; skipping"
+    exit 0
+  fi
+  trap 'rmdir "$LOCK" 2>/dev/null || true' EXIT
+fi
 
 # Process list, with a test seam. Real runs read live `ps`; tests feed a fixture.
 ps_list() {
@@ -84,8 +103,15 @@ while read -r pid cmd; do
     else
       log "reaping profile=$name pid=$pid idle=${idle_min}min"
       kill -TERM "$pid" 2>/dev/null
-      # Escalate to SIGKILL if it's still alive after a grace window.
-      ( sleep 8; kill -0 "$pid" 2>/dev/null && kill -KILL "$pid" 2>/dev/null ) &
+      # Escalate to SIGKILL only if the SAME QA browser is still alive after a
+      # grace window. Re-checking the command line closes the PID-reuse window:
+      # if the browser exited and the OS recycled its PID, the new owner has a
+      # different command and is spared.
+      ( sleep 8
+        if kill -0 "$pid" 2>/dev/null && \
+           ps -p "$pid" -o command= 2>/dev/null | grep -q "chromium-profile-$name"; then
+          kill -KILL "$pid" 2>/dev/null
+        fi ) &
       reaped=$((reaped + 1))
     fi
   fi

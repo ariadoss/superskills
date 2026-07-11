@@ -28,10 +28,11 @@ IDLE_MIN=30
 INTERVAL=900
 ACTION=install
 
+need_int() { case "${2:-}" in ''|*[!0-9]*) echo "$1 needs a positive integer value" >&2; exit 2 ;; esac; }
 while [ $# -gt 0 ]; do
   case "$1" in
-    --idle-min)  IDLE_MIN="$2"; shift 2 ;;
-    --interval)  INTERVAL="$2"; shift 2 ;;
+    --idle-min)  need_int "$1" "${2:-}"; IDLE_MIN="$2"; shift 2 ;;
+    --interval)  need_int "$1" "${2:-}"; INTERVAL="$2"; shift 2 ;;
     --uninstall) ACTION=uninstall; shift ;;
     -h|--help)   sed -n '2,20p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1" >&2; exit 2 ;;
