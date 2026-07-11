@@ -1,4 +1,4 @@
-# Superskills `v2.16.1`
+# Superskills `v2.17.0`
 
 Curated AI skills pack for Claude Code, OpenCode, Codex CLI, Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Bundles [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
@@ -173,6 +173,49 @@ cd ~/.claude/skills/superskills && git pull && ./setup
 > symlink. `setup` installs a git `post-merge` hook that does this automatically
 > on every pull, so after your first run you can just `git pull`. The
 > `/superskills-upgrade` command also handles this for you.
+
+## Maintenance utilities
+
+### Idle QA browser reaper
+
+gstack's `/qa`, `/browse`, and `/benchmark` skills launch a persistent per-project
+"Chrome for Testing" browser under `~/.gstack/chromium-profile-<name>`. The profile
+dir is meant to persist (it keeps logins/cookies between runs), but the browser
+*process* has no idle teardown — when a skill or Claude session ends via SIGTERM,
+Ctrl-C, or a crash, the browser is orphaned and can sit for hours pegging a CPU
+core. A few of these stacked up will push your load average past your core count
+and make the whole machine (Terminal, Claude, everything) feel sluggish.
+
+`scripts/gstack-qa-browser-reaper.sh` kills QA browsers that have been idle past a
+threshold. It is:
+
+- **Scoped** — touches only `~/.gstack/chromium-profile-<suffix>` QA profiles. Your
+  real Chrome/Firefox and the bare `chromium-profile` browser are never matched.
+- **Idle-based** — uses the profile dir mtime (Chrome writes it on navigation /
+  cookies; it goes stale when the browser sits idle), so it never kills a browser
+  you're actively driving in another window.
+- **Graceful** — SIGTERM first (Chrome tears down its own children), SIGKILL only
+  if it ignores the polite ask.
+
+Preview what it would reap without killing anything:
+
+```bash
+scripts/gstack-qa-browser-reaper.sh --dry-run
+```
+
+Install it as a background agent (launchd, runs every 15 min) plus, optionally, a
+Claude Code `SessionEnd` hook the installer prints for you:
+
+```bash
+scripts/install-qa-browser-reaper.sh            # defaults: idle 30 min, every 15 min
+scripts/install-qa-browser-reaper.sh --idle-min 60 --interval 1800
+scripts/install-qa-browser-reaper.sh --uninstall
+```
+
+The installer is **opt-in** and never run by `./setup` — it installs a background
+agent that force-kills processes, so it stays a deliberate choice. macOS only.
+Threshold and process list are seam-injectable (`GSTACK_QA_REAP_IDLE_MIN`,
+`GSTACK_QA_REAP_PS_FILE`) and covered by `tests/gstack-qa-browser-reaper.bats`.
 
 ## Marketing Skills (173)
 
