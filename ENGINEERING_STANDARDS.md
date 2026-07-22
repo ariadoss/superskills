@@ -74,7 +74,8 @@ A change is **NOT READY** if any of these is true:
 1. A failing test or broken build.
 2. New public surface with **zero tests** (TDD gate).
 3. A `/code-review` CRITICAL/HIGH correctness finding.
-4. A `/defense` CRITICAL/HIGH security finding.
+4. A CRITICAL/HIGH security finding from `/defense`, `/fuzz`, `/pentest`, or
+   `/iac-scan`.
 5. An N+1 / missing index on a hot path (`/db-optimize`).
 6. A CRITICAL/HIGH browser-QA bug in a user-facing flow.
 7. A hard perf-gate breach, when `CLAUDE.md` defines one.

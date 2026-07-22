@@ -158,6 +158,15 @@ crypto / data-protection). Diff-only, no external tools, no auth prompt.
   record it SKIPPED with a reason (e.g. "scanner unavailable in CI"). Leaving it
   as a bare "recommend" when its trigger fired ⇒ unaccounted ⇒ NOT READY. If
   `CLAUDE.md` marks `/pentest` MANDATORY, SKIPPED is a blocker.
+- `/fuzz` needs a running target (like `/web-perf`), so it is **not** auto-run —
+  but when the diff adds or changes **new endpoints, input parsing, file-upload
+  handling, or deserialization paths**, it becomes a **triggered,
+  mandatory-accounting check** exactly like `/pentest`: either run it against a
+  reachable dev server (record evidence) or record it SKIPPED with a reason
+  (e.g. "no reachable dev server"). Leaving it as a bare "recommend" when its
+  trigger fired ⇒ unaccounted ⇒ NOT READY. CRITICAL/HIGH fuzz findings (crash,
+  injection, auth bypass surfaced by fuzzing) **block**. If `CLAUDE.md` marks
+  `/fuzz` MANDATORY, SKIPPED is a blocker.
 - **Infra/deploy config — `/iac-scan`.** When the diff changes infrastructure
   (`Dockerfile`, `docker-compose*`, `*.tf`/`*.tfvars`, k8s/Helm manifests,
   `.github/workflows/**`, `.gitlab-ci.yml`, `Jenkinsfile`, nginx/cloud config —
@@ -254,6 +263,9 @@ without a corresponding assertion.
   completion gate. Draft one focused failing-then-passing test per gap (output
   as a code block — do not apply). Internal helpers without tests are warnings.
 - Recommend `/tdd` when a gap is large enough to warrant test-first follow-up.
+- Recommend `/playwright` when the untested surface is a **user-facing flow**:
+  `/tdd` covers the unit gap and `/qa-only` observes the flow once, but neither
+  leaves an e2e regression test behind — `/playwright` does.
 
 ## Step 10: Accounting ledger + ship-readiness verdict
 
@@ -264,7 +276,7 @@ resolved to RAN (evidence) / SKIPPED (reason) / NOT-TRIGGERED / MANDATORY-FAIL.
 **Phase-4 accounting (security + performance — what this gate enforces "was done"):**
 - Steps 4–8 each get a ledger row. A triggered check with no RAN evidence and no
   SKIPPED reason is an **unaccounted-check blocker**.
-- `/pentest`, `/perf-profile` are accounted the same way once their trigger fires.
+- `/pentest`, `/fuzz`, `/perf-profile` are accounted the same way once their trigger fires.
 - Any check `CLAUDE.md` marks MANDATORY must be RAN with evidence — SKIPPED ⇒ blocker.
 
 **Phase-5 accounting (honest scope):** `/qa-full` *is* the entry to Phase 5, so it
@@ -290,6 +302,8 @@ maintainer — you do not need to read that file to run this gate):
 - failing test or broken build, or test/build not freshly run this invocation (Step 2)
 - `/code-review` CRITICAL/HIGH correctness finding (Step 3)
 - `/defense` CRITICAL/HIGH security finding (Step 4)
+- `/fuzz` CRITICAL/HIGH finding — crash, injection, or auth bypass surfaced by fuzzing (Step 4)
+- `/pentest` CRITICAL/HIGH vulnerability, when it ran (Step 4)
 - N+1 / missing index on a hot path (Step 5)
 - CRITICAL/HIGH browser-QA bug in a user-facing flow (Step 7)
 - `/a11y` CRITICAL finding — a control unusable by screen-reader/keyboard (Step 8)
@@ -327,6 +341,7 @@ Base: <base>  Range: <base>..HEAD  Changed files: N  Working tree: clean|dirty
 | /defense (Step 4)       | 4     | RAN | N findings |
 | /iac-scan (Step 4)      | 4     | RAN / NOT-TRIGGERED | infra/deploy files changed? |
 | /pentest (Step 4)       | 4     | RAN / SKIPPED(reason) / NOT-TRIGGERED | sensitive paths? |
+| /fuzz (Step 4)          | 4     | RAN / SKIPPED(reason) / NOT-TRIGGERED | new endpoints / input parsing? |
 | /db-optimize (Step 5)   | 4     | RAN / NOT-TRIGGERED | DB/ORM/SQL in diff? |
 | /web-perf (Step 6)      | 4     | RAN / SKIPPED(reason) / NOT-TRIGGERED | dev URL / "no server" |
 | /perf-profile (Step 6)  | 4     | RAN / SKIPPED(reason) / NOT-TRIGGERED | pre-launch / hot path? |
@@ -348,12 +363,18 @@ Base: <base>  Range: <base>..HEAD  Changed files: N  Working tree: clean|dirty
   modeling happened at plan time; threat modeling belongs in `/write-plan`, this
   is the late catch)
 - `/pentest` — (only if /defense found CRITICAL/HIGH or sensitive paths changed)
+- `/fuzz` — (only if the diff added endpoints / input parsing / uploads /
+  deserialization and it was SKIPPED in the ledger — needs a running target)
 - `/perf-profile` — (app-level execution profiling; pre-launch or when a
   hot path / measured bottleneck needs localizing)
 - `/qa` — (interactive test→fix loop, if Step 7 found user-facing bugs)
 - `/design-audit` — (if UI changed; read-only visual/a11y audit, alongside `/qa`)
 - `/a11y` — (if heavy UI likely to affect screen-reader/keyboard/contrast; dynamic axe pass needs a dev URL)
 - `/iac-scan` — (if infra/deploy config changed; static, plus `/pentest` if HIGH/CRITICAL)
+- `/playwright` — (if Step 9 found untested user-facing flows; leaves e2e
+  regression tests behind)
+- `/simplify` — (reuse/simplification/efficiency cleanups; mutates code, so it
+  runs after the gate, not during it)
 - `/design-review` — (to *fix* what `/design-audit` flags; mutates + commits, so
   it runs after the gate, not during it)
 - `/finish-branch` → `/ship` — (only if VERDICT is SHIP-READY)
@@ -397,6 +418,8 @@ Recommend-only:
   home is `/write-plan`; here it's only a **backstop** when a trust-boundary
   change reaches the gate without a threat model.
 - `/pentest` — external scanner needing auth confirmation.
+- `/fuzz` — web fuzzing against a running target; triggered-accounting like
+  `/pentest` when the diff adds endpoints/input parsing (Step 4).
 - `/perf-profile` — app-level execution profiling; needs a representative
   workload, so it's a pre-launch / bottleneck-localizing follow-up, not a gate.
 - `/qa` — interactive test→fix→re-verify loop (mutates code).
@@ -404,6 +427,9 @@ Recommend-only:
   design check, paired with `/qa-only` on any UI change.
 - `/design-review` — *fixes and commits* visual issues (mutates); a post-gate
   follow-up to apply what `/design-audit` found, never run inside the gate.
+- `/playwright` — e2e regression tests for untested user-facing flows (Step 9).
+- `/simplify` — post-gate quality cleanups on the diff (mutates code); the
+  read-only equivalent already runs inside Step 3's `/code-review`.
 - `/verify`, `/debug`, `/investigate`, `/tdd` — per-issue follow-ups.
 
 Hand-off (only when SHIP-READY):

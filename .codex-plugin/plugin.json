@@ -1,6 +1,6 @@
 {
   "name": "superskills",
-  "version": "2.17.1",
+  "version": "2.17.2",
   "description": "Curated AI engineering + design skills with a Google/Meta-quality workflow (TDD, DRY, SOLID). Codex plugin install exposes the core skills; the full set installs via ./setup into ~/.codex/skills.",
   "author": {
     "name": "Danilo Stern-Sapad",
