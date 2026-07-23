@@ -22,6 +22,8 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 If the spec covers multiple independent subsystems, it should have been broken into sub-project specs during brainstorming. If it wasn't, suggest breaking this into separate plans — one per subsystem. Each plan should produce working, testable software on its own.
 
+If the spec is a **user-facing feature**, scope the plan as a **vertical slice**: one branch containing every layer the feature needs to work — UI, API, business logic, data, and tests — independently shippable and safely reversible (full definition in `DEVELOPER_WORKFLOW.md` in the superskills install). If it's a **bugfix, refactor, or single-layer change**, scope only the layers it actually touches — do not add layers to make the slice look complete; that's a YAGNI violation.
+
 ## File Structure
 
 Before defining tasks, map out which files will be created or modified and what each one is responsible for. This is where decomposition decisions get locked in.
