@@ -193,6 +193,12 @@ draft small, focused tests.
    draft-PR tool wired up, suggest the exact command; otherwise output
    the test files as a code block and let the user apply them.
 
+This step is a **report-only draft** — it never applies the tests it drafts.
+To actually **close** the gaps found here — including edge/corner cases and
+past-regression coverage beyond what a single drafted test covers — recommend
+`/test-coverage`, which writes and applies the missing tests and enforces
+Google's Testing on the Toilet best practices on them.
+
 If pursuing TDD-style follow-up, recommend `/tdd`. To verify a fix
 actually works in the running app, recommend `/verify`.
 
@@ -370,6 +376,8 @@ For a deeper live probe after HIGH/CRITICAL, recommend `/pentest` (§7c).
 - `/perf-profile` — when Step 5 flags a regression but lacks measurements.
 - `/verify` — when a fix from this report is ready to confirm.
 - `/tdd` — when expanding Step 6 coverage into a real feature.
+- `/test-coverage` — writes and applies the tests Step 6 only drafts; recommend
+  when the untested-path list is worth closing now rather than just noting.
 - `/finish-branch` / `/ship` — when a fix is ready to land.
 
 ## Step 8: Report format
@@ -434,6 +442,7 @@ CI runs scanned: N
 - `/design-review` — (to fix what `/design-audit`/`/a11y` flag; mutates + commits)
 - `/pentest` — (only if /defense or /iac-scan found CRITICAL/HIGH, or auth/crypto changed — NOT on a bare infra change; /iac-scan §4c already covers that statically)
 - `/qa` — (only if UI changed or e2e tests failed)
+- `/test-coverage` — (only if Step 6's untested-path list is worth closing now; writes and applies the drafted tests)
 ```
 
 Print the report path and a 5-line executive summary to the chat.
@@ -470,4 +479,7 @@ Recommend-only (never auto-run):
 - `/perf-profile` — drill into a perf regression flagged in Step 5.
 - `/verify` — confirm a proposed fix works in the running app.
 - `/tdd` — write the failing test first when expanding Step 6 coverage.
+- `/test-coverage` — *writes and applies* the missing unit/integration/e2e
+  tests that Step 6 only drafts as a report; the fixer counterpart, and the
+  same relationship it has to `/qa-full` Step 9.
 - `/finish-branch` / `/ship` — when a fix from this report is ready to land.
