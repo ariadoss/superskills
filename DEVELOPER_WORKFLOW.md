@@ -57,6 +57,7 @@ Each agent works independently and spawns subagents. Exponentially faster than p
 | Command | Role |
 |---------|------|
 | `/tdd` | Enforce Red-Green-Refactor so tests are written before code, not as an afterthought |
+| `/test-coverage` | After the feature lands, find complex business logic, edge/corner cases, and past regressions left untested — write and apply the missing unit/integration/e2e tests, enforcing Google's Testing on the Toilet best practices (see `skills/test-coverage/rules/` for the full checklist) |
 | `/checklist` | Generate a custom quality checklist for the specific feature being built |
 | `/playwright` | Run end-to-end tests with Playwright, automate UI verification |
 | `/qa` | Browser-based testing and bug fixing using real Chromium |

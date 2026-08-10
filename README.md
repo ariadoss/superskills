@@ -1,8 +1,8 @@
-# Superskills `v2.17.3`
+# Superskills `v2.18.0`
 
 Curated AI skills pack for Claude Code, OpenCode, Codex CLI, Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Bundles [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
-33 core skills + 43 gstack skills + 173 marketing skills + 35 design skills. gstack is installed automatically and vendored in this repo so skills are available even if the upstream repo is removed.
+38 core skills + 43 gstack skills + 173 marketing skills + 35 design skills. gstack is installed automatically and vendored in this repo so skills are available even if the upstream repo is removed.
 
 > **[Full command reference →](COMMANDS.md)** — all skills with descriptions and overlap notes
 > **[10x+ Engineering Workflow →](DEVELOPER_WORKFLOW.md)** — run 10+ parallel AI agents, each with a full quality pipeline ([deep dive](https://hyperion360.com/blog/parallel-ai-agents-engineering-workflow/))
@@ -55,7 +55,7 @@ The plugin `version` is driven by the repo's `VERSION` file via
 watch. The `./setup` install above remains the way to get **all** skills across
 every supported tool.
 
-## Skills (28)
+## Skills (38)
 
 ### Dev Methodology (from [superpowers](https://github.com/obra/superpowers))
 | Command | Description |
@@ -63,10 +63,19 @@ every supported tool.
 | `/tdd` | Test-Driven Development — RED-GREEN-REFACTOR enforcement |
 | `/debug` | Systematic Debugging — 4-phase root cause analysis |
 | `/daily-qa` | Daily evidence-grounded sweep — recent commits, CI failures, dep drift, perf regressions, untested paths; auto-runs `/defense` (basic OWASP) + scoped `/db-optimize` |
+| `/qa-full` | Per-feature QA gate — full multi-dimensional fan-out (tests, correctness, security, DB, perf, browser QA, coverage) on the branch diff → pass/fail ship-readiness verdict |
 | `/worktrees` | Git Worktrees — isolated parallel development |
 | `/finish-branch` | Branch cleanup and merge decisions |
 | `/verify` | Pre-merge validation |
 | `/write-plan` | Detailed implementation planning |
+
+### Performance & Database
+| Command | Description |
+|---------|-------------|
+| `/db-optimize` | Database performance audit — N+1 detection, EXPLAIN analysis, missing indexes, join opportunities |
+| `/perf-profile` | Application performance profiling — code execution time, DB call time, bottleneck identification |
+| `/web-perf` | Frontend performance audit — Core Web Vitals (LCP, INP, CLS), render-blocking resources, bundle size |
+| `/cache-strategy` | Permanent cache-first strategy — no TTL, invalidate only on data change |
 
 ### Security
 | Command | Description |
@@ -74,6 +83,7 @@ every supported tool.
 | `/pentest` | Security scanning via [clearwing](https://github.com/Lazarus-AI/clearwing) |
 | `/fuzz` | Web fuzzing via [ffuf](https://github.com/ffuf/ffuf) |
 | `/defense` | Defense-in-depth — OWASP Top 10, secrets, auth, encryption |
+| `/iac-scan` | Infrastructure-as-Code security scan — Dockerfiles, Terraform, Kubernetes/Helm, CI/CD workflows |
 
 ### Spec Workflow (from [BB-Skills](https://github.com/buildbetter-app/BB-Skills))
 | Command | Description |
@@ -102,7 +112,9 @@ every supported tool.
 ### Testing
 | Command | Description |
 |---------|-------------|
+| `/test-coverage` | Finds untested complex logic, edge/corner cases, and past regressions, then writes and applies the missing tests — enforces Google's Testing on the Toilet best practices |
 | `/playwright` | E2E testing with Playwright |
+| `/a11y` | Accessibility audit — WCAG 2.2 AA, screen-reader, keyboard nav, ARIA, contrast |
 
 ### Codebase Context (from [ariadoss/repomap](https://github.com/ariadoss/repomap), [safishamsi/graphify](https://github.com/safishamsi/graphify))
 | Command | Description |
@@ -111,6 +123,8 @@ every supported tool.
 | `/dbmap` | Generate database schema map (DBMAP.md) |
 | `/repomap-auto-on` | Auto-update REPOMAP.md on every code change |
 | `/repomap-auto-off` | Disable automatic repo map updates |
+| `/dbmap-auto-on` | Auto-regenerate DBMAP.md after migration commands run |
+| `/dbmap-auto-off` | Disable automatic database schema map updates |
 | `/graphify` | Turn any folder into a queryable knowledge graph — HTML, JSON, audit report |
 
 ## Knowledge Bases

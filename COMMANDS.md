@@ -31,6 +31,7 @@
 |---------|-------------|
 | `/db-optimize` | Database performance audit — N+1 detection, EXPLAIN analysis, slow query log, join opportunities, per-endpoint DB call counts, missing index flags |
 | `/perf-profile` | Application performance profiling — code execution time, DB call time, bottleneck identification across app and DB layers |
+| `/web-perf` | Frontend performance audit — Core Web Vitals (LCP, INP, CLS), render-blocking resources, bundle size, layout shifts, against a live dev URL via Chrome DevTools MCP |
 | `/cache-strategy` | Implement permanent cache-first strategy — check cache before DB, write on first read, invalidate only on data change (Play Framework model, no TTL) |
 
 ### Security
@@ -40,6 +41,7 @@
 | `/pentest` | Security scanning via clearwing (source code + network) |
 | `/fuzz` | Web fuzzing via ffuf |
 | `/defense` | Defense-in-depth — OWASP Top 10, secrets, auth, encryption |
+| `/iac-scan` | Infrastructure-as-Code security scan — Dockerfiles, docker-compose, Terraform, Kubernetes/Helm, CI/CD workflows; flags root containers, open ingress, wildcard IAM, exposed secrets |
 
 ### Spec Workflow
 
@@ -72,7 +74,9 @@
 
 | Command | Description |
 |---------|-------------|
+| `/test-coverage` | Finds complex business logic, edge cases, corner cases, and past regressions that lack tests, then **writes and applies** the missing unit/integration/E2E tests — enforces Google's Testing on the Toilet best practices (see `skills/test-coverage/rules/` for the full checklist). The fixer counterpart to `/qa-full` Step 9's draft-only gate check. |
 | `/playwright` | E2E testing with Playwright |
+| `/a11y` | Accessibility audit — WCAG 2.2 AA, screen-reader compatibility, keyboard navigation, focus management, ARIA correctness, color contrast, reduced-motion; static diff-scoped pass plus optional dynamic axe pass |
 
 ### Codebase Context
 

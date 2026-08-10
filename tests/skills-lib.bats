@@ -59,6 +59,18 @@ EOF
   [ "$output" = "A block-form description whose first" ]
 }
 
+@test "skill_desc_from falls back to 'skill' when no description: field" {
+  mkdir -p "$FIX/gamma"
+  cat > "$FIX/gamma/SKILL.md" <<'EOF'
+---
+name: gamma-cmd
+---
+# Gamma
+EOF
+  run skill_desc_from "$FIX/gamma/SKILL.md"
+  [ "$output" = "skill" ]
+}
+
 @test "skill_body_from returns content after the second fence" {
   run skill_body_from "$FIX/alpha/SKILL.md"
   [[ "$output" == *"# Alpha"* ]]
@@ -101,4 +113,18 @@ EOF
   run link_skill_into "$TARGET" "$FIX/alpha/SKILL.md" "fallback"
   [ "$status" -eq 0 ]
   [ -L "$TARGET/alpha-cmd/SKILL.md" ]
+}
+
+@test "link_skill_into returns 1 and links nothing when no name is resolvable" {
+  mkdir -p "$FIX/gamma"
+  cat > "$FIX/gamma/SKILL.md" <<'EOF'
+---
+description: no name field and no fallback given
+---
+# Gamma
+EOF
+  run link_skill_into "$TARGET" "$FIX/gamma/SKILL.md" ""
+  [ "$status" -eq 1 ]
+  [ -z "$output" ]
+  [ ! -e "$TARGET/gamma" ]
 }

@@ -262,6 +262,11 @@ without a corresponding assertion.
 - New **public** surface with zero tests is a **blocker** for a feature
   completion gate. Draft one focused failing-then-passing test per gap (output
   as a code block — do not apply). Internal helpers without tests are warnings.
+- This step is a **gate check only** — draft-and-report, never apply (gates
+  don't mutate source). To actually **close** the gaps found here — including
+  edge/corner cases and past-regression coverage beyond just "new public
+  surface" — recommend `/test-coverage`, which writes and applies the missing
+  tests and enforces Google's Testing on the Toilet best practices on them.
 - Recommend `/tdd` when a gap is large enough to warrant test-first follow-up.
 - Recommend `/playwright` when the untested surface is a **user-facing flow**:
   `/tdd` covers the unit gap and `/qa-only` observes the flow once, but neither
@@ -428,6 +433,8 @@ Recommend-only:
 - `/design-review` — *fixes and commits* visual issues (mutates); a post-gate
   follow-up to apply what `/design-audit` found, never run inside the gate.
 - `/playwright` — e2e regression tests for untested user-facing flows (Step 9).
+- `/test-coverage` — *writes and applies* the missing unit/integration/e2e
+  tests that Step 9 only drafts as a gate check; the fixer counterpart.
 - `/simplify` — post-gate quality cleanups on the diff (mutates code); the
   read-only equivalent already runs inside Step 3's `/code-review`.
 - `/verify`, `/debug`, `/investigate`, `/tdd` — per-issue follow-ups.
