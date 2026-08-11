@@ -1,8 +1,8 @@
-# Superskills `v2.18.0`
+# Superskills `v2.19.0`
 
 Curated AI skills pack for Claude Code, OpenCode, Codex CLI, Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Bundles [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
-38 core skills + 43 gstack skills + 173 marketing skills + 35 design skills. gstack is installed automatically and vendored in this repo so skills are available even if the upstream repo is removed.
+40 core skills + 43 gstack skills + 173 marketing skills + 35 design skills. gstack is installed automatically and vendored in this repo so skills are available even if the upstream repo is removed.
 
 > **[Full command reference →](COMMANDS.md)** — all skills with descriptions and overlap notes
 > **[10x+ Engineering Workflow →](DEVELOPER_WORKFLOW.md)** — run 10+ parallel AI agents, each with a full quality pipeline ([deep dive](https://hyperion360.com/blog/parallel-ai-agents-engineering-workflow/))
@@ -55,7 +55,7 @@ The plugin `version` is driven by the repo's `VERSION` file via
 watch. The `./setup` install above remains the way to get **all** skills across
 every supported tool.
 
-## Skills (38)
+## Skills (40)
 
 ### Dev Methodology (from [superpowers](https://github.com/obra/superpowers))
 | Command | Description |
@@ -68,6 +68,8 @@ every supported tool.
 | `/finish-branch` | Branch cleanup and merge decisions |
 | `/verify` | Pre-merge validation |
 | `/write-plan` | Detailed implementation planning |
+| `/subagent-driven-development` | Execute a plan in-session via fresh subagent per task + review loop |
+| `/executing-plans` | Execute a plan in a separate session with review checkpoints |
 
 ### Performance & Database
 | Command | Description |

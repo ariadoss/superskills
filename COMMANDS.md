@@ -24,6 +24,8 @@
 | `/finish-branch` | Guides branch cleanup and merge decisions when implementation is complete |
 | `/verify` | Pre-merge validation — requires running verification commands and confirming output before success claims |
 | `/write-plan` | Detailed implementation planning from a spec — embeds TDD tasks, DRY/SOLID/YAGNI principles, a required **Test Plan & Verification** section, and a concrete coverage target. Auto-chains to `/plan-eng-review` for an independent double-check (which emits the Test Plan Artifact `/qa-full` consumes) before execution. |
+| `/subagent-driven-development` | Executes a `/write-plan` plan in the current session — fresh implementer subagent per task, task-scoped review after each, broad whole-branch review at the end. The **recommended** execution mode when subagents are available. |
+| `/executing-plans` | Executes a `/write-plan` plan in a separate session with human-in-the-loop review checkpoints between tasks — the fallback when subagents aren't available. |
 
 ### Performance & Database
 
