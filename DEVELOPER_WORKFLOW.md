@@ -52,6 +52,22 @@ Each agent works independently and spawns subagents. Exponentially faster than p
 | `/dbmap-auto-on` | Automatically regenerate DBMAP.md after migration commands run, so agents always see the live schema |
 | `/pair-agent` | Coordinate multiple AI agents sharing browser and context across workspaces |
 
+> **Delegation rule: delegate for reasoning, never for fetching.** Spawn a
+> subagent only when the task needs its specialist judgment — a review rubric,
+> a debugging hypothesis, a design call. Never delegate to retrieve data the
+> orchestrating session can read itself ("what's in this file?" → read it;
+> "is this design broken?" → dispatch an agent). Delegating fetches turns
+> clean orchestration into an expensive RPC mess.
+>
+> Any multi-agent setup must answer four known risks
+> ([Anthropic's multi-agent research write-up](https://www.anthropic.com/engineering/built-multi-agent-research-system)
+> measured ~15× token cost vs. single-agent):
+>
+> 1. **Token blow-up** — delegate only the few items needing deep judgment; read shared state (ledger, reports, maps) for the rest
+> 2. **Latency** — run heavy delegations in the background; keep synchronous calls for quick, scoped questions
+> 3. **Debuggability** — every delegation leaves a durable record (ledger entry, report file), not just chat scrollback
+> 4. **Over-delegation** — enforce this rule in the orchestrator's own instructions, where the delegation decision is made
+
 ### 3. Each agent runs the full quality pipeline simultaneously
 
 | Command | Role |
