@@ -61,7 +61,7 @@ Each agent works independently and spawns subagents. Exponentially faster than p
 >
 > Any multi-agent setup must answer four known risks
 > ([Anthropic's multi-agent research write-up](https://www.anthropic.com/engineering/built-multi-agent-research-system)
-> measured ~15× token cost vs. single-agent):
+> measured ~15× token cost vs. plain chat):
 >
 > 1. **Token blow-up** — delegate only the few items needing deep judgment; read shared state (ledger, reports, maps) for the rest
 > 2. **Latency** — run heavy delegations in the background; keep synchronous calls for quick, scoped questions
