@@ -228,10 +228,14 @@ audit + fix + ask unit:
 
 `/review`'s adversarial section runs a free Claude subagent **and**, when the
 Codex CLI is installed and enabled, `codex exec` / `codex review` passes that
-spend OpenAI tokens. Those Codex passes are **ask-first** under the money rule:
-unless the user has explicitly approved Codex spend for this run, follow
-`/review`'s `CODEX_MODE: disabled` branch (Claude adversarial subagent still
-runs; Codex passes skipped) and record that in the ledger.
+spend OpenAI tokens. Those Codex passes are **ask-first** under the money rule.
+You are the one executing `/review`'s instructions, so no config change is
+needed: when its Codex preflight reports `CODEX_MODE: ready`, ask the user
+once whether to spend on Codex for this run; if declined, do not run the
+`codex exec` / `codex review` commands and proceed exactly as the section's
+`disabled` branch describes (Claude adversarial subagent still runs). Record
+the Codex state and the user's answer in the ledger. Never flip the global
+`codex_reviews` config on the user's behalf.
 
 If `/review` cannot run at all (you are on the base branch and can't switch, or
 the gstack install is broken), apply its checklist
