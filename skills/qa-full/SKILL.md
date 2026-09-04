@@ -151,8 +151,8 @@ Recognized settings (all optional; absence = the defaults in the steps below):
 - **Design: skip `/design-review`** — opt *out* of the visual-fix pass (Step 8)
   entirely; by default it runs on any UI change. This skips the check (ledger:
   SKIPPED("project opt-out")) — it does not turn it into a report-only run.
-- **Dev URL / Test+build commands / QA tier** — feed Steps 2, 6, 7 and 8 so they
-  don't have to guess. QA tier defaults to `standard`.
+- **Test/build commands** — feed Steps 2 and 10. **Dev URL** — feeds Steps 4
+  (`/fuzz`), 6, 7 and 8. **QA tier** — feeds Step 7; defaults to `standard`.
 
 If there is no `## qa-full` section, run with the built-in defaults — nothing here
 is required.
