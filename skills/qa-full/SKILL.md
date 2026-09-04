@@ -405,8 +405,10 @@ The fix rounds changed the branch, so verify the *whole* result once more:
 
 1. **Fresh tests + build** on the final HEAD (Step 2 commands). Stale results
    ⇒ NOT READY.
-2. **Re-audit the fix commits:** run `/review` and `/defense` over
-   `original-HEAD..HEAD` — the fixes themselves must not
+2. **Re-audit the fix commits:** run `/defense` scoped to the files the fix
+   commits touched, and read the fix commits themselves
+   (`git show original-HEAD..HEAD`) against `/review`'s checklist — `/review`
+   takes no commit range, and Step 3 already re-ran it twice. The fixes must not
    introduce a CRITICAL/HIGH. If they did, one more fix + re-verify, then stop.
 3. **Diff sanity:** `git log --oneline <base>..HEAD` — every pipeline commit
    should name its check/finding; nothing outside the diff scope was touched.
