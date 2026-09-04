@@ -145,13 +145,11 @@ Each agent works independently and spawns subagents. Exponentially faster than p
 > findings that survive the fix rounds are blockers and stop the gate.
 >
 > **It also enforces that the work was actually done, not just recommended.**
-> Every triggered Phase-4 check (security + perf — `/defense`, `/pentest`,
-> `/fuzz`, `/db-optimize`, `/web-perf`, `/perf-profile`, `/qa`) must resolve in the
-> gate's **accounting ledger** to RAN-CLEAN, FIXED (with commits and re-verify
-> evidence), UNFIXED (a blocker), or SKIPPED (with a reason);
-> a triggered-but-unaccounted check is itself a blocker. Projects can mark a
-> check **MANDATORY** in `CLAUDE.md` (e.g. `/pentest` on a payments service) so
-> that "skipped" no longer passes. Phase-5 caveat: the gate runs *before*
+> Every triggered check — security, performance, browser QA, design, a11y,
+> coverage — must resolve in the pipeline's **accounting ledger** (exact
+> vocabulary and MANDATORY rules: `skills/qa-full/SKILL.md`, Hard rules); a
+> triggered-but-unaccounted check is itself a blocker, and a project can mark a
+> check **MANDATORY** in `CLAUDE.md` so a skip no longer passes. Phase-5 caveat: the gate runs *before*
 > `/finish-branch`/`/ship`, so it enforces the pre-ship half (fresh test/build
 > evidence) and is the hard precondition for ship — it cannot verify steps that
 > happen after it.

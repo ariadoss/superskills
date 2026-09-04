@@ -80,9 +80,11 @@ A change is **NOT READY** if any of these is true:
 6. A CRITICAL/HIGH browser-QA bug in a user-facing flow.
 7. A hard perf-gate breach, when `CLAUDE.md` defines one.
 8. Tests/build not freshly run in the gate invocation (no stale "should pass").
-9. A **triggered** security/perf check left unaccounted — neither run with
-   evidence nor explicitly skipped with a stated reason. (Projects may mark a
-   check MANDATORY in `CLAUDE.md`; then a skip is itself a blocker.)
+9. An `/a11y` CRITICAL finding — a control unusable by screen-reader or
+   keyboard users.
+10. Any **triggered** check left unaccounted — neither run with evidence nor
+    explicitly skipped with a stated reason. (Projects may mark a check
+    MANDATORY in `CLAUDE.md`; then a skip is itself a blocker.)
 
 Everything else (MEDIUM/LOW findings, non-hot-path perf, internal-helper test
 gaps, style) is a **warning** that ships with a written follow-up note.
