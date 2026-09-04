@@ -73,7 +73,8 @@ A change is **NOT READY** if any of these is true:
 
 1. A failing test or broken build.
 2. New public surface with **zero tests** (TDD gate).
-3. A `/code-review` CRITICAL/HIGH correctness finding.
+3. A `/review` CRITICAL correctness finding (or a `/code-review` CRITICAL/HIGH
+   one, when that built-in is run by hand).
 4. A CRITICAL/HIGH security finding from `/defense`, `/fuzz`, `/pentest`, or
    `/iac-scan`.
 5. An N+1 / missing index on a hot path (`/db-optimize`).
