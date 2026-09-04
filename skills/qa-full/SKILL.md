@@ -163,7 +163,8 @@ is required.
 1. Detect the base branch: `gh repo view --json defaultBranchRef -q .defaultBranchRef.name`,
    else `git symbolic-ref refs/remotes/origin/HEAD`, else fall back to `main`/`master`.
 2. If `$ARGUMENTS` names a base branch or `--scope <paths>`, use it.
-3. Compute the changed-file set: `git diff --name-only <base>...HEAD` plus
+3. Compute the changed-file set: `git diff --name-only <base>...HEAD -- <scope paths>`
+   (drop the `--` part when no `--scope` was given) plus
    uncommitted changes (`git status --porcelain`). This set drives every
    trigger below. **Fix commits made by this pipeline extend the set** — later
    steps and the final pass (Step 10) audit the fixes too.
