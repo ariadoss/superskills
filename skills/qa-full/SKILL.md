@@ -439,6 +439,7 @@ HEAD before fixes: <sha>  HEAD after: <sha>  Fix commits: K
 | /iac-scan (Step 4)       | … / NOT-TRIGGERED | infra/deploy files changed? |
 | /pentest (Step 4)        | … / SKIPPED(reason) / NOT-TRIGGERED | authorized? findings? |
 | /fuzz (Step 4)           | … / SKIPPED(reason) / NOT-TRIGGERED | target URL, findings |
+| /cso (Step 4)            | … / NOT-TRIGGERED | new trust boundary? threat-model evidence |
 | /db-optimize (Step 5)    | … / NOT-TRIGGERED | N+1 / index fixes, migration |
 | /web-perf (Step 6)       | … / SKIPPED(reason) / NOT-TRIGGERED | before/after LCP/INP/CLS |
 | /perf-profile (Step 6)   | … / SKIPPED(reason) / NOT-TRIGGERED | bottleneck, before/after |
