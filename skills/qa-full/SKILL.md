@@ -430,7 +430,7 @@ HEAD before fixes: <sha>  HEAD after: <sha>  Fix commits: K
 ### Warnings (ship with a follow-up note)
 - …
 
-## Accounting ledger (every triggered check must be RAN-CLEAN / FIXED / UNFIXED / SKIPPED-with-reason)
+## Accounting ledger (RAN-CLEAN / FIXED(n) / UNFIXED / SKIPPED(reason) / NOT-TRIGGERED / MANDATORY-FAIL)
 | Check | Status | Evidence / fixes / reason |
 |-------|--------|---------------------------|
 | Tests & build (Step 2)   | RAN-CLEAN / FIXED(n) / UNFIXED | exact command + result, fix SHAs |
@@ -446,7 +446,7 @@ HEAD before fixes: <sha>  HEAD after: <sha>  Fix commits: K
 | /design-review (Step 8)  | … / SKIPPED(reason) / NOT-TRIGGERED | screens, fix SHAs |
 | /a11y (Step 8)           | … / SKIPPED(reason) / NOT-TRIGGERED | static + dynamic, fix SHAs |
 | /test-coverage + /playwright (Step 9) | RAN-CLEAN / FIXED(n) / UNFIXED | tests added, suite result |
-| Final pass (Step 10)     | RAN-CLEAN / UNFIXED | fresh test/build + re-audit of fix commits |
+| Final pass (Step 10)     | RAN-CLEAN / FIXED(n) / UNFIXED | fresh test/build + re-audit of fix commits |
 
 > No row may be blank or "recommend" for a check whose trigger fired — that is an
 > unaccounted-check blocker. `CLAUDE.md`-MANDATORY checks must read RAN-CLEAN or FIXED.
