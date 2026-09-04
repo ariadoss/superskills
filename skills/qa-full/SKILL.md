@@ -510,6 +510,7 @@ HEAD before fixes: <sha>  HEAD after: <sha>  Fix commits: K
 
 ## Ask-first / follow-up commands
 - `/code-review ultra` — (billed; offer when a high-stakes correctness concern remains)
+- `/review` Codex passes — (OpenAI tokens; ask before enabling them for a run)
 - `/pentest` — (if it was SKIPPED for authorization and the user now wants it)
 - `/fuzz` — (if SKIPPED for lack of a target and one is now available)
 - `/perf-profile` — (if SKIPPED for lack of a representative workload)
@@ -567,6 +568,7 @@ Auto-run (diff-scoped; audit → fix → verify):
 
 Ask-first (need the user's explicit yes):
 - `/code-review ultra` — billed multi-agent cloud review.
+- `/review`'s Codex passes — OpenAI tokens; per-run yes required (Step 3).
 - `/pentest` — external scanner; authorization confirmation, then it runs.
 
 Follow-up (outside the pipeline):
