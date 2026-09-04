@@ -119,7 +119,8 @@ selected per-diff and driven to green.
   in `CLAUDE.md` (e.g. `/pentest` on a payments service), and for those, SKIPPED
   is itself a blocker.
 - **Money and authorization still need a human yes.** `/code-review ultra` is a
-  billed cloud run — ask before launching it, never assume. `/pentest` requires
+  billed cloud run, and `/review`'s Codex passes spend OpenAI tokens — ask
+  before launching either, never assume. `/pentest` requires
   the user to confirm authorization before it scans — ask, then run. "Ask, then
   run" is still running; it is not report-only.
 
