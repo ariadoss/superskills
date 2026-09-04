@@ -196,35 +196,57 @@ every downstream ledger row `SKIPPED("pipeline halted at Step 2")`.
 
 ## Step 3: Correctness + quality — `/review` then `/clean-code` (always)
 
-Two halves, both audit → fix → verify. Both sub-skills are in-tree, so they are
-invocable from inside any session or tool.
+Two halves. Both sub-skills are in-tree, so they are invocable from inside any
+session or tool. **Run the pipeline from a feature branch** — `/review`'s own
+Step 1 stops with "nothing to review" when the current branch *is* the base.
 
-**Correctness — `/review`.**
-1. **Audit:** run `/review` against the base branch. It's a staff-level
-   pre-landing review of the diff (correctness, SQL safety, trust boundaries,
-   side effects, scope drift vs. the plan) with confidence-calibrated findings.
-2. **Fix:** for each CRITICAL finding (and high-confidence INFORMATIONAL ones
-   with a small safe fix), root-cause it (`/debug`), write the test that would
-   have caught it first (`/tdd`), apply the smallest correct fix, commit
-   atomically.
-3. **Verify:** re-run `/review` on the diff (now including fix commits) and the
-   test suite. CRITICAL findings that survive ⇒ UNFIXED blocker.
+**Correctness — `/review`.** `/review` is not a report-only audit: one
+invocation reads the diff, auto-applies its mechanical (AUTO-FIX) findings to
+the working tree, asks you about the rest (ASK items) via its own
+AskUserQuestion, and never commits. Treat one call as one atomic
+audit + fix + ask unit:
+1. **Run `/review`** against the base this pipeline resolved in Step 1. It has
+   no argument channel, so it always diffs `merge-base(origin/<base>, HEAD)` —
+   if Step 1 resolved a non-default base or a `--scope`, say so in the ledger
+   evidence: `/review` reviewed the full default-base diff.
+2. **Commit what it changed** as one commit attributed to `/review` (e.g.
+   `review: apply AUTO-FIX + approved ASK findings`), so the tree is clean
+   before `/clean-code` and nothing `/review` fixed can be lost by a later
+   revert. For any CRITICAL it reported but could not fix, root-cause
+   (`/debug`), write the failing test first (`/tdd`), fix, commit atomically.
+3. **Verify:** run `/review` once more. It re-scans the full base diff
+   including the fix commits — that's the point. A CRITICAL still present ⇒
+   UNFIXED blocker. Commit anything this second pass auto-fixed the same way.
+   Do not run it a third time in this step.
 
-If Claude Code's built-in `/code-review --fix` is available in the current
-context it may be used *in addition* (its `--fix` applies findings on its own),
-but `/review` is the required, always-invocable path — never skip the audit
-because a built-in couldn't be called.
+`/review`'s adversarial section runs a free Claude subagent **and**, when the
+Codex CLI is installed and enabled, `codex exec` / `codex review` passes that
+spend OpenAI tokens. Those Codex passes are **ask-first** under the money rule:
+unless the user has explicitly approved Codex spend for this run, follow
+`/review`'s `CODEX_MODE: disabled` branch (Claude adversarial subagent still
+runs; Codex passes skipped) and record that in the ledger.
 
-**Quality — `/clean-code`.** After correctness is green, run `/clean-code` on
-the diff. It audits KISS / DRY / SOLID / YAGNI against
-`ENGINEERING_STANDARDS.md`, applies the smallest safe refactor per finding
-under a green suite (characterization test first where none exists), commits
-each atomically, and re-audits. Its HIGH findings left UNFIXED are warnings
-here, not blockers — quality debt ships with a note; bugs don't.
+If `/review` cannot run at all (you are on the base branch and can't switch, or
+the gstack install is broken), apply its checklist
+(`~/.claude/skills/gstack/review/checklist.md`) to `origin/<base>..HEAD` via a
+fresh subagent, fix and re-verify the same way, and say so in the ledger — do
+not skip the correctness step.
+
+**Quality — `/clean-code`.** After correctness is green and committed, run
+`/clean-code <base> [--scope <paths>]` with the base and scope this pipeline
+resolved. It audits KISS / DRY / SOLID / YAGNI against `ENGINEERING_STANDARDS.md`,
+applies the smallest safe refactor per finding under a green suite
+(characterization test first where none exists), commits each atomically,
+re-audits, and reverts a failed refactor with `git checkout` on only the files
+it touched. Its findings left UNFIXED are warnings here, not blockers — quality
+debt ships with a note; bugs don't.
 
 `/code-review ultra` (deep multi-agent cloud review) is **billed** — when a
 `/review` finding is high-stakes (payments, auth, data loss, concurrency), ask
-the user whether to launch it. Do not launch it unasked.
+the user whether to launch it. Do not launch it unasked. Claude Code's
+built-in `/code-review` and `/simplify` are not part of this step: they can't
+be invoked from inside a session, and an optional extra pass would have no
+ledger row.
 
 ## Step 4: Security pipeline — `/defense`, `/iac-scan`, `/pentest`, `/fuzz`
 
