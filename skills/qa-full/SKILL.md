@@ -216,7 +216,10 @@ audit + fix + ask unit:
 2. **Commit what it changed** as one commit attributed to `/review` (e.g.
    `review: apply AUTO-FIX + approved ASK findings`), so the tree is clean
    before `/clean-code` and nothing `/review` fixed can be lost by a later
-   revert. For any CRITICAL it reported but could not fix, root-cause
+   revert. If `--scope` was given, stage and commit only files under scope;
+   any out-of-scope edits `/review` made stay uncommitted (stash them so the
+   tree is clean) and are flagged in the ledger for the user — never silently
+   committed. For any CRITICAL it reported but could not fix, root-cause
    (`/debug`), write the failing test first (`/tdd`), fix, commit atomically.
 3. **Verify:** run `/review` once more. It re-scans the full base diff
    including the fix commits — that's the point. A CRITICAL still present ⇒
