@@ -92,8 +92,10 @@ selected per-diff and driven to green.
   you're in there. Scope stays on the branch diff plus the exact lines a finding
   points at.
 - **Commit, but never push or open a PR.** Each fix lands as its own commit on
-  the current branch so the user can review/revert individually. Integration and
-  shipping belong to `/finish-branch` and `/ship`.
+  the current branch so the user can review/revert individually. Exception:
+  `/review` exposes no per-finding boundary, so its output lands as one commit
+  per invocation (Step 3). Integration and shipping belong to `/finish-branch`
+  and `/ship`.
 - **Ground every finding and every fix in concrete evidence**: file:line,
   failing test name, log snippet, severity as the underlying tool produced it,
   and the commit SHA of the fix. No speculation.
