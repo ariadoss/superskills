@@ -480,6 +480,6 @@ Recommend-only (never auto-run):
 - `/verify` — confirm a proposed fix works in the running app.
 - `/tdd` — write the failing test first when expanding Step 6 coverage.
 - `/test-coverage` — *writes and applies* the missing unit/integration/e2e
-  tests that Step 6 only drafts as a report; the fixer counterpart, and the
-  same relationship it has to `/qa-full` Step 9.
+  tests that Step 6 only drafts as a report; the fixer counterpart (`/qa-full`
+  Step 9 runs it automatically).
 - `/finish-branch` / `/ship` — when a fix from this report is ready to land.

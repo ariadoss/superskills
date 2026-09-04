@@ -137,15 +137,18 @@ Each agent works independently and spawns subagents. Exponentially faster than p
 > ```
 >
 > It reuses `/daily-qa`'s trigger matrix but is branch-scoped, present-human
-> (so it auto-runs the interactive checks `/daily-qa` only recommends —
-> `/web-perf`, browser QA), and **blocking**: CRITICAL/HIGH findings and failing
-> tests stop the gate. It does not mutate code — it reports blockers with
-> minimal fixes; you fix and re-run.
+> (so it actually runs the interactive checks `/daily-qa` only recommends —
+> `/qa`, `/web-perf`, `/design-review`, dynamic `/a11y`), and it is an
+> **audit → fix → verify pipeline**, not a report: each triggered check runs,
+> the pipeline fixes what it found (one atomic commit per fix, never a push),
+> then re-runs the check and the test suite to prove the fix. CRITICAL/HIGH
+> findings that survive the fix rounds are blockers and stop the gate.
 >
 > **It also enforces that the work was actually done, not just recommended.**
 > Every triggered Phase-4 check (security + perf — `/defense`, `/pentest`,
-> `/db-optimize`, `/web-perf`, `/perf-profile`, `/qa-only`) must resolve in the
-> gate's **accounting ledger** to RAN (with evidence) or SKIPPED (with a reason);
+> `/fuzz`, `/db-optimize`, `/web-perf`, `/perf-profile`, `/qa`) must resolve in the
+> gate's **accounting ledger** to RAN-CLEAN, FIXED (with commits and re-verify
+> evidence), UNFIXED (a blocker), or SKIPPED (with a reason);
 > a triggered-but-unaccounted check is itself a blocker. Projects can mark a
 > check **MANDATORY** in `CLAUDE.md` (e.g. `/pentest` on a payments service) so
 > that "skipped" no longer passes. Phase-5 caveat: the gate runs *before*
@@ -155,7 +158,7 @@ Each agent works independently and spawns subagents. Exponentially faster than p
 
 | Command | Role |
 |---------|------|
-| `/qa-full` | Per-feature QA gate — full fan-out (tests, `/code-review`, `/defense`, `/db-optimize`, `/web-perf`, `/qa-only`, coverage) on the branch diff → pass/fail ship-readiness verdict, with an **accounting ledger** that blocks if a triggered Phase-4 check wasn't run or explicitly skipped-with-reason. Run before `/finish-branch` and `/ship` |
+| `/qa-full` | Per-feature QA pipeline — audit → fix → verify. Full fan-out (tests, `/code-review --fix`, `/defense`, `/db-optimize`, `/web-perf`, `/qa`, `/design-review`, `/a11y`, `/test-coverage`) on the branch diff, fixes what it finds, re-verifies, → pass/fail ship-readiness verdict, with an **accounting ledger** that blocks if a triggered check wasn't run, was left unfixed, or wasn't explicitly skipped-with-reason. Run before `/finish-branch` and `/ship` |
 | `/ship` | Sync tests, automate CI/CD, and submit the PR |
 | `/land-and-deploy` | Merge, deploy, and verify production |
 

@@ -19,7 +19,7 @@
 | `/code-review` | Review the current diff for **correctness bugs** + reuse/simplification/efficiency cleanups. Tiers: `low`/`medium` (fewer, high-confidence), `high`→`max` (broader), `ultra` (deep multi-agent cloud review). `--fix` applies findings; `--comment` posts inline PR comments. The DRY/reuse axis catches duplicated logic. |
 | `/simplify` | Apply reuse, simplification, efficiency, and **altitude** (right abstraction level) cleanups to the changed code — and apply the fixes. **Quality only — does not hunt for bugs** (use `/code-review` for that). The reuse axis is DRY enforcement; altitude is the nearest proxy for SOLID-style abstraction. |
 | `/daily-qa` | Daily repo health check — scans recent commits, CI failures, dep/SDK drift, perf regressions, and untested paths. Commit bug scan is powered by `/code-review` (local tier); always auto-runs `/defense` (basic OWASP) on changed files; auto-runs `/db-optimize` when DB code changed; recommends `/code-review ultra`, `/pentest`, `/qa`, and `/web-perf` for heavier follow-up. Evidence-only (no speculation). |
-| `/qa-full` | Per-feature QA gate — runs the full multi-dimensional fan-out (tests, `/code-review`, `/defense`, `/db-optimize`, `/web-perf`, `/qa-only`, coverage) scoped to the branch diff, then emits a **pass/fail ship-readiness verdict**. Same trigger matrix as `/daily-qa` but branch-scoped, present-human (interactive checks auto-run), and blocking. Run it when a feature is done, before `/finish-branch` and `/ship`. |
+| `/qa-full` | Per-feature QA **pipeline** — audit → fix → verify. Runs the full multi-dimensional fan-out (tests, `/code-review --fix` + `/simplify`, `/defense`, `/iac-scan`, `/fuzz`, `/db-optimize`, `/web-perf`, `/qa`, `/design-review`, `/a11y`, `/test-coverage` + `/playwright`) scoped to the branch diff, **fixes what each check finds** (atomic commits, no push), re-runs each check to prove the fix, then emits a **pass/fail ship-readiness verdict** on the repaired branch. Same trigger matrix as `/daily-qa` but branch-scoped, present-human, and fixing instead of recommending. Run it when a feature is done, before `/finish-branch` and `/ship`. |
 | `/worktrees` | Creates isolated git worktrees for parallel feature development |
 | `/finish-branch` | Guides branch cleanup and merge decisions when implementation is complete |
 | `/verify` | Pre-merge validation — requires running verification commands and confirming output before success claims |
@@ -76,7 +76,7 @@
 
 | Command | Description |
 |---------|-------------|
-| `/test-coverage` | Finds complex business logic, edge cases, corner cases, and past regressions that lack tests, then **writes and applies** the missing unit/integration/E2E tests — enforces Google's Testing on the Toilet best practices (see `skills/test-coverage/rules/` for the full checklist). The fixer counterpart to `/qa-full` Step 9's draft-only gate check. |
+| `/test-coverage` | Finds complex business logic, edge cases, corner cases, and past regressions that lack tests, then **writes and applies** the missing unit/integration/E2E tests — enforces Google's Testing on the Toilet best practices (see `skills/test-coverage/rules/` for the full checklist). `/qa-full` Step 9 runs it to close the coverage gaps it finds. |
 | `/playwright` | E2E testing with Playwright |
 | `/a11y` | Accessibility audit — WCAG 2.2 AA, screen-reader compatibility, keyboard navigation, focus management, ARIA correctness, color contrast, reduced-motion; static diff-scoped pass plus optional dynamic axe pass |
 

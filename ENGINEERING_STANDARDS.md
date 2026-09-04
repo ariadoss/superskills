@@ -10,8 +10,8 @@ governance).
 > Google or Meta would land — correct, tested, simple, and built to be changed.
 > "It works" is the floor, not the bar.
 
-These standards are **enforced, not aspirational.** `/qa-full` blocks on the
-hard gates below; `/write-plan` bakes them into every plan; `/code-review`,
+These standards are **enforced, not aspirational.** `/qa-full` fixes what it
+can and blocks on any hard gate below that survives the fix rounds; `/write-plan` bakes them into every plan; `/code-review`,
 `/simplify`, and `/review` check against them; `/verify` confirms them before
 anything is called done.
 
@@ -104,7 +104,7 @@ gaps, style) is a **warning** that ships with a written follow-up note.
 | Build | `/tdd` | Red-Green-Refactor loop |
 | Review | `/code-review`, `/review` | Correctness + DRY/SOLID/efficiency on the diff |
 | Cleanup | `/simplify` | DRY, simplification, efficiency, altitude (quality only) |
-| Gate | `/qa-full` | The hard gates above → pass/fail verdict |
+| Gate | `/qa-full` | Audit → fix → verify every check; the hard gates above → pass/fail verdict on the repaired branch |
 | Done | `/verify` | Verification commands actually pass before "done" |
 
 See `DEVELOPER_WORKFLOW.md` for how these chain together per feature branch.

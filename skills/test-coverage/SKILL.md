@@ -32,9 +32,9 @@ allowed-tools:
 # /test-coverage
 
 Finds where complex business logic, edge cases, corner cases, and past
-regressions are undertested, then **writes and applies** the missing tests —
-unlike `/qa-full` Step 9, which only drafts a sample test as evidence for a
-ship/no-ship verdict. This is the fixer; `/qa-full` is the gate.
+regressions are undertested, then **writes and applies** the missing tests.
+`/qa-full` Step 9 runs this skill as the fix phase of its coverage check, then
+re-runs the suite to verify.
 
 ## Hard rules
 
@@ -180,7 +180,7 @@ the Step 6 `rules/` checklist:
    as a bug/regression finding (see Hard rules) instead of silently adjusting
    the assertion.
 3. Apply the test file changes (this skill writes and commits to the working
-   tree, unlike `/qa-full`'s draft-only Step 9).
+   tree).
 
 ## Step 8: Run the full suite and report
 
@@ -229,9 +229,9 @@ Runner: <command>   Files scoped: N   New tests added: M
 - `/tdd` — the write-code-first-with-a-failing-test loop *while implementing
   new code*. `/test-coverage` runs *after* code exists, to close gaps in what
   already landed.
-- `/qa-full` Step 9 — the read-only gate check ("is there a coverage gap
-  blocking ship"). Recommend `/test-coverage` from there to actually close
-  gaps rather than just draft one sample test.
+- `/qa-full` Step 9 — the coverage check in the pre-ship pipeline; it audits
+  for gaps, runs `/test-coverage` to close them, then re-runs the suite. New
+  public surface still untested afterwards is a ship blocker.
 - `/playwright` — the E2E harness this skill hands off to when Step 5 decides
   a gap needs browser-level coverage.
 - `/code-review` — correctness review of the diff; `/test-coverage` is the
