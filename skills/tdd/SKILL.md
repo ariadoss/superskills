@@ -11,7 +11,7 @@ description: Use when implementing any feature or bugfix, before writing impleme
 > `ENGINEERING_STANDARDS.md` in the superskills install — not something to look
 > for in your project). This skill is the Red-Green-Refactor loop that standard
 > requires; `/qa-full` writes the tests this loop should have produced and
-> blocks any new public surface that still can't be tested.
+> blocks any new public surface that is still untested afterwards.
 
 Write the test first. Watch it fail. Write minimal code to pass.
 
