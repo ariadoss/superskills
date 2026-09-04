@@ -62,9 +62,10 @@ selected per-diff and driven to green.
 
 ## Hard rules
 
-- **The bar is the superskills quality standard** — TDD/DRY/SOLID/YAGNI plus the
-  hard-gate list, both spelled out in full in this skill (Step 10), so you do
-  **not** need to open any external file. The canonical written copy is
+- **The bar is the superskills quality standard** — TDD/DRY/SOLID/YAGNI
+  (applied in every step's fix phase: test first, no duplicated logic, small
+  single-purpose units, nothing speculative) plus the hard-gate list, which is
+  spelled out in full in Step 10's Blocker set. The canonical written copy is
   `ENGINEERING_STANDARDS.md` in the superskills install (a plugin install exposes
   it at `${CLAUDE_PLUGIN_ROOT}/ENGINEERING_STANDARDS.md`); it is **not** expected
   to exist in the project you're reviewing, so don't flag it as missing. Every
