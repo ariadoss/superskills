@@ -189,7 +189,8 @@ If there is no diff against base, stop and say so — there is nothing to QA.
 
 If this step ends UNFIXED after two rounds, **stop here** and report NOT READY
 with the failing test. Every later step's verify phase depends on a green
-suite — running fixers on a red suite is fix → hope, not fix → verify.
+suite — running fixers on a red suite is fix → hope, not fix → verify. Mark
+every downstream ledger row `SKIPPED("pipeline halted at Step 2")`.
 
 ## Step 3: Correctness — `/code-review --fix` + `/simplify` (always)
 
