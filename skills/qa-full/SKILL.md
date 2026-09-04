@@ -479,8 +479,8 @@ HEAD before fixes: <sha>  HEAD after: <sha>  Fix commits: K
 | Check | Status | Evidence / fixes / reason |
 |-------|--------|---------------------------|
 | Tests & build (Step 2)   | RAN-CLEAN / FIXED(n) / UNFIXED | exact command + result, fix SHAs |
-| /review (Step 3)         | RAN-CLEAN / FIXED(n) / UNFIXED | N findings, fix SHAs, re-run result |
-| /clean-code (Step 3)     | RAN-CLEAN / FIXED(n) | KISS/DRY/SOLID/YAGNI findings, fix SHAs |
+| /review (Step 3)         | RAN-CLEAN / FIXED(n) / UNFIXED | N findings, fix SHAs, 2nd-run result, Codex passes on/off, base used |
+| /clean-code (Step 3)     | RAN-CLEAN / FIXED(n) / UNFIXED(warning) | KISS/DRY/SOLID/YAGNI findings, fix SHAs, deferred-with-reason |
 | /defense (Step 4)        | RAN-CLEAN / FIXED(n) / UNFIXED | N findings, fix SHAs |
 | /iac-scan (Step 4)       | … / NOT-TRIGGERED | infra/deploy files changed? |
 | /pentest (Step 4)        | … / SKIPPED(reason) / NOT-TRIGGERED | authorized? findings? |
