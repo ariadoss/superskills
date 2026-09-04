@@ -1,4 +1,4 @@
-# Superskills `v2.20.0`
+# Superskills `v2.21.0`
 
 Curated AI skills pack for Claude Code, OpenCode, Codex CLI, Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Bundles [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
@@ -63,6 +63,7 @@ every supported tool.
 | `/tdd` | Test-Driven Development — RED-GREEN-REFACTOR enforcement |
 | `/debug` | Systematic Debugging — 4-phase root cause analysis |
 | `/daily-qa` | Daily evidence-grounded sweep — recent commits, CI failures, dep drift, perf regressions, untested paths; auto-runs `/defense` (basic OWASP) + scoped `/db-optimize` |
+| `/clean-code` | KISS/DRY/SOLID/YAGNI cleanup of the branch diff — audits, applies the smallest safe refactor per finding under green tests, one commit each; quality only |
 | `/qa-full` | Per-feature QA pipeline — audit → fix → verify across the full fan-out (tests, correctness, security, DB, perf, browser QA, design, a11y, coverage) on the branch diff; fixes what it finds, re-verifies, then emits a pass/fail ship-readiness verdict |
 | `/worktrees` | Git Worktrees — isolated parallel development |
 | `/finish-branch` | Branch cleanup and merge decisions |

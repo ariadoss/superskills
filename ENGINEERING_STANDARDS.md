@@ -12,7 +12,7 @@ governance).
 
 These standards are **enforced, not aspirational.** `/qa-full` fixes what it
 can and blocks on any hard gate below that survives the fix rounds; `/write-plan` bakes them into every plan; `/code-review`,
-`/simplify`, and `/review` check against them; `/verify` confirms them before
+`/simplify`, `/review`, and `/clean-code` check against them; `/verify` confirms them before
 anything is called done.
 
 ---
@@ -92,7 +92,7 @@ gaps, style) is a **warning** that ships with a written follow-up note.
 ## Warnings (fix or consciously defer, with a note)
 
 - DRY/SOLID smells that aren't yet defects (a second near-duplicate, a unit
-  doing slightly too much) — fixed by `/simplify` / `/code-review`.
+  doing slightly too much) — fixed by `/clean-code` (or the built-in `/simplify`).
 - Coverage below target on internal helpers.
 - Naming, dead code, and altitude/abstraction-level inconsistencies.
 
@@ -105,7 +105,7 @@ gaps, style) is a **warning** that ships with a written follow-up note.
 | Plan | `/write-plan` → `/plan-eng-review` | TDD tasks, DRY/SOLID/YAGNI structure, coverage target, Test Plan |
 | Build | `/tdd` | Red-Green-Refactor loop |
 | Review | `/code-review`, `/review` | Correctness + DRY/SOLID/efficiency on the diff |
-| Cleanup | `/simplify` | DRY, simplification, efficiency, altitude (quality only) |
+| Cleanup | `/clean-code` (or built-in `/simplify`) | KISS, DRY, SOLID, YAGNI on the diff, test-verified (quality only) |
 | Gate | `/qa-full` | Audit → fix → verify every check; the hard gates above → pass/fail verdict on the repaired branch |
 | Done | `/verify` | Verification commands actually pass before "done" |
 

@@ -19,7 +19,7 @@ to change.** That bar is defined once in
 **[`ENGINEERING_STANDARDS.md`](ENGINEERING_STANDARDS.md)** (TDD · DRY · SOLID ·
 YAGNI + the hard-gate list) and referenced — never restated — by the skills
 that enforce it: `/write-plan` bakes it into plans, `/tdd` drives the loop,
-`/code-review` + `/simplify` check the diff, **`/qa-full` blocks the ship** on
+`/review` + `/clean-code` check and clean the diff, **`/qa-full` blocks the ship** on
 its hard gates, and `/verify` proves "done" with fresh evidence. Read that file
 first; the workflow below is how it gets enforced per branch.
 
@@ -81,6 +81,7 @@ Each agent works independently and spawns subagents. Exponentially faster than p
 | `/review` | Staff engineer-level code review focused on production readiness |
 | `/code-review` | Review the working diff for correctness bugs + reuse/simplification cleanups (local `low`→`max` tiers; `ultra` for a deep multi-agent cloud review). `--fix` applies findings; `--comment` posts inline PR comments |
 | `/simplify` | Apply reuse, simplification, efficiency, and altitude cleanups to the diff (quality only — no bug hunting; use `/code-review` for bugs) |
+| `/clean-code` | In-tree KISS/DRY/SOLID/YAGNI cleanup of the diff — audit → fix → verify under green tests; invocable from any session or tool (what `/qa-full` runs instead of `/simplify`) |
 | `/investigate` | Root cause analysis with hypothesis testing when something breaks |
 | `/debug` | Systematic 4-phase debugging before proposing any fix |
 | `/verify` | Require passing verification commands before any agent can finish |
@@ -156,7 +157,7 @@ Each agent works independently and spawns subagents. Exponentially faster than p
 
 | Command | Role |
 |---------|------|
-| `/qa-full` | Per-feature QA pipeline — audit → fix → verify. Full fan-out (tests, `/code-review --fix`, `/defense`, `/db-optimize`, `/web-perf`, `/qa`, `/design-review`, `/a11y`, `/test-coverage`) on the branch diff, fixes what it finds, re-verifies, → pass/fail ship-readiness verdict, with an **accounting ledger** that blocks if a triggered check wasn't run, was left unfixed, or wasn't explicitly skipped-with-reason. Run before `/finish-branch` and `/ship` |
+| `/qa-full` | Per-feature QA pipeline — audit → fix → verify. Full fan-out (tests, `/review` + `/clean-code`, `/defense`, `/db-optimize`, `/web-perf`, `/qa`, `/design-review`, `/a11y`, `/test-coverage`) on the branch diff, fixes what it finds, re-verifies, → pass/fail ship-readiness verdict, with an **accounting ledger** that blocks if a triggered check wasn't run, was left unfixed, or wasn't explicitly skipped-with-reason. Run before `/finish-branch` and `/ship` |
 | `/ship` | Sync tests, automate CI/CD, and submit the PR |
 | `/land-and-deploy` | Merge, deploy, and verify production |
 

@@ -194,25 +194,37 @@ with the failing test. Every later step's verify phase depends on a green
 suite — running fixers on a red suite is fix → hope, not fix → verify. Mark
 every downstream ledger row `SKIPPED("pipeline halted at Step 2")`.
 
-## Step 3: Correctness — `/code-review --fix` + `/simplify` (always)
+## Step 3: Correctness + quality — `/review` then `/clean-code` (always)
 
-1. **Audit:** run `/code-review` scoped to the diff (`base..HEAD`) at the
-   `high` tier (pre-ship deserves the broader pass).
-2. **Fix:** apply the findings — `/code-review --fix` for correctness bugs, then
-   `/simplify` for the reuse/simplification/efficiency/altitude cleanups on the
-   changed code. Every logic fix gets a test that would have caught it
-   (`/tdd`). Commit atomically.
-3. **Verify:** re-run `/code-review` on the diff (now including fix commits)
-   and the test suite. CRITICAL/HIGH that survive ⇒ UNFIXED blocker.
+Two halves, both audit → fix → verify. Both sub-skills are in-tree, so they are
+invocable from inside any session or tool.
 
-If `/code-review` or `/simplify` cannot be invoked from the current session
-(they are Claude Code built-in commands, not skills), perform the same
-diff-scoped review at the same tier via a subagent and say so in the ledger
-evidence column — do not skip the step.
+**Correctness — `/review`.**
+1. **Audit:** run `/review` against the base branch. It's a staff-level
+   pre-landing review of the diff (correctness, SQL safety, trust boundaries,
+   side effects, scope drift vs. the plan) with confidence-calibrated findings.
+2. **Fix:** for each CRITICAL finding (and high-confidence INFORMATIONAL ones
+   with a small safe fix), root-cause it (`/debug`), write the test that would
+   have caught it first (`/tdd`), apply the smallest correct fix, commit
+   atomically.
+3. **Verify:** re-run `/review` on the diff (now including fix commits) and the
+   test suite. CRITICAL findings that survive ⇒ UNFIXED blocker.
+
+If Claude Code's built-in `/code-review --fix` is available in the current
+context it may be used *in addition* (its `--fix` applies findings on its own),
+but `/review` is the required, always-invocable path — never skip the audit
+because a built-in couldn't be called.
+
+**Quality — `/clean-code`.** After correctness is green, run `/clean-code` on
+the diff. It audits KISS / DRY / SOLID / YAGNI against
+`ENGINEERING_STANDARDS.md`, applies the smallest safe refactor per finding
+under a green suite (characterization test first where none exists), commits
+each atomically, and re-audits. Its HIGH findings left UNFIXED are warnings
+here, not blockers — quality debt ships with a note; bugs don't.
 
 `/code-review ultra` (deep multi-agent cloud review) is **billed** — when a
-finding is high-stakes (payments, auth, data loss, concurrency), ask the user
-whether to launch it. Do not launch it unasked.
+`/review` finding is high-stakes (payments, auth, data loss, concurrency), ask
+the user whether to launch it. Do not launch it unasked.
 
 ## Step 4: Security pipeline — `/defense`, `/iac-scan`, `/pentest`, `/fuzz`
 
@@ -370,8 +382,8 @@ The fix rounds changed the branch, so verify the *whole* result once more:
 
 1. **Fresh tests + build** on the final HEAD (Step 2 commands). Stale results
    ⇒ NOT READY.
-2. **Re-audit the fix commits:** run `/code-review` (diff-scoped, `high`) and
-   `/defense` over `original-HEAD..HEAD` — the fixes themselves must not
+2. **Re-audit the fix commits:** run `/review` and `/defense` over
+   `original-HEAD..HEAD` — the fixes themselves must not
    introduce a CRITICAL/HIGH. If they did, one more fix + re-verify, then stop.
 3. **Diff sanity:** `git log --oneline <base>..HEAD` — every pipeline commit
    should name its check/finding; nothing outside the diff scope was touched.
@@ -401,7 +413,7 @@ Blocker set (any one ⇒ NOT READY — this is the authoritative list for the
 verdict; it mirrors the superskills `ENGINEERING_STANDARDS.md` hard gates, kept
 in sync by the maintainer). Each is evaluated **after** the fix rounds:
 - failing test or broken build, or test/build not freshly run on final HEAD (Step 2/10)
-- `/code-review` CRITICAL/HIGH correctness finding still present (Step 3)
+- `/review` CRITICAL correctness finding still present (Step 3)
 - `/defense` CRITICAL/HIGH security finding still present (Step 4)
 - `/fuzz` CRITICAL/HIGH — crash, injection, or auth bypass — still reproducible (Step 4)
 - `/pentest` CRITICAL/HIGH vulnerability still present, when it ran (Step 4)
@@ -442,7 +454,8 @@ HEAD before fixes: <sha>  HEAD after: <sha>  Fix commits: K
 | Check | Status | Evidence / fixes / reason |
 |-------|--------|---------------------------|
 | Tests & build (Step 2)   | RAN-CLEAN / FIXED(n) / UNFIXED | exact command + result, fix SHAs |
-| /code-review + /simplify (Step 3) | RAN-CLEAN / FIXED(n) / UNFIXED | tier, N findings, fix SHAs |
+| /review (Step 3)         | RAN-CLEAN / FIXED(n) / UNFIXED | N findings, fix SHAs, re-run result |
+| /clean-code (Step 3)     | RAN-CLEAN / FIXED(n) | KISS/DRY/SOLID/YAGNI findings, fix SHAs |
 | /defense (Step 4)        | RAN-CLEAN / FIXED(n) / UNFIXED | N findings, fix SHAs |
 | /iac-scan (Step 4)       | … / NOT-TRIGGERED | infra/deploy files changed? |
 | /pentest (Step 4)        | … / SKIPPED(reason) / NOT-TRIGGERED | authorized? findings? |
@@ -462,8 +475,6 @@ HEAD before fixes: <sha>  HEAD after: <sha>  Fix commits: K
 
 ## Ask-first / follow-up commands
 - `/code-review ultra` — (billed; offer when a high-stakes correctness concern remains)
-- `/review` — (heavier staff-level production-readiness pass; when the change is
-  architecturally significant or touches a critical path)
 - `/pentest` — (if it was SKIPPED for authorization and the user now wants it)
 - `/fuzz` — (if SKIPPED for lack of a target and one is now available)
 - `/perf-profile` — (if SKIPPED for lack of a representative workload)
@@ -504,7 +515,8 @@ and it **fixes and verifies** instead of recommending.
 
 Auto-run (diff-scoped; audit → fix → verify):
 - Tests & build — always; failures root-caused via `/debug`, proven via `/verify` (Step 2).
-- `/code-review --fix` + `/simplify` — correctness + quality cleanups (Step 3).
+- `/review` — staff-level correctness review; findings fixed by the pipeline (Step 3).
+- `/clean-code` — KISS/DRY/SOLID/YAGNI refactors on the diff, test-verified (Step 3).
 - `/defense` — OWASP/secrets/auth/crypto; findings fixed by the pipeline (Step 4).
 - `/iac-scan` — when infra/deploy config changed; misconfigs fixed (Step 4).
 - `/fuzz` — when the diff adds endpoints/input parsing and a target is reachable (Step 4).
@@ -523,8 +535,8 @@ Ask-first (need the user's explicit yes):
 - `/pentest` — external scanner; authorization confirmation, then it runs.
 
 Follow-up (outside the pipeline):
-- `/review` — staff-level production-readiness review for architecturally
-  significant changes (not a substitute for Step 3's `/code-review`).
+- `/code-review` / `/simplify` — Claude Code built-ins overlapping Step 3; use
+  them by hand, the pipeline uses the in-tree `/review` + `/clean-code`.
 
 Hand-off (only when SHIP-READY):
 - `/finish-branch` — choose how to integrate the work.
