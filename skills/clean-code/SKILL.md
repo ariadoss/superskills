@@ -19,7 +19,7 @@ triggers:
   - remove duplication
   - yagni check
   - tidy before ship
-argument-hint: '<optional: base branch (default auto-detect), --scope <paths>, or --report-only>'
+argument-hint: '<optional: base branch (default auto-detect) and/or --scope <paths>>'
 allowed-tools:
   - Bash
   - Read
@@ -28,6 +28,7 @@ allowed-tools:
   - Grep
   - Glob
   - Task
+  - AskUserQuestion
 ---
 
 # /clean-code
@@ -38,22 +39,29 @@ in-tree counterpart to Claude Code's built-in `/simplify`: it can be invoked fro
 inside any session or pipeline (`/qa-full` Step 3 runs it), and it works the same
 in every tool `./setup` targets.
 
-The principles are defined once, in `ENGINEERING_STANDARDS.md` in the superskills
-install (a plugin install exposes it at
-`${CLAUDE_PLUGIN_ROOT}/ENGINEERING_STANDARDS.md`). Read its DRY / SOLID / YAGNI
-sections before auditing; do not expect the file in the project under review,
-and do not flag it as missing. KISS is the standard's YAGNI + "smallest correct
-change" rules applied to structure: the simplest design that passes the tests.
+The principles are **defined once**, in `ENGINEERING_STANDARDS.md` in the
+superskills install (a plugin install exposes it at
+`${CLAUDE_PLUGIN_ROOT}/ENGINEERING_STANDARDS.md`). Read its **DRY**, **SOLID**,
+and **YAGNI** sections before auditing — this file does not restate them, it
+only lists the diff-level signals to look for. Do not expect the file in the
+project under review, and do not flag it as missing. KISS is not a separate
+section there: it is the standard's "smallest correct change" + YAGNI rules
+applied to structure — the simplest design that passes the tests.
 
 ## Hard rules
 
 - **Quality only.** This skill does not look for correctness bugs, security
   issues, or performance problems. If you notice one, record it as an
   out-of-scope note for `/review` / `/defense` and move on.
-- **Diff-scoped.** Audit the files changed on the branch (`base...HEAD` plus
-  the working tree). Refactoring untouched modules is itself a YAGNI violation.
-  The one exception: when the diff duplicates a helper that already exists
-  elsewhere, the fix is to *use* the existing helper, which may touch its file.
+- **Diff-scoped.** Audit the files changed on the branch. Refactoring untouched
+  modules is itself a YAGNI violation. The one exception: when the diff
+  duplicates a helper that already exists elsewhere, the fix is to *use* the
+  existing helper, which may touch its file.
+- **Clean tree before any fix.** Reverting a failed refactor uses
+  `git checkout -- <files>`, which discards *everything* uncommitted in those
+  files. So no fix is attempted while unrelated uncommitted work exists
+  (Step 1.4). Never use `git stash` as the revert mechanism — it stashes the
+  whole tree, not one change.
 - **Behavior-preserving.** A cleanup changes structure, not behavior. Every fix
   runs under the existing tests; if the code you're restructuring has no test,
   write a characterization test first (`/tdd`), then refactor under green.
@@ -68,71 +76,61 @@ change" rules applied to structure: the simplest design that passes the tests.
 - **Bounded.** One audit pass, one fix round, one verify pass. Report what's
   left as warnings — don't polish indefinitely.
 
-## Step 1: Scope
+## Step 1: Scope and preconditions
 
-1. Detect the base branch (`gh repo view --json defaultBranchRef -q
-   .defaultBranchRef.name`, else `git symbolic-ref refs/remotes/origin/HEAD`,
-   else `main`/`master`). `$ARGUMENTS` may name a base or `--scope <paths>`.
-2. Changed files: `git diff --name-only <base>...HEAD` plus `git status
-   --porcelain`. Keep only source files (skip lockfiles, generated code,
-   vendored dirs, and pure docs unless docs are the deliverable).
-3. Find the test command (`CLAUDE.md`, `package.json` scripts, `Makefile`,
-   `pyproject.toml`); run it once. **If the suite is red, stop** — refactoring
-   can't be verified on a red suite. Report and exit.
-4. If `--report-only` was passed, do Step 2 and Step 4's report, skip Step 3.
+1. **Base branch:** detect it the same way `/qa-full` Step 1 does (`gh repo
+   view` default branch → `origin/HEAD` → `main`/`master`), unless
+   `$ARGUMENTS` names one. When invoked from `/qa-full`, use the base and scope
+   it resolved — do not re-detect.
+2. **Changed files:** `git diff --name-only <base>...HEAD -- <scope paths>`
+   (omit the `--` part when no `--scope` was given) plus any uncommitted
+   changes to those paths. Keep only source files: skip lockfiles, generated
+   code, vendored dirs, and pure docs unless docs are the deliverable.
+3. **Tests:** find the test command (`CLAUDE.md`, `package.json` scripts,
+   `Makefile`, `pyproject.toml`) and run it once. **If the suite is red,
+   stop** — refactoring can't be verified on a red suite. Report and exit.
+4. **Clean tree:** if `git status --porcelain` is non-empty, ask the user (via
+   AskUserQuestion) whether to **commit the in-progress work now**
+   (recommended) or **stash it** before continuing. Do not audit-and-fix on a
+   dirty tree; a revert in Step 3 would take the user's work with it. (Inside
+   `/qa-full` this was already handled in its Step 1 — the tree is clean.)
 
 ## Step 2: Audit (report-only discovery)
 
-Read every changed file in full, then check each of the following. Record
+Read every changed file in full. For each principle, apply the definition from
+`ENGINEERING_STANDARDS.md` and hunt for these diff-level signals. Record
 findings as `PRINCIPLE — file:line — evidence — smallest fix`, with severity
 **HIGH** (duplicated logic, a unit doing two jobs that will diverge, dead code
 on a live path), **MEDIUM** (wrong altitude, needless abstraction, speculative
 config), or **LOW** (naming, ordering, minor simplification).
 
-**DRY — one source of truth**
-- Logic in the diff that already exists elsewhere in the repo. Grep for
-  distinctive identifiers, string literals, and regexes from each new function
-  before calling it new.
-- The same logic written twice *within* the diff (two near-identical branches,
-  two helpers with one differing argument).
-- A rule or constant restated instead of referenced (also applies to docs and
-  governance text).
-- Knowingly-accepted duplication without an inline reason.
-
-**SOLID — built to change**
-- **S:** a function/class/module with more than one reason to change — name
-  both responsibilities in the finding.
-- **O:** a stable core edited with a new `if type == X` branch where a new
-  implementation/strategy would do.
-- **L:** an implementation that narrows or breaks its interface's contract
-  (throws where the base returns, ignores a parameter the caller relies on).
-- **I:** a wide interface where callers use two of eight methods; a parameter
-  object passed only to read one field.
-- **D:** a unit reaching for a concretion (`$HOME`, network, clock, global
-  singleton, `new ConcreteThing()`) where a seam would make it testable in
-  isolation.
-
-**KISS — simplest thing that passes**
-- Indirection with a single call site and no second implementation.
-- Altitude mismatch: low-level detail inline in a high-level orchestrator, or
-  business rules buried in a utility.
-- Clever code where a plain loop/conditional reads in one pass (nested
-  ternaries, reduce-as-control-flow, regex doing a parser's job).
-- Cyclomatic hot spots: a function whose branches/early-returns exceed what a
-  reader can hold; split by responsibility, not by line count.
-
-**YAGNI — only what's required**
-- Speculative extensibility: hooks, options, flags, config keys, abstract bases
-  with one subclass, feature toggles nobody flips.
-- Dead code: unreachable branches, unused exports/params/imports, commented-out
-  blocks, TODOs describing work that isn't planned.
-- Over-refactoring already in the diff: restructuring of code that had no
-  reason to change.
+- **DRY signals:** before calling any new function "new", Grep the repo for its
+  distinctive identifiers, string literals, and regexes — a hit is a duplicate.
+  Two near-identical branches or helpers within the diff differing by one
+  argument. A rule or constant pasted where a reference would do (docs and
+  governance text count). Accepted duplication with no inline reason.
+- **SOLID signals:** a new `if type == X` branch bolted onto a stable core; an
+  implementation that throws or no-ops where its interface's contract returns;
+  a parameter object passed to read one field; an interface where callers use
+  two of eight methods; a unit reaching straight for `$HOME`, the network, the
+  clock, a global singleton, or `new Concrete()` where a seam would make it
+  testable in isolation. Name both responsibilities when flagging a unit that
+  has two reasons to change.
+- **KISS signals:** an indirection with a single call site and no second
+  implementation; low-level detail inline in a high-level orchestrator, or a
+  business rule buried in a utility; nested ternaries, reduce-as-control-flow,
+  or a regex doing a parser's job; a function whose branches exceed what a
+  reader holds in one pass (split by responsibility, not line count).
+- **YAGNI signals:** hooks, options, flags, config keys, abstract bases with one
+  subclass, or toggles nothing consumes (Grep for each consumer — a flag
+  advertised but never read is a finding); unreachable branches, unused
+  exports/params/imports, commented-out blocks, TODOs for unplanned work;
+  restructuring in the diff of code that had no reason to change.
 
 Also note (not as findings) any *existing* helper you found that the diff should
 reuse — that becomes the DRY fix.
 
-## Step 3: Fix (skip with `--report-only`)
+## Step 3: Fix
 
 For each HIGH and MEDIUM finding, and any LOW whose fix is a one-liner:
 
@@ -141,22 +139,23 @@ For each HIGH and MEDIUM finding, and any LOW whose fix is a one-liner:
 2. Apply the smallest safe refactor:
    - DRY → extract once, call from every site (or switch to the existing helper
      and delete the duplicate).
-   - S/O/I/D → split by responsibility, introduce the seam, narrow the
+   - SOLID → split by responsibility, introduce the seam, narrow the
      interface; keep public signatures stable unless the diff introduced them.
    - KISS → inline the single-use indirection, flatten the clever construct,
      move code to its right altitude.
    - YAGNI → delete the speculative hook/config/dead code; if the user might
      want it back, say so in the commit message rather than leaving it in.
-3. Run the test suite. Green ⇒ commit atomically. Red ⇒ revert that one change
-   (`git checkout -- <files>` / `git stash`) and record the finding as
-   **UNFIXED** with the failing test name.
+3. Run the test suite. Green ⇒ commit atomically. Red ⇒ revert **only the
+   files this fix touched** with `git checkout -- <those files>` (safe because
+   the tree was clean before the fix), and record the finding as **UNFIXED**
+   with the failing test name.
 
 Do not touch findings outside the diff scope, and do not "improve" the tests
 themselves beyond what a refactor needs.
 
 ## Step 4: Verify + report
 
-1. Re-run the audit checklist on the changed files (now including your fix
+1. Re-run the audit signals on the changed files (now including your fix
    commits). Each fixed finding must no longer appear; the fixes must not have
    introduced a new duplicate or a new one-use abstraction.
 2. Run the full test suite one final time on HEAD.
@@ -171,7 +170,7 @@ Base: <base>  Files audited: N  Suite: <command> → green/red
 - (or) None needed.
 
 ## Unfixed / deferred (with reason)
-- SOLID/S — src/y.ts:12 mixes validation + persistence — needs interface change beyond the diff
+- SOLID — src/y.ts:12 mixes validation + persistence — needs interface change beyond the diff
 
 ## Warnings (LOW, left as-is)
 - …
@@ -190,6 +189,7 @@ the re-audit and the fresh suite run behind it.
 - Extracting a helper for two lines used twice, or a base class for one
   subclass — that's trading a DRY smell for a YAGNI violation.
 - Refactoring without a test that would catch a behavior change.
+- Running a fix round on a dirty tree, or reverting with `git stash`.
 - Leaving a commit that mixes a refactor with any functional change.
 - Pushing, opening PRs, or force-anything.
 - Reporting "looks clean" without reading every changed file in full.
@@ -205,6 +205,6 @@ the re-audit and the fresh suite run behind it.
 - `/test-coverage` — writes the missing tests for logic this skill leaves
   untested.
 - `/qa-full` — runs this skill in Step 3 as the quality half of the correctness
-  pass.
+  pass, passing it the base and scope it resolved.
 - `/write-plan` — applies the same principles at plan time so there's less to
   clean up here.
