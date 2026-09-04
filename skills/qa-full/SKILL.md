@@ -205,6 +205,11 @@ every downstream ledger row `SKIPPED("pipeline halted at Step 2")`.
 3. **Verify:** re-run `/code-review` on the diff (now including fix commits)
    and the test suite. CRITICAL/HIGH that survive ⇒ UNFIXED blocker.
 
+If `/code-review` or `/simplify` cannot be invoked from the current session
+(they are Claude Code built-in commands, not skills), perform the same
+diff-scoped review at the same tier via a subagent and say so in the ledger
+evidence column — do not skip the step.
+
 `/code-review ultra` (deep multi-agent cloud review) is **billed** — when a
 finding is high-stakes (payments, auth, data loss, concurrency), ask the user
 whether to launch it. Do not launch it unasked.
