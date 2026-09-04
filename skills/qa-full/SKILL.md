@@ -142,8 +142,10 @@ for a `## qa-full` section and honor whatever it states. Example:
 
 Recognized settings (all optional; absence = the defaults in the steps below):
 - **Mandatory checks** — listed commands must read RAN-CLEAN or FIXED in the
-  ledger; SKIPPED is a blocker (Step 4/10). Use for compliance-critical surfaces
-  (payments, auth, PII).
+  ledger; SKIPPED is a blocker (any step; Step 10 enforces it). MANDATORY
+  overrides the check's own diff trigger: run it on the diff even when the
+  trigger didn't fire, so NOT-TRIGGERED is not an acceptable state either. Use
+  for compliance-critical surfaces (payments, auth, PII).
 - **Hard perf gate** — turns a `/web-perf` budget breach that survives the fix
   round from a warning into a blocker (Step 6).
 - **Design: skip `/design-review`** — opt *out* of the visual-fix pass (Step 8)
