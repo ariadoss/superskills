@@ -229,8 +229,8 @@ audit + fix + ask unit:
    before `/clean-code` and nothing `/review` fixed can be lost by a later
    revert. If `--scope` was given, stage and commit only files under scope;
    any out-of-scope edits `/review` made stay uncommitted (stash them so the
-   tree is clean) and are flagged in the ledger for the user — never silently
-   committed. For any CRITICAL it reported but could not fix, root-cause
+   tree is clean, noting the stash ref) and are flagged in the ledger with that
+   ref for the user — never silently committed. For any CRITICAL it reported but could not fix, root-cause
    (`/debug`), write the failing test first (`/tdd`), fix, commit atomically.
 3. **Verify:** run `/review` once more. It re-scans the full base diff
    including the fix commits — that's the point. A CRITICAL still present ⇒
@@ -506,7 +506,7 @@ HEAD before fixes: <sha>  HEAD after: <sha>  Fix commits: K
 | Check | Status | Evidence / fixes / reason |
 |-------|--------|---------------------------|
 | Tests & build (Step 2)   | RAN-CLEAN / FIXED(n) / UNFIXED | exact command + result, fix SHAs |
-| /review (Step 3)         | RAN-CLEAN / FIXED(n) / UNFIXED | N findings, fix SHAs, 2nd-run result, Codex passes on/off, base used |
+| /review (Step 3)         | RAN-CLEAN / FIXED(n) / UNFIXED | N findings, fix SHAs, 2nd-run result, Codex passes on/off, base used, out-of-scope stash ref if any |
 | /clean-code (Step 3)     | RAN-CLEAN / FIXED(n) / UNFIXED | KISS/DRY/SOLID/YAGNI findings, fix SHAs, deferred-with-reason |
 | /defense (Step 4)        | RAN-CLEAN / FIXED(n) / UNFIXED | N findings, fix SHAs |
 | /iac-scan (Step 4)       | … / NOT-TRIGGERED | infra/deploy files changed? |
