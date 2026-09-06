@@ -99,7 +99,7 @@
 
 > **Prerequisites:** `bun` v1.0+, Claude Code. Installed automatically by `./setup`.
 > **Commands install with short names** (e.g. `/review`, `/investigate`, `/qa`) — superskills runs gstack's setup with `--no-prefix`. A few names overlap with superskills' own skills (notably `/repomap` and `/dbmap`); where they collide, superskills' version is symlinked last and wins. To keep the `gstack-` prefix instead (avoiding all collisions), re-run `~/.claude/skills/gstack/setup --prefix`.
-> **Vendor copy:** `vendor/gstack/` in this repo backs up all skill definitions in case the upstream repo is removed.
+> **Vendor copy:** `vendor/gstack/` in this repo backs up all skill definitions (SKILL.md plus the sections/specialists/checklist markdown they load) in case the upstream repo is removed. Refresh it with `./scripts/sync-gstack.sh` whenever the live install moves ahead.
 
 ### Planning & Strategy
 
@@ -112,6 +112,7 @@
 | `/plan-devex-review` | Developer experience plan review — evaluates DX personas and integration surfaces | — |
 | `/autoplan` | Automated pipeline — runs CEO → design → eng → DX review chain with auto-decisions | `/analyze` (both check cross-artifact consistency; gstack runs full review chain, superskills checks spec/plan/tasks) |
 | `/plan-tune` | Self-tuning question sensitivity for gstack reviews based on developer psychographic | — |
+| `/spec` | Turn vague intent into a precise, executable spec in five phases | `/write-plan` (**upstream of it**: spec pins down *what*; write-plan produces the *how* with TDD tasks) |
 
 ### Development & Review
 
@@ -121,6 +122,8 @@
 | `/investigate` | Systematic root-cause debugging — four phases: investigate, hypothesize, test, confirm | `/debug` (**very similar**: both 4-phase systematic debugging. gstack uses browser for live investigation; superskills is code-only. **Prefer `/investigate` if browser access matters, `/debug` for pure code issues**) |
 | `/health` | Code quality dashboard — runs type checker, linter, test suite, and scores 0–10 with trends | — |
 | `/codex` | Cross-model code review — runs the same diff through Claude + OpenAI Codex independently | — |
+| `/document-generate` | Generate missing documentation from scratch for a feature, module, or entire project | — |
+| `/diagram` | Turn an English description or mermaid source into a diagram triplet — source, editable .excalidraw, rendered SVG + PNG | — |
 
 ### QA & Testing
 
@@ -133,6 +136,11 @@
 | `/setup-browser-cookies` | Import real browser cookies into the headless session for authenticated testing | — |
 | `/benchmark` | Performance regression detection — establishes baselines and detects regressions | — |
 | `/benchmark-models` | Cross-model benchmark — runs the same prompt through Claude, OpenAI, and others | — |
+| `/ios-qa` | Live-device iOS QA for SwiftUI apps | `/qa` (web counterpart) |
+| `/ios-fix` | Autonomous iOS bug fixer — the fix loop behind `/ios-qa` | — |
+| `/ios-design-review` | Visual design audit for iOS apps on real hardware | `/design-review` (web counterpart) |
+| `/ios-sync` | Regenerate the iOS debug bridge against the latest upstream gstack templates | — |
+| `/ios-clean` | Remove the DebugBridge SPM package and all `#if DEBUG` wiring from an iOS app before shipping | — |
 
 ### Security
 
@@ -163,6 +171,7 @@
 | `/context-restore` | Restore a saved context from `/context-save` | — |
 | `/setup-gbrain` | Set up gbrain — persistent knowledge base that survives session resets | — |
 | `/learn` | Manage project learnings — review, search, prune, and export what gstack has stored | — |
+| `/sync-gbrain` | Keep gbrain current with this repo's code and refresh agent search guidance in CLAUDE.md | `/repomap` (**different layer**: repomap is a static structure map; gbrain is a searchable brain) |
 
 ### Codebase Context
 
@@ -189,6 +198,8 @@
 | `/openclaw` | OpenClaw integration skills |
 
 ---
+| `/scrape` | Pull data from a web page with the gstack browser |
+| `/skillify` | Codify the most recent successful `/scrape` flow into a permanent browser-skill on disk |
 
 ## Design Skills
 

@@ -70,6 +70,20 @@ The `dbmap`, `repomap`, `dbmap-auto-on`, `dbmap-auto-off`, `repomap-auto-on`, an
 
 This pulls the latest upstream and copies each `<name>.md` into `skills/<name>/SKILL.md`. The setup script does **not** auto-modify the source tree — syncing is an explicit maintainer step so end users never see surprise diffs after running `setup`. The script resolves the upstream from `$REPOMAP_HOME` or the standard locations (`~/claude-repomap-command`, `~/.claude-repomap-command`, `~/.local/share/claude-repomap-command`).
 
+Likewise, `vendor/gstack/` is a markdown-only snapshot of the gstack install
+(`~/.claude/skills/gstack`). When the live install is ahead of
+`vendor/gstack/VERSION`, run:
+
+```bash
+./scripts/sync-gstack.sh
+```
+
+It copies every skill's SKILL.md plus the sections/specialists/checklist
+markdown those bodies load, `docs/*.md`, VERSION, CLAUDE.md and gstack's own
+`setup` (so `./setup`'s clone-failed fallback can still link the skills) — never
+other code or build output — and removes anything no longer upstream. Tested by
+`tests/sync-gstack.bats`.
+
 <!-- superskills-workflow-rule -->
 ## Superskills Developer Workflow
 
