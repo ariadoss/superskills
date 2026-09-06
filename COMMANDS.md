@@ -99,7 +99,7 @@
 
 > **Prerequisites:** `bun` v1.0+, Claude Code. Installed automatically by `./setup`.
 > **Commands install with short names** (e.g. `/review`, `/investigate`, `/qa`) — superskills runs gstack's setup with `--no-prefix`. A few names overlap with superskills' own skills (notably `/repomap` and `/dbmap`); where they collide, superskills' version is symlinked last and wins. To keep the `gstack-` prefix instead (avoiding all collisions), re-run `~/.claude/skills/gstack/setup --prefix`.
-> **Vendor copy:** `vendor/gstack/` in this repo backs up all skill definitions (SKILL.md plus the sections/specialists/checklist markdown they load) in case the upstream repo is removed. Refresh it with `./scripts/sync-gstack.sh` whenever the live install moves ahead.
+> **Vendor copy:** `vendor/gstack/` in this repo backs up all skill definitions (SKILL.md plus the sections/specialists/checklist markdown they load) in case the upstream repo is removed. Refresh it with `./scripts/sync-gstack.sh` whenever the live install moves ahead. `./setup` only installs it as a stopgap when the real clone fails, marks it, and retries the real clone on every later run (`scripts/lib/gstack-install-lib.sh`).
 
 ### Planning & Strategy
 

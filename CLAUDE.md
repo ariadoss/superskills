@@ -78,6 +78,10 @@ Likewise, `vendor/gstack/` is a markdown-only snapshot of the gstack install
 ./scripts/sync-gstack.sh
 ```
 
+`./setup` treats that snapshot as a stopgap only: `scripts/lib/gstack-install-lib.sh`
+retries the real clone on every run and promotes a vendor-copy install when it
+succeeds (tested by `tests/gstack-install-lib.bats`).
+
 It copies every skill's SKILL.md plus the sections/specialists/checklist
 markdown those bodies load, `docs/*.md`, VERSION, CLAUDE.md and gstack's own
 `setup` (so `./setup`'s clone-failed fallback can still link the skills) — never

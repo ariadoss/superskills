@@ -1,4 +1,4 @@
-# Superskills `v2.22.0`
+# Superskills `v2.23.0`
 
 Curated AI skills pack for Claude Code, OpenCode, Codex CLI, Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Bundles [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
@@ -15,7 +15,7 @@ cd ~/.claude/skills/superskills && ./setup
 ```
 
 Setup will:
-- Install gstack (Garry Tan's virtual engineering team skills) — required, auto-installed
+- Install gstack (Garry Tan's virtual engineering team skills) — required, auto-installed. A real clone is the goal: the clone is retried with backoff, a broken partial install is moved aside, and if the network is down the vendored snapshot goes in as a stopgap that every later `./setup` run (including `/superskills-upgrade` and the post-merge hook) tries to promote to a real clone
 - Install `bun` if needed (required by gstack's browser tool)
 - Prompt you to connect knowledge base repos (optional)
 - Check for optional dependencies (clearwing, ffuf)

@@ -37,6 +37,8 @@ SKILLS_SRC_DIR="$SOURCE_DIR/skills"
 # tests/skills-lib.bats). Single source of truth for all per-tool linkers.
 # shellcheck source=scripts/lib/skills-lib.sh
 . "$SOURCE_DIR/scripts/lib/skills-lib.sh"
+# shellcheck source=scripts/lib/gstack-install-lib.sh
+. "$SOURCE_DIR/scripts/lib/gstack-install-lib.sh"
 
 # Canonical version, stamped into artifacts for tools that have no native
 # update detection (Windsurf/Cursor/Cline/Continue) so the active version is
@@ -137,41 +139,22 @@ log ""
 GSTACK_DIR="$HOME/.claude/skills/gstack"
 GSTACK_VENDOR_DIR="$SOURCE_DIR/vendor/gstack"
 
-if [ -d "$GSTACK_DIR" ] && [ -f "$GSTACK_DIR/VERSION" ]; then
-  log "  [ok] gstack already installed ($(cat "$GSTACK_DIR/VERSION" 2>/dev/null))"
-else
-  log "  [install] gstack (Garry Tan) — virtual engineering team skills"
-
-  # Ensure bun is installed (required by gstack's browser tool)
-  if ! command -v bun >/dev/null 2>&1; then
-    log "  [install] bun (required by gstack)..."
-    curl -fsSL https://bun.sh/install | bash >/dev/null 2>&1 || {
-      log "  [warn] bun install failed — gstack browse tool may not work"
-      log "         Install manually: curl -fsSL https://bun.sh/install | bash"
-    }
-    # Reload PATH to pick up bun
-    export PATH="$HOME/.bun/bin:$PATH"
-  fi
-
-  if git clone --single-branch --depth 1 --quiet \
-       https://github.com/garrytan/gstack.git "$GSTACK_DIR" 2>/dev/null; then
-    log "  [ok] gstack cloned"
-    (cd "$GSTACK_DIR" && ./setup -q --no-prefix 2>/dev/null) || {
-      log "  [warn] gstack setup failed — skills may need manual activation"
-    }
-    log "  [ok] gstack installed ($(cat "$GSTACK_DIR/VERSION" 2>/dev/null))"
-  else
-    log "  [warn] gstack clone failed — using vendor copy"
-    if [ -d "$GSTACK_VENDOR_DIR" ]; then
-      cp -r "$GSTACK_VENDOR_DIR" "$GSTACK_DIR"
-      (cd "$GSTACK_DIR" && ./setup -q --no-prefix 2>/dev/null) || true
-      log "  [ok] gstack installed from vendor copy"
-    else
-      log "  [error] vendor copy not found — gstack not installed"
-      log "          Manual install: git clone https://github.com/garrytan/gstack.git ~/.claude/skills/gstack && cd ~/.claude/skills/gstack && ./setup"
-    fi
-  fi
+# Ensure bun is installed (required by gstack's browser tool) unless gstack is
+# already a real install that has been through its own setup.
+if [ "$(gstack_install_state "$GSTACK_DIR")" != "real" ] && ! command -v bun >/dev/null 2>&1; then
+  log "  [install] bun (required by gstack)..."
+  curl -fsSL https://bun.sh/install | bash >/dev/null 2>&1 || {
+    log "  [warn] bun install failed — gstack browse tool may not work"
+    log "         Install manually: curl -fsSL https://bun.sh/install | bash"
+  }
+  # Reload PATH to pick up bun
+  export PATH="$HOME/.bun/bin:$PATH"
 fi
+
+# State machine (scripts/lib/gstack-install-lib.sh): a real clone is the goal;
+# the vendor snapshot is a stopgap that every later run tries to promote.
+# `|| true`: a failed install is logged, never aborts setup under `set -e`.
+gstack_ensure "$GSTACK_DIR" "$GSTACK_VENDOR_DIR" || true
 log ""
 
 # ── Dependency checks ─────────────────────────────────────────────────────────
