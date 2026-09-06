@@ -176,8 +176,18 @@ is required.
    AskUserQuestion) whether to **commit the in-progress work now** (recommended
    — a descriptive commit so the feature is preserved before fixes land) or
    **stash it**. Do not proceed with a dirty tree.
-5. Record at the top of the report: base branch, commit range, changed-file
-   count, and the HEAD SHA before any fixes.
+5. **Never run on the base branch itself.** The sub-skills' diff-aware modes
+   (`/review`, `/qa`, `/design-review`) key off "current branch ≠ base" and
+   diff against `merge-base(origin/<base>, HEAD)`. If `git branch
+   --show-current` equals the base and there are unpushed commits, create a
+   working branch at HEAD first — `git switch -c qa-full/<base>-<YYYY-MM-DD>` —
+   and run the whole pipeline there. Step 10 folds it back: fast-forward the
+   base to the working branch (`git switch <base> && git merge --ff-only
+   qa-full/...`) and delete the working branch. No history is rewritten; the
+   base just gains the fix commits. If there are no unpushed commits either,
+   there is nothing to QA.
+6. Record at the top of the report: base branch, working branch (if created),
+   commit range, changed-file count, and the HEAD SHA before any fixes.
 
 If there is no diff against base, stop and say so — there is nothing to QA.
 
@@ -201,8 +211,8 @@ every downstream ledger row `SKIPPED("pipeline halted at Step 2")`.
 ## Step 3: Correctness + quality — `/review` then `/clean-code` (always)
 
 Two halves. Both sub-skills are in-tree, so they are invocable from inside any
-session or tool. **Run the pipeline from a feature branch** — `/review`'s own
-Step 1 stops with "nothing to review" when the current branch *is* the base.
+session or tool, and Step 1.5 guarantees you are on a non-base branch, which
+`/review`'s own branch guard requires.
 
 **Correctness — `/review`.** `/review` is not a report-only audit: one
 invocation reads the diff, auto-applies its mechanical (AUTO-FIX) findings to
@@ -237,8 +247,8 @@ once whether to spend on Codex for this run; if declined, do not run the
 the Codex state and the user's answer in the ledger. Never flip the global
 `codex_reviews` config on the user's behalf.
 
-If `/review` cannot run at all (you are on the base branch and can't switch, or
-the gstack install is broken), apply its checklist
+If `/review` cannot run at all (the gstack install is broken), apply its
+checklist
 (`~/.claude/skills/gstack/review/checklist.md`) to `origin/<base>..HEAD` via a
 fresh subagent, fix and re-verify the same way, and say so in the ledger — do
 not skip the correctness step.
@@ -422,6 +432,10 @@ The fix rounds changed the branch, so verify the *whole* result once more:
    introduce a CRITICAL/HIGH. If they did, one more fix + re-verify, then stop.
 3. **Diff sanity:** `git log --oneline <base>..HEAD` — every pipeline commit
    should name its check/finding; nothing outside the diff scope was touched.
+4. **Fold back the working branch** if Step 1.5 created one: `git switch
+   <base> && git merge --ff-only qa-full/<...> && git branch -d qa-full/<...>`.
+   If the fast-forward fails, the base moved underneath you — stop and report;
+   never force.
 
 Then build the **accounting ledger** — a row per check, each resolved to
 RAN-CLEAN / FIXED(n) / UNFIXED / SKIPPED(reason) / NOT-TRIGGERED /
