@@ -241,10 +241,12 @@ audit + fix + ask unit:
 Codex CLI is installed and enabled, `codex exec` / `codex review` passes that
 spend OpenAI tokens. Those Codex passes are **ask-first** under the money rule.
 You are the one executing `/review`'s instructions, so no config change is
-needed: when its Codex preflight reports `CODEX_MODE: ready`, ask the user
-once whether to spend on Codex for this run; if declined, do not run the
-`codex exec` / `codex review` commands and proceed exactly as the section's
-`disabled` branch describes (Claude adversarial subagent still runs). Record
+needed: when its Codex preflight says Codex would run — `CODEX_MODE: ready`
+in current gstack, `CODEX_AVAILABLE` with `OLD_CFG` not `disabled` in older
+versions — ask the user once whether to spend on Codex for this run; if
+declined, do not run the `codex exec` / `codex review` commands and proceed
+exactly as the section's disabled/unavailable branch describes (Claude
+adversarial subagent still runs). Record
 the Codex state and the user's answer in the ledger. Never flip the global
 `codex_reviews` config on the user's behalf.
 
