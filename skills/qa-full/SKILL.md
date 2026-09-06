@@ -166,7 +166,11 @@ is required.
 1. Detect the base branch: `gh repo view --json defaultBranchRef -q .defaultBranchRef.name`,
    else `git symbolic-ref refs/remotes/origin/HEAD`, else fall back to `main`/`master`.
 2. If `$ARGUMENTS` names a base branch or `--scope <paths>`, use it.
-3. Compute the changed-file set: `git diff --name-only <base>...HEAD -- <scope paths>`
+3. Resolve the **diff ref**: `git fetch origin <base>` and use `origin/<base>`
+   when that ref exists, else local `<base>`. This is what `/review` and `/qa`
+   diff against too, and it stays correct after Step 1.5 creates a working
+   branch (local `<base>` would then equal HEAD and the set would be empty).
+   Compute the changed-file set: `git diff --name-only <diff-ref>...HEAD -- <scope paths>`
    (drop the `--` part when no `--scope` was given) plus
    uncommitted changes (`git status --porcelain`). This set drives every
    trigger below. **Fix commits made by this pipeline extend the set** — later
@@ -181,14 +185,15 @@ is required.
    (`/review`, `/qa`, `/design-review`) key off "current branch ≠ base" and
    diff against `merge-base(origin/<base>, HEAD)`. If `git branch
    --show-current` equals the base and there are unpushed commits, create a
-   working branch at HEAD first — `git switch -c qa-full/<base>-<YYYY-MM-DD>` —
-   and run the whole pipeline there. Step 10 folds it back: fast-forward the
+   working branch at HEAD first — `git switch -c qa-full/<base>-<YYYY-MM-DD>`
+   (reuse it if a same-day branch already exists from an aborted run) — and
+   run the whole pipeline there. Step 10 folds it back: fast-forward the
    base to the working branch (`git switch <base> && git merge --ff-only
    qa-full/...`) and delete the working branch. No history is rewritten; the
    base just gains the fix commits. If there are no unpushed commits either,
    there is nothing to QA.
-6. Record at the top of the report: base branch, working branch (if created),
-   commit range, changed-file count, and the HEAD SHA before any fixes.
+6. Record at the top of the report: base branch, diff ref, working branch (if
+   created), commit range, changed-file count, and the HEAD SHA before any fixes.
 
 If there is no diff against base, stop and say so — there is nothing to QA.
 
@@ -207,7 +212,9 @@ If there is no diff against base, stop and say so — there is nothing to QA.
 If this step ends UNFIXED after two rounds, **stop here** and report NOT READY
 with the failing test. Every later step's verify phase depends on a green
 suite — running fixers on a red suite is fix → hope, not fix → verify. Mark
-every downstream ledger row `SKIPPED("pipeline halted at Step 2")`.
+every downstream ledger row `SKIPPED("pipeline halted at Step 2")`. A working
+branch from Step 1.5 stays as-is (base untouched) so the fix commits are there
+for the user.
 
 ## Step 3: Correctness + quality — `/review` then `/clean-code` (always)
 
@@ -257,8 +264,8 @@ fresh subagent, fix and re-verify the same way, and say so in the ledger — do
 not skip the correctness step.
 
 **Quality — `/clean-code`.** After correctness is green and committed, run
-`/clean-code <base> [--scope <paths>]` with the base and scope this pipeline
-resolved. It audits KISS / DRY / SOLID / YAGNI against `ENGINEERING_STANDARDS.md`,
+`/clean-code <diff-ref> [--scope <paths>]` with the diff ref and scope this
+pipeline resolved. It audits KISS / DRY / SOLID / YAGNI against `ENGINEERING_STANDARDS.md`,
 applies the smallest safe refactor per finding under a green suite
 (characterization test first where none exists), commits each atomically,
 re-audits, and reverts a failed refactor with `git checkout` on only the files

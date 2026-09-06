@@ -78,11 +78,12 @@ applied to structure — the simplest design that passes the tests.
 
 ## Step 1: Scope and preconditions
 
-1. **Base branch:** detect it the same way `/qa-full` Step 1 does (`gh repo
+1. **Base ref:** detect the base the same way `/qa-full` Step 1 does (`gh repo
    view` default branch → `origin/HEAD` → `main`/`master`), unless
-   `$ARGUMENTS` names one. When invoked from `/qa-full`, use the base and scope
-   it resolved — do not re-detect.
-2. **Changed files:** `git diff --name-only <base>...HEAD -- <scope paths>`
+   `$ARGUMENTS` names one, then diff against `origin/<base>` when that ref
+   exists (fetch it first), else local `<base>`. When invoked from `/qa-full`,
+   use the diff ref and scope it resolved — do not re-detect.
+2. **Changed files:** `git diff --name-only <diff-ref>...HEAD -- <scope paths>`
    (omit the `--` part when no `--scope` was given) plus any uncommitted
    changes to those paths. Keep only source files: skip lockfiles, generated
    code, vendored dirs, and pure docs unless docs are the deliverable.
