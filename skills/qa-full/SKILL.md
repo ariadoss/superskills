@@ -50,7 +50,8 @@ changed) with three deliberate differences:
 - **Scope is the branch diff** (`base..HEAD` + working tree), not a time window.
 - **It fixes, not just reports.** Every check runs in three phases — **audit**
   (report-only discovery is fine here), **fix** (apply the smallest correct fix,
-  one atomic commit per fix), **verify** (re-run the same check plus the test
+  one atomic commit per fix — except `/review`'s bundled output, see Hard
+  rules), **verify** (re-run the same check plus the test
   suite and prove the fix holds). The final verdict is on the *repaired* branch.
 - **Interactive checks actually run.** Because a human is present, the checks
   `/daily-qa` only *recommends* — `/qa`, `/web-perf`, `/design-review`, the
