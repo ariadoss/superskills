@@ -30,3 +30,10 @@ Flags, and why:
 
 Results land in `evals/results/<timestamp>/` (git-ignored). Reports from
 analysed runs live in `evals/reports/`.
+
+**Layout notes.** The four `doctor-*` cases share one scaffold,
+`_lib/doctor-fixture.sh` (a directory with no `prompt.md` is not a case). Their
+`skill-fired`, `read-only` and `no-false-ready` graders are deliberately
+duplicated per case: the harness has no shared-grader mechanism, so each copy
+carries a comment saying to edit all four together.
+

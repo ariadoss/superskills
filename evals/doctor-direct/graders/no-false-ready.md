@@ -1,4 +1,5 @@
 ---
+# Shared by every doctor-* case; `claude plugin eval` has no cross-case graders, so edit all four copies together.
 type: llm
 focus: last_message
 arm: both
