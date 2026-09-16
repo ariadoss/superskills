@@ -185,14 +185,13 @@ doctor_check_shims() {
   fi
 }
 
-# doctor_check_command <name> <why> [required]
-# Optional tools warn when missing; pass a third arg "required" to block instead.
+# doctor_check_command <name> <why>
+# Every tool checked this way is optional (bun, bats, clearwing, ffuf), so a
+# missing one is a warning. Required pieces have their own checks above.
 doctor_check_command() {
-  local name="$1" why="$2" level="${3:-optional}" path
+  local name="$1" why="$2" path
   if path="$(command -v "$name" 2>/dev/null)"; then
     _doctor_row "$name" "ready" "$path"
-  elif [ "$level" = "required" ]; then
-    _doctor_row "$name" "blocked" "not on PATH — $why"
   else
     _doctor_row "$name" "warning" "not on PATH — $why"
   fi

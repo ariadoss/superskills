@@ -225,11 +225,6 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
   [[ "$(evidence_of "$output")" == *"/fuzz"* ]]
 }
 
-@test "check_command: blocked when a required tool is missing" {
-  run doctor_check_command "definitely-not-a-command-xyz" "needed by setup" required
-  [ "$(status_of "$output")" = "blocked" ]
-}
-
 # ── knowledge bases ──
 
 @test "check_knowledge: ready with 'none configured' when the conf is absent or empty" {
