@@ -46,3 +46,23 @@ setup() {
   run mirror_wrap dbmap "$BATS_TEST_TMPDIR/once.md"
   [ "$output" = "$(cat "$BATS_TEST_TMPDIR/once.md")" ]
 }
+
+@test "mirror_wrap treats an opening --- with no closing --- as no frontmatter (never emits an unterminated block)" {
+  BAD="$BATS_TEST_TMPDIR/bad.md"
+  printf -- '---\nthis file starts with a rule but has no frontmatter\nname: not-a-key\n' > "$BAD"
+  run mirror_wrap dbmap "$BAD"
+  [ "$(printf '%s\n' "$output" | sed -n '2p')" = "name: dbmap" ]
+  [ "$(printf '%s\n' "$output" | grep -c '^---$')" -eq 3 ]   # synthetic open+close, then the original line
+  [[ "$output" == *"name: not-a-key"* ]]                        # body untouched
+}
+
+@test "mirror_wrap adds name: when upstream frontmatter has none" {
+  NO_NAME="$BATS_TEST_TMPDIR/no-name.md"
+  printf -- '---\ndescription: already there\n---\nBody.\n' > "$NO_NAME"
+  run mirror_wrap dbmap "$NO_NAME"
+  # name: lands inside the frontmatter (before the closing ---), position is irrelevant
+  [ "$(printf '%s\n' "$output" | awk 'NR>1 && /^---$/ {exit} /^name: dbmap$/ {found=1} END {print found+0}')" -eq 1 ]
+  [[ "$output" == *"description: already there"* ]]
+  [ "$(printf '%s\n' "$output" | grep -c '^---$')" -eq 2 ]
+}
+

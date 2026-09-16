@@ -201,6 +201,15 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
   [[ "$(evidence_of "$output")" == *"core.symlinks"* ]]
 }
 
+@test "check_shims: warning when a plugin-skills entry is a dangling symlink" {
+  mkdir -p "$ROOT/marketing-skills/plugin-skills"
+  ln -s ../seo/does-not-exist "$ROOT/marketing-skills/plugin-skills/ghost"
+  run doctor_check_shims "$ROOT"
+  [ "$(status_of "$output")" = "warning" ]
+  [[ "$(evidence_of "$output")" == *"dangling"* ]]
+  [[ "$(evidence_of "$output")" == *"sync-marketing-manifest.sh"* ]]
+}
+
 @test "check_shims: ready with a note when the checkout has no marketing shim tree (older checkout)" {
   run doctor_check_shims "$ROOT"
   [ "$(status_of "$output")" = "ready" ]
@@ -276,6 +285,37 @@ fake_plugin_list() {
   run doctor_check_plugin "$ROOT" "$FAKE"
   [ "$(status_of "$output")" = "ready" ]
   [[ "$(evidence_of "$output")" == *"matches VERSION"* ]]
+}
+
+@test "_doctor_plugin_version: survives a nested object and a } inside a string between id and version" {
+  run _doctor_plugin_version '[{"id":"superskills@superskills","author":{"name":"D"},"description":"has a } brace","version":"2.24.0"}]' "superskills@"
+  [ "$output" = "2.24.0" ]
+  run _doctor_plugin_version "$(printf '[\n  {\n    "id": "other@x",\n    "version": "9.9.9"\n  },\n  {\n    "id": "superskills@superskills",\n    "source": { "source": "url", "url": "https://x.invalid" },\n    "version": "2.24.0"\n  }\n]')" "superskills@"
+  [ "$output" = "2.24.0" ]
+  run _doctor_plugin_version '[]' "superskills@"
+  [ -z "$output" ]
+}
+
+@test "check_plugin: accepts pre-fetched JSON so doctor_report calls the CLI only once" {
+  run doctor_check_plugin "$ROOT" "definitely-not-claude-xyz" '[{"id":"superskills@superskills","version":"2.24.0"}]'
+  [ "$(status_of "$output")" = "ready" ]
+  [[ "$(evidence_of "$output")" == *"matches VERSION"* ]]
+}
+
+@test "doctor_report invokes the claude CLI exactly once" {
+  FAKE="$BATS_TEST_TMPDIR/claude"; LOG="$BATS_TEST_TMPDIR/calls"
+  printf '#!/bin/sh\necho call >> "%s"\necho "[]"\n' "$LOG" > "$FAKE"; chmod +x "$FAKE"
+  run doctor_report "$ROOT" "$HOME_DIR" "$FAKE"
+  [ "$status" -eq 0 ]
+  [ "$(wc -l < "$LOG" | tr -d ' ')" -eq 1 ]
+}
+
+@test "doctor_report does not hang on a CLI that never returns (bounded by a timeout)" {
+  FAKE="$BATS_TEST_TMPDIR/claude"
+  printf '#!/bin/sh\nsleep 30\n' > "$FAKE"; chmod +x "$FAKE"
+  DOCTOR_CLI_TIMEOUT=1 run doctor_report "$ROOT" "$HOME_DIR" "$FAKE"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"| Plugin | unverified |"* ]]
 }
 
 @test "check_plugin: a sibling plugin alone does not count as the superskills plugin" {
@@ -365,15 +405,18 @@ fake_plugin_list() {
 # ── scripts/doctor.sh wrapper (arg parsing; the report itself is tested above) ──
 
 @test "doctor.sh: --root and --home point the report at another checkout and home" {
-  run bash "$REPO_ROOT/scripts/doctor.sh" --root "$ROOT" --home "$HOME_DIR"
+  FAKE="$BATS_TEST_TMPDIR/claude"; printf '#!/bin/sh\necho "[]"\n' > "$FAKE"; chmod +x "$FAKE"
+  run bash "$REPO_ROOT/scripts/doctor.sh" --root "$ROOT" --home "$HOME_DIR" --bin "$FAKE"
   [ "$status" -eq 0 ]
   [[ "$output" == *"superskills v2.24.0 at $ROOT"* ]]
+  [[ "$output" == *"| Plugin | ready | not installed"* ]]
   [[ "$output" == *"linked into $SKILLS"* ]]
 }
 
 @test "doctor.sh: --root=/--home= forms are accepted" {
-  run bash "$REPO_ROOT/scripts/doctor.sh" "--root=$ROOT" "--home=$HOME_DIR"
+  run bash "$REPO_ROOT/scripts/doctor.sh" "--root=$ROOT" "--home=$HOME_DIR" --bin=definitely-not-claude-xyz
   [ "$status" -eq 0 ]
+  [[ "$output" == *"| Plugin | unverified |"* ]]
   [[ "$output" == *"at $ROOT"* ]]
 }
 

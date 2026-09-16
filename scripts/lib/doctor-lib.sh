@@ -200,36 +200,58 @@ doctor_check_command() {
 
 # _doctor_plugin_version <plugin-list-json> <id-prefix>
 # Version of the first plugin whose "id" starts with <id-prefix>, or empty.
-# `claude plugin list --json` pretty-prints one key per line, so this walks
-# the objects with awk (jq is optional on a fresh install; version-lib.sh is
-# jq-free for the same reason). Exact-prefix match: "superskills@" must not
-# match "superskills-marketing@".
+# jq when available; otherwise a position-based scan of the flattened text:
+# find the id, then the next "version" key after it — which survives nested
+# objects and braces inside strings (the CLI prints id before version).
+# Exact-prefix match: "superskills@" must not match "superskills-marketing@".
 _doctor_plugin_version() {
-  printf '%s\n' "$1" | tr -d '\n' | tr '}' '\n' | awk -v pfx="$2" '
-    match($0, /"id"[[:space:]]*:[[:space:]]*"[^"]*"/) {
-      id = substr($0, RSTART, RLENGTH); sub(/^"id"[[:space:]]*:[[:space:]]*"/, "", id); sub(/"$/, "", id)
-      if (index(id, pfx) == 1 && match($0, /"version"[[:space:]]*:[[:space:]]*"[^"]*"/)) {
-        v = substr($0, RSTART, RLENGTH); sub(/^"version"[[:space:]]*:[[:space:]]*"/, "", v); sub(/"$/, "", v)
-        print v; exit
+  local json="$1" pfx="$2"
+  if command -v jq >/dev/null 2>&1; then
+    printf '%s' "$json" | jq -r --arg p "$pfx" '[.[]? | select((.id // "") | startswith($p)) | .version // empty] | first // empty' 2>/dev/null
+    return 0
+  fi
+  printf '%s\n' "$json" | tr -d '\n' | awk -v pfx="$pfx" '
+    {
+      rest = $0
+      while (match(rest, /"id"[[:space:]]*:[[:space:]]*"[^"]*"/)) {
+        id = substr(rest, RSTART, RLENGTH); sub(/^"id"[[:space:]]*:[[:space:]]*"/, "", id); sub(/"$/, "", id)
+        rest = substr(rest, RSTART + RLENGTH)
+        if (index(id, pfx) == 1 && match(rest, /"version"[[:space:]]*:[[:space:]]*"[^"]*"/)) {
+          v = substr(rest, RSTART, RLENGTH); sub(/^"version"[[:space:]]*:[[:space:]]*"/, "", v); sub(/"$/, "", v)
+          print v; exit
+        }
       }
     }'
 }
 
-# doctor_check_plugin <root> [claude_bin]
+# _doctor_cli_json <claude_bin>
+# `claude plugin list --json`, bounded by DOCTOR_CLI_TIMEOUT seconds (default
+# 20) so a hung CLI cannot stall a read-only report. Prints the JSON, or the
+# sentinel "__unavailable__" when the binary is missing, fails, or times out.
+DOCTOR_CLI_UNAVAILABLE="__unavailable__"
+_doctor_cli_json() {
+  local bin="$1" secs="${DOCTOR_CLI_TIMEOUT:-20}" out rc
+  command -v "$bin" >/dev/null 2>&1 || { printf '%s' "$DOCTOR_CLI_UNAVAILABLE"; return 0; }
+  if command -v timeout >/dev/null 2>&1; then out="$(timeout "$secs" "$bin" plugin list --json 2>/dev/null)"; rc=$?
+  elif command -v gtimeout >/dev/null 2>&1; then out="$(gtimeout "$secs" "$bin" plugin list --json 2>/dev/null)"; rc=$?
+  else out="$(perl -e 'alarm shift; exec @ARGV' "$secs" "$bin" plugin list --json 2>/dev/null)"; rc=$?
+  fi
+  if [ "$rc" -ne 0 ]; then printf '%s' "$DOCTOR_CLI_UNAVAILABLE"; else printf '%s' "$out"; fi
+}
+
+# doctor_check_plugin <root> [claude_bin] [plugin_list_json]
 # Whether the plugin-install path (claude plugin install superskills@superskills)
 # is in step with the repo. Not being installed as a plugin is fine: the
-# ./setup symlink install is the primary path.
+# ./setup symlink install is the primary path. doctor_report passes the JSON
+# it already fetched so the CLI runs once; direct callers may omit it.
 doctor_check_plugin() {
-  local root="$1" bin="${2:-claude}" v out installed
+  local root="$1" bin="${2:-claude}" out="${3-}" v installed
   v="$(tr -d '[:space:]' < "$root/VERSION" 2>/dev/null)"
-  if ! command -v "$bin" >/dev/null 2>&1; then
-    _doctor_row "Plugin" "unverified" "claude CLI not on PATH — could not query 'claude plugin list'"
+  [ $# -ge 3 ] || out="$(_doctor_cli_json "$bin")"
+  if [ "$out" = "$DOCTOR_CLI_UNAVAILABLE" ]; then
+    _doctor_row "Plugin" "unverified" "could not run '$bin plugin list --json' (not on PATH, failed, or exceeded ${DOCTOR_CLI_TIMEOUT:-20}s)"
     return 0
   fi
-  out="$("$bin" plugin list --json 2>/dev/null)" || {
-    _doctor_row "Plugin" "unverified" "'$bin plugin list --json' failed"
-    return 0
-  }
   installed="$(_doctor_plugin_version "$out" "superskills@")"
   if [ -z "$installed" ]; then
     _doctor_row "Plugin" "ready" "not installed as a Claude Code plugin (skills are linked by ./setup); optional: /plugin marketplace add ariadoss/superskills"
@@ -304,10 +326,10 @@ doctor_report() {
   # The install kind decides how Links and gstack are judged, and a plugin
   # install is only recognisable through the CLI (or the cache path), so probe
   # the plugin once here and pass the answer down.
+  local plugin_json
+  plugin_json="$(_doctor_cli_json "$bin")"
   plugin_version=""
-  if command -v "$bin" >/dev/null 2>&1; then
-    plugin_version="$(_doctor_plugin_version "$("$bin" plugin list --json 2>/dev/null)" "superskills@")"
-  fi
+  [ "$plugin_json" = "$DOCTOR_CLI_UNAVAILABLE" ] || plugin_version="$(_doctor_plugin_version "$plugin_json" "superskills@")"
   kind="$(doctor_install_kind "$root" "$skills" "$plugin_version")"
   rows="$(
     doctor_check_repo "$root"
@@ -316,7 +338,7 @@ doctor_report() {
     doctor_check_manifests "$root"
     doctor_check_shims "$root"
     doctor_check_gstack "$skills/gstack" "$kind"
-    doctor_check_plugin "$root" "$bin"
+    doctor_check_plugin "$root" "$bin" "$plugin_json"
     doctor_check_hook "$root"
     doctor_check_knowledge "$home/.superskills/knowledge.conf" "$home"
     doctor_check_command bun "gstack's browser tool (/qa, /browse) needs it — curl -fsSL https://bun.sh/install | bash"

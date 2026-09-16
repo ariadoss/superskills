@@ -48,7 +48,7 @@ write_marketing_shims() {
     # The name becomes a path component under plugin-skills/: refuse anything
     # that could escape it or be misparsed (../x, absolute, spaces, slashes).
     case "$name" in
-      *[!A-Za-z0-9._-]*|.|..|"") echo "ERROR: unsafe skill name '$name' at $rel (allowed: letters, digits, . _ -)" >&2; return 1 ;;
+      *[!A-Za-z0-9._-]*|-*|.*|"") echo "ERROR: unsafe skill name '$name' at $rel (letters, digits, . _ - only; must not start with - or .)" >&2; return 1 ;;
     esac
     ln -s "../$rel" "$shim/$name"
   done < <(skill_entries "$root")

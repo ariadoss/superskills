@@ -59,6 +59,14 @@ setup() {
   [ ! -e "$MK/escape" ]
 }
 
+@test "write_marketing_shims refuses names that start with - or . (option look-alikes, hidden entries)" {
+  for bad in "-" "--help" ".hidden"; do
+    rm -rf "$MK/seo/evil"; mkdir -p "$MK/seo/evil"; printf -- '---\nname: %s\n---\n' "$bad" > "$MK/seo/evil/SKILL.md"
+    run write_marketing_shims "$MK"
+    [ "$status" -eq 1 ] || { echo "accepted '$bad'"; return 1; }
+  done
+}
+
 @test "write_marketing_shims refuses an empty or missing root instead of touching /" {
   run write_marketing_shims ""
   [ "$status" -eq 1 ]

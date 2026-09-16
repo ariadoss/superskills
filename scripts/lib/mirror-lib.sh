@@ -7,18 +7,20 @@
 MIRROR_UPSTREAM_URL="https://github.com/ariadoss/repomap"
 
 # mirror_wrap <name> <src-file>
-# Print <src-file> as a SKILL.md. If it already carries frontmatter, keep it
-# but pin `name:` to <name>: the mirror lives in skills/<name>/ and every
+# Print <src-file> as a SKILL.md. If it already carries frontmatter (an opening
+# AND a closing `---`), keep it but pin `name:` to <name> (inserting it when absent): the mirror lives in skills/<name>/ and every
 # consumer (setup, the plugin loader, the doctor) treats the frontmatter name
 # as canonical, so an upstream rename must not silently move the command.
 # Otherwise prefix name / description (first non-empty line) / upstream.
 mirror_wrap() {
   local name="$1" src="$2" first
-  if [ "$(head -c 3 "$src")" = "---" ]; then
+  # Frontmatter only counts when a closing `---` exists after the opening one;
+  # a lone leading rule is treated as body so we never emit an unterminated block.
+  if [ "$(head -c 3 "$src")" = "---" ] && tail -n +2 "$src" | grep -q '^---[[:space:]]*$'; then
     awk -v name="$name" '
       NR == 1 { print; next }
-      !closed && /^---/ { closed = 1 }
-      !closed && /^name:[[:space:]]*/ { print "name: " name; next }
+      !closed && /^---[[:space:]]*$/ { if (!seen) print "name: " name; closed = 1 }
+      !closed && /^name:[[:space:]]*/ { print "name: " name; seen = 1; next }
       { print }' "$src"
     return 0
   fi
