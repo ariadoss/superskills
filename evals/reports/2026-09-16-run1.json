@@ -1,0 +1,2589 @@
+{
+  "schemaVersion": 1,
+  "claudeVersion": "2.1.273",
+  "startedAt": "2026-09-16T19:33:03.540Z",
+  "durationSeconds": 1021,
+  "costUsd": 12.950554,
+  "partial": false,
+  "suite": {
+    "root": "/Users/danilosapad/Sites/superskills",
+    "ablation": "with-without",
+    "judgeModel": "sonnet",
+    "threshold": 0.5,
+    "concurrency": 2,
+    "plugins": [
+      {
+        "name": "superskills",
+        "version": "2.23.0",
+        "path": "/Users/danilosapad/Sites/superskills"
+      },
+      {
+        "name": "superskills-marketing",
+        "version": "2.23.0",
+        "path": "/Users/danilosapad/Sites/superskills/marketing-skills"
+      }
+    ]
+  },
+  "cases": [
+    {
+      "name": "doctor-ambiguous-readonly",
+      "dir": "evals/doctor-ambiguous-readonly",
+      "source": "mixed",
+      "promptMarkdown": "something's off with my superskills setup, can you take a look before I run anything? (test box: checkout is ./fixture-repo, home is ./fixture-home)",
+      "runsPerCase": 3,
+      "timeoutSeconds": 300,
+      "maxTurns": 20,
+      "graders": [
+        {
+          "name": "no-false-ready",
+          "type": "llm",
+          "weight": 1,
+          "graderMarkdown": "You are checking a diagnostic report about a developer-tool install.\n\nPASS if the reply reports at least one problem (a skill that is not linked or\nmissing, a stale manifest, a vendor/stopgap copy, or a missing dependency) AND\nits overall conclusion is consistent with that: it says the install is blocked,\nnot ready, needs a fix, or \"ready with warnings\" for warnings only. Naming the\nfix (e.g. \"run ./setup\") without running it is fine.\n\nFAIL if the reply's overall conclusion is that the install is ready, healthy,\nfine, or \"all good\" while it also reports a blocked/missing item — or if it\nreports no problems at all (the fixture has at least one).",
+          "config": {
+            "criteria": "You are checking a diagnostic report about a developer-tool install.\n\nPASS if the reply reports at least one problem (a skill that is not linked or\nmissing, a stale manifest, a vendor/stopgap copy, or a missing dependency) AND\nits overall conclusion is consistent with that: it says the install is blocked,\nnot ready, needs a fix, or \"ready with warnings\" for warnings only. Naming the\nfix (e.g. \"run ./setup\") without running it is fine.\n\nFAIL if the reply's overall conclusion is that the install is ready, healthy,\nfine, or \"all good\" while it also reports a blocked/missing item — or if it\nreports no problems at all (the fixture has at least one).",
+            "focus": "last_message",
+            "arm": "both"
+          }
+        },
+        {
+          "name": "read-only",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Bash",
+            "input_match": "(\\./setup\\b|\\bgit\\s+(pull|reset|clone|checkout)\\b|curl\\s[^|]*\\|\\s*(ba)?sh|\\bbun\\s+install\\b|\\bnpm\\s+(i|install)\\b|\\bbrew\\s+install\\b)",
+            "min": 0,
+            "max": 0,
+            "arm": "both"
+          }
+        },
+        {
+          "name": "reports-a-finding",
+          "type": "regex",
+          "weight": 1,
+          "config": {
+            "target": "last_message",
+            "pattern": "(clean-code|gstack)",
+            "flags": "",
+            "match": "contains"
+          }
+        },
+        {
+          "name": "skill-fired",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Skill",
+            "input_match": "\"skill\"\\s*:\\s*\"(?:[\\w-]+:)?superskills-doctor\""
+          }
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 6,
+            "costUsd": 0.28095149999999997,
+            "judgeCostUsd": 0.008196,
+            "durationSeconds": 26,
+            "startedAt": "2026-09-16T19:33:03.652Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-LJ5LBD/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "Ran the read-only doctor against the fixture install (`--root ./fixture-repo --home ./fixture-home`). Nothing was changed.\n\n| Check | Status | Evidence / next action |\n|---|---|---|\n| Repo | ready | superskills v2.24.0 at /private/tmp/e-LJ5LBD/home/cwd/fixture-repo |\n| Install | ready | dev-repo install (skills symlinked from /private/tmp/e-LJ5LBD/home/cwd/fixture-repo) |\n| Links | blocked | 2/3 linked. Not linked: clean-code (new skills stay invisible until ./setup runs). Run ./setup |\n| Manifests | ready | all plugin manifests at v2.24.0 |\n| gstack | warning | running on the vendor stopgap copy (v1.80.0.0) — browser skills (/qa, /browse) need the real clone; ./setup retries it when online |\n| Plugin | unverified | claude CLI not on PATH — could not query 'claude plugin list' |\n| Post-merge hook | warning | not installed — after git pull you must run ./setup by hand (./setup installs the hook) |\n| Knowledge bases | ready | none configured (optional; edit /private/tmp/e-LJ5LBD/home/cwd/fixture-home/.superskills/knowledge.conf) |\n| bun | ready | /opt/homebrew/bin/bun |\n| bats | ready | /opt/homebrew/bin/bats |\n| clearwing | warning | not on PATH — needed for /pentest — uv tool install clearwing && clearwing setup |\n| ffuf | warning | not on PATH — needed for /fuzz — brew install ffuf |\n\n**Verdict: blocked** — not ready to run.\n\nNon-ready rows and their next actions:\n\n- **Links (blocked)** — `clean-code` isn't linked, so that skill won't trigger at all. Fix: run `./setup` from the checkout (or `/superskills-upgrade`).\n- **gstack (warning)** — you're on the vendor stopgap copy v1.80.0.0; `/qa` and `/browse` need the real clone. `./setup` retries it when online.\n- **Plugin (unverified)** — the `claude` CLI isn't on PATH, so `claude plugin list` couldn't run. This one is unknown, not fine.\n- **Post-merge hook (warning)** — not installed, so a `git pull` won't re-link skills; you'd have to run `./setup` manually each time. `./setup` installs the hook.\n- **clearwing (warning)** — not on PATH, needed for `/pentest`: `uv tool install clearwing && clearwing setup`.\n- **ffuf (warning)** — not on PATH, needed for `/fuzz`: `brew install ffuf`.\n\nThe single thing standing between you and \"ready\" is `./setup` in `./fixture-repo` — it would fix the link, retry gstack, and install the post-merge hook in one go. Want me to run it?"
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "reports-a-finding",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched (clean-code|gstack)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 6,
+            "costUsd": 0.300438,
+            "judgeCostUsd": 0.00795,
+            "durationSeconds": 30,
+            "startedAt": "2026-09-16T19:33:03.652Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-icGPAz/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "Ran the read-only doctor against the fixture install (`--root ./fixture-repo --home ./fixture-home`). I didn't change anything.\n\n| Check | Status | Evidence / next action |\n|---|---|---|\n| Repo | ready | superskills v2.24.0 at /private/tmp/e-icGPAz/home/cwd/fixture-repo |\n| Install | ready | dev-repo install (skills symlinked from /private/tmp/e-icGPAz/home/cwd/fixture-repo) |\n| Links | blocked | 2/3 linked. Not linked: clean-code (new skills stay invisible until ./setup runs). Run ./setup |\n| Manifests | ready | all plugin manifests at v2.24.0 |\n| gstack | warning | running on the vendor stopgap copy (v1.80.0.0) — browser skills (/qa, /browse) need the real clone; ./setup retries it when online |\n| Plugin | unverified | claude CLI not on PATH — could not query 'claude plugin list' |\n| Post-merge hook | warning | not installed — after git pull you must run ./setup by hand (./setup installs the hook) |\n| Knowledge bases | ready | none configured (optional; edit /private/tmp/e-icGPAz/home/cwd/fixture-home/.superskills/knowledge.conf) |\n| bun | ready | /opt/homebrew/bin/bun |\n| bats | ready | /opt/homebrew/bin/bats |\n| clearwing | warning | not on PATH — needed for /pentest — uv tool install clearwing && clearwing setup |\n| ffuf | warning | not on PATH — needed for /fuzz — brew install ffuf |\n\n**Verdict: blocked** — not ready.\n\nNon-ready rows and their next actions:\n\n- **Links (blocked)** — `clean-code` isn't linked, so it stays invisible. Fix: run `./setup` in the checkout, or `/superskills-upgrade`.\n- **Plugin (unverified)** — the `claude` CLI isn't on PATH, so `claude plugin list` couldn't run. Plugin state is unknown, not fine.\n- **gstack (warning)** — vendor stopgap copy (v1.80.0.0); `/qa` and `/browse` need the real clone. `./setup` retries it when online.\n- **Post-merge hook (warning)** — not installed, so `./setup` won't run automatically after a `git pull`. `./setup` installs it.\n- **clearwing (warning)** — not on PATH; `/pentest` needs it. `uv tool install clearwing && clearwing setup`\n- **ffuf (warning)** — not on PATH; `/fuzz` needs it. `brew install ffuf`\n\nThe one thing actually blocking you is the unlinked skill. I haven't run `./setup` or `/superskills-upgrade` — say the word and I will."
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "reports-a-finding",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched (clean-code|gstack)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 7,
+            "costUsd": 0.311104,
+            "judgeCostUsd": 0.008591999999999995,
+            "durationSeconds": 34,
+            "startedAt": "2026-09-16T19:33:29.511Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-p5c4jK/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "Ran the read-only doctor against the fixture install (`--root ./fixture-repo --home ./fixture-home`). Nothing was changed.\n\n| Check | Status | Evidence / next action |\n|---|---|---|\n| Repo | ready | superskills v2.24.0 at /private/tmp/e-p5c4jK/home/cwd/fixture-repo |\n| Install | ready | dev-repo install (skills symlinked from /private/tmp/e-p5c4jK/home/cwd/fixture-repo) |\n| Links | blocked | 2/3 linked. Not linked: clean-code (new skills stay invisible until ./setup runs). Run ./setup |\n| Manifests | ready | all plugin manifests at v2.24.0 |\n| gstack | warning | running on the vendor stopgap copy (v1.80.0.0) — browser skills (/qa, /browse) need the real clone; ./setup retries it when online |\n| Plugin | unverified | claude CLI not on PATH — could not query 'claude plugin list' |\n| Post-merge hook | warning | not installed — after git pull you must run ./setup by hand (./setup installs the hook) |\n| Knowledge bases | ready | none configured (optional; edit /private/tmp/e-p5c4jK/home/cwd/fixture-home/.superskills/knowledge.conf) |\n| bun | ready | /opt/homebrew/bin/bun |\n| bats | ready | /opt/homebrew/bin/bats |\n| clearwing | warning | not on PATH — needed for /pentest — uv tool install clearwing && clearwing setup |\n| ffuf | warning | not on PATH — needed for /fuzz — brew install ffuf |\n\n**Verdict: blocked** — not ready.\n\nNon-ready rows and their next actions:\n\n- **Links (blocked)** — `clean-code` isn't linked, so it won't trigger. Fix: run `./setup` from the checkout, or `/superskills-upgrade`. This is the one actually blocking you.\n- **Plugin (unverified)** — the `claude` CLI isn't on PATH, so plugin registration couldn't be probed. Unknown, not fine.\n- **gstack (warning)** — vendor stopgap copy (v1.80.0.0); `/qa` and `/browse` need the real clone. `./setup` retries it when online.\n- **Post-merge hook (warning)** — not installed, so `git pull` won't re-link skills automatically; `./setup` installs the hook.\n- **clearwing (warning)** — not on PATH, needed for `/pentest`: `uv tool install clearwing && clearwing setup`.\n- **ffuf (warning)** — not on PATH, needed for `/fuzz`: `brew install ffuf`.\n\nI haven't run `./setup` or anything else that mutates — say the word and I'll run it, or you can use `/superskills-upgrade`.\n\nOne thing worth flagging: this verdict is about the fixture tree you pointed me at. The skills loaded into this session come from your real install at `/Users/danilosapad/Sites/superskills`, and `clean-code` *is* present there — so the missing link is a property of the fixture, not of the setup you're currently running."
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "reports-a-finding",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched (clean-code|gstack)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          }
+        ],
+        "without": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 8,
+            "costUsd": 0.292641,
+            "judgeCostUsd": 0.008940000000000003,
+            "durationSeconds": 68,
+            "startedAt": "2026-09-16T19:33:33.725Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-2VKaB7/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "I inspected everything without running anything. Here's the full state:\n\n```\nfixture-repo/                          fixture-home/.claude/skills/\n├── setup            (10 bytes)        ├── gstack/\n├── VERSION          2.24.0            │   ├── .superskills-vendor-copy\n├── .claude-plugin/                    │   └── VERSION   1.80.0.0\n│   ├── plugin.json      2.24.0        ├── tdd/SKILL.md\n│   └── marketplace.json 2.24.0        └── debug/SKILL.md\n├── .codex-plugin/plugin.json 2.24.0\n└── skills/{clean-code,tdd,debug}/SKILL.md\n```\n\n## What's actually wrong\n\n**1. `setup` is a no-op.** It's exactly `#!/bin/sh\\n` — 10 bytes, zero commands. Running it will silently succeed and do nothing. If you were expecting it to install or sync skills into `fixture-home`, this is the root cause and it explains most of the drift below. It also means I can't verify install semantics from the script, so points 3–5 are inferred from the on-disk artifacts rather than from code.\n\n**2. `marketplace.json` won't resolve its plugin.** The entry is `{ \"version\": \"2.24.0\" }` — no `name`, no `source`. A marketplace plugin entry needs at least those two to point at anything installable. `plugin.json` and `.codex-plugin/plugin.json` are both well-formed at 2.24.0, so this is isolated to the marketplace manifest.\n\n**3. `gstack` is an orphaned vendor copy, and not a valid skill.** It carries `.superskills-vendor-copy`, so superskills put it there, but there's no `skills/gstack/` in the repo at 2.24.0. It also has no `SKILL.md` at all — only a `VERSION` — so it can't load as a skill regardless. It's a leftover from an older install that a sync would most likely delete.\n\n**4. Its version string is a different format.** `1.80.0.0` is four components against the repo's three-component `2.24.0`. Any semver comparison against that will either throw or misorder.\n\n**5. Ownership markers are inconsistent.** `tdd` and `debug` in home are byte-identical to the repo copies (`diff -r` clean), but neither has a `.superskills-vendor-copy` marker while the stale `gstack` does. So whatever reads that marker will classify the two current skills as hand-authored — skipping them on upgrade and leaving them behind on uninstall — while treating the one genuinely dead directory as owned. The bookkeeping is inverted from reality.\n\n**6. `clean-code` is in the repo but never installed.** Consistent with a partial or failed install run.\n\n## Suggested order\n\nFix `setup` first — until it does something, nothing else you change in the repo will propagate, and re-running it won't tell you whether the other fixes worked. Then the `marketplace.json` entry, since that's a flat manifest bug independent of everything else. The home-directory drift (`gstack`, missing markers, missing `clean-code`) is downstream of #1 and is probably best left alone until a working `setup` can reconcile it — hand-patching it now would hide whether the installer actually does its job.\n\nI haven't modified or run anything. Want me to write the `setup` script, or is there a real version of it elsewhere that should have been copied into this fixture?"
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "reports-a-finding",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched (clean-code|gstack)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 8,
+            "costUsd": 0.343758,
+            "judgeCostUsd": 0.008562000000000007,
+            "durationSeconds": 78,
+            "startedAt": "2026-09-16T19:34:03.749Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-Oj7yDt/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "Looked, didn't touch anything — no files changed, `setup` not run.\n\n## What's installed vs. what's in the checkout\n\n| skill | in `fixture-repo/skills` | in `fixture-home/.claude/skills` | how |\n|---|---|---|---|\n| debug | yes | yes | **symlink** → checkout |\n| tdd | yes | yes | **symlink** → checkout |\n| clean-code | yes | **no** | not installed |\n| gstack | **no** | yes | **copy** (`.superskills-vendor-copy` marker) |\n\n## The problems\n\n**1. `fixture-repo/setup` is an empty stub.** It's 10 bytes: `#!/bin/sh\\n` and nothing else. Running it will succeed silently and do nothing — no install, no repair. If you've been re-running it to fix the state below, that's why nothing changed.\n\n**2. Your install is half-linked, half-vendored.** `debug` and `tdd` are symlinks into the checkout (dev/live-edit mode); `gstack` is a materialized copy carrying the vendor marker. Those are two different install strategies coexisting in one skills dir. A real sync will normalize to one of them, and which one it picks decides whether edits in the checkout keep showing up live.\n\n**3. `gstack` is orphaned and non-functional.** No `gstack` exists in the checkout anymore, and the installed directory has no `SKILL.md` at all — just a `VERSION`. Claude Code won't load a skill directory without a `SKILL.md`, so it's dead weight right now. Because it carries `.superskills-vendor-copy`, a sync that prunes stale vendor copies would delete it. Its `VERSION` is `1.80.0.0` — a different versioning line from the repo's `2.24.0` (four components vs. three), so it came from an older or different source, not this checkout.\n\n**4. `clean-code` was never installed.** Present in the checkout, absent from home.\n\n**5. The symlinks are absolute paths** into `/private/tmp/e-Oj7yDt/home/cwd/fixture-repo/...`. They resolve fine today, but moving or renaming the checkout breaks them silently — the skills just stop appearing, with no error.\n\n**6. `fixture-repo` is not a git repo** — no `.git`. Nothing to pull or diff against upstream; `VERSION` (2.24.0) is the only provenance you have. The three manifests (`.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `.codex-plugin/plugin.json`) all agree on 2.24.0, so that part is consistent.\n\n## What I'd need from you before fixing\n\nThe ambiguity I can't resolve by reading: **which install mode do you actually want?** Symlinks if you're developing the skills and want edits live; copies if this box should be pinned to a snapshot. The current state is evidence of both, and I can't tell which was intended from an empty setup script.\n\nAlso — do you still want `gstack`? It's gone from the checkout, so restoring it means finding its real source; otherwise the fix is to delete the directory.\n\nSay the word and I'll normalize it (link or copy), install `clean-code`, and deal with `gstack`."
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "reports-a-finding",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched (clean-code|gstack)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 10,
+            "costUsd": 0.31820149999999997,
+            "judgeCostUsd": 0.009047999999999994,
+            "durationSeconds": 70,
+            "startedAt": "2026-09-16T19:34:41.876Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-zSFvp3/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "Read-only pass done — nothing run, nothing changed. Your fixture is in a half-installed state. Findings, worst first:\n\n## 1. `./setup` is an empty stub — running it does nothing\n`fixture-repo/setup` is 10 bytes: a `#!/bin/sh` shebang and no body. It's marked executable, so it exits 0 and looks like it succeeded. This is why \"running it\" won't repair anything below.\n\n## 2. `gstack` is a broken orphan skill\n`fixture-home/.claude/skills/gstack/` contains only `.superskills-vendor-copy` (0 bytes) and `VERSION` — **no `SKILL.md`**. A skill directory with no `SKILL.md` won't load. On top of that, `gstack` no longer exists in `fixture-repo/skills/`, so it's a leftover from a previous install with nothing to reinstall it from.\n\nIts `VERSION` says `1.80.0.0` — four segments, whereas the repo uses three (`2.24.0`). Definitively stale.\n\n## 3. Two install mechanisms are mixed\n| skill | in repo | in home | mode |\n|---|---|---|---|\n| `debug` | ✅ | ✅ | symlink → repo |\n| `tdd` | ✅ | ✅ | symlink → repo |\n| `clean-code` | ✅ | ❌ | **not installed** |\n| `gstack` | ❌ | ⚠\ufe0f | vendored copy, no SKILL.md |\n\n`debug` and `tdd` are symlinks into the checkout (live dev mode — both resolve fine, I verified). `gstack` is a vendor copy. Pick one model; right now you have both.\n\n## 4. `clean-code` was never installed\nIt exists at `fixture-repo/skills/clean-code/SKILL.md` with valid frontmatter, but there's no corresponding entry in `fixture-home/.claude/skills/`. Missing symlink.\n\n## 5. `marketplace.json` plugin entry is malformed\n```json\n{ \"name\": \"superskills\", \"plugins\": [{ \"version\": \"2.24.0\" }] }\n```\nThe `plugins[0]` object has only `version` — no `name` and no `source`, so the entry can't resolve to anything. `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json` are both fine (`name` + `version`), and all four version declarations agree on `2.24.0`, so the version story is consistent — it's just this entry that's incomplete.\n\nMinor: all three `SKILL.md` descriptions are placeholders (`\"debug skill\"`), which gives the model nothing to trigger on. Expected in a fixture, but worth knowing if you're testing skill selection.\n\n---\n\n**One thing I couldn't check:** whether `superskills` is actually registered as a plugin in your live Claude Code config — reading `/private/tmp/e-zSFvp3/config/` was denied by the sandbox's read policy. If you want that verified, you'd need to loosen that or check it yourself.\n\n**Before I fix anything, which install model do you want?** It changes the repair: symlinks-everywhere means linking `clean-code` and deleting `gstack`; vendored-copies means converting `debug`/`tdd` to real copies too. I'd recommend symlinks for a dev checkout — you get edits live without reinstalling. Say the word and I'll write a real `setup` that enforces it (including pruning orphans like `gstack`)."
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "reports-a-finding",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched (clean-code|gstack)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          }
+        ]
+      },
+      "aggregates": {
+        "score": 1,
+        "passRate": 1,
+        "scoreWithout": 1,
+        "passRateWithout": 1,
+        "delta": 0
+      }
+    },
+    {
+      "name": "doctor-direct",
+      "dir": "evals/doctor-direct",
+      "source": "mixed",
+      "promptMarkdown": "Is my superskills install healthy? Please check it. This is a test machine: the superskills checkout is at ./fixture-repo and my home directory is ./fixture-home.",
+      "runsPerCase": 3,
+      "timeoutSeconds": 300,
+      "maxTurns": 20,
+      "graders": [
+        {
+          "name": "mentions-gstack-vendor",
+          "type": "regex",
+          "weight": 1,
+          "config": {
+            "target": "last_message",
+            "pattern": "^(?=[\\s\\S]*gstack)(?=[\\s\\S]*(vendor|stopgap|not a real clone|no \\.git))",
+            "flags": "i",
+            "match": "contains"
+          }
+        },
+        {
+          "name": "names-unlinked-skill",
+          "type": "regex",
+          "weight": 1,
+          "config": {
+            "target": "last_message",
+            "pattern": "^(?=[\\s\\S]*clean-code)(?=[\\s\\S]*setup)",
+            "flags": "",
+            "match": "contains"
+          }
+        },
+        {
+          "name": "no-false-ready",
+          "type": "llm",
+          "weight": 1,
+          "graderMarkdown": "You are checking a diagnostic report about a developer-tool install.\n\nPASS if the reply reports at least one problem (a skill that is not linked or\nmissing, a stale manifest, a vendor/stopgap copy, or a missing dependency) AND\nits overall conclusion is consistent with that: it says the install is blocked,\nnot ready, needs a fix, or \"ready with warnings\" for warnings only. Naming the\nfix (e.g. \"run ./setup\") without running it is fine.\n\nFAIL if the reply's overall conclusion is that the install is ready, healthy,\nfine, or \"all good\" while it also reports a blocked/missing item — or if it\nreports no problems at all (the fixture has at least one).",
+          "config": {
+            "criteria": "You are checking a diagnostic report about a developer-tool install.\n\nPASS if the reply reports at least one problem (a skill that is not linked or\nmissing, a stale manifest, a vendor/stopgap copy, or a missing dependency) AND\nits overall conclusion is consistent with that: it says the install is blocked,\nnot ready, needs a fix, or \"ready with warnings\" for warnings only. Naming the\nfix (e.g. \"run ./setup\") without running it is fine.\n\nFAIL if the reply's overall conclusion is that the install is ready, healthy,\nfine, or \"all good\" while it also reports a blocked/missing item — or if it\nreports no problems at all (the fixture has at least one).",
+            "focus": "last_message",
+            "arm": "both"
+          }
+        },
+        {
+          "name": "read-only",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Bash",
+            "input_match": "(\\./setup\\b|\\bgit\\s+(pull|reset|clone|checkout)\\b|curl\\s[^|]*\\|\\s*(ba)?sh|\\bbun\\s+install\\b|\\bnpm\\s+(i|install)\\b|\\bbrew\\s+install\\b)",
+            "min": 0,
+            "max": 0,
+            "arm": "both"
+          }
+        },
+        {
+          "name": "skill-fired",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Skill",
+            "input_match": "\"skill\"\\s*:\\s*\"(?:[\\w-]+:)?superskills-doctor\""
+          }
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 6,
+            "costUsd": 0.28558,
+            "judgeCostUsd": 0.007859999999999992,
+            "durationSeconds": 27,
+            "startedAt": "2026-09-16T19:35:21.635Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-f0xraA/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "mentions-gstack-vendor",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*gstack)(?=[\\s\\S]*(vendor|stopgap|not a real clone|no \\.git))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "names-unlinked-skill",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*clean-code)(?=[\\s\\S]*setup)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "**Not ready.** Here's the full report from `scripts/doctor.sh` (read-only — nothing was changed):\n\n| Check | Status | Evidence / next action |\n|---|---|---|\n| Repo | ready | superskills v2.24.0 at ./fixture-repo |\n| Install | ready | dev-repo install (skills symlinked from ./fixture-repo) |\n| Links | blocked | 2/3 linked. Not linked: clean-code (new skills stay invisible until ./setup runs). Run ./setup |\n| Manifests | ready | all plugin manifests at v2.24.0 |\n| gstack | warning | running on the vendor stopgap copy (v1.80.0.0) — browser skills (/qa, /browse) need the real clone; ./setup retries it when online |\n| Plugin | unverified | claude CLI not on PATH — could not query 'claude plugin list' |\n| Post-merge hook | warning | not installed — after git pull you must run ./setup by hand (./setup installs the hook) |\n| Knowledge bases | ready | none configured (optional; edit ./fixture-home/.superskills/knowledge.conf) |\n| bun | ready | /opt/homebrew/bin/bun |\n| bats | ready | /opt/homebrew/bin/bats |\n| clearwing | warning | not on PATH — needed for /pentest — uv tool install clearwing && clearwing setup |\n| ffuf | warning | not on PATH — needed for /fuzz — brew install ffuf |\n\n**Verdict: blocked** — a required check is blocked; superskills is NOT ready until its next action is done.\n\nNon-ready rows and their next actions:\n\n- **Links (blocked)** — `clean-code` isn't linked, so it won't trigger. Run `./setup` from `./fixture-repo`, or use `/superskills-upgrade`.\n- **gstack (warning)** — you're on the vendor stopgap copy (v1.80.0.0); `/qa` and `/browse` need the real clone. `./setup` retries it when online.\n- **Plugin (unverified)** — the `claude` CLI isn't on PATH, so `claude plugin list` couldn't run. Plugin state is unknown, not confirmed fine.\n- **Post-merge hook (warning)** — not installed, so `./setup` must be run by hand after each `git pull`. `./setup` installs the hook.\n- **clearwing (warning)** — not on PATH, needed for `/pentest`: `uv tool install clearwing && clearwing setup`.\n- **ffuf (warning)** — not on PATH, needed for `/fuzz`: `brew install ffuf`.\n\nOne `./setup` run from `./fixture-repo` clears the blocked row plus the gstack and post-merge-hook warnings. Want me to run it? (That's a mutation, so I left it alone.)"
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 5,
+            "costUsd": 0.2782225,
+            "judgeCostUsd": 0.007896,
+            "durationSeconds": 25,
+            "startedAt": "2026-09-16T19:35:48.705Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-de8ihK/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "mentions-gstack-vendor",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*gstack)(?=[\\s\\S]*(vendor|stopgap|not a real clone|no \\.git))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "names-unlinked-skill",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*clean-code)(?=[\\s\\S]*setup)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "**Not ready — the doctor verdict is `blocked`.**\n\n| Check | Status | Evidence / next action |\n|---|---|---|\n| Repo | ready | superskills v2.24.0 at /private/tmp/e-de8ihK/home/cwd/fixture-repo |\n| Install | ready | dev-repo install (skills symlinked from /private/tmp/e-de8ihK/home/cwd/fixture-repo) |\n| Links | blocked | 2/3 linked. Not linked: clean-code (new skills stay invisible until ./setup runs). Run ./setup |\n| Manifests | ready | all plugin manifests at v2.24.0 |\n| gstack | warning | running on the vendor stopgap copy (v1.80.0.0) — browser skills (/qa, /browse) need the real clone; ./setup retries it when online |\n| Plugin | unverified | claude CLI not on PATH — could not query 'claude plugin list' |\n| Post-merge hook | warning | not installed — after git pull you must run ./setup by hand (./setup installs the hook) |\n| Knowledge bases | ready | none configured (optional; edit /private/tmp/e-de8ihK/home/cwd/fixture-home/.superskills/knowledge.conf) |\n| bun | ready | /opt/homebrew/bin/bun |\n| bats | ready | /opt/homebrew/bin/bats |\n| clearwing | warning | not on PATH — needed for /pentest — uv tool install clearwing && clearwing setup |\n| ffuf | warning | not on PATH — needed for /fuzz — brew install ffuf |\n\nVerdict: blocked\n\nNon-ready rows and their next actions:\n\n- **Links (blocked)** — `clean-code` isn't linked, so that skill won't trigger. Run `./setup` from the checkout.\n- **gstack (warning)** — on the vendor stopgap copy (v1.80.0.0); `/qa` and `/browse` need the real clone. `./setup` retries it when online.\n- **Plugin (unverified)** — the `claude` CLI isn't on PATH, so `claude plugin list` couldn't run; plugin state is unknown, not confirmed fine.\n- **Post-merge hook (warning)** — not installed, so `./setup` must be run by hand after each `git pull`. `./setup` installs the hook.\n- **clearwing (warning)** — not on PATH, needed for `/pentest`: `uv tool install clearwing && clearwing setup`.\n- **ffuf (warning)** — not on PATH, needed for `/fuzz`: `brew install ffuf`.\n\nThe blocking row, the gstack stopgap, and the missing hook would all be addressed by one `./setup` run in `./fixture-repo` (or `/superskills-upgrade`). I haven't run it — this check is read-only. Want me to?"
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 5,
+            "costUsd": 0.27855149999999995,
+            "judgeCostUsd": 0.00792000000000001,
+            "durationSeconds": 25,
+            "startedAt": "2026-09-16T19:35:52.104Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-HPHWfT/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "mentions-gstack-vendor",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*gstack)(?=[\\s\\S]*(vendor|stopgap|not a real clone|no \\.git))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "names-unlinked-skill",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*clean-code)(?=[\\s\\S]*setup)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "**Not ready** — the doctor reports `Verdict: blocked`.\n\n| Check | Status | Evidence / next action |\n|---|---|---|\n| Repo | ready | superskills v2.24.0 at /private/tmp/e-HPHWfT/home/cwd/fixture-repo |\n| Install | ready | dev-repo install (skills symlinked from /private/tmp/e-HPHWfT/home/cwd/fixture-repo) |\n| Links | blocked | 2/3 linked. Not linked: clean-code (new skills stay invisible until ./setup runs). Run ./setup |\n| Manifests | ready | all plugin manifests at v2.24.0 |\n| gstack | warning | running on the vendor stopgap copy (v1.80.0.0) — browser skills (/qa, /browse) need the real clone; ./setup retries it when online |\n| Plugin | unverified | claude CLI not on PATH — could not query 'claude plugin list' |\n| Post-merge hook | warning | not installed — after git pull you must run ./setup by hand (./setup installs the hook) |\n| Knowledge bases | ready | none configured (optional; edit /private/tmp/e-HPHWfT/home/cwd/fixture-home/.superskills/knowledge.conf) |\n| bun | ready | /opt/homebrew/bin/bun |\n| bats | ready | /opt/homebrew/bin/bats |\n| clearwing | warning | not on PATH — needed for /pentest — uv tool install clearwing && clearwing setup |\n| ffuf | warning | not on PATH — needed for /fuzz — brew install ffuf |\n\nNon-ready rows and their next actions:\n\n- **Links (blocked)** — `clean-code` isn't symlinked, so that skill won't trigger. Run `./setup` from the checkout (or `/superskills-upgrade`).\n- **Plugin (unverified)** — the `claude` CLI isn't on PATH, so plugin registration couldn't be checked at all. Unknown, not fine.\n- **gstack (warning)** — you're on the vendor stopgap copy (v1.80.0.0); `/qa` and `/browse` need the real clone. `./setup` retries it when online.\n- **Post-merge hook (warning)** — not installed, so `git pull` won't re-run setup automatically. `./setup` installs it.\n- **clearwing (warning)** — missing; needed for `/pentest`. `uv tool install clearwing && clearwing setup`.\n- **ffuf (warning)** — missing; needed for `/fuzz`. `brew install ffuf`.\n\nI didn't run any of these — the doctor is read-only by design. Three of the four superskills-side items (links, gstack retry, post-merge hook) are fixed by a single `./setup` in the checkout, or by `/superskills-upgrade`. Want me to run that?"
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          }
+        ],
+        "without": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 8,
+            "costUsd": 0.2811115,
+            "judgeCostUsd": 0.008328000000000002,
+            "durationSeconds": 58,
+            "startedAt": "2026-09-16T19:36:13.498Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-KEx4Bd/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "mentions-gstack-vendor",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*gstack)(?=[\\s\\S]*(vendor|stopgap|not a real clone|no \\.git))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "names-unlinked-skill",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*clean-code)(?=[\\s\\S]*setup)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "I checked the checkout against the installed state. **Not healthy — two real problems.**\n\n## What's fine\n\n- **Version is coherent at 2.24.0** across all four manifests: `VERSION`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `.codex-plugin/plugin.json`. No version skew.\n- **`tdd` and `debug` are installed and byte-identical** to their repo sources — no local drift.\n\n## Problems\n\n**1. Incomplete install — `clean-code` is missing**\n\nThe repo ships three skills (`clean-code`, `tdd`, `debug`) but only two are in `fixture-home/.claude/skills/`. `fixture-repo/skills/clean-code/SKILL.md` has no counterpart installed, so that skill is simply unavailable.\n\n**2. `gstack` is an orphaned, broken vendor copy**\n\n`fixture-home/.claude/skills/gstack/` contains only:\n- `.superskills-vendor-copy` (empty marker)\n- `VERSION` → `1.80.0.0`\n\nThere's **no `SKILL.md`**, so it can't load as a skill at all — it's a dead directory. And there's no `gstack` source anywhere in the 2.24.0 checkout, so it's a leftover from an earlier superskills version that the current tree has no way to refresh or remove. The `1.80.0.0` version string is also a different shape (four components) than the repo's three-component scheme, reinforcing that it predates the current install.\n\n## Two things that make this harder to fix\n\n- **Skills are installed as plain copies, not symlinks.** They happen to match right now, but nothing keeps them in sync — every repo update silently leaves the installed copies stale until setup is re-run.\n- **`setup` is an empty stub** — 10 bytes, just `#!/bin/sh` with no body. Re-running it will not install `clean-code` or clean up `gstack`. There is currently no working repair path, which is probably the root cause of both problems above.\n\nI'd also note I couldn't verify the checkout's provenance: `fixture-repo` has no `.git` of its own (it resolves up to the enclosing `/private/tmp/e-KEx4Bd/home` repo), so I can't confirm it sits on the released 2.24.0 commit rather than just carrying that version string.\n\n## Suggested fixes\n\n1. Copy `fixture-repo/skills/clean-code/` into `fixture-home/.claude/skills/clean-code/`.\n2. Delete `fixture-home/.claude/skills/gstack/` — it's non-functional and unmanaged. Worth confirming first whether `gstack` was intentionally dropped from superskills or should be re-vendored; if it should still exist, this is a packaging bug in the repo, not just a stale file.\n3. Give `setup` an actual implementation, ideally symlinking `skills/*` into `~/.claude/skills/` so drift can't accumulate, and pruning vendor copies whose source no longer exists.\n\nTell me which of these you want and I'll make the changes — I haven't modified anything yet."
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 6,
+            "costUsd": 0.2520405,
+            "judgeCostUsd": 0.006767999999999982,
+            "durationSeconds": 46,
+            "startedAt": "2026-09-16T19:36:17.025Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-v98bVl/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "mentions-gstack-vendor",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*gstack)(?=[\\s\\S]*(vendor|stopgap|not a real clone|no \\.git))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "names-unlinked-skill",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*clean-code)(?=[\\s\\S]*setup)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "I checked the checkout (`fixture-repo`) against the installed copies in `fixture-home/.claude/skills`. There's no `doctor` skill available in this session, so this is a manual inspection of what's on disk.\n\n**Verdict: not healthy — two real problems, plus two things worth a look.**\n\n## Healthy\n- **Version metadata is consistent at 2.24.0** across `fixture-repo/VERSION`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, and `.codex-plugin/plugin.json`.\n- **`debug` and `tdd` are installed and match the repo byte-for-byte** (verified by sha1, not just by name).\n\n## Problems\n1. **`clean-code` ships in the repo but is not installed.** `fixture-repo/skills/clean-code/SKILL.md` exists; there is no `fixture-home/.claude/skills/clean-code`. You're missing a skill the current version provides.\n2. **`gstack` is a stale orphan.** `fixture-home/.claude/skills/gstack/` carries the `.superskills-vendor-copy` marker, so superskills installed it — but no `gstack` exists in the repo anymore, and its `VERSION` reads `1.80.0.0` (also a different format from the repo's `2.24.0` semver). It's a leftover from an old install. It's also broken on its own terms: the directory has no `SKILL.md`, only `VERSION` and the marker, so it can't load as a skill.\n\n## Worth a look\n- **Inconsistent provenance markers.** Only `gstack` has `.superskills-vendor-copy`; the correctly-installed `debug` and `tdd` don't. Any update or uninstall path that keys off that marker would skip them — and conversely would treat them as hand-written user skills.\n- **`fixture-repo/setup` is a no-op.** The file is exactly `#!/bin/sh` with no body, which would explain both problems above: running it installs nothing and cleans nothing.\n\nWant me to fix the install — copy `clean-code` into place, remove the orphaned `gstack`, and normalize the marker files? I'd rather confirm before deleting `gstack`, since removing it is the one irreversible step and I can't tell from the fixture whether you still want that skill around from some other source."
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 6,
+            "costUsd": 0.2756664999999999,
+            "judgeCostUsd": 0.009059999999999985,
+            "durationSeconds": 56,
+            "startedAt": "2026-09-16T19:37:02.798Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-QUBSvx/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "mentions-gstack-vendor",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*gstack)(?=[\\s\\S]*(vendor|stopgap|not a real clone|no \\.git))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "names-unlinked-skill",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*clean-code)(?=[\\s\\S]*setup)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "Checked both trees. **Not healthy — two real problems, plus one ambiguity.**\n\n## Issues\n\n**1. `gstack` is an orphaned, non-loadable skill** (most serious)\n\n`fixture-home/.claude/skills/gstack/` contains only two files:\n- `VERSION` → `1.80.0.0`\n- `.superskills-vendor-copy` (empty marker)\n\nThere is **no `SKILL.md`**, so it can't load as a skill at all. And there is no `gstack` in `fixture-repo/skills/`, so nothing in the checkout can ever repair or update it. The `.superskills-vendor-copy` marker says superskills installed it, and the version (`1.80.0.0`, a 4-component string unlike the repo's `2.24.0`) points to a much older install whose skill was later renamed or dropped. This is leftover state from a previous version.\n\n**2. `clean-code` is in the repo but not installed**\n\n`fixture-repo/skills/clean-code/SKILL.md` exists; `fixture-home/.claude/skills/clean-code/` does not. Of the repo's three skills, only `debug` and `tdd` made it to the home directory.\n\nRelated: `fixture-repo/setup` is executable but its entire contents are `#!/bin/sh` — a no-op. Whatever is meant to sync skills into `~/.claude/skills` isn't implemented here, which is consistent with both drift symptoms above.\n\n**3. Inconsistent provenance markers** (needs your call)\n\n`gstack` has `.superskills-vendor-copy`; the installed `debug` and `tdd` do not. So either the marker convention changed between versions, or `debug`/`tdd` were placed by hand rather than by the installer. I can't tell which from the fixture alone — there's no documentation in the checkout. It matters because an installer that keys off that marker to decide what it owns would currently skip `debug` and `tdd` on upgrade or uninstall.\n\n## What checks out\n\n- **Versions agree across all four manifests**: `VERSION`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, and `.codex-plugin/plugin.json` are all `2.24.0`, all named `superskills`.\n- **No content drift**: installed `debug` and `tdd` are byte-identical to their repo sources (`diff -r` clean).\n- All present `SKILL.md` files have valid `name` + `description` frontmatter, and names match their directory names.\n\nTwo smaller notes: the marketplace plugin entry is `{ \"version\": \"2.24.0\" }` with no `name` or `source` field, and `fixture-repo` has no `.git` directory so I couldn't confirm the checkout sits on a released commit. Both may just be fixture minimalism — every file here is a stub — so I'm flagging rather than calling them defects.\n\n## Suggested repairs\n\nWant me to apply these? I haven't touched anything yet.\n\n1. Delete `fixture-home/.claude/skills/gstack/` — it's dead weight that can't load. Confirm first that you don't want its `1.80.0.0` content recovered from elsewhere; there's nothing to recover it *from* in this checkout.\n2. Install `clean-code` into `fixture-home/.claude/skills/` to match the repo.\n3. Decide the marker convention and make it uniform — most likely adding `.superskills-vendor-copy` to `debug` and `tdd`, assuming superskills should own them."
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          }
+        ]
+      },
+      "aggregates": {
+        "score": 1,
+        "passRate": 1,
+        "scoreWithout": 1,
+        "passRateWithout": 1,
+        "delta": 0
+      }
+    },
+    {
+      "name": "doctor-release-check",
+      "dir": "evals/doctor-release-check",
+      "source": "mixed",
+      "promptMarkdown": "Before I cut a release, verify that VERSION matches every plugin manifest and that gstack is a real clone rather than the vendor copy. Checkout: ./fixture-repo. Home: ./fixture-home. Report only; don't fix.",
+      "runsPerCase": 3,
+      "timeoutSeconds": 300,
+      "maxTurns": 20,
+      "graders": [
+        {
+          "name": "finds-stale-manifest",
+          "type": "regex",
+          "weight": 1,
+          "config": {
+            "target": "last_message",
+            "pattern": "^(?=[\\s\\S]*codex)(?=[\\s\\S]*(2\\.23\\.0|stale|mismatch|out of (date|sync)|does not match|doesn.t match))",
+            "flags": "i",
+            "match": "contains"
+          }
+        },
+        {
+          "name": "finds-vendor-gstack",
+          "type": "regex",
+          "weight": 1,
+          "config": {
+            "target": "last_message",
+            "pattern": "^(?=[\\s\\S]*gstack)(?=[\\s\\S]*(vendor|stopgap|not a real clone|no \\.git))",
+            "flags": "i",
+            "match": "contains"
+          }
+        },
+        {
+          "name": "names-sync-version",
+          "type": "regex",
+          "weight": 1,
+          "config": {
+            "target": "last_message",
+            "pattern": "sync-version",
+            "flags": "",
+            "match": "contains"
+          }
+        },
+        {
+          "name": "no-false-ready",
+          "type": "llm",
+          "weight": 1,
+          "graderMarkdown": "You are checking a diagnostic report about a developer-tool install.\n\nPASS if the reply reports at least one problem (a skill that is not linked or\nmissing, a stale manifest, a vendor/stopgap copy, or a missing dependency) AND\nits overall conclusion is consistent with that: it says the install is blocked,\nnot ready, needs a fix, or \"ready with warnings\" for warnings only. Naming the\nfix (e.g. \"run ./setup\") without running it is fine.\n\nFAIL if the reply's overall conclusion is that the install is ready, healthy,\nfine, or \"all good\" while it also reports a blocked/missing item — or if it\nreports no problems at all (the fixture has at least one).",
+          "config": {
+            "criteria": "You are checking a diagnostic report about a developer-tool install.\n\nPASS if the reply reports at least one problem (a skill that is not linked or\nmissing, a stale manifest, a vendor/stopgap copy, or a missing dependency) AND\nits overall conclusion is consistent with that: it says the install is blocked,\nnot ready, needs a fix, or \"ready with warnings\" for warnings only. Naming the\nfix (e.g. \"run ./setup\") without running it is fine.\n\nFAIL if the reply's overall conclusion is that the install is ready, healthy,\nfine, or \"all good\" while it also reports a blocked/missing item — or if it\nreports no problems at all (the fixture has at least one).",
+            "focus": "last_message",
+            "arm": "both"
+          }
+        },
+        {
+          "name": "read-only",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Bash",
+            "input_match": "(\\./setup\\b|\\bgit\\s+(pull|reset|clone|checkout)\\b|curl\\s[^|]*\\|\\s*(ba)?sh|\\bbun\\s+install\\b|\\bnpm\\s+(i|install)\\b|\\bbrew\\s+install\\b)",
+            "min": 0,
+            "max": 0,
+            "arm": "both"
+          }
+        },
+        {
+          "name": "skill-fired",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Skill",
+            "input_match": "\"skill\"\\s*:\\s*\"(?:[\\w-]+:)?superskills-doctor\""
+          }
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 6,
+            "costUsd": 0.2925065,
+            "judgeCostUsd": 0.008063999999999988,
+            "durationSeconds": 29,
+            "startedAt": "2026-09-16T19:37:11.031Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-w6FtnQ/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "finds-stale-manifest",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*codex)(?=[\\s\\S]*(2\\.23\\.0|stale|mismatch|out of (date|sync)|does not match|doesn.t match))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "finds-vendor-gstack",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*gstack)(?=[\\s\\S]*(vendor|stopgap|not a real clone|no \\.git))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "names-sync-version",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched sync-version",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "Ran the doctor read-only against `./fixture-repo` / `./fixture-home`. Table verbatim:\n\n| Check | Status | Evidence / next action |\n|---|---|---|\n| Repo | ready | superskills v2.24.0 at ./fixture-repo |\n| Install | ready | dev-repo install (skills symlinked from ./fixture-repo) |\n| Links | ready | 3/3 skills linked into ./fixture-home/.claude/skills |\n| Manifests | warning | stale version in: .codex-plugin/plugin.json — run ./scripts/sync-version.sh (VERSION is the source of truth) |\n| gstack | warning | running on the vendor stopgap copy (v1.80.0.0) — browser skills (/qa, /browse) need the real clone; ./setup retries it when online |\n| Plugin | unverified | claude CLI not on PATH — could not query 'claude plugin list' |\n| Post-merge hook | warning | not installed — after git pull you must run ./setup by hand (./setup installs the hook) |\n| Knowledge bases | ready | none configured (optional; edit ./fixture-home/.superskills/knowledge.conf) |\n| bun | ready | /opt/homebrew/bin/bun |\n| bats | ready | /opt/homebrew/bin/bats |\n| clearwing | warning | not on PATH — needed for /pentest — uv tool install clearwing && clearwing setup |\n| ffuf | warning | not on PATH — needed for /fuzz — brew install ffuf |\n\n**Verdict: unverified** — readiness is unknown, not \"ready\". The Plugin probe could not run because the `claude` CLI is not on PATH.\n\nYour two release questions, both answered \"no\":\n\n- **VERSION vs manifests — mismatch.** `.codex-plugin/plugin.json` carries a stale version against VERSION (v2.24.0). Next action from that row: `./scripts/sync-version.sh`, with VERSION as the source of truth.\n- **gstack — not a real clone.** It's the vendor stopgap copy (v1.80.0.0). Browser skills (`/qa`, `/browse`) need the real clone; `./setup` retries the clone when online.\n\nOther non-ready rows:\n\n- Plugin (unverified) — no `claude` CLI on PATH, so `claude plugin list` could not be queried.\n- Post-merge hook (warning) — not installed; after `git pull` you'd have to run `./setup` by hand. `./setup` installs the hook.\n- clearwing (warning) — not on PATH, needed for `/pentest`: `uv tool install clearwing && clearwing setup`.\n- ffuf (warning) — not on PATH, needed for `/fuzz`: `brew install ffuf`.\n\nI made no changes. If you want the manifest and gstack issues fixed, that's `./setup` from the repo or `/superskills-upgrade` — say the word and I'll run it."
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 6,
+            "costUsd": 0.2913285,
+            "judgeCostUsd": 0.00816,
+            "durationSeconds": 30,
+            "startedAt": "2026-09-16T19:37:40.244Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-pTocw4/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "finds-stale-manifest",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*codex)(?=[\\s\\S]*(2\\.23\\.0|stale|mismatch|out of (date|sync)|does not match|doesn.t match))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "finds-vendor-gstack",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*gstack)(?=[\\s\\S]*(vendor|stopgap|not a real clone|no \\.git))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "names-sync-version",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched sync-version",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "Doctor run against `./fixture-repo` with home `./fixture-home` — read-only, nothing changed.\n\n| Check | Status | Evidence / next action |\n|---|---|---|\n| Repo | ready | superskills v2.24.0 at ./fixture-repo |\n| Install | ready | dev-repo install (skills symlinked from ./fixture-repo) |\n| Links | ready | 3/3 skills linked into ./fixture-home/.claude/skills |\n| Manifests | warning | stale version in: .codex-plugin/plugin.json — run ./scripts/sync-version.sh (VERSION is the source of truth) |\n| gstack | warning | running on the vendor stopgap copy (v1.80.0.0) — browser skills (/qa, /browse) need the real clone; ./setup retries it when online |\n| Plugin | unverified | claude CLI not on PATH — could not query 'claude plugin list' |\n| Post-merge hook | warning | not installed — after git pull you must run ./setup by hand (./setup installs the hook) |\n| Knowledge bases | ready | none configured (optional; edit ./fixture-home/.superskills/knowledge.conf) |\n| bun | ready | /opt/homebrew/bin/bun |\n| bats | ready | /opt/homebrew/bin/bats |\n| clearwing | warning | not on PATH — needed for /pentest — uv tool install clearwing && clearwing setup |\n| ffuf | warning | not on PATH — needed for /fuzz — brew install ffuf |\n\n**Verdict: unverified** — a probe could not run, so readiness is unknown, not \"ready\".\n\n## Your two release questions\n\n**VERSION vs. manifests: no, they don't all match.** `.codex-plugin/plugin.json` is stale against VERSION (v2.24.0). The row's next action is `./scripts/sync-version.sh`, treating VERSION as the source of truth. Other manifests passed.\n\n**gstack: not a real clone.** It's the vendor stopgap copy (v1.80.0.0). `/qa` and `/browse` need the real clone; `./setup` retries the clone when online.\n\n## Other non-ready rows\n\n- **Plugin — unverified:** the `claude` CLI isn't on PATH, so `claude plugin list` couldn't be queried. This is what makes the overall verdict unverified rather than \"ready with warnings.\"\n- **Post-merge hook — warning:** not installed, so a `git pull` won't re-run setup automatically; `./setup` installs the hook.\n- **clearwing — warning:** not on PATH (`uv tool install clearwing && clearwing setup`), needed for `/pentest`.\n- **ffuf — warning:** not on PATH (`brew install ffuf`), needed for `/fuzz`.\n\nBoth of your release blockers are real, and neither is fixed — per your instruction I only reported. The usual repair is `./setup` from the repo or `/superskills-upgrade`; say the word and I'll run it."
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 6,
+            "costUsd": 0.2925335,
+            "judgeCostUsd": 0.007781999999999997,
+            "durationSeconds": 31,
+            "startedAt": "2026-09-16T19:37:58.730Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-uII8Ma/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "finds-stale-manifest",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*codex)(?=[\\s\\S]*(2\\.23\\.0|stale|mismatch|out of (date|sync)|does not match|doesn.t match))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "finds-vendor-gstack",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*gstack)(?=[\\s\\S]*(vendor|stopgap|not a real clone|no \\.git))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "names-sync-version",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched sync-version",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "Doctor run against `./fixture-repo` / `./fixture-home` (read-only; nothing changed):\n\n| Check | Status | Evidence / next action |\n|---|---|---|\n| Repo | ready | superskills v2.24.0 at ./fixture-repo |\n| Install | ready | dev-repo install (skills symlinked from ./fixture-repo) |\n| Links | ready | 3/3 skills linked into ./fixture-home/.claude/skills |\n| Manifests | warning | stale version in: .codex-plugin/plugin.json — run ./scripts/sync-version.sh (VERSION is the source of truth) |\n| gstack | warning | running on the vendor stopgap copy (v1.80.0.0) — browser skills (/qa, /browse) need the real clone; ./setup retries it when online |\n| Plugin | unverified | claude CLI not on PATH — could not query 'claude plugin list' |\n| Post-merge hook | warning | not installed — after git pull you must run ./setup by hand (./setup installs the hook) |\n| Knowledge bases | ready | none configured (optional; edit ./fixture-home/.superskills/knowledge.conf) |\n| bun | ready | /opt/homebrew/bin/bun |\n| bats | ready | /opt/homebrew/bin/bats |\n| clearwing | warning | not on PATH — needed for /pentest — uv tool install clearwing && clearwing setup |\n| ffuf | warning | not on PATH — needed for /fuzz — brew install ffuf |\n\n**Verdict: unverified** — readiness is unknown, not \"ready\". The `claude` CLI isn't on PATH, so the Plugin probe (`claude plugin list`) could not run.\n\nOn your two release questions specifically:\n\n- **VERSION vs manifests: not clean.** `.codex-plugin/plugin.json` is stale relative to VERSION (v2.24.0). Next action per the row: `./scripts/sync-version.sh`, with VERSION as the source of truth.\n- **gstack: it's the vendor copy, not a real clone.** Reported as the vendor stopgap at v1.80.0.0; the browser skills (`/qa`, `/browse`) need the real clone. `./setup` retries the clone when online.\n\nOther non-ready rows and their stated next actions:\n- Post-merge hook not installed → `./setup` installs it; until then a `git pull` needs a manual `./setup`.\n- clearwing missing → `uv tool install clearwing && clearwing setup` (only affects `/pentest`).\n- ffuf missing → `brew install ffuf` (only affects `/fuzz`).\n\nI haven't run any of these. If you want the manifest and gstack issues fixed, that's `/superskills-upgrade` or `./setup` from the repo — say the word."
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          }
+        ],
+        "without": [
+          {
+            "score": 0.6,
+            "passed": false,
+            "turns": 10,
+            "costUsd": 0.27730600000000005,
+            "judgeCostUsd": 0.0072419999999999984,
+            "durationSeconds": 56,
+            "startedAt": "2026-09-16T19:38:09.864Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-RKN7xq/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "finds-stale-manifest",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*codex)(?=[\\s\\S]*(2\\.23\\.0|stale|mismatch|out of (date|sync)|does not match|doesn.t match))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "finds-vendor-gstack",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*gstack)(?=[\\s\\S]*(vendor|stopgap|not a real clone|no \\.git))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "names-sync-version",
+                "passed": false,
+                "weight": 1,
+                "explanation": "pattern not found in last_message",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "Both checks are done. Report below — nothing changed.\n\n## Check 1: VERSION vs. plugin manifests — ❌ FAIL\n\n`fixture-repo/VERSION` is **2.24.0**.\n\n| File | Version | Match |\n|---|---|---|\n| `fixture-repo/.claude-plugin/plugin.json` | 2.24.0 | ✅ |\n| `fixture-repo/.claude-plugin/marketplace.json` (`plugins[0].version`) | 2.24.0 | ✅ |\n| `fixture-repo/.codex-plugin/plugin.json` | **2.23.0** | ❌ off by one minor |\n\nThe Codex manifest was left behind at the previous version — it looks like the 2.24.0 bump touched the two `.claude-plugin` files and missed `.codex-plugin/plugin.json`. Blocker for the release.\n\n## Check 2: gstack real clone vs. vendor copy — ❌ FAIL (it's the vendor copy)\n\n`fixture-home/.claude/skills/gstack/` is the vendor copy, on three independent signals:\n\n1. **The vendor marker is present:** `.superskills-vendor-copy` (empty sentinel file) sits in the skill dir. None of the other installed skills (`clean-code`, `debug`, `tdd`) carry it.\n2. **No git repository of its own:** there's no `gstack/.git`. Running `git rev-parse --git-dir` from inside the directory resolves to `/private/tmp/e-RKN7xq/home/.git` — an enclosing repo that happens to contain the fixture tree, not a gstack checkout. A real clone would have its own `.git` and a `gstack` remote; `git remote -v` returns nothing.\n3. **Contents are stub-shaped:** the directory holds only `VERSION` and the marker — no `SKILL.md`, no source. A real clone would carry the skill content.\n\nTwo incidental observations while verifying, neither part of what you asked:\n\n- `gstack/VERSION` is `1.80.0.0` — a four-component version, which doesn't parse as semver. Worth a glance if anything compares it.\n- `fixture-repo` itself has no `.git`, so I couldn't cross-check the manifest versions against tags or commit history; the comparison above is purely from file contents.\n\nSince you asked for a report only, I haven't edited `.codex-plugin/plugin.json` or replaced the gstack vendor copy. Both need resolving before you cut 2.24.0 — say the word and I'll fix either."
+              },
+              {
+                "name": "read-only",
+                "passed": false,
+                "weight": 1,
+                "explanation": "Bash called 1x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 0.6,
+            "passed": false,
+            "turns": 9,
+            "costUsd": 0.2686025,
+            "judgeCostUsd": 0.00653400000000004,
+            "durationSeconds": 46,
+            "startedAt": "2026-09-16T19:38:29.641Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-jx4nup/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "finds-stale-manifest",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*codex)(?=[\\s\\S]*(2\\.23\\.0|stale|mismatch|out of (date|sync)|does not match|doesn.t match))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "finds-vendor-gstack",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*gstack)(?=[\\s\\S]*(vendor|stopgap|not a real clone|no \\.git))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "names-sync-version",
+                "passed": false,
+                "weight": 1,
+                "explanation": "pattern not found in last_message",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "Report only — I changed nothing.\n\n## 1. VERSION vs. plugin manifests — ❌ one mismatch\n\n`fixture-repo/VERSION` = **2.24.0**\n\n| Manifest | Version | |\n|---|---|---|\n| `.claude-plugin/plugin.json` | 2.24.0 | ✅ match |\n| `.claude-plugin/marketplace.json` (`plugins[0].version`) | 2.24.0 | ✅ match |\n| `.codex-plugin/plugin.json` | **2.23.0** | ❌ **stale, one minor behind** |\n\nThose are the only three manifests in the repo — I listed every file under `fixture-repo/` and grepped for version strings, so nothing else carries a version to check.\n\n## 2. gstack install — ❌ it's the vendor copy, not a clone\n\n`fixture-home/.claude/skills/gstack/` contains exactly two files:\n\n- `.superskills-vendor-copy` — the vendor marker (empty sentinel file), present\n- `VERSION` — `1.80.0.0`\n\nEvidence it is not a real clone:\n- No `.git` directory of its own. `git -C .../gstack rev-parse --show-toplevel` resolves to `/private/tmp/e-jx4nup/home` — it's just falling through to the ambient repo that contains the session home, not a gstack checkout.\n- `git remote -v` returns nothing, so there's no upstream to pull from.\n- No `SKILL.md` or any skill content at all — just the marker and VERSION.\n\nTwo other things worth a look before you tag:\n- The gstack `VERSION` is `1.80.0.0`, a four-component string, which doesn't match the three-component scheme used everywhere else.\n- `fixture-repo` ships three skills (`clean-code`, `debug`, `tdd`), and `fixture-home/.claude/skills` has those same three plus `gstack`. `gstack` has no source in the checkout, so a release built from this repo won't refresh it.\n\n**Bottom line: not clear to cut.** Bump `.codex-plugin/plugin.json` to 2.24.0 and replace the gstack vendor copy with a genuine clone first."
+              },
+              {
+                "name": "read-only",
+                "passed": false,
+                "weight": 1,
+                "explanation": "Bash called 1x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 0.6,
+            "passed": false,
+            "turns": 12,
+            "costUsd": 0.29893699999999995,
+            "judgeCostUsd": 0.007955999999999963,
+            "durationSeconds": 58,
+            "startedAt": "2026-09-16T19:39:05.756Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-BXsZXS/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "finds-stale-manifest",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*codex)(?=[\\s\\S]*(2\\.23\\.0|stale|mismatch|out of (date|sync)|does not match|doesn.t match))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "finds-vendor-gstack",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*gstack)(?=[\\s\\S]*(vendor|stopgap|not a real clone|no \\.git))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "names-sync-version",
+                "passed": false,
+                "weight": 1,
+                "explanation": "pattern not found in last_message",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "# Pre-release verification — report only, nothing changed\n\n## 1. VERSION vs. plugin manifests — ❌ one mismatch\n\n`fixture-repo/VERSION` = **2.24.0**\n\n| Manifest | Version | Status |\n|---|---|---|\n| `fixture-repo/.claude-plugin/plugin.json` | 2.24.0 | ✅ match |\n| `fixture-repo/.claude-plugin/marketplace.json` (`plugins[0].version`) | 2.24.0 | ✅ match |\n| `fixture-repo/.codex-plugin/plugin.json` | **2.23.0** | ❌ **stale — one minor behind** |\n\nThe Codex manifest was not bumped along with the Claude ones. That's the blocker for cutting 2.24.0.\n\n## 2. gstack: real clone or vendor copy? — ❌ it is the vendor copy\n\n`fixture-home/.claude/skills/gstack/` contains exactly two entries:\n\n- `.superskills-vendor-copy` (empty marker file)\n- `VERSION` → `1.80.0.0`\n\nEvidence it is **not** a real clone:\n- No `.git` directory or file of its own.\n- The vendor marker `.superskills-vendor-copy` is present — that's the explicit \"this was copied in, not cloned\" flag.\n- No `SKILL.md`, unlike the three sibling skills (`clean-code`, `tdd`, `debug`), which each have one.\n\n⚠\ufe0f **Caution on how you check this.** Running `git rev-parse --is-inside-work-tree` inside that directory returns `true`, which looks like a pass. It isn't. The enclosing repo resolves to:\n\n```\ntoplevel: /private/tmp/e-BXsZXS/home\ngitdir:   /private/tmp/e-BXsZXS/home/.git\n```\n\nThat's the ambient home-directory repo the fixture sits inside, not a gstack checkout. Any release-check script that relies on `is-inside-work-tree`, or on a bare \"is there git here\" test, will silently green-light a vendor copy whenever the skills tree happens to live under some other repo. Worth checking whether your real doctor script does this — the correct test is that `git -C <skill> rev-parse --show-toplevel` equals the skill directory itself, plus asserting the absence of `.superskills-vendor-copy`.\n\n## Minor note, not a blocker\n\ngstack's `VERSION` is `1.80.0.0` — four segments rather than three. It's an independently versioned component, so it is *not* expected to match 2.24.0, but the extra segment is malformed against the semver used everywhere else and may parse oddly downstream.\n\n## Bottom line\n\nTwo things to resolve before you cut: bump `.codex-plugin/plugin.json` to 2.24.0, and replace the gstack vendor copy with a real clone. I've left both as-is per your instruction."
+              },
+              {
+                "name": "read-only",
+                "passed": false,
+                "weight": 1,
+                "explanation": "Bash called 1x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          }
+        ]
+      },
+      "aggregates": {
+        "score": 1,
+        "passRate": 1,
+        "scoreWithout": 0.6,
+        "passRateWithout": 0,
+        "delta": 0.4
+      }
+    },
+    {
+      "name": "doctor-symptom-missing-skill",
+      "dir": "evals/doctor-symptom-missing-skill",
+      "source": "mixed",
+      "promptMarkdown": "I pulled the latest superskills this morning but the new /clean-code command doesn't show up in Claude Code. What's wrong? For this test the checkout is ./fixture-repo and treat ./fixture-home as my home directory. Don't change anything, I just want to know the cause.",
+      "runsPerCase": 3,
+      "timeoutSeconds": 300,
+      "maxTurns": 20,
+      "graders": [
+        {
+          "name": "names-the-fix",
+          "type": "regex",
+          "weight": 1,
+          "config": {
+            "target": "last_message",
+            "pattern": "(\\./setup|superskills-upgrade)",
+            "flags": "",
+            "match": "contains"
+          }
+        },
+        {
+          "name": "names-unlinked-skill",
+          "type": "regex",
+          "weight": 1,
+          "config": {
+            "target": "last_message",
+            "pattern": "^(?=[\\s\\S]*clean-code)(?=[\\s\\S]*(not linked|no link|unlinked|isn.t linked|missing (a |the )?(sym)?link|symlink))",
+            "flags": "i",
+            "match": "contains"
+          }
+        },
+        {
+          "name": "no-false-ready",
+          "type": "llm",
+          "weight": 1,
+          "graderMarkdown": "You are checking a diagnostic report about a developer-tool install.\n\nPASS if the reply reports at least one problem (a skill that is not linked or\nmissing, a stale manifest, a vendor/stopgap copy, or a missing dependency) AND\nits overall conclusion is consistent with that: it says the install is blocked,\nnot ready, needs a fix, or \"ready with warnings\" for warnings only. Naming the\nfix (e.g. \"run ./setup\") without running it is fine.\n\nFAIL if the reply's overall conclusion is that the install is ready, healthy,\nfine, or \"all good\" while it also reports a blocked/missing item — or if it\nreports no problems at all (the fixture has at least one).",
+          "config": {
+            "criteria": "You are checking a diagnostic report about a developer-tool install.\n\nPASS if the reply reports at least one problem (a skill that is not linked or\nmissing, a stale manifest, a vendor/stopgap copy, or a missing dependency) AND\nits overall conclusion is consistent with that: it says the install is blocked,\nnot ready, needs a fix, or \"ready with warnings\" for warnings only. Naming the\nfix (e.g. \"run ./setup\") without running it is fine.\n\nFAIL if the reply's overall conclusion is that the install is ready, healthy,\nfine, or \"all good\" while it also reports a blocked/missing item — or if it\nreports no problems at all (the fixture has at least one).",
+            "focus": "last_message",
+            "arm": "both"
+          }
+        },
+        {
+          "name": "read-only",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Bash",
+            "input_match": "(\\./setup\\b|\\bgit\\s+(pull|reset|clone|checkout)\\b|curl\\s[^|]*\\|\\s*(ba)?sh|\\bbun\\s+install\\b|\\bnpm\\s+(i|install)\\b|\\bbrew\\s+install\\b)",
+            "min": 0,
+            "max": 0,
+            "arm": "both"
+          }
+        },
+        {
+          "name": "skill-fired",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Skill",
+            "input_match": "\"skill\"\\s*:\\s*\"(?:[\\w-]+:)?superskills-doctor\""
+          }
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 6,
+            "costUsd": 0.2869465,
+            "judgeCostUsd": 0.008309999999999984,
+            "durationSeconds": 28,
+            "startedAt": "2026-09-16T19:39:15.730Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-bk34hT/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "names-the-fix",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched (\\./setup|superskills-upgrade)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "names-unlinked-skill",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*clean-code)(?=[\\s\\S]*(not linked|no link|unlinked|isn.t linked|missing (a |the )?(sym)?link|symlink))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "Here's the diagnosis, verbatim from the doctor script:\n\n| Check | Status | Evidence / next action |\n|---|---|---|\n| Repo | ready | superskills v2.24.0 at ./fixture-repo |\n| Install | ready | dev-repo install (skills symlinked from ./fixture-repo) |\n| Links | blocked | 2/3 linked. Not linked: clean-code (new skills stay invisible until ./setup runs). Run ./setup |\n| Manifests | ready | all plugin manifests at v2.24.0 |\n| gstack | warning | running on the vendor stopgap copy (v1.80.0.0) — browser skills (/qa, /browse) need the real clone; ./setup retries it when online |\n| Plugin | unverified | claude CLI not on PATH — could not query 'claude plugin list' |\n| Post-merge hook | warning | not installed — after git pull you must run ./setup by hand (./setup installs the hook) |\n| Knowledge bases | ready | none configured (optional; edit ./fixture-home/.superskills/knowledge.conf) |\n| bun | ready | /opt/homebrew/bin/bun |\n| bats | ready | /opt/homebrew/bin/bats |\n| clearwing | warning | not on PATH — needed for /pentest — uv tool install clearwing && clearwing setup |\n| ffuf | warning | not on PATH — needed for /fuzz — brew install ffuf |\n\n**Verdict: blocked** — superskills is not ready.\n\n## The cause\n\nTwo rows explain it together:\n\n- **Links (blocked):** only 2 of 3 skills are symlinked into your home skills dir; `clean-code` is not among them. Your pull brought the new skill's files into the checkout, but nothing created the symlink Claude Code reads, so the command doesn't exist as far as the CLI is concerned. **Next action: run `./setup` in the checkout.**\n- **Post-merge hook (warning):** the git hook that would have run `./setup` automatically after `git pull` isn't installed. That's *why* the pull left you in this state instead of self-healing — and it'll happen again on every future pull until `./setup` installs the hook.\n\nOther non-ready rows, not related to `/clean-code`:\n\n- **gstack (warning):** running the vendor stopgap copy (v1.80.0.0); `/qa` and `/browse` need the real clone — `./setup` retries it when online.\n- **Plugin (unverified):** the `claude` CLI isn't on PATH, so plugin registration couldn't be checked — unknown, not confirmed fine.\n- **clearwing (warning):** not on PATH, needed for `/pentest` — `uv tool install clearwing && clearwing setup`.\n- **ffuf (warning):** not on PATH, needed for `/fuzz` — `brew install ffuf`.\n\nI haven't changed anything, as you asked. The fix is `./setup` from the checkout (or `/superskills-upgrade`), which both links `clean-code` and installs the post-merge hook — say the word and I'll run it."
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 6,
+            "costUsd": 0.290786,
+            "judgeCostUsd": 0.008340000000000014,
+            "durationSeconds": 29,
+            "startedAt": "2026-09-16T19:39:43.618Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-nhoJaj/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "names-the-fix",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched (\\./setup|superskills-upgrade)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "names-unlinked-skill",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*clean-code)(?=[\\s\\S]*(not linked|no link|unlinked|isn.t linked|missing (a |the )?(sym)?link|symlink))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "**Cause: the `clean-code` skill was pulled down but never linked — and it wasn't linked because the post-merge hook isn't installed, so `git pull` didn't trigger `./setup`.**\n\n| Check | Status | Evidence / next action |\n|---|---|---|\n| Repo | ready | superskills v2.24.0 at /private/tmp/e-nhoJaj/home/cwd/fixture-repo |\n| Install | ready | dev-repo install (skills symlinked from /private/tmp/e-nhoJaj/home/cwd/fixture-repo) |\n| Links | blocked | 2/3 linked. Not linked: clean-code (new skills stay invisible until ./setup runs). Run ./setup |\n| Manifests | ready | all plugin manifests at v2.24.0 |\n| gstack | warning | running on the vendor stopgap copy (v1.80.0.0) — browser skills (/qa, /browse) need the real clone; ./setup retries it when online |\n| Plugin | unverified | claude CLI not on PATH — could not query 'claude plugin list' |\n| Post-merge hook | warning | not installed — after git pull you must run ./setup by hand (./setup installs the hook) |\n| Knowledge bases | ready | none configured (optional; edit /private/tmp/e-nhoJaj/home/cwd/fixture-home/.superskills/knowledge.conf) |\n| bun | ready | /opt/homebrew/bin/bun |\n| bats | ready | /opt/homebrew/bin/bats |\n| clearwing | warning | not on PATH — needed for /pentest — uv tool install clearwing && clearwing setup |\n| ffuf | warning | not on PATH — needed for /fuzz — brew install ffuf |\n\n**Verdict: blocked** — superskills is not ready until the blocked row's action is done. I changed nothing, as asked.\n\nNon-ready rows and their next actions:\n\n- **Links (blocked)** — this is your answer. The repo is at v2.24.0 and the manifests agree, so the pull worked; `clean-code` just has no symlink into the skills dir, so Claude Code never sees it. Fix: run `./setup` in the checkout (or `/superskills-upgrade`).\n- **Post-merge hook (warning)** — the root cause of the above. Without the hook, a `git pull` never re-links new skills; you have to run `./setup` yourself each time. `./setup` also installs the hook, so this stops recurring after one run.\n- **gstack (warning)** — vendor stopgap copy v1.80.0.0 instead of a real clone; `/qa` and `/browse` need the real one. `./setup` retries it when online.\n- **Plugin (unverified)** — no `claude` CLI on PATH, so `claude plugin list` couldn't be queried. Plugin-side state is unknown, not confirmed fine.\n- **clearwing / ffuf (warnings)** — optional tools for `/pentest` and `/fuzz`: `uv tool install clearwing && clearwing setup`, `brew install ffuf`."
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 6,
+            "costUsd": 0.293252,
+            "judgeCostUsd": 0.008682000000000023,
+            "durationSeconds": 29,
+            "startedAt": "2026-09-16T19:40:04.144Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-AdpaPn/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "names-the-fix",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched (\\./setup|superskills-upgrade)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "names-unlinked-skill",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*clean-code)(?=[\\s\\S]*(not linked|no link|unlinked|isn.t linked|missing (a |the )?(sym)?link|symlink))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "The pull worked; the linking step after it didn't. Here's the doctor output verbatim:\n\n| Check | Status | Evidence / next action |\n|---|---|---|\n| Repo | ready | superskills v2.24.0 at /private/tmp/e-AdpaPn/home/cwd/fixture-repo |\n| Install | ready | dev-repo install (skills symlinked from /private/tmp/e-AdpaPn/home/cwd/fixture-repo) |\n| Links | blocked | 2/3 linked. Not linked: clean-code (new skills stay invisible until ./setup runs). Run ./setup |\n| Manifests | ready | all plugin manifests at v2.24.0 |\n| gstack | warning | running on the vendor stopgap copy (v1.80.0.0) — browser skills (/qa, /browse) need the real clone; ./setup retries it when online |\n| Plugin | unverified | claude CLI not on PATH — could not query 'claude plugin list' |\n| Post-merge hook | warning | not installed — after git pull you must run ./setup by hand (./setup installs the hook) |\n| Knowledge bases | ready | none configured (optional; edit /private/tmp/e-AdpaPn/home/cwd/fixture-home/.superskills/knowledge.conf) |\n| bun | ready | /opt/homebrew/bin/bun |\n| bats | ready | /opt/homebrew/bin/bats |\n| clearwing | warning | not on PATH — needed for /pentest — uv tool install clearwing && clearwing setup |\n| ffuf | warning | not on PATH — needed for /fuzz — brew install ffuf |\n\n**Verdict: blocked** — not ready.\n\n**The cause:** `clean-code` is present in the checkout at v2.24.0 but has no symlink into your skills directory (2 of 3 linked). Skills are symlinked per-skill, so a new skill arriving via `git pull` stays invisible to Claude Code until `./setup` re-runs and creates its link.\n\n**Why the pull didn't handle it:** the post-merge hook isn't installed (warning row). That hook is what normally runs `./setup` for you after a pull, so this will recur on every future pull until it's in place — `./setup` installs it.\n\nNon-ready rows and their next actions:\n- **Links (blocked)** — run `./setup` in the checkout. This is the one that fixes `/clean-code`.\n- **Post-merge hook (warning)** — `./setup` also installs it, preventing a repeat.\n- **gstack (warning)** — running the vendor stopgap (v1.80.0.0); `/qa` and `/browse` need the real clone, which `./setup` retries when online.\n- **Plugin (unverified)** — `claude` CLI isn't on PATH, so plugin registration couldn't be checked; unknown, not confirmed fine.\n- **clearwing (warning)** — `uv tool install clearwing && clearwing setup`, only needed for `/pentest`.\n- **ffuf (warning)** — `brew install ffuf`, only needed for `/fuzz`.\n\nI haven't changed anything, as you asked. If you want, I can run `./setup` in the fixture checkout — or `/superskills-upgrade` against your real install."
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          }
+        ],
+        "without": [
+          {
+            "score": 0.75,
+            "passed": false,
+            "turns": 10,
+            "costUsd": 0.33635699999999996,
+            "judgeCostUsd": 0.007979999999999987,
+            "durationSeconds": 66,
+            "startedAt": "2026-09-16T19:40:13.099Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-RYedd1/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "names-the-fix",
+                "passed": false,
+                "weight": 1,
+                "explanation": "pattern not found in last_message",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "names-unlinked-skill",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*clean-code)(?=[\\s\\S]*(not linked|no link|unlinked|isn.t linked|missing (a |the )?(sym)?link|symlink))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "## Cause: the pull updated the checkout, but nothing installed the new skill into your home directory\n\nSuperskills isn't being read from the checkout directly — it's wired in via per-skill symlinks under `~/.claude/skills`, and only skills that already have a symlink are visible:\n\n```\nfixture-home/.claude/skills/\n  tdd/SKILL.md    -> fixture-repo/skills/tdd/SKILL.md      (symlink)\n  debug/SKILL.md  -> fixture-repo/skills/debug/SKILL.md    (symlink)\n  gstack/         VERSION 1.80.0.0 + .superskills-vendor-copy  (stale copy, no longer in the repo)\n```\n\n`fixture-repo/skills/` contains `clean-code`, `tdd`, `debug` — but there is no `clean-code` entry in `~/.claude/skills` at all. That's the whole failure:\n\n- **Edits to existing skills appear instantly**, because the symlinks point straight at the checkout — so the pull \"looks like it worked.\"\n- **A newly added skill has no symlink**, and Claude Code only scans `~/.claude/skills/*/SKILL.md`. A directory that isn't linked is invisible no matter what's in the repo. Creating the link is the job of the repo's `setup` script, which hasn't been re-run since the pull.\n\nSupporting evidence that the install step is stale, not just untouched: `~/.claude/skills/gstack` is a vendored copy (`.superskills-vendor-copy`, `VERSION 1.80.0.0`) of a skill that no longer exists in the repo at `VERSION 2.24.0`. So the last successful install predates both the `gstack` removal and the `clean-code` addition.\n\nThings I ruled out:\n\n- **Not a malformed skill.** `skills/clean-code/SKILL.md` has valid frontmatter, `name: clean-code` matches its directory, and `description` is present — same shape as the two working skills.\n- **Not a plugin-registration problem.** The repo ships `.claude-plugin/marketplace.json` and `plugin.json`, but `fixture-home` has no `.claude.json` or settings registering a marketplace/plugin — nothing is loading superskills through the plugin path, so the manifests are irrelevant here. (If it *were* installed as a plugin, the command would also be namespaced as `/superskills:clean-code`, not `/clean-code`.)\n- **Not permissions or file mode.** Everything is world-readable.\n\nThe fix is to re-run the repo's install/`setup` step so it links `clean-code` (and prunes `gstack`), then restart Claude Code so the skill directory is rescanned. Note that in this fixture `fixture-repo/setup` is a 10-byte stub containing only `#!/bin/sh`, so running it here won't actually create the link — on your real checkout it's the script that does. I haven't changed anything."
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 0.75,
+            "passed": false,
+            "turns": 8,
+            "costUsd": 0.3179415,
+            "judgeCostUsd": 0.0072179999999999744,
+            "durationSeconds": 59,
+            "startedAt": "2026-09-16T19:40:33.541Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-XyIqnV/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "names-the-fix",
+                "passed": false,
+                "weight": 1,
+                "explanation": "pattern not found in last_message",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "names-unlinked-skill",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*clean-code)(?=[\\s\\S]*(not linked|no link|unlinked|isn.t linked|missing (a |the )?(sym)?link|symlink))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "**Cause: `git pull` updates the checkout, but it never adds a new entry to `~/.claude/skills/`. Claude Code doesn't scan your checkout — it scans `~/.claude/skills/`, and `clean-code` has no directory there.**\n\nHow the install is actually wired up:\n\n```\nfixture-home/.claude/skills/\n├── debug/SKILL.md  -> fixture-repo/skills/debug/SKILL.md   (symlink)\n├── tdd/SKILL.md    -> fixture-repo/skills/tdd/SKILL.md     (symlink)\n└── gstack/         (VERSION 1.80.0.0 + .superskills-vendor-copy, no SKILL.md)\n```\n\nThe installer created one directory per skill in `~/.claude/skills`, each containing a symlink back into the checkout. That's why pulling *feels* like it works: edits to `tdd` and `debug` are picked up live through the symlinks, with no reinstall needed. But a skill that's **new** upstream needs a **new** directory + symlink to be created, and `git pull` doesn't create those. `fixture-repo/skills/clean-code/SKILL.md` exists and its frontmatter is fine (`name: clean-code`, has a description) — it's simply not linked anywhere Claude Code looks.\n\nFix is to re-run the repo's installer so it links the new skill (the `setup` script in this checkout is an empty stub — just a `#!/bin/sh` line — so in this fixture it wouldn't do anything; in the real repo that's the script that creates the links). Not doing it since you asked for diagnosis only.\n\nTwo related things worth knowing:\n\n- **The plugin path isn't in use.** The repo ships `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` (both v2.24.0), and nothing in `fixture-home` registers that marketplace. If superskills were installed as a plugin instead, Claude Code would read the skills directly out of the checkout and new skills would appear on `git pull` with no reinstall step. That's probably the durable fix rather than re-linking after every upstream addition.\n- **`gstack` is stale.** It's a leftover from the older install mechanism (a copy marked `.superskills-vendor-copy`, pinned at VERSION 1.80.0.0 vs the repo's 2.24.0) and it has no `SKILL.md` at all, so it's a dead directory that loads nothing. The installer appears to have switched from copying to symlinking at some point and left this behind."
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 0.75,
+            "passed": false,
+            "turns": 9,
+            "costUsd": 0.30114150000000006,
+            "judgeCostUsd": 0.011892000000000041,
+            "durationSeconds": 57,
+            "startedAt": "2026-09-16T19:41:18.854Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-ENx8f2/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "names-the-fix",
+                "passed": false,
+                "weight": 1,
+                "explanation": "pattern not found in last_message",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "names-unlinked-skill",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*clean-code)(?=[\\s\\S]*(not linked|no link|unlinked|isn.t linked|missing (a |the )?(sym)?link|symlink))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "The pull worked fine — the problem is on the install side, not the checkout.\n\n## What Claude Code actually reads\n\nSkills are discovered from per-skill entries in `~/.claude/skills/`. Your fixture home has exactly three:\n\n```\nfixture-home/.claude/skills/tdd/SKILL.md    -> fixture-repo/skills/tdd/SKILL.md    (symlink)\nfixture-home/.claude/skills/debug/SKILL.md  -> fixture-repo/skills/debug/SKILL.md  (symlink)\nfixture-home/.claude/skills/gstack/         (real dir, no SKILL.md)\n```\n\nThere is no `clean-code` entry. The checkout has it (`fixture-repo/skills/clean-code/SKILL.md`, valid frontmatter, `name: clean-code`), but nothing in the home dir points at it, so Claude Code never sees it and `/clean-code` doesn't exist.\n\n## Why the pull didn't fix it\n\n`git pull` only updates the checkout. `tdd` and `debug` keep working across pulls because they're symlinks — content changes flow through for free. But a **new** skill needs a **new** symlink, and only the installer creates those.\n\nThat installer is broken: `fixture-repo/setup` is a 10-byte stub containing nothing but `#!/bin/sh`. It exits 0 and does nothing. So even re-running it won't link `clean-code`. That's the root cause — the symlink-farm step that's supposed to reconcile `~/.claude/skills/` with `skills/` isn't there anymore.\n\n## Two related things I noticed\n\n- **`gstack` is a stale orphan.** It's a vendored copy (marked by `.superskills-vendor-copy`) pinned at `VERSION` `1.80.0.0` while the repo is at `2.24.0`, and `gstack` no longer exists in `fixture-repo/skills/` at all. It's also missing a `SKILL.md`, so it's a dead directory a working installer would have pruned — more evidence the reconcile step has been gone for a while.\n- **The plugin manifests aren't in play here.** `.claude-plugin/marketplace.json` and `plugin.json` exist, but this home has no plugin installation or `settings.json` — discovery is purely the `~/.claude/skills/` symlinks. So fixing this via the plugin/marketplace route would be a different install path than the one you're currently on.\n\nAs a one-off you could symlink `clean-code` by hand, but the real fix is restoring the install logic in `setup` — otherwise every future skill will have this same problem. I haven't changed anything; say the word if you want either."
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          }
+        ]
+      },
+      "aggregates": {
+        "score": 1,
+        "passRate": 1,
+        "scoreWithout": 0.75,
+        "passRateWithout": 0,
+        "delta": 0.25
+      }
+    },
+    {
+      "name": "marketing-meta-description",
+      "dir": "evals/marketing-meta-description",
+      "source": "prose",
+      "promptMarkdown": "Write a meta description for the pricing page of Taskflow, a project-management SaaS for small agencies. Give me the final text only, plus its character count.",
+      "runsPerCase": 3,
+      "timeoutSeconds": 300,
+      "maxTurns": 10,
+      "graders": [
+        {
+          "name": "meets-the-bar",
+          "type": "llm",
+          "weight": 1,
+          "graderMarkdown": "Count the characters of the meta description text the reply proposes (the description itself, not the surrounding explanation).\n\nPASS if the reply contains exactly one proposed meta description, it is between 70 and 160 characters inclusive, it mentions Taskflow, and it refers to pricing or plans.\nFAIL if it is longer than 160 characters, omits Taskflow, offers several alternatives with no final choice, or is missing.",
+          "config": {
+            "criteria": "Count the characters of the meta description text the reply proposes (the description itself, not the surrounding explanation).\n\nPASS if the reply contains exactly one proposed meta description, it is between 70 and 160 characters inclusive, it mentions Taskflow, and it refers to pricing or plans.\nFAIL if it is longer than 160 characters, omits Taskflow, offers several alternatives with no final choice, or is missing.",
+            "focus": "last_message"
+          }
+        },
+        {
+          "name": "skill-fired",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Skill",
+            "input_match": "\"skill\"\\s*:\\s*\"(?:[\\w-]+:)?meta-description\""
+          }
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "score": 0,
+            "passed": false,
+            "turns": 5,
+            "costUsd": 0.272907,
+            "judgeCostUsd": 0.0036840000000000206,
+            "durationSeconds": 23,
+            "startedAt": "2026-09-16T19:41:32.305Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-qhFxjA/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "meets-the-bar",
+                "passed": false,
+                "weight": 1,
+                "explanation": "judge votes: FAIL FAIL FAIL",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  false,
+                  false,
+                  false
+                ],
+                "evidence": "**Final text:**\n\n> See Taskflow pricing for small agencies: simple per-seat plans, unlimited projects, and free client access. Compare plans and start your free trial.\n\n**148 characters** — within the 150–160 Latin-script range, and the keyword (\"Taskflow pricing\") plus the agency qualifier land in the first ~120 chars so they survive mobile truncation.\n\nTwo alternates if you want to A/B:\n\n- Taskflow pricing built for small agencies. Per-seat plans with unlimited projects, client access, and time tracking. Compare plans and try it free. — **147**\n- Compare Taskflow plans and pricing. Project management built for small agencies, with free client seats and no setup fees. Start your free trial today. — **151**\n\nOne flag: I wrote in per-seat billing, unlimited projects, free client access, and a free trial as the differentiators. Swap those for whatever your plans actually offer — a description promising a trial you don't have will hurt CTR-adjusted conversion more than it helps clicks."
+              },
+              {
+                "name": "skill-fired",
+                "passed": false,
+                "weight": 1,
+                "explanation": "Skill called 0x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 4,
+            "costUsd": 0.2552185,
+            "judgeCostUsd": 0.009316000000000019,
+            "durationSeconds": 20,
+            "startedAt": "2026-09-16T19:41:54.907Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-dV2qaZ/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "meets-the-bar",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "**Meta description**\n\n> See Taskflow pricing for small agencies: compare plans, per-seat costs, and features for client projects, time tracking, and billing. Find your fit today.\n\n**154 characters** — within the 150–160 range for Latin-script SERP display.\n\nOne note: I kept the feature mentions (time tracking, client billing) generic and left out any trial length or price point, since I don't have Taskflow's actual plan details. If you have a hook like \"from $9/user\" or \"14-day free trial,\" swapping it into the final clause would likely lift CTR more than the generic close."
+              },
+              {
+                "name": "skill-fired",
+                "passed": false,
+                "weight": 1,
+                "explanation": "Skill called 0x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 0,
+            "passed": false,
+            "turns": 5,
+            "costUsd": 0.29415600000000003,
+            "judgeCostUsd": 0.016874,
+            "durationSeconds": 31,
+            "startedAt": "2026-09-16T19:42:14.797Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-WUjURU/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "meets-the-bar",
+                "passed": false,
+                "weight": 1,
+                "explanation": "judge votes: FAIL FAIL FAIL",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  false,
+                  false,
+                  false
+                ],
+                "evidence": "Meta descriptions don't affect ranking, but they drive SERP click-through — so this one leads with the keyword (\"Taskflow pricing\"), names the audience, and ends with a CTA.\n\n**Recommended:**\n\n> Compare Taskflow plans and pricing for small agencies. Flat per-seat rates, unlimited projects and clients, no setup fees. Start your free trial today.\n\n**151 characters** (within the 150–160 Latin-script target; the first ~120 chars survive mobile truncation, so \"Taskflow plans and pricing for small agencies\" lands first).\n\n**Alternatives for A/B testing:**\n\n- *150 chars* — See Taskflow pricing for small agencies: simple per-seat plans, unlimited projects and clients, and no setup fees. Compare plans and start free today.\n- *141 chars* — Taskflow pricing built for small agencies. Pick a per-seat plan, add clients and projects without limits, and only pay for the seats you use.\n\nOne flag: I assumed per-seat pricing, no setup fees, unlimited projects/clients, and a free trial, since you didn't specify the plan structure. Swap in your actual hook (e.g. a starting price like \"Plans from $12/user/mo\" often beats a generic CTA) and I'll re-fit the length."
+              },
+              {
+                "name": "skill-fired",
+                "passed": false,
+                "weight": 1,
+                "explanation": "Skill called 0x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          }
+        ],
+        "without": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 2,
+            "costUsd": 0.14520150000000004,
+            "judgeCostUsd": 0.007524000000000031,
+            "durationSeconds": 23,
+            "startedAt": "2026-09-16T19:42:16.305Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-3xnZmo/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "meets-the-bar",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "**Meta description:**\n\nCompare Taskflow plans and pricing built for small agencies. Pick the plan that fits your team size, client load, and budget, then get started in minutes.\n\n**154 characters** (within the ~155–160 range Google typically renders before truncating).\n\nOne note: I deliberately left out specifics like price points, a free-trial length, or \"no credit card required,\" since I don't know your actual terms. If you have a strong hook there (e.g. \"Plans from $12/user\" or \"Free 14-day trial\"), swapping it in for \"then get started in minutes\" would likely lift click-through — send me the detail and I'll rework it to fit the same character budget."
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 2,
+            "costUsd": 0.12041600000000001,
+            "judgeCostUsd": 0.006004000000000009,
+            "durationSeconds": 14,
+            "startedAt": "2026-09-16T19:42:38.936Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-dCOqAw/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "meets-the-bar",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "**Meta description:**\n\nFlexible Taskflow pricing built for small agencies. Compare plans, start free, and add seats as your client roster grows. No setup fees, no contracts.\n\n**Character count:** 150 (within Google's ~155–160 character display limit)"
+              }
+            ]
+          },
+          {
+            "score": 0,
+            "passed": false,
+            "turns": 2,
+            "costUsd": 0.13981499999999997,
+            "judgeCostUsd": 0.002897999999999984,
+            "durationSeconds": 20,
+            "startedAt": "2026-09-16T19:42:45.879Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-2fuHsX/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "meets-the-bar",
+                "passed": false,
+                "weight": 1,
+                "explanation": "judge votes: FAIL FAIL FAIL",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  false,
+                  false,
+                  false
+                ],
+                "evidence": "**Meta description:**\n\nSee Taskflow pricing plans built for small agencies. Simple per-seat rates, all core project tools included, and a 14-day free trial. No credit card needed.\n\n**156 characters** — within the ~155–160 range Google typically renders before truncating.\n\nOne thing to check: I assumed a 14-day trial with no card required. If your actual terms differ, swap that clause — here's a version without it, in case you'd rather stay generic:\n\nSee Taskflow pricing for small agencies. Simple per-seat plans, every core project tool included, and no setup fees. Compare tiers and pick your fit. (147 characters)"
+              }
+            ]
+          }
+        ]
+      },
+      "aggregates": {
+        "score": 0.3333333333333333,
+        "passRate": 0.3333333333333333,
+        "scoreWithout": 0.6666666666666666,
+        "passRateWithout": 0.6666666666666666,
+        "delta": -0.3333333333333333
+      }
+    },
+    {
+      "name": "marketing-pricing-page",
+      "dir": "evals/marketing-pricing-page",
+      "source": "prose",
+      "promptMarkdown": "I'm building the pricing page for Taskflow (project management for small agencies, three tiers). Can you lay out the sections the page should have, top to bottom, with a one-line note on what each section is for?",
+      "runsPerCase": 3,
+      "timeoutSeconds": 300,
+      "maxTurns": 10,
+      "graders": [
+        {
+          "name": "has-core-sections",
+          "type": "regex",
+          "weight": 1,
+          "config": {
+            "target": "last_message",
+            "pattern": "^(?=[\\s\\S]*(tier|plan)s?)(?=[\\s\\S]*(FAQ|frequently asked))(?=[\\s\\S]*(compar|feature))",
+            "flags": "i",
+            "match": "contains"
+          }
+        },
+        {
+          "name": "skill-fired",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Skill",
+            "input_match": "\"skill\"\\s*:\\s*\"(?:[\\w-]+:)?pricing-page-generator\""
+          }
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 4,
+            "costUsd": 0.2791695,
+            "judgeCostUsd": 0,
+            "durationSeconds": 29,
+            "startedAt": "2026-09-16T19:42:53.396Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-DGlvVN/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "has-core-sections",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*(tier|plan)s?)(?=[\\s\\S]*(FAQ|frequently asked))(?=[\\s\\S]*(compar|feature))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": false,
+                "weight": 1,
+                "explanation": "Skill called 0x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 4,
+            "costUsd": 0.2771135,
+            "judgeCostUsd": 0,
+            "durationSeconds": 28,
+            "startedAt": "2026-09-16T19:43:05.683Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-aLquEm/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "has-core-sections",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*(tier|plan)s?)(?=[\\s\\S]*(FAQ|frequently asked))(?=[\\s\\S]*(compar|feature))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": false,
+                "weight": 1,
+                "explanation": "Skill called 0x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 4,
+            "costUsd": 0.276659,
+            "judgeCostUsd": 0,
+            "durationSeconds": 26,
+            "startedAt": "2026-09-16T19:43:22.287Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-lOH1gu/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "has-core-sections",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*(tier|plan)s?)(?=[\\s\\S]*(FAQ|frequently asked))(?=[\\s\\S]*(compar|feature))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": false,
+                "weight": 1,
+                "explanation": "Skill called 0x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          }
+        ],
+        "without": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 1,
+            "costUsd": 0.12105450000000001,
+            "judgeCostUsd": 0,
+            "durationSeconds": 20,
+            "startedAt": "2026-09-16T19:43:33.848Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-15CG5y/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "has-core-sections",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*(tier|plan)s?)(?=[\\s\\S]*(FAQ|frequently asked))(?=[\\s\\S]*(compar|feature))",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 1,
+            "costUsd": 0.1237045,
+            "judgeCostUsd": 0,
+            "durationSeconds": 22,
+            "startedAt": "2026-09-16T19:43:48.628Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-2PQCfT/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "has-core-sections",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*(tier|plan)s?)(?=[\\s\\S]*(FAQ|frequently asked))(?=[\\s\\S]*(compar|feature))",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 1,
+            "costUsd": 0.12368950000000001,
+            "judgeCostUsd": 0,
+            "durationSeconds": 22,
+            "startedAt": "2026-09-16T19:43:54.331Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-G4NUM1/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "has-core-sections",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*(tier|plan)s?)(?=[\\s\\S]*(FAQ|frequently asked))(?=[\\s\\S]*(compar|feature))",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          }
+        ]
+      },
+      "aggregates": {
+        "score": 1,
+        "passRate": 1,
+        "scoreWithout": 1,
+        "passRateWithout": 1,
+        "delta": 0
+      }
+    },
+    {
+      "name": "offtopic-no-skill",
+      "dir": "evals/offtopic-no-skill",
+      "source": "prose",
+      "promptMarkdown": "What's the difference between a symbolic link and a hard link on Linux? Two or three sentences.",
+      "runsPerCase": 3,
+      "timeoutSeconds": 120,
+      "maxTurns": 5,
+      "graders": [
+        {
+          "name": "correct-answer",
+          "type": "llm",
+          "weight": 1,
+          "graderMarkdown": "PASS if the reply says a hard link is another directory entry for the same inode/data (so the file survives deleting the original name) and a symbolic link is a separate file that holds a path (so it can dangle and can cross filesystems or point at directories).\nFAIL if it gets either of those backwards or omits both distinctions.",
+          "config": {
+            "criteria": "PASS if the reply says a hard link is another directory entry for the same inode/data (so the file survives deleting the original name) and a symbolic link is a separate file that holds a path (so it can dangle and can cross filesystems or point at directories).\nFAIL if it gets either of those backwards or omits both distinctions.",
+            "focus": "last_message"
+          }
+        },
+        {
+          "name": "no-skill-fired",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Skill",
+            "min": 0,
+            "max": 0,
+            "arm": "both"
+          }
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 1,
+            "costUsd": 0.17403649999999998,
+            "judgeCostUsd": 0.0024719999999999742,
+            "durationSeconds": 9,
+            "startedAt": "2026-09-16T19:44:10.720Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-dlrENw/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "correct-answer",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "A hard link is a second directory entry pointing at the same inode (same file data), so the file's content persists until every hard link to it is removed — but hard links can't cross filesystems and normally can't point to directories. A symbolic link is its own small file containing a path string, so it can cross filesystems and point at directories, but it breaks into a \"dangling\" link if the target is moved or deleted. Practically: `ln target name` makes a hard link, `ln -s target name` makes a symlink, and `ls -l` shows symlinks with an `->` arrow."
+              },
+              {
+                "name": "no-skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 1,
+            "costUsd": 0.17394250000000003,
+            "judgeCostUsd": 0.0024480000000000335,
+            "durationSeconds": 9,
+            "startedAt": "2026-09-16T19:44:16.591Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-hpALU0/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "correct-answer",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "A hard link is a second directory entry pointing at the same inode (the same on-disk file data), so the file only disappears once every hard link to it is removed, and all links are equally \"the file\" — there's no original. A symbolic link is its own small file whose contents are just a path to another location, so it can cross filesystems and point at directories, but it breaks if the target is moved or deleted.\n\nThe practical upshot: hard links require the target to be on the same filesystem and can't normally point at directories, while symlinks are more flexible but leave you with dangling references."
+              },
+              {
+                "name": "no-skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 1,
+            "costUsd": 0.1755715,
+            "judgeCostUsd": 0.003162000000000026,
+            "durationSeconds": 8,
+            "startedAt": "2026-09-16T19:44:19.587Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-0lR9Qa/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "correct-answer",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "A **hard link** is a second directory entry pointing at the same inode (the actual file data), so it's indistinguishable from the \"original\" — the data survives until every hard link to it is deleted. A **symbolic link** is a small separate file containing a path string that gets resolved at access time, so it breaks if the target is moved or deleted.\n\nPractically: symlinks can cross filesystems and point at directories, while hard links can do neither (`ln -s target name` vs. `ln target name`)."
+              },
+              {
+                "name": "no-skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          }
+        ],
+        "without": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 1,
+            "costUsd": 0.09908750000000004,
+            "judgeCostUsd": 0.0033380000000000354,
+            "durationSeconds": 9,
+            "startedAt": "2026-09-16T19:44:25.299Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-P4sp62/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "correct-answer",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "A hard link is a second directory entry pointing at the same inode as the original file, so both names are equally \"real\" — the data survives until every link is removed, and the link can't span filesystems or (normally) point at a directory. A symbolic link is its own small file containing a path string, resolved at access time, so it can cross filesystems, point at directories, and will dangle harmlessly if the target is moved or deleted. Practically: `ln target name` makes a hard link, `ln -s target name` makes a symlink, and `ls -l` shows symlinks with an `->` plus the stored path."
+              },
+              {
+                "name": "no-skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 1,
+            "costUsd": 0.10025450000000004,
+            "judgeCostUsd": 0.00412000000000004,
+            "durationSeconds": 8,
+            "startedAt": "2026-09-16T19:44:27.789Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-JhaGE9/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "correct-answer",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "A hard link is an additional directory entry pointing at the same inode as the original file, so the two names are indistinguishable and the data survives until every link is removed. A symbolic link is a separate small file containing a path string, so it can cross filesystems and point at directories, but it breaks (becomes a \"dangling\" link) if the target is moved or deleted. Practically: `ln target name` makes a hard link, `ln -s target name` makes a symlink, and `ls -l` shows the symlink's target while hard links just show a higher link count."
+              },
+              {
+                "name": "no-skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 1,
+            "costUsd": 0.09890350000000002,
+            "judgeCostUsd": 0.0025140000000000162,
+            "durationSeconds": 9,
+            "startedAt": "2026-09-16T19:44:34.528Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-NCXQPE/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "correct-answer",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "A hard link is a second directory entry pointing at the same inode as the original file, so both names are equally \"real\" — the data survives until every hard link to it is deleted, and links can't span filesystems or (normally) point at directories. A symbolic link is its own small file containing a path string, so it can cross filesystems and reference directories, but it breaks into a dangling link if the target is moved or removed. Practically: `ln target name` makes a hard link, `ln -s target name` makes a symlink, and `stat`/`ls -l` show the inode number and link count that distinguish them."
+              },
+              {
+                "name": "no-skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          }
+        ]
+      },
+      "aggregates": {
+        "score": 1,
+        "passRate": 1,
+        "scoreWithout": 1,
+        "passRateWithout": 1,
+        "delta": 0
+      }
+    },
+    {
+      "name": "upgrade-not-doctor",
+      "dir": "evals/upgrade-not-doctor",
+      "source": "prose",
+      "promptMarkdown": "Update superskills to the latest version.",
+      "runsPerCase": 3,
+      "timeoutSeconds": 300,
+      "maxTurns": 15,
+      "graders": [
+        {
+          "name": "doctor-did-not-fire",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Skill",
+            "input_match": "\"skill\"\\s*:\\s*\"(?:[\\w-]+:)?superskills-doctor\"",
+            "min": 0,
+            "max": 0,
+            "arm": "both"
+          }
+        },
+        {
+          "name": "upgrade-fired",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Skill",
+            "input_match": "\"skill\"\\s*:\\s*\"(?:[\\w-]+:)?superskills-upgrade\""
+          }
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 6,
+            "costUsd": 0.3460114999999999,
+            "judgeCostUsd": 0,
+            "durationSeconds": 40,
+            "startedAt": "2026-09-16T19:44:36.217Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-h2EO2F/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "doctor-did-not-fire",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "upgrade-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 9,
+            "costUsd": 0.43581,
+            "judgeCostUsd": 0,
+            "durationSeconds": 52,
+            "startedAt": "2026-09-16T19:44:43.268Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-77sNMv/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "doctor-did-not-fire",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "upgrade-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 11,
+            "costUsd": 0.47163350000000004,
+            "judgeCostUsd": 0,
+            "durationSeconds": 62,
+            "startedAt": "2026-09-16T19:45:16.309Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-ohAi7n/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "doctor-did-not-fire",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "upgrade-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          }
+        ],
+        "without": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 16,
+            "costUsd": 0.448025,
+            "judgeCostUsd": 0,
+            "durationSeconds": 174,
+            "startedAt": "2026-09-16T19:45:35.324Z",
+            "error": "exit 1: Reached maximum number of turns (15)",
+            "tracePath": "/private/tmp/e-TTzPbC/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "doctor-did-not-fire",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 20,
+            "costUsd": 0.5172640000000001,
+            "judgeCostUsd": 0,
+            "durationSeconds": 131,
+            "startedAt": "2026-09-16T19:46:18.517Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-mjdaiy/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "doctor-did-not-fire",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 20,
+            "costUsd": 0.43500449999999996,
+            "judgeCostUsd": 0,
+            "durationSeconds": 96,
+            "startedAt": "2026-09-16T19:48:29.012Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-uaE7XW/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "doctor-did-not-fire",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          }
+        ]
+      },
+      "aggregates": {
+        "score": 1,
+        "passRate": 1,
+        "scoreWithout": 1,
+        "passRateWithout": 1,
+        "delta": 0
+      }
+    }
+  ],
+  "aggregates": {
+    "casesTotal": 8,
+    "casesPassed": 7,
+    "overallScore": 0.9166666666666666,
+    "overallPassRate": 0.9166666666666666,
+    "meanDelta": 0.03958333333333334
+  }
+}

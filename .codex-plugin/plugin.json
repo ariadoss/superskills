@@ -1,6 +1,6 @@
 {
   "name": "superskills",
-  "version": "2.23.0",
+  "version": "2.24.0",
   "description": "Curated AI engineering + design skills with a Google/Meta-quality workflow (TDD, DRY, SOLID). Codex plugin install exposes the core skills; the full set installs via ./setup into ~/.codex/skills.",
   "author": {
     "name": "Danilo Stern-Sapad",
@@ -9,6 +9,31 @@
   },
   "homepage": "https://github.com/ariadoss/superskills",
   "license": "MIT",
-  "keywords": ["skills", "tdd", "code-review", "design", "workflow"],
-  "skills": "./skills/"
+  "keywords": [
+    "skills",
+    "tdd",
+    "code-review",
+    "design",
+    "workflow"
+  ],
+  "skills": "./skills/",
+  "repository": "https://github.com/ariadoss/superskills",
+  "interface": {
+    "displayName": "Superskills",
+    "shortDescription": "TDD, debugging, review, QA and security skills",
+    "longDescription": "Curated engineering skills with a Google/Meta-quality workflow: test-driven development, systematic debugging, code review and clean-code passes, full per-feature QA, security testing, spec and planning workflows, and knowledge-base integration. The plugin install exposes the core skills; ./setup installs the full set (gstack, design, marketing) into ~/.codex/skills.",
+    "developerName": "Danilo Stern-Sapad",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Read",
+      "Write",
+      "CLI"
+    ],
+    "websiteURL": "https://github.com/ariadoss/superskills",
+    "defaultPrompt": [
+      "Check whether my superskills install is healthy.",
+      "Run the full QA pipeline on this branch before I ship it.",
+      "Debug this failing test using root-cause analysis."
+    ]
+  }
 }

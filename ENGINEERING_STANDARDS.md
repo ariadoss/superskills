@@ -67,6 +67,34 @@ anything is called done.
 
 ---
 
+## Skill-authoring conventions (how a SKILL.md behaves)
+
+The standards above govern code. These govern the **instructions** a skill gives
+the agent, so every skill fails safe the same way. Adapted from Spotify's
+[portal-ai-plugins](https://github.com/spotify/portal-ai-plugins) workflows
+(Apache-2.0). `/superskills-doctor` is the reference implementation.
+
+- **State the trigger precisely, and its boundary.** The `description` says when
+  to fire *and* names the neighbouring skill it must not be confused with
+  (`doctor` diagnoses; `upgrade` changes things). Overlapping triggers are a
+  defect that `evals/` measures.
+- **Scripts over prose pipelines.** Multi-step shell logic lives in a tested
+  script under `scripts/` that the skill calls with named flags; the skill never
+  asks the agent to assemble the pipeline from a description.
+- **Read-only means read-only.** A diagnostic skill never installs, pulls,
+  resets, logs in, or re-runs setup. It names the fix; a separate skill applies it.
+- **Run `--help` before relying on a flag** of any external CLI, and prefer
+  `--json` whenever the agent consumes the output.
+- **Never infer success.** A dry run is not a run; "unavailable" is not
+  "healthy"; a probe that could not execute is *unverified*, never *ready*. An
+  overall "ready" is only reported when every required check passed.
+- **Evidence in the report.** Tables with `status | evidence / next action`
+  per check; reproduce tool output rather than summarising it away.
+- **Never ask for credentials in chat.** Tokens, codes and passwords go through
+  the tool's own login flow, never through the conversation.
+- **Ask before mutating on the user's behalf** when the action is hard to
+  reverse (force-sync, reset, delete), and show exactly what will change first.
+
 ## Hard gates (these block a ship — `/qa-full`)
 
 A change is **NOT READY** if any of these is true:

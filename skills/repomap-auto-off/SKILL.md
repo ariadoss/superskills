@@ -1,3 +1,9 @@
+---
+name: repomap-auto-off
+description: Disable automatic repo map updates.
+metadata:
+  upstream: https://github.com/ariadoss/repomap
+---
 Disable automatic repo map updates.
 
 Run this command:

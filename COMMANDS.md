@@ -5,6 +5,7 @@
 | Command | Description |
 |---------|-------------|
 | `/superskills-upgrade` | Upgrade superskills to the latest version — pulls from GitHub, re-runs setup, reports version change |
+| `/superskills-doctor` | Read-only readiness check — install kind, linked skills, VERSION vs plugin manifests, gstack real-vs-vendor, bun/optional tools — as a status table with a verdict that is never "ready" while a required check is blocked. Diagnoses only; `/superskills-upgrade` fixes. |
 
 ---
 
@@ -208,7 +209,7 @@
 | `/adaptive-communication` | Adjust communication style based on whether the user is in relational or transactional mode |
 | `/app-store-screenshots` | Generate App Store and Google Play marketing screenshots using Next.js |
 | `/bencium-code-conventions` | Apply Bence's code style, tech stack, and workflow conventions |
-| `/composition-patterns` | React composition patterns that scale — compound components, render props, context providers |
+| `/vercel-composition-patterns` | React composition patterns that scale — compound components, render props, context providers |
 | `/deploy-to-vercel` | Deploy applications and websites to Vercel |
 | `/design-audit` | Conduct systematic visual audits and produce phased, implementation-ready design plans |
 | `/design-drift` | Detect and fix design drift — consolidate one-off colors/spacing/type into tokens, collapse duplicate component variants |
@@ -224,9 +225,9 @@
 | `/minimalist-ui` | Create clean editorial-style interfaces with warm monochrome palette and typographic contrast |
 | `/negentropy-lens` | Evaluate systems through an entropy/negentropy lens — is this system decaying or growing? |
 | `/organic-first-campaign` | Design grassroots-first campaigns for organizations facing spending disadvantages |
-| `/react-best-practices` | React and Next.js performance optimization guidelines from Vercel Engineering |
-| `/react-native-skills` | React Native and Expo best practices for building performant mobile apps |
-| `/react-view-transitions` | Implement smooth animations using React's View Transition API |
+| `/vercel-react-best-practices` | React and Next.js performance optimization guidelines from Vercel Engineering |
+| `/vercel-react-native-skills` | React Native and Expo best practices for building performant mobile apps |
+| `/vercel-react-view-transitions` | Implement smooth animations using React's View Transition API |
 | `/redesign-existing-projects` | Upgrade existing websites and apps to premium quality by auditing and applying high-end standards |
 | `/relationship-design` | Design AI-first interfaces that build ongoing relationships through memory and trust evolution |
 | `/renaissance-architecture` | Software architecture principles for building genuinely new solutions, not derivative work |

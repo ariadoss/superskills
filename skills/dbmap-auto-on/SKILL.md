@@ -1,3 +1,9 @@
+---
+name: dbmap-auto-on
+description: Enable automatic database schema map updates. When enabled, DBMAP.md is regenerated every time a database migration command runs in the project.
+metadata:
+  upstream: https://github.com/ariadoss/repomap
+---
 Enable automatic database schema map updates. When enabled, DBMAP.md is regenerated every time a database migration command runs in the project.
 
 The hook fires PostToolUse on `Bash` tool calls and matches common migration commands across frameworks (Rails `db:migrate`, Django `manage.py migrate`, Alembic, Prisma, Knex, Sequelize, Goose, Dbmate, Flyway, Liquibase, TypeORM, Drizzle).

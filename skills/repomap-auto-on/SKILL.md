@@ -1,3 +1,9 @@
+---
+name: repomap-auto-on
+description: Enable automatic repo map updates. When enabled, REPOMAP.md is incrementally updated every time a file is edited.
+metadata:
+  upstream: https://github.com/ariadoss/repomap
+---
 Enable automatic repo map updates. When enabled, REPOMAP.md is incrementally updated every time a file is edited.
 
 Run this command:

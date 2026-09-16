@@ -1,0 +1,38 @@
+case	arm	run	grader	judge	human	note
+doctor-direct	with	1-3	no-false-ready	PASS	PASS	table + "Verdict: blocked"
+doctor-direct	without	1-3	no-false-ready	PASS	PASS	"not healthy"; but recommends deleting gstack (domain-correct: FAIL)
+doctor-symptom-missing-skill	with	1-3	no-false-ready	PASS	PASS	
+doctor-symptom-missing-skill	without	1-3	no-false-ready	PASS	PASS	root cause correct; calls gstack orphan/stale (domain-correct: FAIL)
+doctor-ambiguous-readonly	with	1-3	no-false-ready	PASS	PASS	
+doctor-ambiguous-readonly	without	1-3	no-false-ready	PASS	PASS	"setup is a no-op root cause", "marketplace malformed" (domain-correct: FAIL)
+doctor-release-check	with	1-3	no-false-ready	PASS	PASS	
+doctor-release-check	without	1-3	no-false-ready	PASS	PASS	domain-correct: PASS (prompt defined vendor copy); no sync-version mention
+doctor-release-check	without	1-3	read-only	FAIL	PASS	regex matched "git clone" in the tool description text
+offtopic-no-skill	with	1-3	correct-answer	PASS	PASS	
+offtopic-no-skill	without	1-3	correct-answer	PASS	PASS	
+marketing-meta-description	with	1	meets-the-bar	FAIL	PASS	final marked, 148 chars, alternates labelled A/B
+marketing-meta-description	with	2	meets-the-bar	PASS	PASS	154 chars
+marketing-meta-description	with	3	meets-the-bar	FAIL	PASS	"Recommended" marked, 151 chars, alternates labelled
+marketing-meta-description	without	1	meets-the-bar	PASS	PASS	154 chars
+marketing-meta-description	without	2	meets-the-bar	PASS	PASS	150 chars
+marketing-meta-description	without	3	meets-the-bar	FAIL	PASS	156 chars primary + one fallback variant
+# run 2 (rerun-doctor.json, rerun-marketing.json)
+doctor-direct	without	1	domain-correct	FAIL	FAIL	"delete gstack outright", "setup is a no-op"
+doctor-direct	without	2	domain-correct	FAIL	FAIL	"orphaned vendor copy", "delete outright"
+doctor-direct	with	1-2	domain-correct	PASS	PASS	
+doctor-symptom-missing-skill	without	1	domain-correct	FAIL	FAIL	borderline: "stale vendored copy", "installer can't fix it"
+doctor-symptom-missing-skill	without	2	domain-correct	FAIL	FAIL	"stale copy", "gstack no longer exists in repo"
+doctor-symptom-missing-skill	with	1-2	domain-correct	PASS	PASS	
+doctor-ambiguous-readonly	without	1	domain-correct	FAIL	FAIL	"orphan from an older install", "don't run ./setup yet"
+doctor-ambiguous-readonly	without	2	domain-correct	FAIL	FAIL	"broken orphan", "reconstruct setup or clear out dead gstack"
+doctor-ambiguous-readonly	with	1-2	domain-correct	PASS	PASS	
+doctor-release-check	without	1	domain-correct	PASS	PASS	vendor copy identified; no deletion
+doctor-release-check	without	2	domain-correct	FAIL	PASS	bumps the one stale manifest (rubric allows); no sync step mentioned — judge too harsh
+doctor-release-check	with	1-2	domain-correct	PASS	PASS	
+marketing-meta-description	with	1-3	meets-the-bar	PASS	PASS	147/156/156 chars, final marked
+marketing-meta-description	without	1-3	meets-the-bar	PASS	PASS	~150/155/~145 chars
+marketing-pricing-page	without	2	has-conversion-elements	FAIL	FAIL	fewer than four conversion elements listed
+marketing-pricing-page	without	1	has-conversion-elements	PASS	PASS	toggle, trust bar, comparison, social proof, closing CTA
+marketing-pricing-page	without	2	has-conversion-elements	FAIL	PASS	toggle, comparison, social proof, closing CTA after FAQ = 4 elements — judge too harsh
+marketing-pricing-page	without	3	has-conversion-elements	PASS	PASS	toggle, logos, comparison, testimonial, final CTA
+marketing-pricing-page	with	1-3	has-conversion-elements	PASS	PASS	

@@ -25,10 +25,31 @@ Update the version badge in README.md to match (e.g. `v2.1.0` → `v2.2.0`).
 
 After bumping VERSION, **run `./scripts/sync-version.sh`** to propagate it into the
 plugin manifests (`.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`,
-`.codex-plugin/plugin.json`). These `version` fields are what trigger the native
-"plugins updated" alert in Claude Code and Codex — a bump that doesn't reach them
-means existing plugin installs never see the update. VERSION is the single source
-of truth; the manifests are generated from it, never hand-edited.
+`.codex-plugin/plugin.json`, `.cursor-plugin/plugin.json`, `.cursor-plugin/marketplace.json`).
+These `version` fields are what trigger the native "plugins updated" alert in
+Claude Code and Codex — a bump that doesn't reach them means existing plugin
+installs never see the update. VERSION is the single source of truth; the
+manifests are generated from it, never hand-edited.
+
+`sync-version.sh` also regenerates the `superskills-marketing` plugin:
+`marketing-skills/plugin-skills/` (one relative symlink per skill, named by its
+frontmatter `name`) and `marketing-skills/.claude-plugin/plugin.json`. The shim
+tree exists because Claude Code's plugin loader does not recurse into nested
+skill directories and names a plugin skill by its **directory** basename, not
+its frontmatter name (verified by `evals/` on Claude Code 2.1.273; 100 of the
+174 marketing skills would otherwise get the wrong slash name and two would
+collide on `article`). After adding, moving or renaming a marketing skill, run
+`./scripts/sync-marketing-manifest.sh`; `tests/manifest-lib.bats` and
+`tests/plugin-manifests.bats` fail on drift. `./setup` ignores the shim tree.
+The shim tree is the repo's only committed symlinks: a Windows checkout without
+`core.symlinks` gets text files there and the marketing plugin will not load.
+
+Skill *behaviour* is evaluated with `claude plugin eval` — suite in `evals/`,
+method in `evals/RUBRIC.md`. Runs cost model calls, so they are a release step,
+not part of `./tests/run.sh`. `AGENTS.md` is the Codex-facing pointer to this
+file and to `ENGINEERING_STANDARDS.md`, which carries the skill-authoring
+conventions every SKILL.md follows; `/superskills-doctor` is their reference
+implementation.
 
 ## Always re-run `./setup` after a pull or after adding a skill
 

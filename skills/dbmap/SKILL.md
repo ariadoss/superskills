@@ -1,3 +1,9 @@
+---
+name: dbmap
+description: Generate a database schema map for the current project and analyze indexes.
+metadata:
+  upstream: https://github.com/ariadoss/repomap
+---
 Generate a database schema map for the current project and analyze indexes.
 
 First, locate the repomap install. Search in this order and use the first hit:

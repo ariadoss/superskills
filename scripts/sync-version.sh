@@ -4,6 +4,9 @@
 #   - Claude Code: .claude-plugin/plugin.json + marketplace.json  → startup
 #     "Plugins updated, run /reload-plugins" alert
 #   - Codex CLI:   .codex-plugin/plugin.json
+#   - Cursor:      .cursor-plugin/plugin.json + marketplace.json
+#   - marketing-skills/.claude-plugin/plugin.json is regenerated from the tree
+#     by scripts/sync-marketing-manifest.sh (its skills list is derived, not stamped)
 #
 # VERSION (repo root) is the single source of truth. Run this as part of every
 # release, right after bumping VERSION and before committing (see CLAUDE.md).
@@ -21,7 +24,9 @@ rc=0
 for f in \
   ".claude-plugin/plugin.json" \
   ".claude-plugin/marketplace.json" \
-  ".codex-plugin/plugin.json"
+  ".codex-plugin/plugin.json" \
+  ".cursor-plugin/plugin.json" \
+  ".cursor-plugin/marketplace.json"
 do
   if stamp_json_version "$VERSION" "$ROOT/$f"; then
     echo "  [ok]   $f → $VERSION"
@@ -30,4 +35,5 @@ do
     rc=1
   fi
 done
+"$ROOT/scripts/sync-marketing-manifest.sh" || rc=1
 exit $rc

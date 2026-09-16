@@ -1,6 +1,6 @@
 {
   "name": "superskills",
-  "description": "Superskills marketplace — the superskills plugin, installable directly from this repo.",
+  "description": "Superskills marketplace \u2014 the superskills plugin (core + design skills) and superskills-marketing (173 marketing skills), installable directly from this repo.",
   "owner": {
     "name": "Danilo Stern-Sapad",
     "email": "danilosapad@gmail.com"
@@ -10,7 +10,7 @@
       "name": "superskills",
       "displayName": "Superskills",
       "source": "./",
-      "version": "2.23.0",
+      "version": "2.24.0",
       "description": "Core + design skills with a Google/Meta-quality workflow (TDD, DRY, SOLID). Full marketing-skills set via ./setup.",
       "author": {
         "name": "Danilo Stern-Sapad",
@@ -19,7 +19,36 @@
       "homepage": "https://github.com/ariadoss/superskills",
       "repository": "https://github.com/ariadoss/superskills",
       "license": "MIT",
-      "keywords": ["skills", "agents", "tdd", "design", "marketing", "workflow"]
+      "keywords": [
+        "skills",
+        "agents",
+        "tdd",
+        "design",
+        "marketing",
+        "workflow"
+      ]
+    },
+    {
+      "name": "superskills-marketing",
+      "displayName": "Superskills Marketing",
+      "source": "./marketing-skills",
+      "version": "2.24.0",
+      "description": "The 173 marketing skills (SEO, content, pages, ads, channels, strategies) as a separate plugin \u2014 install alongside superskills.",
+      "author": {
+        "name": "Danilo Stern-Sapad",
+        "email": "danilosapad@gmail.com"
+      },
+      "homepage": "https://github.com/ariadoss/superskills",
+      "repository": "https://github.com/ariadoss/superskills",
+      "license": "MIT",
+      "keywords": [
+        "marketing",
+        "seo",
+        "content",
+        "ads",
+        "growth",
+        "skills"
+      ]
     }
   ]
 }

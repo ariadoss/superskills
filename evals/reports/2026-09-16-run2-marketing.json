@@ -1,0 +1,561 @@
+{
+  "schemaVersion": 1,
+  "claudeVersion": "2.1.273",
+  "startedAt": "2026-09-16T19:56:33.517Z",
+  "durationSeconds": 165,
+  "costUsd": 2.5284549999999997,
+  "partial": false,
+  "suite": {
+    "root": "/Users/danilosapad/Sites/superskills",
+    "ablation": "with-without",
+    "judgeModel": "sonnet",
+    "caseFilter": "marketing-*",
+    "threshold": 0.5,
+    "concurrency": 2,
+    "plugins": [
+      {
+        "name": "superskills-marketing",
+        "version": "2.24.0",
+        "path": "/Users/danilosapad/Sites/superskills/marketing-skills"
+      }
+    ]
+  },
+  "cases": [
+    {
+      "name": "marketing-meta-description",
+      "dir": "evals/marketing-meta-description",
+      "source": "prose",
+      "promptMarkdown": "Write a meta description for the pricing page of Taskflow, a project-management SaaS for small agencies. Give me the final text only, plus its character count.",
+      "runsPerCase": 3,
+      "timeoutSeconds": 300,
+      "maxTurns": 10,
+      "graders": [
+        {
+          "name": "meets-the-bar",
+          "type": "llm",
+          "weight": 1,
+          "graderMarkdown": "Identify the meta description the reply presents as its final or recommended one (labelled \"final\", \"recommended\", shown first, or the only one). Extra alternates that are clearly labelled as alternatives or A/B variants do NOT count against it. Count that description's characters yourself (do not trust the reply's count).\n\nPASS if that final description is between 70 and 160 characters inclusive, mentions Taskflow, and refers to pricing or plans.\nFAIL if it is longer than 160 characters, omits Taskflow, or the reply presents several options with none marked as the final/recommended one, or no description at all.",
+          "config": {
+            "criteria": "Identify the meta description the reply presents as its final or recommended one (labelled \"final\", \"recommended\", shown first, or the only one). Extra alternates that are clearly labelled as alternatives or A/B variants do NOT count against it. Count that description's characters yourself (do not trust the reply's count).\n\nPASS if that final description is between 70 and 160 characters inclusive, mentions Taskflow, and refers to pricing or plans.\nFAIL if it is longer than 160 characters, omits Taskflow, or the reply presents several options with none marked as the final/recommended one, or no description at all.",
+            "focus": "last_message"
+          }
+        },
+        {
+          "name": "skill-fired",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Skill",
+            "input_match": "\"skill\"\\s*:\\s*\"(?:[\\w-]+:)?meta-description\""
+          }
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 5,
+            "costUsd": 0.26075349999999997,
+            "judgeCostUsd": 0.00814,
+            "durationSeconds": 22,
+            "startedAt": "2026-09-16T19:56:33.693Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-oqNprd/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "meets-the-bar",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "**Recommended**\n\n```\nCompare Taskflow pricing plans built for small agencies. Per-seat pricing, unlimited projects and clients, no setup fees. Start a free trial today.\n```\n\n**147 characters** — within the 150–160 Latin-script range, and the keyword (\"Taskflow pricing\") plus the agency qualifier land in the first ~120 chars so they survive mobile truncation.\n\n**Alternatives for A/B testing**\n\n- `See Taskflow pricing for small agencies: simple per-seat plans, unlimited projects, and client access included. Compare plans and start free today.` — 147 chars\n- `Taskflow pricing for small agencies. Transparent per-seat plans with unlimited projects, client portals, and time tracking. Compare plans and start free.` — 153 chars\n\nOne thing to verify before publishing: I assumed per-seat pricing, unlimited projects, no setup fees, and a free trial, since you didn't specify Taskflow's actual plan structure. Swap in your real differentiators (e.g. flat-rate pricing, free client seats, a starting price like \"from $12/user/mo\") if any of those don't hold — a concrete price in the description usually outperforms a generic benefit claim on CTR."
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 5,
+            "costUsd": 0.281906,
+            "judgeCostUsd": 0.01962,
+            "durationSeconds": 32,
+            "startedAt": "2026-09-16T19:56:33.693Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-gVoSU6/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "meets-the-bar",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "Meta descriptions shape click-through in the SERP (not ranking), so this targets \"Taskflow pricing\" + the agency qualifier and leads with a compare-and-decide CTA.\n\n**Recommended**\n\n> Taskflow pricing for small agencies: compare plans side by side, see per-user costs, and pick the right fit. Transparent pricing, no setup fees. Start free.\n\n**156 characters** — inside the 150–160 Latin-script range, so it should render in full on desktop (~920px).\n\n**Alternatives for A/B testing**\n\n| Variant | Chars |\n|---|---|\n| Compare Taskflow plans and pricing built for small agencies. Transparent per-user rates, unlimited projects, and client access. Find your plan and start free. | 158 |\n| See Taskflow pricing for small agencies. Simple per-user plans for client projects, time tracking, and team workloads. Compare plans and start your free trial. | 159 |\n\nOne note: I assumed per-user pricing, no setup fees, and a free tier or trial, since those are the norm for agency-tier SaaS. If any of those don't match Taskflow's actual plans, swap that clause — the first ~120 characters carry the keyword and agency framing and can stay as-is on mobile."
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 5,
+            "costUsd": 0.30089199999999994,
+            "judgeCostUsd": 0.018239999999999992,
+            "durationSeconds": 31,
+            "startedAt": "2026-09-16T19:56:56.069Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-ZLOX5m/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "meets-the-bar",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS FAIL PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  false,
+                  true
+                ],
+                "evidence": "A meta description doesn't affect ranking, but it's the SERP sales pitch — for a pricing page the job is to signal transparency and remove the \"will this fit my budget?\" hesitation before the click.\n\n**Recommended:**\n\n```\nCompare Taskflow plans and pricing for small agencies. Simple per-seat pricing, unlimited projects and free client seats. Start free, no credit card needed.\n```\n\n**156 characters** — within the 150–160 Latin-script range, with the keyword (\"Taskflow pricing\", \"small agencies\") front-loaded so it survives the ~120-char mobile truncation.\n\n**Alternatives for A/B testing:**\n\n| Variant | Text | Chars |\n|---|---|---|\n| Benefit-led | See Taskflow pricing for small agencies: simple per-seat plans, unlimited projects, and free client access. Compare plans and start your free trial today. | 154 |\n| Low-commitment | Taskflow pricing for small agencies. Compare plans, see what's included at every tier, and pick the one that fits your team. Start free, upgrade when ready. | 156 |\n\nOne thing to verify before publishing: I assumed per-seat pricing, free client seats, and a no-credit-card free tier, since I have no Taskflow product details. Swap those specifics for your actual differentiators (flat-rate pricing, trial length, a starting price like \"from $12/user/mo\") — concrete numbers tend to outperform generic claims on pricing pages."
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          }
+        ],
+        "without": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 1,
+            "costUsd": 0.1252105,
+            "judgeCostUsd": 0.013535999999999996,
+            "durationSeconds": 19,
+            "startedAt": "2026-09-16T19:57:05.984Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-TtLD7M/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "meets-the-bar",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "**Meta description:**\n\nSimple project management pricing built for small agencies. Compare Taskflow plans, see what's included, and start a free 14-day trial — no card required.\n\n**Character count:** 154 (within the ~155 limit before Google truncates)\n\nOne assumption to verify: the \"free 14-day trial — no card required\" claim. If Taskflow's trial differs, swap that clause for whatever's accurate and I'll recount."
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 2,
+            "costUsd": 0.152886,
+            "judgeCostUsd": 0.012184000000000007,
+            "durationSeconds": 24,
+            "startedAt": "2026-09-16T19:57:25.139Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-jLrhUA/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "meets-the-bar",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "See Taskflow pricing for small agencies. Flexible plans to manage projects, clients, and deadlines in one place. Compare features and pick your plan today.\n\n**155 characters**\n\nNo specific price points or tier names are included, since I don't have them — drop in a real hook (e.g. \"Plans from $X/mo\") if you want one and I'll rebalance the length."
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 2,
+            "costUsd": 0.1313685,
+            "judgeCostUsd": 0.008615999999999999,
+            "durationSeconds": 18,
+            "startedAt": "2026-09-16T19:57:27.214Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-bBOwxr/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "meets-the-bar",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "**Meta description:**\n\nCompare Taskflow pricing plans built for small agencies. Transparent per-seat rates, no hidden fees, and a free trial on every plan. Find your fit.\n\n**Character count:** 147 (within the ~150–160 range Google typically renders on desktop)\n\nOne flag: I assumed per-seat pricing and a free trial on all plans. If either isn't true, swap those clauses — e.g. \"Flat monthly rates\" or \"a 14-day free trial\" — and the length stays in range."
+              }
+            ]
+          }
+        ]
+      },
+      "aggregates": {
+        "score": 1,
+        "passRate": 1,
+        "scoreWithout": 1,
+        "passRateWithout": 1,
+        "delta": 0
+      }
+    },
+    {
+      "name": "marketing-pricing-page",
+      "dir": "evals/marketing-pricing-page",
+      "source": "prose",
+      "promptMarkdown": "I'm building the pricing page for Taskflow (project management for small agencies, three tiers). Can you lay out the sections the page should have, top to bottom, with a one-line note on what each section is for?",
+      "runsPerCase": 3,
+      "timeoutSeconds": 300,
+      "maxTurns": 10,
+      "graders": [
+        {
+          "name": "has-conversion-elements",
+          "type": "llm",
+          "weight": 1,
+          "graderMarkdown": "PASS if the section list includes at least four of these six pricing-page elements, in any wording: (1) a billing-period toggle or annual-discount display, (2) a highlighted/recommended middle tier, (3) a risk-reversal line such as free trial / no credit card / cancel anytime, (4) social proof (logos, testimonials, customer counts), (5) a full feature-comparison table, (6) a closing call-to-action after the FAQ.\nFAIL if fewer than four are present.",
+          "config": {
+            "criteria": "PASS if the section list includes at least four of these six pricing-page elements, in any wording: (1) a billing-period toggle or annual-discount display, (2) a highlighted/recommended middle tier, (3) a risk-reversal line such as free trial / no credit card / cancel anytime, (4) social proof (logos, testimonials, customer counts), (5) a full feature-comparison table, (6) a closing call-to-action after the FAQ.\nFAIL if fewer than four are present.",
+            "focus": "last_message"
+          }
+        },
+        {
+          "name": "has-core-sections",
+          "type": "regex",
+          "weight": 1,
+          "config": {
+            "target": "last_message",
+            "pattern": "^(?=[\\s\\S]*(tier|plan)s?)(?=[\\s\\S]*(FAQ|frequently asked))(?=[\\s\\S]*(compar|feature))",
+            "flags": "i",
+            "match": "contains"
+          }
+        },
+        {
+          "name": "skill-fired",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Skill",
+            "input_match": "\"skill\"\\s*:\\s*\"(?:[\\w-]+:)?pricing-page-generator\""
+          }
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 4,
+            "costUsd": 0.295281,
+            "judgeCostUsd": 0.0077160000000000145,
+            "durationSeconds": 37,
+            "startedAt": "2026-09-16T19:57:45.119Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-GWxUoR/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "has-conversion-elements",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "Quick note on what this covers: pricing-page work is mostly structure and sequencing — the order sections appear in does the persuading, since visitors scan tiers, hunt for the catch, then look for reassurance. Here's the top-to-bottom layout for Taskflow.\n\n## Taskflow pricing page — section order\n\n| # | Section | What it's for |\n|---|---------|---------------|\n| 1 | **Headline + subhead** | Frames the pricing as simple and agency-sized before any number is seen (\"Pricing that scales with your client roster\"). |\n| 2 | **Monthly / annual toggle** | Lets visitors self-select billing period and surfaces the annual discount (15–25%) as an immediate reason to commit. |\n| 3 | **Three tier cards** | The core decision unit — price, value metric, \"best for\" line, and 4–6 differentiating features per tier. |\n| 4 | **\"Most popular\" badge on the middle tier** | Not a section, but the anchoring device: makes tier 2 the default choice instead of tier 1. |\n| 5 | **Risk-reversal strip** (directly under the cards) | Kills the \"what's the catch\" hesitation at the moment of highest doubt — free trial, no credit card, cancel anytime. |\n| 6 | **Full feature comparison table** | Serves the careful evaluator who needs to confirm a specific feature exists in the tier they're considering. |\n| 7 | **Seats & client-access explainer** | Agency-specific: states plainly what a billable seat is and whether client guests/reviewers are free — the #1 pricing question agencies have. |\n| 8 | **Social proof row** | Agency logos plus one short quote mentioning a concrete outcome, placed after the price to justify it. |\n| 9 | **\"Not sure which plan?\" guidance block** | Resolves tier confusion with a 2–3 line decision rule (by team size or active client count) rather than more features. |\n| 10 | **Bigger agency / custom band** | Catches the few accounts that outgrow tier 3 — a single row with \"Talk to us\" instead of a fourth card that clutters the decision. |\n| 11 | **FAQ** | Absorbs the remaining objections: proration on upgrades, what happens at trial end, refunds, data export, migrating from your current tool. |\n| 12 | **Closing CTA** | Recaptures anyone who scrolled past the cards while reading, so they don't have to scroll back up. |\n\nTwo things worth deciding before you build it:\n\n- **Your value metric.** For agencies the natural candidates are seats or active clients/projects. Pick one and make all three tiers scale on it — mixing metrics across tiers is the most common reason pricing pages confuse people.\n- **Client guests.** If billing clients as seats is even possible, agencies will assume the worst and bounce. If they're free, say so in the tier cards, not just section 7.\n\nWant me to write the actual copy for the tier cards and FAQ next, or work out the tier structure and price points first?"
+              },
+              {
+                "name": "has-core-sections",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*(tier|plan)s?)(?=[\\s\\S]*(FAQ|frequently asked))(?=[\\s\\S]*(compar|feature))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 4,
+            "costUsd": 0.2821735,
+            "judgeCostUsd": 0.007428000000000004,
+            "durationSeconds": 28,
+            "startedAt": "2026-09-16T19:57:48.839Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-B4AxgA/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "has-conversion-elements",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "No project context file in the repo, so this is a generic-but-opinionated structure for a self-serve SMB product. Since you're selling to small agencies at three tiers, pricing should be public and in the main nav — hidden pricing is a top deterrent for buyers at this size, and there's no enterprise sales motion to protect.\n\n## Taskflow /pricing — sections, top to bottom\n\n| # | Section | What it's for |\n|---|---------|---------------|\n| 1 | **Headline + subhead** | Frames the page as simple and risk-free before any number is read (\"Pricing that scales with your client list\"). |\n| 2 | **Monthly/annual toggle** | Lets visitors self-select billing period and surfaces the annual discount (15–25%) as a visible saving, not fine print. |\n| 3 | **Three plan cards** | The core decision: price, value metric, \"best for\" line, and 4–6 outcome-led bullets per tier. |\n| 4 | **Per-plan CTA** (inside each card) | Converts at the moment of choice — same primary action across tiers so no tier feels like a dead end. |\n| 5 | **\"Most popular\" badge on the middle tier** | Anchors the decision on your target plan and gives the undecided a default. |\n| 6 | **Full feature comparison table** | Catches the comparison shopper who needs to verify a specific feature before committing; also the natural home for limits. |\n| 7 | **Risk reversal strip** | One line under the tables — free trial, no credit card, cancel anytime — to kill commitment objections at the point of hesitation. |\n| 8 | **Social proof** | Agency logos or one short testimonial with a concrete result; proves other agencies like them already pay. |\n| 9 | **FAQ** | Absorbs billing, seat changes, client/project limits, refunds, and data export questions that would otherwise become support tickets or bounces. |\n| 10 | **Closing CTA** | Recaptures anyone who scrolled past the cards while researching. |\n\n## Two calls worth making before you build it\n\n**Your value metric.** For agencies the obvious candidates are seats, active clients, or active projects. Seats is easiest to explain and bill, but it punishes agencies for adding freelancers — which is exactly what small agencies do constantly. Active clients or projects tracks the value they get more honestly and grows as they grow. I'd lean toward seats *plus* a generous client/project allowance per tier, so the metric is legible but doesn't tax collaboration.\n\n**Client-facing access.** Agencies need to give clients visibility without paying full seat price. Whether guest/client viewers are free is a tier-differentiation lever and one of the first things an agency buyer will look for — decide it deliberately rather than leaving it to the comparison table.\n\nWant me to draft the actual copy for any of these — plan names, bullets, and FAQ answers?"
+              },
+              {
+                "name": "has-core-sections",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*(tier|plan)s?)(?=[\\s\\S]*(FAQ|frequently asked))(?=[\\s\\S]*(compar|feature))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 4,
+            "costUsd": 0.2946535,
+            "judgeCostUsd": 0.013272000000000006,
+            "durationSeconds": 32,
+            "startedAt": "2026-09-16T19:58:16.956Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-CT6p6Q/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "has-conversion-elements",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "A pricing page for a three-tier, self-serve SaaS is mostly a sequencing problem: get the plan grid visible fast, then answer objections in the order they surface. Here's the top-to-bottom layout.\n\n## Taskflow /pricing — section order\n\n| # | Section | What it's for |\n|---|---------|---------------|\n| 1 | **Headline + subhead** | Frames the value and the unit of pricing in one line (\"Pricing that scales with your client list, not your headcount\") so visitors know what they're buying before they read numbers. |\n| 2 | **Monthly/annual toggle** | Lets visitors self-select billing period and surfaces the annual discount (aim 15–25%) as a visible savings badge, not fine print. |\n| 3 | **Three-tier plan cards** | The core decision: three cards side by side, each with price, a \"Best for [agency size]\" line, and its 4–6 differentiating features. |\n| 4 | **\"Most popular\" badge on the middle tier** | Not a separate section — a treatment on card 2 that makes the mid-tier the default choice and keeps the top tier working as the anchor. |\n| 5 | **Per-card CTA** | Each tier gets its own button (\"Start 14-day trial,\" no shared generic CTA) plus a risk-reducer microline: no credit card, cancel anytime. |\n| 6 | **Full feature comparison table** | For the visitor who's torn between two tiers — every feature, every row, so nobody has to email you to find out what \"advanced\" means. |\n| 7 | **Value-metric explainer** | A short block defining how you count (seats? active clients? projects?) and confirming free guest/client access — the #1 pricing question agencies ask. |\n| 8 | **Social proof strip** | Agency logos or a one-line stat (\"Trusted by 800+ agencies\") placed right after the decision point, where hesitation peaks. |\n| 9 | **Testimonial with a switching story** | One quote from an agency that moved off a spreadsheet or a competitor, ideally with a concrete result — handles \"is this worth it\" better than any feature row. |\n| 10 | **Objection-handling / guarantee block** | Money-back or trial terms, migration help, and cancel-anytime stated plainly to defuse commitment risk. |\n| 11 | **FAQ** | Billing cycle, mid-cycle upgrades and proration, what happens at the seat limit, refunds, data export on cancellation, invoicing for annual. |\n| 12 | **Closing CTA** | Recaptures anyone who scrolled the whole page: repeat the primary action plus a low-commitment alternative (\"Book a 15-min walkthrough\"). |\n\n**Two calls worth making deliberately:**\n\n- **No enterprise tier.** Small agencies are your whole market; adding a \"Contact sales\" fourth column dilutes the three-tier decoy structure and implies the real product is elsewhere. If large agencies do come knocking, handle it with one line under the top card (\"Need more than 50 seats? Talk to us\") rather than a column.\n- **Section 7 is load-bearing.** Agency pricing confusion is almost always about whether clients count as billable seats. If they don't, say so on the cards themselves, not just in the FAQ.\n\nWant me to draft the actual copy for any of these — the plan cards and their feature splits are usually the highest-leverage place to start."
+              },
+              {
+                "name": "has-core-sections",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*(tier|plan)s?)(?=[\\s\\S]*(FAQ|frequently asked))(?=[\\s\\S]*(compar|feature))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          }
+        ],
+        "without": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 1,
+            "costUsd": 0.14233650000000003,
+            "judgeCostUsd": 0.015672000000000005,
+            "durationSeconds": 27,
+            "startedAt": "2026-09-16T19:58:21.939Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-PzjYDj/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "has-conversion-elements",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "Here's a top-to-bottom structure for the Taskflow pricing page:\n\n1. **Nav** — Standard site header, but trimmed: no competing CTAs pulling people off the page except \"Log in\" and the primary trial button.\n2. **Page hero** — One headline that frames the value (\"Pricing that scales with your client roster\"), one subhead, no image; get people to the cards fast.\n3. **Billing toggle** — Monthly/annual switch with the annual discount stated as a saving (\"2 months free\"), placed directly above the cards so it's obviously attached to them.\n4. **Three tier cards** — The core of the page: price, who each tier is for in one line, seat count/limits, a short differentiating feature list, and a CTA per card with the middle tier visually marked as recommended.\n5. **\"Not sure which plan?\" strip** — A one-line-per-tier plain-language chooser (\"Solo or 2–3 people → Starter; a team billing clients → Growth\"), for people the cards didn't settle.\n6. **Trust bar** — The objection-killers right under the buying decision: free trial length, no credit card, cancel anytime, migration/import help, data export.\n7. **Full feature comparison table** — The detailed tier-by-tier matrix for the evaluator who's already sold on the category and is checking specifics.\n8. **Social proof** — Agency logos plus one testimonial that speaks to money or team size, positioned to reassure right after the table's cognitive load.\n9. **FAQ** — Handles the questions that would otherwise become support tickets or exits: what counts as a seat, do clients/guests cost anything, mid-cycle upgrades, overages, refunds, what happens at trial end.\n10. **Closing CTA** — Restates the primary action for anyone who scrolled the whole page, with a secondary \"Talk to us\" for the bigger agencies.\n11. **Footer** — Normal site footer.\n\nA few calls worth flagging:\n\n- **Seat pricing needs a calculator, not just a per-seat number.** Agencies buy in odd team sizes (7 people, 2 contractors). If Taskflow is per-seat, add a small seat slider inside or beside the cards showing the real monthly total — it removes the biggest source of \"I'll come back later.\"\n- **Decide where client/guest access lives.** For agency tools this is the single most-asked pricing question. If guests are free, say it on the cards, not just in the FAQ — it's a differentiator, not a detail.\n- **Sections 5 and 6 are the ones most pages skip**, and they're where small-agency buyers stall. If you want a shorter v1, cut the comparison table before cutting either of those.\n\nIf you tell me the tier names, prices, and what separates them, I can write the actual copy for each section."
+              },
+              {
+                "name": "has-core-sections",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*(tier|plan)s?)(?=[\\s\\S]*(FAQ|frequently asked))(?=[\\s\\S]*(compar|feature))",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 0.5,
+            "passed": false,
+            "turns": 1,
+            "costUsd": 0.1251445,
+            "judgeCostUsd": 0.006840000000000013,
+            "durationSeconds": 22,
+            "startedAt": "2026-09-16T19:58:48.701Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-MDTOOL/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "has-conversion-elements",
+                "passed": false,
+                "weight": 1,
+                "explanation": "judge votes: FAIL FAIL FAIL",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  false,
+                  false,
+                  false
+                ],
+                "evidence": "Here's a top-to-bottom structure for the Taskflow pricing page.\n\n## Core page\n\n**1. Header / page title**\nOne line that frames the value (\"Pricing that scales with your client roster\"), not just the word \"Pricing\" — sets the frame before anyone reads a number.\n\n**2. Billing toggle (monthly / annual)**\nSits directly above the cards so the discount is visible before tier comparison; label the savings explicitly (\"Save 20%\").\n\n**3. The three tier cards**\nThe decision surface — each card carries name, price, who it's for, the 4–6 features that matter most, and its own CTA. Mark one tier \"Most popular\" to give the undecided buyer a default.\n\n**4. \"What counts as a seat\" / pricing-model clarifier**\nImmediately under the cards, because for agencies the first real question is whether client collaborators and freelancers burn a paid seat — ambiguity here kills the conversion.\n\n**5. Full feature comparison table**\nFor the evaluator who's already interested and needs to confirm one specific capability; grouped by category (projects, time tracking, client access, reporting, admin) with sticky tier headers.\n\n**6. Add-ons / usage limits**\nAnything priced outside the tiers — extra storage, guest seats, premium support — so the sticker price stays trustworthy.\n\n## Supporting\n\n**7. Social proof strip**\nLogos or a short quote from agencies of a recognizable size — reassures the buyer that peers at their scale actually run on this.\n\n**8. ROI or switching context**\nOne compact block (calculator, or \"replaces X + Y + Z\") that reframes the monthly cost against the tools or billable hours it displaces.\n\n**9. Security, reliability, and trust**\nSOC 2, uptime, data ownership, export — brief for small agencies, but its absence reads as a gap to anyone vetting a system of record for client work.\n\n**10. Pricing FAQ**\nAbsorbs the objections that would otherwise become support tickets: changing plans mid-cycle, refunds, what happens at trial end, cancellation, invoicing vs. card.\n\n**11. Closing CTA**\nRestates the low-risk entry point (free trial, no card) for anyone who scrolled the whole page without clicking.\n\nTwo judgment calls worth making early, since they change the layout: whether there's a free tier or trial-only (a free tier adds a fourth column and usually forces a narrower card design), and whether the top tier is \"Contact sales\" rather than self-serve (that swaps the third card's CTA and often warrants a small enterprise band below the cards instead)."
+              },
+              {
+                "name": "has-core-sections",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*(tier|plan)s?)(?=[\\s\\S]*(FAQ|frequently asked))(?=[\\s\\S]*(compar|feature))",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 1,
+            "costUsd": 0.1358495,
+            "judgeCostUsd": 0.007439999999999988,
+            "durationSeconds": 29,
+            "startedAt": "2026-09-16T19:58:49.140Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-jMUz3j/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "has-conversion-elements",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "Here's the layout, top to bottom:\n\n## Page structure\n\n1. **Hero / page header** — One headline that frames the value (\"Project management priced for agencies, not enterprises\") plus a one-line reassurance: free trial, no card, cancel anytime.\n\n2. **Billing toggle** — Monthly/annual switch with the annual discount stated as a number (\"2 months free\"), placed directly above the cards so it's seen before prices are read.\n\n3. **The three pricing cards** — The core decision: tier name, price, who it's for in one line, 4–6 differentiating features, and a CTA on each; middle tier visually flagged as recommended.\n\n4. **Seat & client-access note** — A short strip under the cards clarifying what counts as a paid seat vs. a free client/guest seat — the #1 pricing question agencies ask, and answering it early prevents bounce.\n\n5. **Logo bar / social proof** — Agency logos or a \"trusted by X agencies\" stat, positioned right after the price to blunt sticker shock.\n\n6. **Full feature comparison table** — The detailed grid for people who've narrowed to two tiers and need to justify the upgrade; collapsible by category so it doesn't wall off the page.\n\n7. **\"Which plan is right for you?\"** — Three short profiles (\"5-person studio\", \"growing agency with contractors\", \"30+ with multiple client portfolios\") mapping team shape to tier, for people who can't self-select from the table.\n\n8. **ROI / value framing** — One block translating the price into agency terms — cost per seat vs. one billable hour, or hours saved on status reporting.\n\n9. **Testimonial or mini case study** — One agency's before/after with a concrete number, sitting right where doubt peaks (after comparison, before FAQ).\n\n10. **Security, data ownership & admin** — Brief trust block covering data export, client data handling, SSO/permissions — table stakes for anyone holding client work.\n\n11. **FAQ** — Objection handling: switching tiers, overages, what happens at trial end, refunds, migration from their current tool, discounts for nonprofits/annual.\n\n12. **Final CTA** — A last dual CTA — start free trial (primary) and talk to us (secondary) — for people who scrolled the whole page and are still deciding.\n\n13. **Footer** — Standard navigation, plus links to terms and a contact route for custom/volume requests.\n\n## Two calls worth flagging\n\n**Comparison table below the cards, not instead of them.** Cards sell; tables justify. Leading with the table makes the page feel like a spec sheet and kills conversion on the primary tier.\n\n**Sections 4 and 7 are the agency-specific ones.** Generic SaaS pricing pages skip both. For agencies the two blockers are \"do my clients cost me money?\" and \"I'm between two tiers\" — if you cut anything for a v1, cut 8 and 10 before those."
+              },
+              {
+                "name": "has-core-sections",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*(tier|plan)s?)(?=[\\s\\S]*(FAQ|frequently asked))(?=[\\s\\S]*(compar|feature))",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          }
+        ]
+      },
+      "aggregates": {
+        "score": 1,
+        "passRate": 1,
+        "scoreWithout": 0.8333333333333334,
+        "passRateWithout": 0.6666666666666666,
+        "delta": 0.16666666666666663
+      }
+    }
+  ],
+  "aggregates": {
+    "casesTotal": 2,
+    "casesPassed": 2,
+    "overallScore": 1,
+    "overallPassRate": 1,
+    "meanDelta": 0.08333333333333331
+  }
+}

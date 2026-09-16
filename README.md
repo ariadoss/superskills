@@ -1,8 +1,8 @@
-# Superskills `v2.23.0`
+# Superskills `v2.24.0`
 
 Curated AI skills pack for Claude Code, OpenCode, Codex CLI, Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Bundles [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
-42 core skills + 53 gstack skills + 173 marketing skills + 35 design skills. gstack is installed automatically and vendored in this repo so skills are available even if the upstream repo is removed.
+43 core skills + 53 gstack skills + 173 marketing skills + 35 design skills. gstack is installed automatically and vendored in this repo so skills are available even if the upstream repo is removed.
 
 > **[Full command reference →](COMMANDS.md)** — all skills with descriptions and overlap notes
 > **[10x+ Engineering Workflow →](DEVELOPER_WORKFLOW.md)** — run 10+ parallel AI agents, each with a full quality pipeline ([deep dive](https://hyperion360.com/blog/parallel-ai-agents-engineering-workflow/))
@@ -34,11 +34,13 @@ Claude Code and Codex can install superskills as a versioned **plugin**, which
 gives you a native "updated" notification when a new version ships — no manual
 `git pull` needed.
 
-**Claude Code** (exposes the core + design skills; run `./setup` for the full
-marketing-skills set):
+**Claude Code** — two plugins from one marketplace: `superskills` (core + design
+skills) and `superskills-marketing` (the 173 marketing skills under their usual
+names, e.g. `/superskills-marketing:meta-description`):
 ```bash
 /plugin marketplace add ariadoss/superskills
 /plugin install superskills@superskills
+/plugin install superskills-marketing@superskills   # optional
 /reload-plugins
 ```
 On a new release you'll see *"Plugins updated — run `/reload-plugins`"* at startup
@@ -49,6 +51,11 @@ On a new release you'll see *"Plugins updated — run `/reload-plugins`"* at sta
 codex plugin marketplace add ariadoss/superskills
 codex plugin install superskills
 ```
+
+**Cursor:** register `ariadoss/superskills` as a team marketplace
+(Dashboard → Plugins → Add Marketplace → Import from Repo), then install
+Superskills from **Cursor Settings → Plugins**. `.cursor-plugin/` carries the
+manifests; `./setup --cursor` remains the project-level `.mdc` rules install.
 
 The plugin `version` is driven by the repo's `VERSION` file via
 `scripts/sync-version.sh`, so every release bumps the version the plugin systems
@@ -175,8 +182,14 @@ All executable code in this repo holds to [`ENGINEERING_STANDARDS.md`](ENGINEERI
 (TDD · DRY · SOLID · YAGNI). Shell code is unit-tested with [bats](https://github.com/bats-core/bats-core):
 
 ```bash
-./tests/run.sh    # runs tests/*.bats
+./tests/run.sh    # runs tests/*.bats (includes `claude plugin validate --strict`)
 ```
+
+Skill *behaviour* is tested with `claude plugin eval` — a suite under
+[`evals/`](evals/) with a sampling plan, binary graders and a no-plugin baseline
+so each case reports what the plugin actually contributed (Δ). See
+[`evals/RUBRIC.md`](evals/RUBRIC.md). Every eval run is a real model call on your
+account, so it is not part of `./tests/run.sh`.
 
 ## Updating
 
@@ -190,6 +203,11 @@ cd ~/.claude/skills/superskills && git pull && ./setup
 > symlink. `setup` installs a git `post-merge` hook that does this automatically
 > on every pull, so after your first run you can just `git pull`. The
 > `/superskills-upgrade` command also handles this for you.
+>
+> Not sure what state an install is in? `/superskills-doctor` prints a read-only
+> table — install kind, which skills are linked, VERSION vs manifests, gstack,
+> bun, optional tools — and a verdict that is never "ready" while a required check
+> is blocked. It changes nothing; the table names the fix.
 
 ## Maintenance utilities
 
@@ -258,7 +276,7 @@ From [kostja94/marketing-skills](https://github.com/kostja94/marketing-skills) �
 | **Visual Design** | `/high-end-visual-design`, `/minimalist-ui`, `/design-taste-frontend`, `/redesign-existing-projects`, `/ui-refactor`, `/interface-design` |
 | **Design Process** | `/design-audit`, `/design-drift`, `/ux-designer`, `/emil-design-eng` |
 | **Typography** | `/typography` |
-| **React / Next.js** | `/react-best-practices`, `/react-view-transitions`, `/composition-patterns`, `/react-native-skills` |
+| **React / Next.js** | `/vercel-react-best-practices`, `/vercel-react-view-transitions`, `/vercel-composition-patterns`, `/vercel-react-native-skills` |
 | **Vercel** | `/deploy-to-vercel`, `/vercel-cli-with-tokens`, `/web-design-guidelines` |
 | **Swift / iOS** | `/ios-dev`, `/swiftui-toolbars`, `/swiftui-charts-3d`, `/swiftui-alarmkit`, `/swiftui-text-editing`, `/swiftui-webkit` |
 | **App Marketing** | `/app-store-screenshots` |

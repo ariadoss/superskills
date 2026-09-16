@@ -1,0 +1,1508 @@
+{
+  "schemaVersion": 1,
+  "claudeVersion": "2.1.273",
+  "startedAt": "2026-09-16T19:59:19.355Z",
+  "durationSeconds": 418,
+  "costUsd": 5.2206445,
+  "partial": false,
+  "suite": {
+    "root": "/Users/danilosapad/Sites/superskills",
+    "ablation": "with-without",
+    "judgeModel": "sonnet",
+    "caseFilter": "doctor-*",
+    "threshold": 0.5,
+    "concurrency": 2,
+    "plugins": [
+      {
+        "name": "superskills",
+        "version": "2.24.0",
+        "path": "/Users/danilosapad/Sites/superskills"
+      }
+    ]
+  },
+  "cases": [
+    {
+      "name": "doctor-ambiguous-readonly",
+      "dir": "evals/doctor-ambiguous-readonly",
+      "source": "mixed",
+      "promptMarkdown": "something's off with my superskills setup, can you take a look before I run anything? (test box: checkout is ./fixture-repo, home is ./fixture-home)",
+      "runsPerCase": 3,
+      "timeoutSeconds": 300,
+      "maxTurns": 20,
+      "graders": [
+        {
+          "name": "domain-correct",
+          "type": "llm",
+          "weight": 1,
+          "graderMarkdown": "Context the reply may not know: in this tool, `gstack` is an external dependency that the installer clones from GitHub; when the clone fails it installs a \"vendor copy\" (marked `.superskills-vendor-copy`) as a temporary stopgap that the installer replaces with a real clone on its next run. Skills become visible by re-running the installer (`./setup`, or the `/superskills-upgrade` command), which creates symlinks.\n\nPASS if the reply's diagnosis and remediation are consistent with that: the missing skill is fixed by re-running the installer (or the upgrade command), and gstack — if mentioned — is described as a vendor/stopgap copy to be replaced by a real clone (or simply as a warning).\n\nFAIL if the reply recommends or suggests any of: deleting or pruning the gstack directory; copying skill files into the home directory by hand; rewriting or \"implementing\" the setup script; adding or normalising vendor-marker files; or if it calls gstack orphaned/dead/leftover, or presents the plugin manifests as malformed.",
+          "config": {
+            "criteria": "Context the reply may not know: in this tool, `gstack` is an external dependency that the installer clones from GitHub; when the clone fails it installs a \"vendor copy\" (marked `.superskills-vendor-copy`) as a temporary stopgap that the installer replaces with a real clone on its next run. Skills become visible by re-running the installer (`./setup`, or the `/superskills-upgrade` command), which creates symlinks.\n\nPASS if the reply's diagnosis and remediation are consistent with that: the missing skill is fixed by re-running the installer (or the upgrade command), and gstack — if mentioned — is described as a vendor/stopgap copy to be replaced by a real clone (or simply as a warning).\n\nFAIL if the reply recommends or suggests any of: deleting or pruning the gstack directory; copying skill files into the home directory by hand; rewriting or \"implementing\" the setup script; adding or normalising vendor-marker files; or if it calls gstack orphaned/dead/leftover, or presents the plugin manifests as malformed.",
+            "focus": "last_message",
+            "arm": "both"
+          }
+        },
+        {
+          "name": "no-false-ready",
+          "type": "llm",
+          "weight": 1,
+          "graderMarkdown": "You are checking a diagnostic report about a developer-tool install.\n\nPASS if the reply reports at least one problem (a skill that is not linked or\nmissing, a stale manifest, a vendor/stopgap copy, or a missing dependency) AND\nits overall conclusion is consistent with that: it says the install is blocked,\nnot ready, needs a fix, or \"ready with warnings\" for warnings only. Naming the\nfix (e.g. \"run ./setup\") without running it is fine.\n\nFAIL if the reply's overall conclusion is that the install is ready, healthy,\nfine, or \"all good\" while it also reports a blocked/missing item — or if it\nreports no problems at all (the fixture has at least one).",
+          "config": {
+            "criteria": "You are checking a diagnostic report about a developer-tool install.\n\nPASS if the reply reports at least one problem (a skill that is not linked or\nmissing, a stale manifest, a vendor/stopgap copy, or a missing dependency) AND\nits overall conclusion is consistent with that: it says the install is blocked,\nnot ready, needs a fix, or \"ready with warnings\" for warnings only. Naming the\nfix (e.g. \"run ./setup\") without running it is fine.\n\nFAIL if the reply's overall conclusion is that the install is ready, healthy,\nfine, or \"all good\" while it also reports a blocked/missing item — or if it\nreports no problems at all (the fixture has at least one).",
+            "focus": "last_message",
+            "arm": "both"
+          }
+        },
+        {
+          "name": "read-only",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Bash",
+            "input_match": "\"command\"\\s*:\\s*\"(?:[^\"\\\\]|\\\\.)*?(\\.\\/setup\\b|\\bgit\\s+(pull|reset|clone|checkout)\\b|curl\\s[^|]*\\|\\s*(ba)?sh|\\bbun\\s+install\\b|\\bnpm\\s+(i|install)\\b|\\bbrew\\s+install\\b)",
+            "min": 0,
+            "max": 0,
+            "arm": "both"
+          }
+        },
+        {
+          "name": "reports-a-finding",
+          "type": "regex",
+          "weight": 1,
+          "config": {
+            "target": "last_message",
+            "pattern": "(clean-code|gstack)",
+            "flags": "",
+            "match": "contains"
+          }
+        },
+        {
+          "name": "skill-fired",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Skill",
+            "input_match": "\"skill\"\\s*:\\s*\"(?:[\\w-]+:)?superskills-doctor\""
+          }
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 6,
+            "costUsd": 0.31307850000000004,
+            "judgeCostUsd": 0.019896,
+            "durationSeconds": 34,
+            "startedAt": "2026-09-16T19:59:19.533Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-azZna2/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "domain-correct",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "**Not ready — verdict is `blocked`.** Here's the full table from `scripts/doctor.sh`:\n\n| Check | Status | Evidence / next action |\n|---|---|---|\n| Repo | ready | superskills v2.24.0 at ./fixture-repo |\n| Install | ready | dev-repo install (skills symlinked from ./fixture-repo) |\n| Links | blocked | 2/3 linked. Not linked: clean-code (new skills stay invisible until ./setup runs). Run ./setup |\n| Manifests | ready | all plugin manifests at v2.24.0 |\n| gstack | warning | running on the vendor stopgap copy (v1.80.0.0) — browser skills (/qa, /browse) need the real clone; ./setup retries it when online |\n| Plugin | unverified | claude CLI not on PATH — could not query 'claude plugin list' |\n| Post-merge hook | warning | not installed — after git pull you must run ./setup by hand (./setup installs the hook) |\n| Knowledge bases | ready | none configured (optional; edit ./fixture-home/.superskills/knowledge.conf) |\n| bun | ready | /opt/homebrew/bin/bun |\n| bats | ready | /opt/homebrew/bin/bats |\n| clearwing | warning | not on PATH — needed for /pentest — uv tool install clearwing && clearwing setup |\n| ffuf | warning | not on PATH — needed for /fuzz — brew install ffuf |\n\n**Verdict: blocked** — a required check is blocked; superskills is NOT ready until its next action is done.\n\nNon-ready rows, blocked first:\n\n- **Links (blocked)** — `clean-code` isn't linked, so that skill won't trigger at all. Next action: run `./setup` from the checkout.\n- **Plugin (unverified)** — the `claude` CLI isn't on PATH, so `claude plugin list` couldn't run. This one is *unknown*, not fine: the plugin-side install state was never confirmed.\n- **gstack (warning)** — you're on the vendor stopgap copy (v1.80.0.0), not a real clone; `/qa` and `/browse` need the real one. `./setup` retries the clone when online.\n- **Post-merge hook (warning)** — not installed, so a `git pull` won't re-link skills; you'd have to run `./setup` by hand each time. `./setup` installs the hook.\n- **clearwing (warning)** — not on PATH, `/pentest` won't work: `uv tool install clearwing && clearwing setup`.\n- **ffuf (warning)** — not on PATH, `/fuzz` won't work: `brew install ffuf`.\n\nI haven't changed anything — this check is read-only. The single fix that clears the blocked row and two of the warnings is `./setup` from `./fixture-repo` (or `/superskills-upgrade`, which pulls and re-runs setup). Say the word and I'll run it."
+              },
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "**Not ready — verdict is `blocked`.** Here's the full table from `scripts/doctor.sh`:\n\n| Check | Status | Evidence / next action |\n|---|---|---|\n| Repo | ready | superskills v2.24.0 at ./fixture-repo |\n| Install | ready | dev-repo install (skills symlinked from ./fixture-repo) |\n| Links | blocked | 2/3 linked. Not linked: clean-code (new skills stay invisible until ./setup runs). Run ./setup |\n| Manifests | ready | all plugin manifests at v2.24.0 |\n| gstack | warning | running on the vendor stopgap copy (v1.80.0.0) — browser skills (/qa, /browse) need the real clone; ./setup retries it when online |\n| Plugin | unverified | claude CLI not on PATH — could not query 'claude plugin list' |\n| Post-merge hook | warning | not installed — after git pull you must run ./setup by hand (./setup installs the hook) |\n| Knowledge bases | ready | none configured (optional; edit ./fixture-home/.superskills/knowledge.conf) |\n| bun | ready | /opt/homebrew/bin/bun |\n| bats | ready | /opt/homebrew/bin/bats |\n| clearwing | warning | not on PATH — needed for /pentest — uv tool install clearwing && clearwing setup |\n| ffuf | warning | not on PATH — needed for /fuzz — brew install ffuf |\n\n**Verdict: blocked** — a required check is blocked; superskills is NOT ready until its next action is done.\n\nNon-ready rows, blocked first:\n\n- **Links (blocked)** — `clean-code` isn't linked, so that skill won't trigger at all. Next action: run `./setup` from the checkout.\n- **Plugin (unverified)** — the `claude` CLI isn't on PATH, so `claude plugin list` couldn't run. This one is *unknown*, not fine: the plugin-side install state was never confirmed.\n- **gstack (warning)** — you're on the vendor stopgap copy (v1.80.0.0), not a real clone; `/qa` and `/browse` need the real one. `./setup` retries the clone when online.\n- **Post-merge hook (warning)** — not installed, so a `git pull` won't re-link skills; you'd have to run `./setup` by hand each time. `./setup` installs the hook.\n- **clearwing (warning)** — not on PATH, `/pentest` won't work: `uv tool install clearwing && clearwing setup`.\n- **ffuf (warning)** — not on PATH, `/fuzz` won't work: `brew install ffuf`.\n\nI haven't changed anything — this check is read-only. The single fix that clears the blocked row and two of the warnings is `./setup` from `./fixture-repo` (or `/superskills-upgrade`, which pulls and re-runs setup). Say the word and I'll run it."
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "reports-a-finding",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched (clean-code|gstack)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 9,
+            "costUsd": 0.36733699999999997,
+            "judgeCostUsd": 0.022646,
+            "durationSeconds": 39,
+            "startedAt": "2026-09-16T19:59:19.533Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-Ssiu90/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "domain-correct",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "Ran the read-only doctor against your fixture install. Nothing was changed.\n\n| Check | Status | Evidence / next action |\n|---|---|---|\n| Repo | ready | superskills v2.24.0 at /private/tmp/e-Ssiu90/home/cwd/fixture-repo |\n| Install | ready | dev-repo install (skills symlinked from /private/tmp/e-Ssiu90/home/cwd/fixture-repo) |\n| Links | blocked | 2/3 linked. Not linked: clean-code (new skills stay invisible until ./setup runs). Run ./setup |\n| Manifests | ready | all plugin manifests at v2.24.0 |\n| gstack | warning | running on the vendor stopgap copy (v1.80.0.0) — browser skills (/qa, /browse) need the real clone; ./setup retries it when online |\n| Plugin | unverified | claude CLI not on PATH — could not query 'claude plugin list' |\n| Post-merge hook | warning | not installed — after git pull you must run ./setup by hand (./setup installs the hook) |\n| Knowledge bases | ready | none configured (optional; edit /private/tmp/e-Ssiu90/home/cwd/fixture-home/.superskills/knowledge.conf) |\n| bun | ready | /opt/homebrew/bin/bun |\n| bats | ready | /opt/homebrew/bin/bats |\n| clearwing | warning | not on PATH — needed for /pentest — uv tool install clearwing && clearwing setup |\n| ffuf | warning | not on PATH — needed for /fuzz — brew install ffuf |\n\n**Verdict: blocked** — not ready.\n\nNon-ready rows and their next actions:\n\n- **Links (blocked)** — `clean-code` isn't linked, so that skill won't trigger at all. Fix: run `./setup` from the checkout (or `/superskills-upgrade`). This is the one that has to be resolved.\n- **Plugin (unverified)** — the `claude` CLI isn't on PATH, so the probe couldn't run `claude plugin list`. Plugin registration status is unknown, not confirmed fine.\n- **gstack (warning)** — you're on the vendor stopgap copy (v1.80.0.0), not a real clone; `/qa` and `/browse` need the real one. `./setup` retries the clone when online.\n- **Post-merge hook (warning)** — not installed, so a `git pull` won't re-link skills; you'd have to run `./setup` manually each time. `./setup` installs the hook.\n- **clearwing (warning)** — not on PATH; `/pentest` won't work. `uv tool install clearwing && clearwing setup`\n- **ffuf (warning)** — not on PATH; `/fuzz` won't work. `brew install ffuf`\n\nI haven't run `./setup` or anything else — say the word and I will, or run `/superskills-upgrade` yourself. Note that even after `./setup`, the Plugin row stays unverified until `claude` is on PATH."
+              },
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "Ran the read-only doctor against your fixture install. Nothing was changed.\n\n| Check | Status | Evidence / next action |\n|---|---|---|\n| Repo | ready | superskills v2.24.0 at /private/tmp/e-Ssiu90/home/cwd/fixture-repo |\n| Install | ready | dev-repo install (skills symlinked from /private/tmp/e-Ssiu90/home/cwd/fixture-repo) |\n| Links | blocked | 2/3 linked. Not linked: clean-code (new skills stay invisible until ./setup runs). Run ./setup |\n| Manifests | ready | all plugin manifests at v2.24.0 |\n| gstack | warning | running on the vendor stopgap copy (v1.80.0.0) — browser skills (/qa, /browse) need the real clone; ./setup retries it when online |\n| Plugin | unverified | claude CLI not on PATH — could not query 'claude plugin list' |\n| Post-merge hook | warning | not installed — after git pull you must run ./setup by hand (./setup installs the hook) |\n| Knowledge bases | ready | none configured (optional; edit /private/tmp/e-Ssiu90/home/cwd/fixture-home/.superskills/knowledge.conf) |\n| bun | ready | /opt/homebrew/bin/bun |\n| bats | ready | /opt/homebrew/bin/bats |\n| clearwing | warning | not on PATH — needed for /pentest — uv tool install clearwing && clearwing setup |\n| ffuf | warning | not on PATH — needed for /fuzz — brew install ffuf |\n\n**Verdict: blocked** — not ready.\n\nNon-ready rows and their next actions:\n\n- **Links (blocked)** — `clean-code` isn't linked, so that skill won't trigger at all. Fix: run `./setup` from the checkout (or `/superskills-upgrade`). This is the one that has to be resolved.\n- **Plugin (unverified)** — the `claude` CLI isn't on PATH, so the probe couldn't run `claude plugin list`. Plugin registration status is unknown, not confirmed fine.\n- **gstack (warning)** — you're on the vendor stopgap copy (v1.80.0.0), not a real clone; `/qa` and `/browse` need the real one. `./setup` retries the clone when online.\n- **Post-merge hook (warning)** — not installed, so a `git pull` won't re-link skills; you'd have to run `./setup` manually each time. `./setup` installs the hook.\n- **clearwing (warning)** — not on PATH; `/pentest` won't work. `uv tool install clearwing && clearwing setup`\n- **ffuf (warning)** — not on PATH; `/fuzz` won't work. `brew install ffuf`\n\nI haven't run `./setup` or anything else — say the word and I will, or run `/superskills-upgrade` yourself. Note that even after `./setup`, the Plugin row stays unverified until `claude` is on PATH."
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "reports-a-finding",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched (clean-code|gstack)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          }
+        ],
+        "without": [
+          {
+            "score": 0.75,
+            "passed": false,
+            "turns": 11,
+            "costUsd": 0.38202099999999994,
+            "judgeCostUsd": 0.02150400000000001,
+            "durationSeconds": 80,
+            "startedAt": "2026-09-16T19:59:53.431Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-TsgX4H/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "domain-correct",
+                "passed": false,
+                "weight": 1,
+                "explanation": "judge votes: FAIL FAIL FAIL",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  false,
+                  false,
+                  false
+                ],
+                "evidence": "I looked at everything read-only — no changes made, nothing run beyond `ls`/`cat`. There are four real problems, and the first one matters most given your question.\n\n## 1. `setup` is an empty stub — running it would do nothing\n\n`fixture-repo/setup:1` is 10 bytes: a `#!/bin/sh` shebang and a newline. No body.\n\n```\n0000000    #   !   /   b   i   n   /   s   h  \\n\n```\n\nIt will exit 0 silently. That's the trap — it looks like a successful install but repairs none of the below. There's no `.git` in `fixture-repo`, so I can't tell whether this was truncated/clobbered or is genuinely a stub in your tree. Worth confirming against your source before you trust any run of it.\n\n## 2. `gstack` is installed but structurally broken\n\n`fixture-home/.claude/skills/gstack/` contains only `.superskills-vendor-copy` (empty marker) and `VERSION` (`1.80.0.0`) — **no `SKILL.md`**. A skill directory without `SKILL.md` won't load at all.\n\nWorse, there is no `gstack` in `fixture-repo/skills/` (which ships `clean-code`, `debug`, `tdd`). So it's an orphan from an older install, and nothing in this checkout can regenerate it. A reinstall likely can't fix it — it can only delete it.\n\n## 3. `clean-code` never got installed\n\n| repo `skills/` | home `.claude/skills/` |\n|---|---|\n| clean-code | — **missing** |\n| debug | debug |\n| tdd | tdd |\n| — | gstack **(orphan)** |\n\n## 4. Install modes are mixed\n\n- `debug` and `tdd` are **symlinks** — `SKILL.md -> /private/tmp/e-TsgX4H/home/cwd/fixture-repo/skills/<name>/SKILL.md` (dev/link mode)\n- `gstack` is a **vendored copy** (real files + vendor marker)\n\nBoth symlinks are absolute and hardcoded to this checkout path — they break if `fixture-repo` ever moves. If you expected uniformly linked or uniformly vendored, half the tree is the wrong mode. Note also that only the vendored skill carries `.superskills-vendor-copy`; if your installer uses that marker to decide what it owns, `debug` and `tdd` look user-authored to it, and `gstack` looks like the only thing it may remove.\n\n## One lower-confidence flag\n\n`fixture-repo/.claude-plugin/marketplace.json:1` has a plugin entry with only a version: `{\"plugins\": [{\"version\": \"2.24.0\"}]}` — no `name` or `source`. I don't know your marketplace schema, but entries usually need both. The version numbers themselves are consistent — `2.24.0` across `VERSION`, `.claude-plugin/plugin.json`, `marketplace.json`, and `.codex-plugin/plugin.json`.\n\n---\n\n**My recommendation:** don't run `./setup` yet — find out why it's a bare shebang first, since a no-op run that \"succeeds\" will just mask items 2–4. Once you tell me what `setup` is supposed to do (or restore it), I can verify it handles the orphaned `gstack` and the missing `clean-code` rather than silently skipping them. Want me to dig into any of these further?"
+              },
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "I looked at everything read-only — no changes made, nothing run beyond `ls`/`cat`. There are four real problems, and the first one matters most given your question.\n\n## 1. `setup` is an empty stub — running it would do nothing\n\n`fixture-repo/setup:1` is 10 bytes: a `#!/bin/sh` shebang and a newline. No body.\n\n```\n0000000    #   !   /   b   i   n   /   s   h  \\n\n```\n\nIt will exit 0 silently. That's the trap — it looks like a successful install but repairs none of the below. There's no `.git` in `fixture-repo`, so I can't tell whether this was truncated/clobbered or is genuinely a stub in your tree. Worth confirming against your source before you trust any run of it.\n\n## 2. `gstack` is installed but structurally broken\n\n`fixture-home/.claude/skills/gstack/` contains only `.superskills-vendor-copy` (empty marker) and `VERSION` (`1.80.0.0`) — **no `SKILL.md`**. A skill directory without `SKILL.md` won't load at all.\n\nWorse, there is no `gstack` in `fixture-repo/skills/` (which ships `clean-code`, `debug`, `tdd`). So it's an orphan from an older install, and nothing in this checkout can regenerate it. A reinstall likely can't fix it — it can only delete it.\n\n## 3. `clean-code` never got installed\n\n| repo `skills/` | home `.claude/skills/` |\n|---|---|\n| clean-code | — **missing** |\n| debug | debug |\n| tdd | tdd |\n| — | gstack **(orphan)** |\n\n## 4. Install modes are mixed\n\n- `debug` and `tdd` are **symlinks** — `SKILL.md -> /private/tmp/e-TsgX4H/home/cwd/fixture-repo/skills/<name>/SKILL.md` (dev/link mode)\n- `gstack` is a **vendored copy** (real files + vendor marker)\n\nBoth symlinks are absolute and hardcoded to this checkout path — they break if `fixture-repo` ever moves. If you expected uniformly linked or uniformly vendored, half the tree is the wrong mode. Note also that only the vendored skill carries `.superskills-vendor-copy`; if your installer uses that marker to decide what it owns, `debug` and `tdd` look user-authored to it, and `gstack` looks like the only thing it may remove.\n\n## One lower-confidence flag\n\n`fixture-repo/.claude-plugin/marketplace.json:1` has a plugin entry with only a version: `{\"plugins\": [{\"version\": \"2.24.0\"}]}` — no `name` or `source`. I don't know your marketplace schema, but entries usually need both. The version numbers themselves are consistent — `2.24.0` across `VERSION`, `.claude-plugin/plugin.json`, `marketplace.json`, and `.codex-plugin/plugin.json`.\n\n---\n\n**My recommendation:** don't run `./setup` yet — find out why it's a bare shebang first, since a no-op run that \"succeeds\" will just mask items 2–4. Once you tell me what `setup` is supposed to do (or restore it), I can verify it handles the orphaned `gstack` and the missing `clean-code` rather than silently skipping them. Want me to dig into any of these further?"
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "reports-a-finding",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched (clean-code|gstack)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 0.75,
+            "passed": false,
+            "turns": 9,
+            "costUsd": 0.32208050000000005,
+            "judgeCostUsd": 0.018816,
+            "durationSeconds": 68,
+            "startedAt": "2026-09-16T19:59:58.823Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-IunYl0/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "domain-correct",
+                "passed": false,
+                "weight": 1,
+                "explanation": "judge votes: FAIL FAIL FAIL",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  false,
+                  false,
+                  false
+                ],
+                "evidence": "I looked at the fixture checkout and fixture home read-only — I didn't run `setup` or anything else. There are several real problems, and the first one matters most given you were about to run it.\n\n## 1. `setup` is an empty stub (the big one)\n\n`fixture-repo/setup` is 10 bytes — a `#!/bin/sh` shebang and nothing else. It's executable, so it will run, exit 0, and report success while doing absolutely nothing. If you run it and then check for a \"did it work\" signal, you'll get a clean exit and an unchanged install. Whatever repopulates `~/.claude/skills` isn't in there.\n\n## 2. `gstack` is a broken orphan in the home install\n\n`fixture-home/.claude/skills/gstack/` contains only two files:\n- `.superskills-vendor-copy` (empty marker)\n- `VERSION` → `1.80.0.0`\n\nThere is **no `SKILL.md`**, so it isn't a loadable skill at all, and there's no `skills/gstack` in the checkout either — it's a leftover from an older version that a previous install/uninstall didn't clean up.\n\nIts `VERSION` is also malformed: `1.80.0.0` is four segments where everything else in the repo is three. Any semver comparison against the current `2.24.0` is being fed a value that won't parse as semver.\n\n## 3. `clean-code` was never installed\n\n| skill | in checkout | in home |\n|---|---|---|\n| clean-code | ✅ | ❌ missing |\n| debug | ✅ | ✅ symlink |\n| tdd | ✅ | ✅ symlink |\n| gstack | ❌ | ⚠\ufe0f broken vendor copy |\n\nConsistent with #1 — the installer isn't running, so the home dir is frozen at some earlier state.\n\n## 4. Mixed install modes, with absolute symlinks\n\n`tdd` and `debug` are symlinks (dev/link mode) pointing at absolute paths inside the checkout:\n\n```\nfixture-home/.claude/skills/tdd/SKILL.md\n  -> /private/tmp/.../fixture-repo/skills/tdd/SKILL.md\n```\n\nBoth currently resolve fine. But `gstack` is a *vendor copy* instead, so the home dir is half-linked, half-copied. Two consequences: the two modes will fight if the installer tries to reconcile them, and because the links are absolute, moving or deleting the checkout silently breaks `tdd` and `debug` with no warning.\n\n## 5. Minor: marketplace entry has no name\n\nVersion strings are consistent everywhere (`VERSION`, `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, `marketplace.json` all say `2.24.0`). But the marketplace plugin entry is just `{ \"version\": \"2.24.0\" }` — no `name` or `source` key, where those entries normally identify the plugin. Lower confidence than the rest; worth a glance against your schema.\n\n---\n\n**My read:** don't run `setup` expecting it to fix anything — it's a no-op, and its clean exit will mislead you. The install state you have was produced by something else, and it's stale. I'd start by restoring the real `setup` contents (git history or another checkout), since #3 and probably #2 resolve themselves once the installer actually works.\n\nWant me to reconstruct `setup`, or just clear out the dead `gstack` directory and link `clean-code` by hand so the fixture is consistent?"
+              },
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "I looked at the fixture checkout and fixture home read-only — I didn't run `setup` or anything else. There are several real problems, and the first one matters most given you were about to run it.\n\n## 1. `setup` is an empty stub (the big one)\n\n`fixture-repo/setup` is 10 bytes — a `#!/bin/sh` shebang and nothing else. It's executable, so it will run, exit 0, and report success while doing absolutely nothing. If you run it and then check for a \"did it work\" signal, you'll get a clean exit and an unchanged install. Whatever repopulates `~/.claude/skills` isn't in there.\n\n## 2. `gstack` is a broken orphan in the home install\n\n`fixture-home/.claude/skills/gstack/` contains only two files:\n- `.superskills-vendor-copy` (empty marker)\n- `VERSION` → `1.80.0.0`\n\nThere is **no `SKILL.md`**, so it isn't a loadable skill at all, and there's no `skills/gstack` in the checkout either — it's a leftover from an older version that a previous install/uninstall didn't clean up.\n\nIts `VERSION` is also malformed: `1.80.0.0` is four segments where everything else in the repo is three. Any semver comparison against the current `2.24.0` is being fed a value that won't parse as semver.\n\n## 3. `clean-code` was never installed\n\n| skill | in checkout | in home |\n|---|---|---|\n| clean-code | ✅ | ❌ missing |\n| debug | ✅ | ✅ symlink |\n| tdd | ✅ | ✅ symlink |\n| gstack | ❌ | ⚠\ufe0f broken vendor copy |\n\nConsistent with #1 — the installer isn't running, so the home dir is frozen at some earlier state.\n\n## 4. Mixed install modes, with absolute symlinks\n\n`tdd` and `debug` are symlinks (dev/link mode) pointing at absolute paths inside the checkout:\n\n```\nfixture-home/.claude/skills/tdd/SKILL.md\n  -> /private/tmp/.../fixture-repo/skills/tdd/SKILL.md\n```\n\nBoth currently resolve fine. But `gstack` is a *vendor copy* instead, so the home dir is half-linked, half-copied. Two consequences: the two modes will fight if the installer tries to reconcile them, and because the links are absolute, moving or deleting the checkout silently breaks `tdd` and `debug` with no warning.\n\n## 5. Minor: marketplace entry has no name\n\nVersion strings are consistent everywhere (`VERSION`, `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, `marketplace.json` all say `2.24.0`). But the marketplace plugin entry is just `{ \"version\": \"2.24.0\" }` — no `name` or `source` key, where those entries normally identify the plugin. Lower confidence than the rest; worth a glance against your schema.\n\n---\n\n**My read:** don't run `setup` expecting it to fix anything — it's a no-op, and its clean exit will mislead you. The install state you have was produced by something else, and it's stale. I'd start by restoring the real `setup` contents (git history or another checkout), since #3 and probably #2 resolve themselves once the installer actually works.\n\nWant me to reconstruct `setup`, or just clear out the dead `gstack` directory and link `clean-code` by hand so the fixture is consistent?"
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "reports-a-finding",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched (clean-code|gstack)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          }
+        ]
+      },
+      "aggregates": {
+        "score": 1,
+        "passRate": 1,
+        "scoreWithout": 0.75,
+        "passRateWithout": 0,
+        "delta": 0.25
+      }
+    },
+    {
+      "name": "doctor-direct",
+      "dir": "evals/doctor-direct",
+      "source": "mixed",
+      "promptMarkdown": "Is my superskills install healthy? Please check it. This is a test machine: the superskills checkout is at ./fixture-repo and my home directory is ./fixture-home.",
+      "runsPerCase": 3,
+      "timeoutSeconds": 300,
+      "maxTurns": 20,
+      "graders": [
+        {
+          "name": "domain-correct",
+          "type": "llm",
+          "weight": 1,
+          "graderMarkdown": "Context the reply may not know: in this tool, `gstack` is an external dependency that the installer clones from GitHub; when the clone fails it installs a \"vendor copy\" (marked `.superskills-vendor-copy`) as a temporary stopgap that the installer replaces with a real clone on its next run. Skills become visible by re-running the installer (`./setup`, or the `/superskills-upgrade` command), which creates symlinks.\n\nPASS if the reply's diagnosis and remediation are consistent with that: the missing skill is fixed by re-running the installer (or the upgrade command), and gstack — if mentioned — is described as a vendor/stopgap copy to be replaced by a real clone (or simply as a warning).\n\nFAIL if the reply recommends or suggests any of: deleting or pruning the gstack directory; copying skill files into the home directory by hand; rewriting or \"implementing\" the setup script; adding or normalising vendor-marker files; or if it calls gstack orphaned/dead/leftover, or presents the plugin manifests as malformed.",
+          "config": {
+            "criteria": "Context the reply may not know: in this tool, `gstack` is an external dependency that the installer clones from GitHub; when the clone fails it installs a \"vendor copy\" (marked `.superskills-vendor-copy`) as a temporary stopgap that the installer replaces with a real clone on its next run. Skills become visible by re-running the installer (`./setup`, or the `/superskills-upgrade` command), which creates symlinks.\n\nPASS if the reply's diagnosis and remediation are consistent with that: the missing skill is fixed by re-running the installer (or the upgrade command), and gstack — if mentioned — is described as a vendor/stopgap copy to be replaced by a real clone (or simply as a warning).\n\nFAIL if the reply recommends or suggests any of: deleting or pruning the gstack directory; copying skill files into the home directory by hand; rewriting or \"implementing\" the setup script; adding or normalising vendor-marker files; or if it calls gstack orphaned/dead/leftover, or presents the plugin manifests as malformed.",
+            "focus": "last_message",
+            "arm": "both"
+          }
+        },
+        {
+          "name": "mentions-gstack-vendor",
+          "type": "regex",
+          "weight": 1,
+          "config": {
+            "target": "last_message",
+            "pattern": "^(?=[\\s\\S]*gstack)(?=[\\s\\S]*(vendor|stopgap|not a real clone|no \\.git))",
+            "flags": "i",
+            "match": "contains"
+          }
+        },
+        {
+          "name": "names-unlinked-skill",
+          "type": "regex",
+          "weight": 1,
+          "config": {
+            "target": "last_message",
+            "pattern": "^(?=[\\s\\S]*clean-code)(?=[\\s\\S]*setup)",
+            "flags": "",
+            "match": "contains"
+          }
+        },
+        {
+          "name": "no-false-ready",
+          "type": "llm",
+          "weight": 1,
+          "graderMarkdown": "You are checking a diagnostic report about a developer-tool install.\n\nPASS if the reply reports at least one problem (a skill that is not linked or\nmissing, a stale manifest, a vendor/stopgap copy, or a missing dependency) AND\nits overall conclusion is consistent with that: it says the install is blocked,\nnot ready, needs a fix, or \"ready with warnings\" for warnings only. Naming the\nfix (e.g. \"run ./setup\") without running it is fine.\n\nFAIL if the reply's overall conclusion is that the install is ready, healthy,\nfine, or \"all good\" while it also reports a blocked/missing item — or if it\nreports no problems at all (the fixture has at least one).",
+          "config": {
+            "criteria": "You are checking a diagnostic report about a developer-tool install.\n\nPASS if the reply reports at least one problem (a skill that is not linked or\nmissing, a stale manifest, a vendor/stopgap copy, or a missing dependency) AND\nits overall conclusion is consistent with that: it says the install is blocked,\nnot ready, needs a fix, or \"ready with warnings\" for warnings only. Naming the\nfix (e.g. \"run ./setup\") without running it is fine.\n\nFAIL if the reply's overall conclusion is that the install is ready, healthy,\nfine, or \"all good\" while it also reports a blocked/missing item — or if it\nreports no problems at all (the fixture has at least one).",
+            "focus": "last_message",
+            "arm": "both"
+          }
+        },
+        {
+          "name": "read-only",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Bash",
+            "input_match": "\"command\"\\s*:\\s*\"(?:[^\"\\\\]|\\\\.)*?(\\.\\/setup\\b|\\bgit\\s+(pull|reset|clone|checkout)\\b|curl\\s[^|]*\\|\\s*(ba)?sh|\\bbun\\s+install\\b|\\bnpm\\s+(i|install)\\b|\\bbrew\\s+install\\b)",
+            "min": 0,
+            "max": 0,
+            "arm": "both"
+          }
+        },
+        {
+          "name": "skill-fired",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Skill",
+            "input_match": "\"skill\"\\s*:\\s*\"(?:[\\w-]+:)?superskills-doctor\""
+          }
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 6,
+            "costUsd": 0.29773549999999993,
+            "judgeCostUsd": 0.016169999999999976,
+            "durationSeconds": 29,
+            "startedAt": "2026-09-16T20:01:07.253Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-dqJuKo/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "domain-correct",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "**Not ready** — the doctor's verdict is `blocked`.\n\n| Check | Status | Evidence / next action |\n|---|---|---|\n| Repo | ready | superskills v2.24.0 at /private/tmp/e-dqJuKo/home/cwd/fixture-repo |\n| Install | ready | dev-repo install (skills symlinked from /private/tmp/e-dqJuKo/home/cwd/fixture-repo) |\n| Links | blocked | 2/3 linked. Not linked: clean-code (new skills stay invisible until ./setup runs). Run ./setup |\n| Manifests | ready | all plugin manifests at v2.24.0 |\n| gstack | warning | running on the vendor stopgap copy (v1.80.0.0) — browser skills (/qa, /browse) need the real clone; ./setup retries it when online |\n| Plugin | unverified | claude CLI not on PATH — could not query 'claude plugin list' |\n| Post-merge hook | warning | not installed — after git pull you must run ./setup by hand (./setup installs the hook) |\n| Knowledge bases | ready | none configured (optional; edit /private/tmp/e-dqJuKo/home/cwd/fixture-home/.superskills/knowledge.conf) |\n| bun | ready | /opt/homebrew/bin/bun |\n| bats | ready | /opt/homebrew/bin/bats |\n| clearwing | warning | not on PATH — needed for /pentest — uv tool install clearwing && clearwing setup |\n| ffuf | warning | not on PATH — needed for /fuzz — brew install ffuf |\n\n`Verdict: blocked`\n\nNon-ready rows and their next actions:\n\n- **Links (blocked)** — `clean-code` isn't linked, so that skill won't trigger. Run `./setup` from the checkout, or `/superskills-upgrade`.\n- **gstack (warning)** — you're on the vendor stopgap copy (v1.80.0.0); `/qa` and `/browse` need the real clone. `./setup` retries it when online.\n- **Plugin (unverified)** — the `claude` CLI isn't on PATH, so plugin registration is unknown, not confirmed fine.\n- **Post-merge hook (warning)** — not installed, so `git pull` won't re-link automatically; `./setup` installs the hook.\n- **clearwing (warning)** — not on PATH, needed for `/pentest`: `uv tool install clearwing && clearwing setup`.\n- **ffuf (warning)** — not on PATH, needed for `/fuzz`: `brew install ffuf`.\n\nI haven't run any of these — say the word and I'll run `./setup` in the fixture checkout, or you can use `/superskills-upgrade`."
+              },
+              {
+                "name": "mentions-gstack-vendor",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*gstack)(?=[\\s\\S]*(vendor|stopgap|not a real clone|no \\.git))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "names-unlinked-skill",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*clean-code)(?=[\\s\\S]*setup)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "**Not ready** — the doctor's verdict is `blocked`.\n\n| Check | Status | Evidence / next action |\n|---|---|---|\n| Repo | ready | superskills v2.24.0 at /private/tmp/e-dqJuKo/home/cwd/fixture-repo |\n| Install | ready | dev-repo install (skills symlinked from /private/tmp/e-dqJuKo/home/cwd/fixture-repo) |\n| Links | blocked | 2/3 linked. Not linked: clean-code (new skills stay invisible until ./setup runs). Run ./setup |\n| Manifests | ready | all plugin manifests at v2.24.0 |\n| gstack | warning | running on the vendor stopgap copy (v1.80.0.0) — browser skills (/qa, /browse) need the real clone; ./setup retries it when online |\n| Plugin | unverified | claude CLI not on PATH — could not query 'claude plugin list' |\n| Post-merge hook | warning | not installed — after git pull you must run ./setup by hand (./setup installs the hook) |\n| Knowledge bases | ready | none configured (optional; edit /private/tmp/e-dqJuKo/home/cwd/fixture-home/.superskills/knowledge.conf) |\n| bun | ready | /opt/homebrew/bin/bun |\n| bats | ready | /opt/homebrew/bin/bats |\n| clearwing | warning | not on PATH — needed for /pentest — uv tool install clearwing && clearwing setup |\n| ffuf | warning | not on PATH — needed for /fuzz — brew install ffuf |\n\n`Verdict: blocked`\n\nNon-ready rows and their next actions:\n\n- **Links (blocked)** — `clean-code` isn't linked, so that skill won't trigger. Run `./setup` from the checkout, or `/superskills-upgrade`.\n- **gstack (warning)** — you're on the vendor stopgap copy (v1.80.0.0); `/qa` and `/browse` need the real clone. `./setup` retries it when online.\n- **Plugin (unverified)** — the `claude` CLI isn't on PATH, so plugin registration is unknown, not confirmed fine.\n- **Post-merge hook (warning)** — not installed, so `git pull` won't re-link automatically; `./setup` installs the hook.\n- **clearwing (warning)** — not on PATH, needed for `/pentest`: `uv tool install clearwing && clearwing setup`.\n- **ffuf (warning)** — not on PATH, needed for `/fuzz`: `brew install ffuf`.\n\nI haven't run any of these — say the word and I'll run `./setup` in the fixture checkout, or you can use `/superskills-upgrade`."
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 6,
+            "costUsd": 0.29639350000000003,
+            "judgeCostUsd": 0.01896200000000002,
+            "durationSeconds": 28,
+            "startedAt": "2026-09-16T20:01:13.882Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-yRLve0/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "domain-correct",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "**Not ready.** Here's the doctor's output verbatim:\n\n| Check | Status | Evidence / next action |\n|---|---|---|\n| Repo | ready | superskills v2.24.0 at /private/tmp/e-yRLve0/home/cwd/fixture-repo |\n| Install | ready | dev-repo install (skills symlinked from /private/tmp/e-yRLve0/home/cwd/fixture-repo) |\n| Links | blocked | 2/3 linked. Not linked: clean-code (new skills stay invisible until ./setup runs). Run ./setup |\n| Manifests | ready | all plugin manifests at v2.24.0 |\n| gstack | warning | running on the vendor stopgap copy (v1.80.0.0) — browser skills (/qa, /browse) need the real clone; ./setup retries it when online |\n| Plugin | unverified | claude CLI not on PATH — could not query 'claude plugin list' |\n| Post-merge hook | warning | not installed — after git pull you must run ./setup by hand (./setup installs the hook) |\n| Knowledge bases | ready | none configured (optional; edit /private/tmp/e-yRLve0/home/cwd/fixture-home/.superskills/knowledge.conf) |\n| bun | ready | /opt/homebrew/bin/bun |\n| bats | ready | /opt/homebrew/bin/bats |\n| clearwing | warning | not on PATH — needed for /pentest — uv tool install clearwing && clearwing setup |\n| ffuf | warning | not on PATH — needed for /fuzz — brew install ffuf |\n\n**Verdict: blocked**\n\nNon-ready rows and their next actions:\n\n- **Links (blocked)** — `clean-code` is not linked (2/3 linked); run `./setup` from the checkout.\n- **gstack (warning)** — on the vendor stopgap copy v1.80.0.0; `/qa` and `/browse` need the real clone, which `./setup` retries when online.\n- **Plugin (unverified)** — the `claude` CLI isn't on PATH, so `claude plugin list` couldn't be queried; plugin state is unknown, not confirmed fine.\n- **Post-merge hook (warning)** — not installed, so you must run `./setup` by hand after each `git pull`; `./setup` installs the hook.\n- **clearwing (warning)** — not on PATH, needed for `/pentest`: `uv tool install clearwing && clearwing setup`.\n- **ffuf (warning)** — not on PATH, needed for `/fuzz`: `brew install ffuf`.\n\nThe blocked row, the gstack stopgap, and the missing hook all clear with a single `./setup` run in `fixture-repo` (or `/superskills-upgrade`). I haven't run it — say the word and I will."
+              },
+              {
+                "name": "mentions-gstack-vendor",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*gstack)(?=[\\s\\S]*(vendor|stopgap|not a real clone|no \\.git))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "names-unlinked-skill",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*clean-code)(?=[\\s\\S]*setup)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "**Not ready.** Here's the doctor's output verbatim:\n\n| Check | Status | Evidence / next action |\n|---|---|---|\n| Repo | ready | superskills v2.24.0 at /private/tmp/e-yRLve0/home/cwd/fixture-repo |\n| Install | ready | dev-repo install (skills symlinked from /private/tmp/e-yRLve0/home/cwd/fixture-repo) |\n| Links | blocked | 2/3 linked. Not linked: clean-code (new skills stay invisible until ./setup runs). Run ./setup |\n| Manifests | ready | all plugin manifests at v2.24.0 |\n| gstack | warning | running on the vendor stopgap copy (v1.80.0.0) — browser skills (/qa, /browse) need the real clone; ./setup retries it when online |\n| Plugin | unverified | claude CLI not on PATH — could not query 'claude plugin list' |\n| Post-merge hook | warning | not installed — after git pull you must run ./setup by hand (./setup installs the hook) |\n| Knowledge bases | ready | none configured (optional; edit /private/tmp/e-yRLve0/home/cwd/fixture-home/.superskills/knowledge.conf) |\n| bun | ready | /opt/homebrew/bin/bun |\n| bats | ready | /opt/homebrew/bin/bats |\n| clearwing | warning | not on PATH — needed for /pentest — uv tool install clearwing && clearwing setup |\n| ffuf | warning | not on PATH — needed for /fuzz — brew install ffuf |\n\n**Verdict: blocked**\n\nNon-ready rows and their next actions:\n\n- **Links (blocked)** — `clean-code` is not linked (2/3 linked); run `./setup` from the checkout.\n- **gstack (warning)** — on the vendor stopgap copy v1.80.0.0; `/qa` and `/browse` need the real clone, which `./setup` retries when online.\n- **Plugin (unverified)** — the `claude` CLI isn't on PATH, so `claude plugin list` couldn't be queried; plugin state is unknown, not confirmed fine.\n- **Post-merge hook (warning)** — not installed, so you must run `./setup` by hand after each `git pull`; `./setup` installs the hook.\n- **clearwing (warning)** — not on PATH, needed for `/pentest`: `uv tool install clearwing && clearwing setup`.\n- **ffuf (warning)** — not on PATH, needed for `/fuzz`: `brew install ffuf`.\n\nThe blocked row, the gstack stopgap, and the missing hook all clear with a single `./setup` run in `fixture-repo` (or `/superskills-upgrade`). I haven't run it — say the word and I will."
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          }
+        ],
+        "without": [
+          {
+            "score": 0.8,
+            "passed": false,
+            "turns": 10,
+            "costUsd": 0.327403,
+            "judgeCostUsd": 0.017424000000000023,
+            "durationSeconds": 69,
+            "startedAt": "2026-09-16T20:01:36.045Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-Zsb1zS/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "domain-correct",
+                "passed": false,
+                "weight": 1,
+                "explanation": "judge votes: FAIL FAIL FAIL",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  false,
+                  false,
+                  false
+                ],
+                "evidence": "I checked the repo at `fixture-repo` against the install in `fixture-home/.claude`. **Not fully healthy — two real problems.**\n\n## What's fine\n\n- **Version consistency is clean.** All four manifests agree on `2.24.0`: `VERSION`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `.codex-plugin/plugin.json`.\n- **`tdd` and `debug` are correctly installed** as symlinks into the checkout, both resolve, and content matches the repo source exactly.\n- **No broken/dangling symlinks** anywhere under `~/.claude/skills`.\n\n## Problem 1 — `clean-code` is not installed\n\nThe repo ships three skills (`clean-code`, `tdd`, `debug`) but only two are linked into `~/.claude/skills`. `clean-code` has no entry at all, so it will never load.\n\nFix: `ln -s .../fixture-repo/skills/clean-code ...` — matching the symlink-a-directory pattern the other two use.\n\n## Problem 2 — `gstack` is a stale orphan, and it's broken\n\n`fixture-home/.claude/skills/gstack/` contains only:\n\n- `.superskills-vendor-copy` (empty marker — so superskills itself placed this, as a copy rather than a symlink)\n- `VERSION` = `1.80.0.0`\n\nThree things wrong with it:\n\n1. **No `SKILL.md`.** The directory can't load as a skill at all — it's inert dead weight.\n2. **Not in the repo.** `skills/gstack/` doesn't exist in the checkout, so nothing upstream will ever update or remove it.\n3. **Stale version.** `1.80.0.0` against the current `2.24.0` — and note it's a four-component version string versus the repo's three, suggesting it predates the current versioning scheme.\n\nThis is the classic leftover from a vendored install: the skill was dropped upstream, but because it was copied rather than symlinked, nothing cleaned it up.\n\n## Two caveats worth flagging\n\n**The `setup` script is a no-op.** `fixture-repo/setup` is literally just `#!/bin/sh` with no body. The natural remedy for both problems above would be \"re-run the installer,\" but that will do nothing here. Any fix has to be applied by hand (or the installer is genuinely missing its logic, which would itself be the root cause of the drift).\n\n**`marketplace.json` looks under-specified.** Its `plugins` array entry carries only `{\"version\": \"2.24.0\"}` — no `name` or `source` key. A real Claude Code marketplace entry needs a `name` to be resolvable. I'm less confident here since this may just be a trimmed test fixture rather than your actual file.\n\n## Recommendation\n\nI'd fix Problem 1 by symlinking `clean-code`, and delete the `gstack` directory outright for Problem 2 — it holds no recoverable content beyond a stale version stamp.\n\nI haven't changed anything yet, since you asked me to check rather than repair, and one of those is a deletion. Want me to apply both?"
+              },
+              {
+                "name": "mentions-gstack-vendor",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*gstack)(?=[\\s\\S]*(vendor|stopgap|not a real clone|no \\.git))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "names-unlinked-skill",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*clean-code)(?=[\\s\\S]*setup)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "I checked the repo at `fixture-repo` against the install in `fixture-home/.claude`. **Not fully healthy — two real problems.**\n\n## What's fine\n\n- **Version consistency is clean.** All four manifests agree on `2.24.0`: `VERSION`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `.codex-plugin/plugin.json`.\n- **`tdd` and `debug` are correctly installed** as symlinks into the checkout, both resolve, and content matches the repo source exactly.\n- **No broken/dangling symlinks** anywhere under `~/.claude/skills`.\n\n## Problem 1 — `clean-code` is not installed\n\nThe repo ships three skills (`clean-code`, `tdd`, `debug`) but only two are linked into `~/.claude/skills`. `clean-code` has no entry at all, so it will never load.\n\nFix: `ln -s .../fixture-repo/skills/clean-code ...` — matching the symlink-a-directory pattern the other two use.\n\n## Problem 2 — `gstack` is a stale orphan, and it's broken\n\n`fixture-home/.claude/skills/gstack/` contains only:\n\n- `.superskills-vendor-copy` (empty marker — so superskills itself placed this, as a copy rather than a symlink)\n- `VERSION` = `1.80.0.0`\n\nThree things wrong with it:\n\n1. **No `SKILL.md`.** The directory can't load as a skill at all — it's inert dead weight.\n2. **Not in the repo.** `skills/gstack/` doesn't exist in the checkout, so nothing upstream will ever update or remove it.\n3. **Stale version.** `1.80.0.0` against the current `2.24.0` — and note it's a four-component version string versus the repo's three, suggesting it predates the current versioning scheme.\n\nThis is the classic leftover from a vendored install: the skill was dropped upstream, but because it was copied rather than symlinked, nothing cleaned it up.\n\n## Two caveats worth flagging\n\n**The `setup` script is a no-op.** `fixture-repo/setup` is literally just `#!/bin/sh` with no body. The natural remedy for both problems above would be \"re-run the installer,\" but that will do nothing here. Any fix has to be applied by hand (or the installer is genuinely missing its logic, which would itself be the root cause of the drift).\n\n**`marketplace.json` looks under-specified.** Its `plugins` array entry carries only `{\"version\": \"2.24.0\"}` — no `name` or `source` key. A real Claude Code marketplace entry needs a `name` to be resolvable. I'm less confident here since this may just be a trimmed test fixture rather than your actual file.\n\n## Recommendation\n\nI'd fix Problem 1 by symlinking `clean-code`, and delete the `gstack` directory outright for Problem 2 — it holds no recoverable content beyond a stale version stamp.\n\nI haven't changed anything yet, since you asked me to check rather than repair, and one of those is a deletion. Want me to apply both?"
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 0.8,
+            "passed": false,
+            "turns": 11,
+            "costUsd": 0.4058064999999999,
+            "judgeCostUsd": 0.019847999999999935,
+            "durationSeconds": 92,
+            "startedAt": "2026-09-16T20:01:42.124Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-IkOhlV/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "domain-correct",
+                "passed": false,
+                "weight": 1,
+                "explanation": "judge votes: FAIL FAIL FAIL",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  false,
+                  false,
+                  false
+                ],
+                "evidence": "I checked both trees directly. There's no health-check/doctor script in the checkout to run (the repo contains only `setup`, `VERSION`, the plugin manifests, and three skills), so I verified the install by hand.\n\n**Verdict: not fully healthy — 3 real problems, one of which breaks a skill.**\n\n## What's wrong\n\n**1. `clean-code` is not installed**\nThe repo ships three skills, but only two are linked into your home:\n\n| Skill | In repo | In `~/.claude/skills` |\n|---|---|---|\n| `debug` | ✅ | ✅ symlink → repo |\n| `tdd` | ✅ | ✅ symlink → repo |\n| `clean-code` | ✅ `fixture-repo/skills/clean-code/SKILL.md` | ❌ absent |\n\n**2. `gstack` is a broken, orphaned vendor copy**\n`fixture-home/.claude/skills/gstack/` contains only `.superskills-vendor-copy` (empty marker) and `VERSION` (`1.80.0.0`) — **there is no `SKILL.md`**, so the skill cannot load at all. It's also orphaned: `grep -rn gstack fixture-repo` returns nothing, so the repo no longer vendors gstack at any version. This is leftover state from an older install, not something the current checkout can refresh.\n\n**3. `marketplace.json` plugin entry is incomplete**\n`fixture-repo/.claude-plugin/marketplace.json` is `{\"name\":\"superskills\",\"plugins\":[{\"version\":\"2.24.0\"}]}`. The entry in `plugins[]` carries only a version — no `name` and no `source`, which marketplace entries normally need for the plugin to be resolvable.\n\nWorth knowing alongside these: `fixture-repo/setup` is 10 bytes — a bare `#!/bin/sh` with no body. Re-running the installer is a no-op, so it won't repair issue 1 or 2 on its own.\n\n## What checks out\n\n- **Version is consistent at 2.24.0** across all four places it's declared: `VERSION`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `.codex-plugin/plugin.json`.\n- **The two installed symlinks resolve correctly** — both point at absolute paths inside `fixture-repo` and read back fine.\n- **All three repo `SKILL.md` files have valid frontmatter**, and each `name:` field matches its containing directory.\n\nOne note on method: `fixture-repo` has no `.git` directory, so I couldn't compare the checkout against an upstream ref — the version-consistency check above is internal to the working tree only.\n\nWant me to fix these? The first is a one-line symlink matching the existing pattern; for `gstack` I'd want your call on whether to delete the directory outright (it's dead weight given the repo no longer ships it) or leave it pending a look at where 1.80.0.0 came from."
+              },
+              {
+                "name": "mentions-gstack-vendor",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*gstack)(?=[\\s\\S]*(vendor|stopgap|not a real clone|no \\.git))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "names-unlinked-skill",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*clean-code)(?=[\\s\\S]*setup)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "I checked both trees directly. There's no health-check/doctor script in the checkout to run (the repo contains only `setup`, `VERSION`, the plugin manifests, and three skills), so I verified the install by hand.\n\n**Verdict: not fully healthy — 3 real problems, one of which breaks a skill.**\n\n## What's wrong\n\n**1. `clean-code` is not installed**\nThe repo ships three skills, but only two are linked into your home:\n\n| Skill | In repo | In `~/.claude/skills` |\n|---|---|---|\n| `debug` | ✅ | ✅ symlink → repo |\n| `tdd` | ✅ | ✅ symlink → repo |\n| `clean-code` | ✅ `fixture-repo/skills/clean-code/SKILL.md` | ❌ absent |\n\n**2. `gstack` is a broken, orphaned vendor copy**\n`fixture-home/.claude/skills/gstack/` contains only `.superskills-vendor-copy` (empty marker) and `VERSION` (`1.80.0.0`) — **there is no `SKILL.md`**, so the skill cannot load at all. It's also orphaned: `grep -rn gstack fixture-repo` returns nothing, so the repo no longer vendors gstack at any version. This is leftover state from an older install, not something the current checkout can refresh.\n\n**3. `marketplace.json` plugin entry is incomplete**\n`fixture-repo/.claude-plugin/marketplace.json` is `{\"name\":\"superskills\",\"plugins\":[{\"version\":\"2.24.0\"}]}`. The entry in `plugins[]` carries only a version — no `name` and no `source`, which marketplace entries normally need for the plugin to be resolvable.\n\nWorth knowing alongside these: `fixture-repo/setup` is 10 bytes — a bare `#!/bin/sh` with no body. Re-running the installer is a no-op, so it won't repair issue 1 or 2 on its own.\n\n## What checks out\n\n- **Version is consistent at 2.24.0** across all four places it's declared: `VERSION`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `.codex-plugin/plugin.json`.\n- **The two installed symlinks resolve correctly** — both point at absolute paths inside `fixture-repo` and read back fine.\n- **All three repo `SKILL.md` files have valid frontmatter**, and each `name:` field matches its containing directory.\n\nOne note on method: `fixture-repo` has no `.git` directory, so I couldn't compare the checkout against an upstream ref — the version-consistency check above is internal to the working tree only.\n\nWant me to fix these? The first is a one-line symlink matching the existing pattern; for `gstack` I'd want your call on whether to delete the directory outright (it's dead weight given the repo no longer ships it) or leave it pending a look at where 1.80.0.0 came from."
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          }
+        ]
+      },
+      "aggregates": {
+        "score": 1,
+        "passRate": 1,
+        "scoreWithout": 0.8,
+        "passRateWithout": 0,
+        "delta": 0.19999999999999996
+      }
+    },
+    {
+      "name": "doctor-release-check",
+      "dir": "evals/doctor-release-check",
+      "source": "mixed",
+      "promptMarkdown": "Before I cut a release, verify that VERSION matches every plugin manifest and that gstack is a real clone rather than the vendor copy. Checkout: ./fixture-repo. Home: ./fixture-home. Report only; don't fix.",
+      "runsPerCase": 3,
+      "timeoutSeconds": 300,
+      "maxTurns": 20,
+      "graders": [
+        {
+          "name": "domain-correct",
+          "type": "llm",
+          "weight": 1,
+          "graderMarkdown": "Context the reply may not know: in this tool, VERSION is the single source of truth and a script named `sync-version.sh` stamps it into every plugin manifest; `gstack` is an external dependency the installer clones, and a \"vendor copy\" (marker `.superskills-vendor-copy`) is a temporary stopgap replaced by a real clone on the installer's next run.\n\nPASS if the reply's remediation is consistent with that: the stale manifest is fixed by re-running the version sync (or at minimum by bumping it to match VERSION), and the gstack vendor copy is fixed by re-running the installer or re-cloning — not by deleting it.\n\nFAIL if the reply recommends deleting the gstack directory, hand-editing several manifests as the primary fix without mentioning any sync step, calls gstack orphaned/dead/leftover, or raises gstack's own version string as a defect.",
+          "config": {
+            "criteria": "Context the reply may not know: in this tool, VERSION is the single source of truth and a script named `sync-version.sh` stamps it into every plugin manifest; `gstack` is an external dependency the installer clones, and a \"vendor copy\" (marker `.superskills-vendor-copy`) is a temporary stopgap replaced by a real clone on the installer's next run.\n\nPASS if the reply's remediation is consistent with that: the stale manifest is fixed by re-running the version sync (or at minimum by bumping it to match VERSION), and the gstack vendor copy is fixed by re-running the installer or re-cloning — not by deleting it.\n\nFAIL if the reply recommends deleting the gstack directory, hand-editing several manifests as the primary fix without mentioning any sync step, calls gstack orphaned/dead/leftover, or raises gstack's own version string as a defect.",
+            "focus": "last_message",
+            "arm": "both"
+          }
+        },
+        {
+          "name": "finds-stale-manifest",
+          "type": "regex",
+          "weight": 1,
+          "config": {
+            "target": "last_message",
+            "pattern": "^(?=[\\s\\S]*codex)(?=[\\s\\S]*(2\\.23\\.0|stale|mismatch|out of (date|sync)|does not match|doesn.t match))",
+            "flags": "i",
+            "match": "contains"
+          }
+        },
+        {
+          "name": "finds-vendor-gstack",
+          "type": "regex",
+          "weight": 1,
+          "config": {
+            "target": "last_message",
+            "pattern": "^(?=[\\s\\S]*gstack)(?=[\\s\\S]*(vendor|stopgap|not a real clone|no \\.git))",
+            "flags": "i",
+            "match": "contains"
+          }
+        },
+        {
+          "name": "names-sync-version",
+          "type": "regex",
+          "weight": 1,
+          "config": {
+            "target": "last_message",
+            "pattern": "sync-version",
+            "flags": "",
+            "match": "contains"
+          }
+        },
+        {
+          "name": "no-false-ready",
+          "type": "llm",
+          "weight": 1,
+          "graderMarkdown": "You are checking a diagnostic report about a developer-tool install.\n\nPASS if the reply reports at least one problem (a skill that is not linked or\nmissing, a stale manifest, a vendor/stopgap copy, or a missing dependency) AND\nits overall conclusion is consistent with that: it says the install is blocked,\nnot ready, needs a fix, or \"ready with warnings\" for warnings only. Naming the\nfix (e.g. \"run ./setup\") without running it is fine.\n\nFAIL if the reply's overall conclusion is that the install is ready, healthy,\nfine, or \"all good\" while it also reports a blocked/missing item — or if it\nreports no problems at all (the fixture has at least one).",
+          "config": {
+            "criteria": "You are checking a diagnostic report about a developer-tool install.\n\nPASS if the reply reports at least one problem (a skill that is not linked or\nmissing, a stale manifest, a vendor/stopgap copy, or a missing dependency) AND\nits overall conclusion is consistent with that: it says the install is blocked,\nnot ready, needs a fix, or \"ready with warnings\" for warnings only. Naming the\nfix (e.g. \"run ./setup\") without running it is fine.\n\nFAIL if the reply's overall conclusion is that the install is ready, healthy,\nfine, or \"all good\" while it also reports a blocked/missing item — or if it\nreports no problems at all (the fixture has at least one).",
+            "focus": "last_message",
+            "arm": "both"
+          }
+        },
+        {
+          "name": "read-only",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Bash",
+            "input_match": "\"command\"\\s*:\\s*\"(?:[^\"\\\\]|\\\\.)*?(\\.\\/setup\\b|\\bgit\\s+(pull|reset|clone|checkout)\\b|curl\\s[^|]*\\|\\s*(ba)?sh|\\bbun\\s+install\\b|\\bnpm\\s+(i|install)\\b|\\bbrew\\s+install\\b)",
+            "min": 0,
+            "max": 0,
+            "arm": "both"
+          }
+        },
+        {
+          "name": "skill-fired",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Skill",
+            "input_match": "\"skill\"\\s*:\\s*\"(?:[\\w-]+:)?superskills-doctor\""
+          }
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 6,
+            "costUsd": 0.3170355,
+            "judgeCostUsd": 0.023132000000000014,
+            "durationSeconds": 33,
+            "startedAt": "2026-09-16T20:02:45.218Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-I5AgTl/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "domain-correct",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "Ran the read-only doctor against `./fixture-repo` with home `./fixture-home`. Both things you asked about came back as warnings.\n\n| Check | Status | Evidence / next action |\n|---|---|---|\n| Repo | ready | superskills v2.24.0 at /private/tmp/e-I5AgTl/home/cwd/fixture-repo |\n| Install | ready | dev-repo install (skills symlinked from /private/tmp/e-I5AgTl/home/cwd/fixture-repo) |\n| Links | ready | 3/3 skills linked into /private/tmp/e-I5AgTl/home/cwd/fixture-home/.claude/skills |\n| Manifests | warning | stale version in: .codex-plugin/plugin.json — run ./scripts/sync-version.sh (VERSION is the source of truth) |\n| gstack | warning | running on the vendor stopgap copy (v1.80.0.0) — browser skills (/qa, /browse) need the real clone; ./setup retries it when online |\n| Plugin | unverified | claude CLI not on PATH — could not query 'claude plugin list' |\n| Post-merge hook | warning | not installed — after git pull you must run ./setup by hand (./setup installs the hook) |\n| Knowledge bases | ready | none configured (optional; edit /private/tmp/e-I5AgTl/home/cwd/fixture-home/.superskills/knowledge.conf) |\n| bun | ready | /opt/homebrew/bin/bun |\n| bats | ready | /opt/homebrew/bin/bats |\n| clearwing | warning | not on PATH — needed for /pentest — uv tool install clearwing && clearwing setup |\n| ffuf | warning | not on PATH — needed for /fuzz — brew install ffuf |\n\n**Verdict: unverified** — a probe could not run, so readiness is unknown, not \"ready\".\n\nAnswering your two questions directly:\n\n- **VERSION vs manifests: no, they don't all match.** VERSION is 2.24.0; `.codex-plugin/plugin.json` is stale. `.claude-plugin` was not flagged, so the mismatch is limited to the Codex manifest. Next action: `./scripts/sync-version.sh` from the repo.\n- **gstack: it's the vendor stopgap, not a real clone** (v1.80.0.0). `/qa` and `/browse` need the real clone. Next action: `./setup` while online, which retries the clone.\n\nOther non-ready rows, in case they matter for the release:\n\n- **Plugin (unverified)** — the `claude` CLI isn't on PATH in this sandbox, so `claude plugin list` couldn't run. This is why the overall verdict is unverified rather than ready-with-warnings; it's an artifact of probing a fixture tree, but it does mean plugin registration is unconfirmed.\n- **Post-merge hook** — not installed; `./setup` installs it.\n- **clearwing / ffuf** — not on PATH, only affect `/pentest` and `/fuzz`.\n\nI didn't change anything. If you want the two release blockers fixed, `./scripts/sync-version.sh` and `./setup` are the commands, or `/superskills-upgrade` — say the word and I'll run them."
+              },
+              {
+                "name": "finds-stale-manifest",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*codex)(?=[\\s\\S]*(2\\.23\\.0|stale|mismatch|out of (date|sync)|does not match|doesn.t match))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "finds-vendor-gstack",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*gstack)(?=[\\s\\S]*(vendor|stopgap|not a real clone|no \\.git))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "names-sync-version",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched sync-version",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "Ran the read-only doctor against `./fixture-repo` with home `./fixture-home`. Both things you asked about came back as warnings.\n\n| Check | Status | Evidence / next action |\n|---|---|---|\n| Repo | ready | superskills v2.24.0 at /private/tmp/e-I5AgTl/home/cwd/fixture-repo |\n| Install | ready | dev-repo install (skills symlinked from /private/tmp/e-I5AgTl/home/cwd/fixture-repo) |\n| Links | ready | 3/3 skills linked into /private/tmp/e-I5AgTl/home/cwd/fixture-home/.claude/skills |\n| Manifests | warning | stale version in: .codex-plugin/plugin.json — run ./scripts/sync-version.sh (VERSION is the source of truth) |\n| gstack | warning | running on the vendor stopgap copy (v1.80.0.0) — browser skills (/qa, /browse) need the real clone; ./setup retries it when online |\n| Plugin | unverified | claude CLI not on PATH — could not query 'claude plugin list' |\n| Post-merge hook | warning | not installed — after git pull you must run ./setup by hand (./setup installs the hook) |\n| Knowledge bases | ready | none configured (optional; edit /private/tmp/e-I5AgTl/home/cwd/fixture-home/.superskills/knowledge.conf) |\n| bun | ready | /opt/homebrew/bin/bun |\n| bats | ready | /opt/homebrew/bin/bats |\n| clearwing | warning | not on PATH — needed for /pentest — uv tool install clearwing && clearwing setup |\n| ffuf | warning | not on PATH — needed for /fuzz — brew install ffuf |\n\n**Verdict: unverified** — a probe could not run, so readiness is unknown, not \"ready\".\n\nAnswering your two questions directly:\n\n- **VERSION vs manifests: no, they don't all match.** VERSION is 2.24.0; `.codex-plugin/plugin.json` is stale. `.claude-plugin` was not flagged, so the mismatch is limited to the Codex manifest. Next action: `./scripts/sync-version.sh` from the repo.\n- **gstack: it's the vendor stopgap, not a real clone** (v1.80.0.0). `/qa` and `/browse` need the real clone. Next action: `./setup` while online, which retries the clone.\n\nOther non-ready rows, in case they matter for the release:\n\n- **Plugin (unverified)** — the `claude` CLI isn't on PATH in this sandbox, so `claude plugin list` couldn't run. This is why the overall verdict is unverified rather than ready-with-warnings; it's an artifact of probing a fixture tree, but it does mean plugin registration is unconfirmed.\n- **Post-merge hook** — not installed; `./setup` installs it.\n- **clearwing / ffuf** — not on PATH, only affect `/pentest` and `/fuzz`.\n\nI didn't change anything. If you want the two release blockers fixed, `./scripts/sync-version.sh` and `./setup` are the commands, or `/superskills-upgrade` — say the word and I'll run them."
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 8,
+            "costUsd": 0.34265200000000007,
+            "judgeCostUsd": 0.016752000000000017,
+            "durationSeconds": 40,
+            "startedAt": "2026-09-16T20:03:14.170Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-EtqQ2f/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "domain-correct",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "Doctor run against `./fixture-repo` / `./fixture-home`, read-only — nothing was changed.\n\n| Check | Status | Evidence / next action |\n|---|---|---|\n| Repo | ready | superskills v2.24.0 at ./fixture-repo |\n| Install | ready | dev-repo install (skills symlinked from ./fixture-repo) |\n| Links | ready | 3/3 skills linked into ./fixture-home/.claude/skills |\n| Manifests | warning | stale version in: .codex-plugin/plugin.json — run ./scripts/sync-version.sh (VERSION is the source of truth) |\n| gstack | warning | running on the vendor stopgap copy (v1.80.0.0) — browser skills (/qa, /browse) need the real clone; ./setup retries it when online |\n| Plugin | unverified | claude CLI not on PATH — could not query 'claude plugin list' |\n| Post-merge hook | warning | not installed — after git pull you must run ./setup by hand (./setup installs the hook) |\n| Knowledge bases | ready | none configured (optional; edit ./fixture-home/.superskills/knowledge.conf) |\n| bun | ready | /opt/homebrew/bin/bun |\n| bats | ready | /opt/homebrew/bin/bats |\n| clearwing | warning | not on PATH — needed for /pentest — uv tool install clearwing && clearwing setup |\n| ffuf | warning | not on PATH — needed for /fuzz — brew install ffuf |\n\n**Verdict: unverified** — a probe could not run, so readiness is unknown, not \"ready\".\n\n## On your two release questions\n\n**VERSION vs manifests — mismatch.** `VERSION` is `2.24.0`. `.claude-plugin/plugin.json` matches at `2.24.0`, but `.codex-plugin/plugin.json` is still at `2.23.0`. Next action per the row: `./scripts/sync-version.sh` (VERSION is the source of truth).\n\n**gstack — vendor copy, not a real clone.** It's the vendor stopgap at v1.80.0.0. Browser skills (`/qa`, `/browse`) need the real clone; `./setup` retries the clone when online.\n\n## Other non-ready rows\n\n- **Plugin (unverified)** — the `claude` CLI isn't on PATH, so `claude plugin list` couldn't be queried. This is why the overall verdict is unverified rather than ready-with-warnings.\n- **Post-merge hook (warning)** — not installed; after a `git pull` you'd have to run `./setup` by hand. `./setup` installs the hook.\n- **clearwing (warning)** — not on PATH, needed for `/pentest`: `uv tool install clearwing && clearwing setup`.\n- **ffuf (warning)** — not on PATH, needed for `/fuzz`: `brew install ffuf`.\n\nI haven't run any of these; say the word and I'll apply the version sync and re-run the check."
+              },
+              {
+                "name": "finds-stale-manifest",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*codex)(?=[\\s\\S]*(2\\.23\\.0|stale|mismatch|out of (date|sync)|does not match|doesn.t match))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "finds-vendor-gstack",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*gstack)(?=[\\s\\S]*(vendor|stopgap|not a real clone|no \\.git))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "names-sync-version",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched sync-version",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "Doctor run against `./fixture-repo` / `./fixture-home`, read-only — nothing was changed.\n\n| Check | Status | Evidence / next action |\n|---|---|---|\n| Repo | ready | superskills v2.24.0 at ./fixture-repo |\n| Install | ready | dev-repo install (skills symlinked from ./fixture-repo) |\n| Links | ready | 3/3 skills linked into ./fixture-home/.claude/skills |\n| Manifests | warning | stale version in: .codex-plugin/plugin.json — run ./scripts/sync-version.sh (VERSION is the source of truth) |\n| gstack | warning | running on the vendor stopgap copy (v1.80.0.0) — browser skills (/qa, /browse) need the real clone; ./setup retries it when online |\n| Plugin | unverified | claude CLI not on PATH — could not query 'claude plugin list' |\n| Post-merge hook | warning | not installed — after git pull you must run ./setup by hand (./setup installs the hook) |\n| Knowledge bases | ready | none configured (optional; edit ./fixture-home/.superskills/knowledge.conf) |\n| bun | ready | /opt/homebrew/bin/bun |\n| bats | ready | /opt/homebrew/bin/bats |\n| clearwing | warning | not on PATH — needed for /pentest — uv tool install clearwing && clearwing setup |\n| ffuf | warning | not on PATH — needed for /fuzz — brew install ffuf |\n\n**Verdict: unverified** — a probe could not run, so readiness is unknown, not \"ready\".\n\n## On your two release questions\n\n**VERSION vs manifests — mismatch.** `VERSION` is `2.24.0`. `.claude-plugin/plugin.json` matches at `2.24.0`, but `.codex-plugin/plugin.json` is still at `2.23.0`. Next action per the row: `./scripts/sync-version.sh` (VERSION is the source of truth).\n\n**gstack — vendor copy, not a real clone.** It's the vendor stopgap at v1.80.0.0. Browser skills (`/qa`, `/browse`) need the real clone; `./setup` retries the clone when online.\n\n## Other non-ready rows\n\n- **Plugin (unverified)** — the `claude` CLI isn't on PATH, so `claude plugin list` couldn't be queried. This is why the overall verdict is unverified rather than ready-with-warnings.\n- **Post-merge hook (warning)** — not installed; after a `git pull` you'd have to run `./setup` by hand. `./setup` installs the hook.\n- **clearwing (warning)** — not on PATH, needed for `/pentest`: `uv tool install clearwing && clearwing setup`.\n- **ffuf (warning)** — not on PATH, needed for `/fuzz`: `brew install ffuf`.\n\nI haven't run any of these; say the word and I'll apply the version sync and re-run the check."
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          }
+        ],
+        "without": [
+          {
+            "score": 0.8333333333333334,
+            "passed": false,
+            "turns": 9,
+            "costUsd": 0.2973175,
+            "judgeCostUsd": 0.012660000000000005,
+            "durationSeconds": 55,
+            "startedAt": "2026-09-16T20:03:18.601Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-U85LIf/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "domain-correct",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "Both checks fail. Report only — I changed nothing.\n\n## 1. VERSION vs. plugin manifests — MISMATCH\n\n`fixture-repo/VERSION` = **2.24.0**\n\n| Manifest | Version | Status |\n|---|---|---|\n| `fixture-repo/.claude-plugin/plugin.json` | 2.24.0 | ✅ matches |\n| `fixture-repo/.claude-plugin/marketplace.json` (`plugins[0].version`) | 2.24.0 | ✅ matches |\n| `fixture-repo/.codex-plugin/plugin.json` | **2.23.0** | ❌ one minor behind |\n\nThe Codex manifest was left at the previous release. It's the only version string in the repo that disagrees — I grepped the whole checkout and those four files are the complete set of version references.\n\n## 2. gstack — VENDOR COPY, not a clone\n\n`fixture-home/.claude/skills/gstack/` is the vendor copy:\n\n- It contains the marker file **`.superskills-vendor-copy`** (empty, its presence is the signal).\n- It has **no `.git`** of its own. `git rev-parse --show-toplevel` from inside it resolves to `/private/tmp/e-U85LIf/home` — the enclosing repo — so the directory is just tracked files, not an independent checkout.\n- Contents are only `VERSION` (`1.80.0.0`) and the marker — no `SKILL.md`, unlike the sibling skills (`clean-code`, `debug`, `tdd`, each of which has one).\n\nSo a release cut now would ship a stale Codex manifest, and the gstack skill in the home directory would not pick up upstream changes the way a real clone would.\n\nOne caveat on scope: I verified the marker-file and git-metadata evidence, but I don't have the expected upstream remote URL for gstack, so I can't tell you *which* clone it should have been. If you have that, it's a one-line `git remote -v` check once the clone is in place."
+              },
+              {
+                "name": "finds-stale-manifest",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*codex)(?=[\\s\\S]*(2\\.23\\.0|stale|mismatch|out of (date|sync)|does not match|doesn.t match))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "finds-vendor-gstack",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*gstack)(?=[\\s\\S]*(vendor|stopgap|not a real clone|no \\.git))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "names-sync-version",
+                "passed": false,
+                "weight": 1,
+                "explanation": "pattern not found in last_message",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "Both checks fail. Report only — I changed nothing.\n\n## 1. VERSION vs. plugin manifests — MISMATCH\n\n`fixture-repo/VERSION` = **2.24.0**\n\n| Manifest | Version | Status |\n|---|---|---|\n| `fixture-repo/.claude-plugin/plugin.json` | 2.24.0 | ✅ matches |\n| `fixture-repo/.claude-plugin/marketplace.json` (`plugins[0].version`) | 2.24.0 | ✅ matches |\n| `fixture-repo/.codex-plugin/plugin.json` | **2.23.0** | ❌ one minor behind |\n\nThe Codex manifest was left at the previous release. It's the only version string in the repo that disagrees — I grepped the whole checkout and those four files are the complete set of version references.\n\n## 2. gstack — VENDOR COPY, not a clone\n\n`fixture-home/.claude/skills/gstack/` is the vendor copy:\n\n- It contains the marker file **`.superskills-vendor-copy`** (empty, its presence is the signal).\n- It has **no `.git`** of its own. `git rev-parse --show-toplevel` from inside it resolves to `/private/tmp/e-U85LIf/home` — the enclosing repo — so the directory is just tracked files, not an independent checkout.\n- Contents are only `VERSION` (`1.80.0.0`) and the marker — no `SKILL.md`, unlike the sibling skills (`clean-code`, `debug`, `tdd`, each of which has one).\n\nSo a release cut now would ship a stale Codex manifest, and the gstack skill in the home directory would not pick up upstream changes the way a real clone would.\n\nOne caveat on scope: I verified the marker-file and git-metadata evidence, but I don't have the expected upstream remote URL for gstack, so I can't tell you *which* clone it should have been. If you have that, it's a one-line `git remote -v` check once the clone is in place."
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 0.6666666666666666,
+            "passed": false,
+            "turns": 8,
+            "costUsd": 0.25152500000000005,
+            "judgeCostUsd": 0.013770000000000032,
+            "durationSeconds": 45,
+            "startedAt": "2026-09-16T20:03:53.810Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-AO4Znm/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "domain-correct",
+                "passed": false,
+                "weight": 1,
+                "explanation": "judge votes: FAIL FAIL FAIL",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  false,
+                  false,
+                  false
+                ],
+                "evidence": "Both checks came back with a problem. Report only — I changed nothing.\n\n## 1. VERSION vs. plugin manifests — ✗ one mismatch\n\n`fixture-repo/VERSION` = **2.24.0**\n\n| File | Version | |\n|---|---|---|\n| `fixture-repo/.claude-plugin/plugin.json` | 2.24.0 | ✓ match |\n| `fixture-repo/.claude-plugin/marketplace.json` (`plugins[0].version`) | 2.24.0 | ✓ match |\n| `fixture-repo/.codex-plugin/plugin.json` | **2.23.0** | ✗ **stale, one minor behind** |\n\nThe Codex manifest was not bumped with the last release. It's the only version string in the tree that disagrees; no other file anywhere in the checkout carries a version.\n\n## 2. gstack — ✗ it's the vendor copy, not a clone\n\n`fixture-home/.claude/skills/gstack/` contains only:\n\n- `.superskills-vendor-copy` — the vendor marker file (empty, present)\n- `VERSION` — `1.80.0.0`\n\nTwo independent signals confirm it:\n\n- **The marker file exists.** A real clone would not carry `.superskills-vendor-copy`.\n- **No git metadata.** There's no `.git` in the directory; `git rev-parse --show-toplevel` from inside it walks up and resolves to the enclosing `/private/tmp/e-AO4Znm/home` repo, so gstack has no repository of its own and no remote, branch, or HEAD to speak of.\n\nIt's also missing a `SKILL.md`, unlike its siblings `clean-code`, `debug`, and `tdd`, which each have one.\n\n## Blockers before you cut\n\n1. Bump `.codex-plugin/plugin.json` to 2.24.0.\n2. Replace the gstack vendor copy with a real clone.\n\nOne thing I noticed but didn't chase, since it's outside what you asked: `fixture-repo` itself has no `.git` either — it resolves up to the same parent repo — so if your release tooling expects to tag inside the checkout, that will need a look too. `fixture-repo/setup` is also a bare `#!/bin/sh` with no body, which may be intentional."
+              },
+              {
+                "name": "finds-stale-manifest",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*codex)(?=[\\s\\S]*(2\\.23\\.0|stale|mismatch|out of (date|sync)|does not match|doesn.t match))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "finds-vendor-gstack",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*gstack)(?=[\\s\\S]*(vendor|stopgap|not a real clone|no \\.git))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "names-sync-version",
+                "passed": false,
+                "weight": 1,
+                "explanation": "pattern not found in last_message",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "Both checks came back with a problem. Report only — I changed nothing.\n\n## 1. VERSION vs. plugin manifests — ✗ one mismatch\n\n`fixture-repo/VERSION` = **2.24.0**\n\n| File | Version | |\n|---|---|---|\n| `fixture-repo/.claude-plugin/plugin.json` | 2.24.0 | ✓ match |\n| `fixture-repo/.claude-plugin/marketplace.json` (`plugins[0].version`) | 2.24.0 | ✓ match |\n| `fixture-repo/.codex-plugin/plugin.json` | **2.23.0** | ✗ **stale, one minor behind** |\n\nThe Codex manifest was not bumped with the last release. It's the only version string in the tree that disagrees; no other file anywhere in the checkout carries a version.\n\n## 2. gstack — ✗ it's the vendor copy, not a clone\n\n`fixture-home/.claude/skills/gstack/` contains only:\n\n- `.superskills-vendor-copy` — the vendor marker file (empty, present)\n- `VERSION` — `1.80.0.0`\n\nTwo independent signals confirm it:\n\n- **The marker file exists.** A real clone would not carry `.superskills-vendor-copy`.\n- **No git metadata.** There's no `.git` in the directory; `git rev-parse --show-toplevel` from inside it walks up and resolves to the enclosing `/private/tmp/e-AO4Znm/home` repo, so gstack has no repository of its own and no remote, branch, or HEAD to speak of.\n\nIt's also missing a `SKILL.md`, unlike its siblings `clean-code`, `debug`, and `tdd`, which each have one.\n\n## Blockers before you cut\n\n1. Bump `.codex-plugin/plugin.json` to 2.24.0.\n2. Replace the gstack vendor copy with a real clone.\n\nOne thing I noticed but didn't chase, since it's outside what you asked: `fixture-repo` itself has no `.git` either — it resolves up to the same parent repo — so if your release tooling expects to tag inside the checkout, that will need a look too. `fixture-repo/setup` is also a bare `#!/bin/sh` with no body, which may be intentional."
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          }
+        ]
+      },
+      "aggregates": {
+        "score": 1,
+        "passRate": 1,
+        "scoreWithout": 0.75,
+        "passRateWithout": 0,
+        "delta": 0.25
+      }
+    },
+    {
+      "name": "doctor-symptom-missing-skill",
+      "dir": "evals/doctor-symptom-missing-skill",
+      "source": "mixed",
+      "promptMarkdown": "I pulled the latest superskills this morning but the new /clean-code command doesn't show up in Claude Code. What's wrong? For this test the checkout is ./fixture-repo and treat ./fixture-home as my home directory. Don't change anything, I just want to know the cause.",
+      "runsPerCase": 3,
+      "timeoutSeconds": 300,
+      "maxTurns": 20,
+      "graders": [
+        {
+          "name": "domain-correct",
+          "type": "llm",
+          "weight": 1,
+          "graderMarkdown": "Context the reply may not know: in this tool, `gstack` is an external dependency that the installer clones from GitHub; when the clone fails it installs a \"vendor copy\" (marked `.superskills-vendor-copy`) as a temporary stopgap that the installer replaces with a real clone on its next run. Skills become visible by re-running the installer (`./setup`, or the `/superskills-upgrade` command), which creates symlinks.\n\nPASS if the reply's diagnosis and remediation are consistent with that: the missing skill is fixed by re-running the installer (or the upgrade command), and gstack — if mentioned — is described as a vendor/stopgap copy to be replaced by a real clone (or simply as a warning).\n\nFAIL if the reply recommends or suggests any of: deleting or pruning the gstack directory; copying skill files into the home directory by hand; rewriting or \"implementing\" the setup script; adding or normalising vendor-marker files; or if it calls gstack orphaned/dead/leftover, or presents the plugin manifests as malformed.",
+          "config": {
+            "criteria": "Context the reply may not know: in this tool, `gstack` is an external dependency that the installer clones from GitHub; when the clone fails it installs a \"vendor copy\" (marked `.superskills-vendor-copy`) as a temporary stopgap that the installer replaces with a real clone on its next run. Skills become visible by re-running the installer (`./setup`, or the `/superskills-upgrade` command), which creates symlinks.\n\nPASS if the reply's diagnosis and remediation are consistent with that: the missing skill is fixed by re-running the installer (or the upgrade command), and gstack — if mentioned — is described as a vendor/stopgap copy to be replaced by a real clone (or simply as a warning).\n\nFAIL if the reply recommends or suggests any of: deleting or pruning the gstack directory; copying skill files into the home directory by hand; rewriting or \"implementing\" the setup script; adding or normalising vendor-marker files; or if it calls gstack orphaned/dead/leftover, or presents the plugin manifests as malformed.",
+            "focus": "last_message",
+            "arm": "both"
+          }
+        },
+        {
+          "name": "names-the-fix",
+          "type": "regex",
+          "weight": 1,
+          "config": {
+            "target": "last_message",
+            "pattern": "(\\./setup|superskills-upgrade)",
+            "flags": "",
+            "match": "contains"
+          }
+        },
+        {
+          "name": "names-unlinked-skill",
+          "type": "regex",
+          "weight": 1,
+          "config": {
+            "target": "last_message",
+            "pattern": "^(?=[\\s\\S]*clean-code)(?=[\\s\\S]*(not linked|no link|unlinked|isn.t linked|missing (a |the )?(sym)?link|symlink))",
+            "flags": "i",
+            "match": "contains"
+          }
+        },
+        {
+          "name": "no-false-ready",
+          "type": "llm",
+          "weight": 1,
+          "graderMarkdown": "You are checking a diagnostic report about a developer-tool install.\n\nPASS if the reply reports at least one problem (a skill that is not linked or\nmissing, a stale manifest, a vendor/stopgap copy, or a missing dependency) AND\nits overall conclusion is consistent with that: it says the install is blocked,\nnot ready, needs a fix, or \"ready with warnings\" for warnings only. Naming the\nfix (e.g. \"run ./setup\") without running it is fine.\n\nFAIL if the reply's overall conclusion is that the install is ready, healthy,\nfine, or \"all good\" while it also reports a blocked/missing item — or if it\nreports no problems at all (the fixture has at least one).",
+          "config": {
+            "criteria": "You are checking a diagnostic report about a developer-tool install.\n\nPASS if the reply reports at least one problem (a skill that is not linked or\nmissing, a stale manifest, a vendor/stopgap copy, or a missing dependency) AND\nits overall conclusion is consistent with that: it says the install is blocked,\nnot ready, needs a fix, or \"ready with warnings\" for warnings only. Naming the\nfix (e.g. \"run ./setup\") without running it is fine.\n\nFAIL if the reply's overall conclusion is that the install is ready, healthy,\nfine, or \"all good\" while it also reports a blocked/missing item — or if it\nreports no problems at all (the fixture has at least one).",
+            "focus": "last_message",
+            "arm": "both"
+          }
+        },
+        {
+          "name": "read-only",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Bash",
+            "input_match": "\"command\"\\s*:\\s*\"(?:[^\"\\\\]|\\\\.)*?(\\.\\/setup\\b|\\bgit\\s+(pull|reset|clone|checkout)\\b|curl\\s[^|]*\\|\\s*(ba)?sh|\\bbun\\s+install\\b|\\bnpm\\s+(i|install)\\b|\\bbrew\\s+install\\b)",
+            "min": 0,
+            "max": 0,
+            "arm": "both"
+          }
+        },
+        {
+          "name": "skill-fired",
+          "type": "tool_used",
+          "weight": 1,
+          "config": {
+            "tool": "Skill",
+            "input_match": "\"skill\"\\s*:\\s*\"(?:[\\w-]+:)?superskills-doctor\""
+          }
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 6,
+            "costUsd": 0.3065985,
+            "judgeCostUsd": 0.017178000000000027,
+            "durationSeconds": 33,
+            "startedAt": "2026-09-16T20:04:14.084Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-Ip1Hgm/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "domain-correct",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "## Cause\n\nYour pull brought in the `clean-code` skill files, but the symlink that makes it visible to Claude Code was never created. New skills stay invisible until `./setup` runs — and the post-merge hook that would normally run it for you isn't installed, so the pull left the link tree stale.\n\nDoctor output, verbatim:\n\n| Check | Status | Evidence / next action |\n|---|---|---|\n| Repo | ready | superskills v2.24.0 at /private/tmp/e-Ip1Hgm/home/cwd/fixture-repo |\n| Install | ready | dev-repo install (skills symlinked from /private/tmp/e-Ip1Hgm/home/cwd/fixture-repo) |\n| Links | blocked | 2/3 linked. Not linked: clean-code (new skills stay invisible until ./setup runs). Run ./setup |\n| Manifests | ready | all plugin manifests at v2.24.0 |\n| gstack | warning | running on the vendor stopgap copy (v1.80.0.0) — browser skills (/qa, /browse) need the real clone; ./setup retries it when online |\n| Plugin | unverified | claude CLI not on PATH — could not query 'claude plugin list' |\n| Post-merge hook | warning | not installed — after git pull you must run ./setup by hand (./setup installs the hook) |\n| Knowledge bases | ready | none configured (optional; edit /private/tmp/e-Ip1Hgm/home/cwd/fixture-home/.superskills/knowledge.conf) |\n| bun | ready | /opt/homebrew/bin/bun |\n| bats | ready | /opt/homebrew/bin/bats |\n| clearwing | warning | not on PATH — needed for /pentest — uv tool install clearwing && clearwing setup |\n| ffuf | warning | not on PATH — needed for /fuzz — brew install ffuf |\n\n**Verdict: blocked** — superskills is not ready until the blocked row's action is done.\n\nNon-ready rows and their next actions:\n\n- **Links (blocked)** — run `./setup` in the checkout. This is your actual problem.\n- **Post-merge hook (warning)** — not installed, which is *why* the pull didn't link the new skill. `./setup` installs the hook, so the same command prevents a repeat.\n- **gstack (warning)** — vendor stopgap copy; `/qa` and `/browse` need the real clone. `./setup` retries it when online.\n- **Plugin (unverified)** — the `claude` CLI isn't on PATH, so plugin registration couldn't be checked. Unknown, not confirmed fine.\n- **clearwing (warning)** — `uv tool install clearwing && clearwing setup`, only needed for `/pentest`.\n- **ffuf (warning)** — `brew install ffuf`, only needed for `/fuzz`.\n\nI changed nothing. The fix is `./setup` from `./fixture-repo`, or `/superskills-upgrade` — say the word and I'll run it."
+              },
+              {
+                "name": "names-the-fix",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched (\\./setup|superskills-upgrade)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "names-unlinked-skill",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*clean-code)(?=[\\s\\S]*(not linked|no link|unlinked|isn.t linked|missing (a |the )?(sym)?link|symlink))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "## Cause\n\nYour pull brought in the `clean-code` skill files, but the symlink that makes it visible to Claude Code was never created. New skills stay invisible until `./setup` runs — and the post-merge hook that would normally run it for you isn't installed, so the pull left the link tree stale.\n\nDoctor output, verbatim:\n\n| Check | Status | Evidence / next action |\n|---|---|---|\n| Repo | ready | superskills v2.24.0 at /private/tmp/e-Ip1Hgm/home/cwd/fixture-repo |\n| Install | ready | dev-repo install (skills symlinked from /private/tmp/e-Ip1Hgm/home/cwd/fixture-repo) |\n| Links | blocked | 2/3 linked. Not linked: clean-code (new skills stay invisible until ./setup runs). Run ./setup |\n| Manifests | ready | all plugin manifests at v2.24.0 |\n| gstack | warning | running on the vendor stopgap copy (v1.80.0.0) — browser skills (/qa, /browse) need the real clone; ./setup retries it when online |\n| Plugin | unverified | claude CLI not on PATH — could not query 'claude plugin list' |\n| Post-merge hook | warning | not installed — after git pull you must run ./setup by hand (./setup installs the hook) |\n| Knowledge bases | ready | none configured (optional; edit /private/tmp/e-Ip1Hgm/home/cwd/fixture-home/.superskills/knowledge.conf) |\n| bun | ready | /opt/homebrew/bin/bun |\n| bats | ready | /opt/homebrew/bin/bats |\n| clearwing | warning | not on PATH — needed for /pentest — uv tool install clearwing && clearwing setup |\n| ffuf | warning | not on PATH — needed for /fuzz — brew install ffuf |\n\n**Verdict: blocked** — superskills is not ready until the blocked row's action is done.\n\nNon-ready rows and their next actions:\n\n- **Links (blocked)** — run `./setup` in the checkout. This is your actual problem.\n- **Post-merge hook (warning)** — not installed, which is *why* the pull didn't link the new skill. `./setup` installs the hook, so the same command prevents a repeat.\n- **gstack (warning)** — vendor stopgap copy; `/qa` and `/browse` need the real clone. `./setup` retries it when online.\n- **Plugin (unverified)** — the `claude` CLI isn't on PATH, so plugin registration couldn't be checked. Unknown, not confirmed fine.\n- **clearwing (warning)** — `uv tool install clearwing && clearwing setup`, only needed for `/pentest`.\n- **ffuf (warning)** — `brew install ffuf`, only needed for `/fuzz`.\n\nI changed nothing. The fix is `./setup` from `./fixture-repo`, or `/superskills-upgrade` — say the word and I'll run it."
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 6,
+            "costUsd": 0.3122405,
+            "judgeCostUsd": 0.018617999999999968,
+            "durationSeconds": 37,
+            "startedAt": "2026-09-16T20:04:38.418Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-ikXb1d/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "domain-correct",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "Here's the doctor output, verbatim:\n\n| Check | Status | Evidence / next action |\n|---|---|---|\n| Repo | ready | superskills v2.24.0 at /private/tmp/e-ikXb1d/home/cwd/fixture-repo |\n| Install | ready | dev-repo install (skills symlinked from /private/tmp/e-ikXb1d/home/cwd/fixture-repo) |\n| Links | blocked | 2/3 linked. Not linked: clean-code (new skills stay invisible until ./setup runs). Run ./setup |\n| Manifests | ready | all plugin manifests at v2.24.0 |\n| gstack | warning | running on the vendor stopgap copy (v1.80.0.0) — browser skills (/qa, /browse) need the real clone; ./setup retries it when online |\n| Plugin | unverified | claude CLI not on PATH — could not query 'claude plugin list' |\n| Post-merge hook | warning | not installed — after git pull you must run ./setup by hand (./setup installs the hook) |\n| Knowledge bases | ready | none configured (optional; edit /private/tmp/e-ikXb1d/home/cwd/fixture-home/.superskills/knowledge.conf) |\n| bun | ready | /opt/homebrew/bin/bun |\n| bats | ready | /opt/homebrew/bin/bats |\n| clearwing | warning | not on PATH — needed for /pentest — uv tool install clearwing && clearwing setup |\n| ffuf | warning | not on PATH — needed for /fuzz — brew install ffuf |\n\n**Verdict: blocked** — superskills is NOT ready.\n\n## The cause\n\nYour pull worked fine: the repo is at v2.24.0 and the manifests match, so the `clean-code` skill files *are* on disk. What's missing is the symlink — this is a dev-repo install, where skills are exposed to Claude Code by symlinking them into your home config. Only 2 of 3 are linked, and `clean-code` is the one that isn't. New skills stay invisible until `./setup` runs.\n\nThe reason nobody ran it: the **post-merge hook isn't installed**. Normally `./setup` installs a git hook that re-links skills after every `git pull`. Without it, a pull updates the files but never wires up anything new — so every new skill will keep silently not appearing.\n\nNext actions per non-ready row (I haven't run any of these):\n\n- **Links (blocked)** — run `./setup` from `fixture-repo`, or `/superskills-upgrade`. This also installs the post-merge hook, fixing both rows at once.\n- **Post-merge hook (warning)** — same fix; `./setup` installs it.\n- **gstack (warning)** — on the vendor stopgap copy; `./setup` retries the real clone when online. Affects `/qa` and `/browse` only.\n- **Plugin (unverified)** — the `claude` CLI isn't on PATH, so plugin registration couldn't be checked. Unknown, not confirmed fine.\n- **clearwing / ffuf (warnings)** — optional tools for `/pentest` and `/fuzz`; install commands are in the table.\n\nOne caveat on the verdict: the Plugin row is unverified, so if `./setup` doesn't make `/clean-code` show up, plugin-level registration is the next thing to check — that probe couldn't run here."
+              },
+              {
+                "name": "names-the-fix",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched (\\./setup|superskills-upgrade)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "names-unlinked-skill",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*clean-code)(?=[\\s\\S]*(not linked|no link|unlinked|isn.t linked|missing (a |the )?(sym)?link|symlink))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "Here's the doctor output, verbatim:\n\n| Check | Status | Evidence / next action |\n|---|---|---|\n| Repo | ready | superskills v2.24.0 at /private/tmp/e-ikXb1d/home/cwd/fixture-repo |\n| Install | ready | dev-repo install (skills symlinked from /private/tmp/e-ikXb1d/home/cwd/fixture-repo) |\n| Links | blocked | 2/3 linked. Not linked: clean-code (new skills stay invisible until ./setup runs). Run ./setup |\n| Manifests | ready | all plugin manifests at v2.24.0 |\n| gstack | warning | running on the vendor stopgap copy (v1.80.0.0) — browser skills (/qa, /browse) need the real clone; ./setup retries it when online |\n| Plugin | unverified | claude CLI not on PATH — could not query 'claude plugin list' |\n| Post-merge hook | warning | not installed — after git pull you must run ./setup by hand (./setup installs the hook) |\n| Knowledge bases | ready | none configured (optional; edit /private/tmp/e-ikXb1d/home/cwd/fixture-home/.superskills/knowledge.conf) |\n| bun | ready | /opt/homebrew/bin/bun |\n| bats | ready | /opt/homebrew/bin/bats |\n| clearwing | warning | not on PATH — needed for /pentest — uv tool install clearwing && clearwing setup |\n| ffuf | warning | not on PATH — needed for /fuzz — brew install ffuf |\n\n**Verdict: blocked** — superskills is NOT ready.\n\n## The cause\n\nYour pull worked fine: the repo is at v2.24.0 and the manifests match, so the `clean-code` skill files *are* on disk. What's missing is the symlink — this is a dev-repo install, where skills are exposed to Claude Code by symlinking them into your home config. Only 2 of 3 are linked, and `clean-code` is the one that isn't. New skills stay invisible until `./setup` runs.\n\nThe reason nobody ran it: the **post-merge hook isn't installed**. Normally `./setup` installs a git hook that re-links skills after every `git pull`. Without it, a pull updates the files but never wires up anything new — so every new skill will keep silently not appearing.\n\nNext actions per non-ready row (I haven't run any of these):\n\n- **Links (blocked)** — run `./setup` from `fixture-repo`, or `/superskills-upgrade`. This also installs the post-merge hook, fixing both rows at once.\n- **Post-merge hook (warning)** — same fix; `./setup` installs it.\n- **gstack (warning)** — on the vendor stopgap copy; `./setup` retries the real clone when online. Affects `/qa` and `/browse` only.\n- **Plugin (unverified)** — the `claude` CLI isn't on PATH, so plugin registration couldn't be checked. Unknown, not confirmed fine.\n- **clearwing / ffuf (warnings)** — optional tools for `/pentest` and `/fuzz`; install commands are in the table.\n\nOne caveat on the verdict: the Plugin row is unverified, so if `./setup` doesn't make `/clean-code` show up, plugin-level registration is the next thing to check — that probe couldn't run here."
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "skill-fired",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Skill called 1x (expected 1..∞)",
+                "withOnly": true,
+                "scored": false
+              }
+            ]
+          }
+        ],
+        "without": [
+          {
+            "score": 0.8,
+            "passed": false,
+            "turns": 11,
+            "costUsd": 0.37064849999999994,
+            "judgeCostUsd": 0.015071999999999974,
+            "durationSeconds": 74,
+            "startedAt": "2026-09-16T20:04:47.228Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-cHbFwI/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "domain-correct",
+                "passed": false,
+                "weight": 1,
+                "explanation": "judge votes: FAIL FAIL FAIL",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  false,
+                  false,
+                  false
+                ],
+                "evidence": "## Cause\n\n`clean-code` has no entry in your skills directory. The install is a symlink farm, and the link was never created.\n\n```\n~/.claude/skills/debug/SKILL.md      -> fixture-repo/skills/debug/SKILL.md\n~/.claude/skills/tdd/SKILL.md        -> fixture-repo/skills/tdd/SKILL.md\n~/.claude/skills/clean-code/         MISSING — no directory at all\n```\n\nThe skill itself is fine: `fixture-repo/skills/clean-code/SKILL.md:1-4` exists with valid frontmatter (`name: clean-code`, a description, closing `---`). It's just not reachable from the path Claude Code scans.\n\nThis is why the symptom is confusing — `tdd` and `debug` are symlinks *into the checkout*, so a `git pull` updates their contents instantly and everything feels up to date. But a pull can't create a new symlink for a skill that didn't exist before. New skills require the install/link step to be re-run; content changes to existing ones don't. You pulled, but didn't re-link.\n\n## The catch\n\nRe-running the installer won't fix it as-is. `fixture-repo/setup` is a 10-byte stub — literally just `#!/bin/sh\\n` and nothing else. It's executable, it exits 0, and it does nothing. So `./setup` will appear to succeed and leave you exactly where you are.\n\n## Two other things I noticed, neither of which is the cause\n\n- `~/.claude/skills/gstack/` is a stale vendored copy — it has a `.superskills-vendor-copy` marker and `VERSION` pinned to `1.80.0.0` (repo is at `2.24.0`), but **no `SKILL.md`**. That skill isn't loading either, for a different reason, and it predates this morning's pull.\n- `.claude-plugin/marketplace.json` has a plugins entry with only a `version` — no `name` or `source`. That would break a plugin-based install, but you aren't using one: `fixture-home/.claude/` contains only `skills/`, with no `plugins/`, `commands/`, `settings.json`, or `.claude.json`. The symlink farm is the only active mechanism here.\n\nI didn't change anything. The fix would be creating `~/.claude/skills/clean-code/SKILL.md` as a symlink to the repo path, matching the pattern of `tdd` and `debug` — say the word and I'll do it, though you may also want to look at why `setup` is empty in your checkout."
+              },
+              {
+                "name": "names-the-fix",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched (\\./setup|superskills-upgrade)",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "names-unlinked-skill",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*clean-code)(?=[\\s\\S]*(not linked|no link|unlinked|isn.t linked|missing (a |the )?(sym)?link|symlink))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "## Cause\n\n`clean-code` has no entry in your skills directory. The install is a symlink farm, and the link was never created.\n\n```\n~/.claude/skills/debug/SKILL.md      -> fixture-repo/skills/debug/SKILL.md\n~/.claude/skills/tdd/SKILL.md        -> fixture-repo/skills/tdd/SKILL.md\n~/.claude/skills/clean-code/         MISSING — no directory at all\n```\n\nThe skill itself is fine: `fixture-repo/skills/clean-code/SKILL.md:1-4` exists with valid frontmatter (`name: clean-code`, a description, closing `---`). It's just not reachable from the path Claude Code scans.\n\nThis is why the symptom is confusing — `tdd` and `debug` are symlinks *into the checkout*, so a `git pull` updates their contents instantly and everything feels up to date. But a pull can't create a new symlink for a skill that didn't exist before. New skills require the install/link step to be re-run; content changes to existing ones don't. You pulled, but didn't re-link.\n\n## The catch\n\nRe-running the installer won't fix it as-is. `fixture-repo/setup` is a 10-byte stub — literally just `#!/bin/sh\\n` and nothing else. It's executable, it exits 0, and it does nothing. So `./setup` will appear to succeed and leave you exactly where you are.\n\n## Two other things I noticed, neither of which is the cause\n\n- `~/.claude/skills/gstack/` is a stale vendored copy — it has a `.superskills-vendor-copy` marker and `VERSION` pinned to `1.80.0.0` (repo is at `2.24.0`), but **no `SKILL.md`**. That skill isn't loading either, for a different reason, and it predates this morning's pull.\n- `.claude-plugin/marketplace.json` has a plugins entry with only a `version` — no `name` or `source`. That would break a plugin-based install, but you aren't using one: `fixture-home/.claude/` contains only `skills/`, with no `plugins/`, `commands/`, `settings.json`, or `.claude.json`. The symlink farm is the only active mechanism here.\n\nI didn't change anything. The fix would be creating `~/.claude/skills/clean-code/SKILL.md` as a symlink to the repo path, matching the pattern of `tdd` and `debug` — say the word and I'll do it, though you may also want to look at why `setup` is empty in your checkout."
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          },
+          {
+            "score": 0.6,
+            "passed": false,
+            "turns": 10,
+            "costUsd": 0.31077150000000003,
+            "judgeCostUsd": 0.015000000000000013,
+            "durationSeconds": 62,
+            "startedAt": "2026-09-16T20:05:15.106Z",
+            "error": null,
+            "tracePath": "/private/tmp/e-z75B0t/out/trace.jsonl",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "domain-correct",
+                "passed": false,
+                "weight": 1,
+                "explanation": "judge votes: FAIL FAIL FAIL",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  false,
+                  false,
+                  false
+                ],
+                "evidence": "## Cause\n\n`git pull` updated the checkout, but the skill was never *installed* into your home dir. Claude Code doesn't read skills out of the checkout — it reads `~/.claude/skills/`, and that directory has no `clean-code` entry:\n\n```\nfixture-home/.claude/skills/\n├── debug/SKILL.md -> fixture-repo/skills/debug/SKILL.md   (symlink)\n├── tdd/SKILL.md   -> fixture-repo/skills/tdd/SKILL.md     (symlink)\n└── gstack/        VERSION 1.80.0.0 + .superskills-vendor-copy  (stale copy)\n```\n\nThe install links **per skill directory**, not the `skills/` dir as a whole. That's why this failure mode is confusing: `tdd` and `debug` pick up pulled changes for free (their symlinks resolve into the checkout), so a pull *feels* like it's enough — but a newly added skill directory has no symlink pointing at it, so it stays invisible until the installer runs again.\n\nThe skill itself is fine — `fixture-repo/skills/clean-code/SKILL.md` has valid frontmatter (`name: clean-code`, `description: …`), structurally identical to the two that do work. So it's not a malformed-skill or naming problem.\n\nTwo corroborating details:\n\n- `fixture-home/.claude/skills/gstack` is a vendored copy pinned at `1.80.0.0` while the repo is at `2.24.0` (`VERSION`, `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json` all agree), and `gstack` no longer exists in `skills/`. Your last full install was many versions ago and left orphans behind.\n- The plugin route isn't active either — `fixture-repo/.claude-plugin/marketplace.json` exists, but nothing in `fixture-home` installs it, so it can't be the fallback delivery path.\n\n## Fix\n\nRe-run the repo's installer (`fixture-repo/setup`) and restart Claude Code. One caveat: in this fixture `setup` is a 10-byte stub containing only `#!/bin/sh`, so running it here won't actually create the symlink — if that's also true of your real checkout, that's the deeper bug. Otherwise, the equivalent manual step is a symlink from `~/.claude/skills/clean-code` into the checkout, matching the pattern used by `tdd` and `debug`.\n\nI didn't change anything, per your request."
+              },
+              {
+                "name": "names-the-fix",
+                "passed": false,
+                "weight": 1,
+                "explanation": "pattern not found in last_message",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "names-unlinked-skill",
+                "passed": true,
+                "weight": 1,
+                "explanation": "matched ^(?=[\\s\\S]*clean-code)(?=[\\s\\S]*(not linked|no link|unlinked|isn.t linked|missing (a |the )?(sym)?link|symlink))",
+                "withOnly": false,
+                "scored": true
+              },
+              {
+                "name": "no-false-ready",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "## Cause\n\n`git pull` updated the checkout, but the skill was never *installed* into your home dir. Claude Code doesn't read skills out of the checkout — it reads `~/.claude/skills/`, and that directory has no `clean-code` entry:\n\n```\nfixture-home/.claude/skills/\n├── debug/SKILL.md -> fixture-repo/skills/debug/SKILL.md   (symlink)\n├── tdd/SKILL.md   -> fixture-repo/skills/tdd/SKILL.md     (symlink)\n└── gstack/        VERSION 1.80.0.0 + .superskills-vendor-copy  (stale copy)\n```\n\nThe install links **per skill directory**, not the `skills/` dir as a whole. That's why this failure mode is confusing: `tdd` and `debug` pick up pulled changes for free (their symlinks resolve into the checkout), so a pull *feels* like it's enough — but a newly added skill directory has no symlink pointing at it, so it stays invisible until the installer runs again.\n\nThe skill itself is fine — `fixture-repo/skills/clean-code/SKILL.md` has valid frontmatter (`name: clean-code`, `description: …`), structurally identical to the two that do work. So it's not a malformed-skill or naming problem.\n\nTwo corroborating details:\n\n- `fixture-home/.claude/skills/gstack` is a vendored copy pinned at `1.80.0.0` while the repo is at `2.24.0` (`VERSION`, `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json` all agree), and `gstack` no longer exists in `skills/`. Your last full install was many versions ago and left orphans behind.\n- The plugin route isn't active either — `fixture-repo/.claude-plugin/marketplace.json` exists, but nothing in `fixture-home` installs it, so it can't be the fallback delivery path.\n\n## Fix\n\nRe-run the repo's installer (`fixture-repo/setup`) and restart Claude Code. One caveat: in this fixture `setup` is a 10-byte stub containing only `#!/bin/sh`, so running it here won't actually create the symlink — if that's also true of your real checkout, that's the deeper bug. Otherwise, the equivalent manual step is a symlink from `~/.claude/skills/clean-code` into the checkout, matching the pattern used by `tdd` and `debug`.\n\nI didn't change anything, per your request."
+              },
+              {
+                "name": "read-only",
+                "passed": true,
+                "weight": 1,
+                "explanation": "Bash called 0x (expected 0..0)",
+                "withOnly": false,
+                "scored": true
+              }
+            ]
+          }
+        ]
+      },
+      "aggregates": {
+        "score": 1,
+        "passRate": 1,
+        "scoreWithout": 0.7,
+        "passRateWithout": 0,
+        "delta": 0.30000000000000004
+      }
+    }
+  ],
+  "aggregates": {
+    "casesTotal": 4,
+    "casesPassed": 4,
+    "overallScore": 1,
+    "overallPassRate": 1,
+    "meanDelta": 0.25
+  }
+}

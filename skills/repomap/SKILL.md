@@ -1,3 +1,9 @@
+---
+name: repomap
+description: Generate a repo map for the current project.
+metadata:
+  upstream: https://github.com/ariadoss/repomap
+---
 Generate a repo map for the current project.
 
 First, verify this is a git repository. If not, let the user know.

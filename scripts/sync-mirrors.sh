@@ -4,7 +4,8 @@
 # The dbmap/repomap skills live in their own upstream repo
 # (github.com/ariadoss/repomap, cloned to ~/claude-repomap-command by default).
 # This repo keeps an in-tree copy of each slash command file as
-# skills/<name>/SKILL.md so the skills work even if the upstream is removed.
+# skills/<name>/SKILL.md (wrapped in the frontmatter every plugin validator
+# requires) so the skills work even if the upstream is removed.
 #
 # Run this whenever the upstream changes, before bumping VERSION. CI / setup
 # does not auto-modify the source tree, so syncing is an explicit maintainer
@@ -20,6 +21,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$SCRIPT_DIR")"
+# shellcheck source=scripts/lib/mirror-lib.sh
+. "$SCRIPT_DIR/lib/mirror-lib.sh"
 
 find_upstream() {
     local candidates=(
@@ -82,10 +85,13 @@ for name in "${MIRRORS[@]}"; do
         continue
     fi
 
-    if [ -f "$dst" ] && cmp -s "$src" "$dst"; then
+    # Upstream files are plain markdown; SKILL.md needs frontmatter (see
+    # scripts/lib/mirror-lib.sh), so compare and write the wrapped form.
+    wrapped="$(mirror_wrap "$name" "$src")"
+    if [ -f "$dst" ] && [ "$wrapped" = "$(cat "$dst")" ]; then
         echo "ok:    $name"
     else
-        cp "$src" "$dst"
+        printf '%s\n' "$wrapped" > "$dst"
         echo "sync:  $name"
         changed=$((changed + 1))
     fi
