@@ -153,6 +153,19 @@ Read-only held in 28/28 runs after the regex fix; no run errored; no usage-limit
 - `marketing-skills/plugin-skills/` introduces committed symlinks. A Windows checkout without `core.symlinks` gets plain text files and the marketing plugin will not load there; `./setup` installs are unaffected.
 - The marketplace install path was exercised afterwards in an isolated config (`CLAUDE_CONFIG_DIR=<scratch>`): `claude plugin marketplace add <repo>` then `install superskills-marketing@superskills` and `install superskills@superskills` both succeed at 2.24.0, and all 174 shim links resolve inside the plugin cache copy. Note the root plugin's `source: "./"` copies the whole repo (vendor, evals, marketing-skills) into the cache.
 
+### Changes from the `/qa-full` pass (2026-09-16, after this report's runs)
+
+`/qa-full` on this branch (`qa-full-reports/qa-full-main-2026-09-16.md`, local) ran `/review`
+with testing, maintainability, security, simplification, adversarial and red-team reviewers,
+then `/clean-code`, `/defense` and `/test-coverage`. It changed the doctor in ways the eval
+did not exercise and a future run should: the plugin check now parses the CLI's
+pretty-printed JSON (it never matched before, so "Plugin" always read "not installed"); a
+plugin-only install (`claude plugin install`, `./setup` never run) is recognised instead of
+being reported blocked; a new "Marketing shims" row diagnoses symlinks materialised as text
+files; a missing manifest is a warning, not silence; the CLI is called once with a timeout.
+A one-run pilot of `doctor-release-check` after these changes scored 1.0 (all seven graders).
+The four doctor fixtures now share `evals/_lib/doctor-fixture.sh`.
+
 ### Follow-ups found and fixed after the eval
 
 - Four design skills were exposed under basename slash names in the main plugin (`superskills:composition-patterns` instead of `vercel-composition-patterns`). Fixed by renaming the four directories to their frontmatter names; `tests/plugin-manifests.bats` now fails on any dir/name mismatch in `skills/` or `design-skills/`. README and COMMANDS.md had documented the wrong slash names for these four (the `./setup` links were already `vercel-*`); corrected.
