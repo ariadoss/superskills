@@ -21,13 +21,7 @@ VERSION="$(tr -d '[:space:]' < "$ROOT/VERSION")"
 
 echo "Syncing manifests to VERSION=$VERSION"
 rc=0
-for f in \
-  ".claude-plugin/plugin.json" \
-  ".claude-plugin/marketplace.json" \
-  ".codex-plugin/plugin.json" \
-  ".cursor-plugin/plugin.json" \
-  ".cursor-plugin/marketplace.json"
-do
+for f in "${SUPERSKILLS_MANIFESTS[@]}"; do
   if stamp_json_version "$VERSION" "$ROOT/$f"; then
     echo "  [ok]   $f → $VERSION"
   else

@@ -2,7 +2,7 @@
 
 Curated AI skills pack for Claude Code, OpenCode, Codex CLI, Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Bundles [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
-43 core skills + 53 gstack skills + 173 marketing skills + 35 design skills. gstack is installed automatically and vendored in this repo so skills are available even if the upstream repo is removed.
+43 core skills + 53 gstack skills + 174 marketing skills + 35 design skills. gstack is installed automatically and vendored in this repo so skills are available even if the upstream repo is removed.
 
 > **[Full command reference →](COMMANDS.md)** — all skills with descriptions and overlap notes
 > **[10x+ Engineering Workflow →](DEVELOPER_WORKFLOW.md)** — run 10+ parallel AI agents, each with a full quality pipeline ([deep dive](https://hyperion360.com/blog/parallel-ai-agents-engineering-workflow/))
@@ -35,7 +35,7 @@ gives you a native "updated" notification when a new version ships — no manual
 `git pull` needed.
 
 **Claude Code** — two plugins from one marketplace: `superskills` (core + design
-skills) and `superskills-marketing` (the 173 marketing skills under their usual
+skills) and `superskills-marketing` (the 174 marketing skills under their usual
 names, e.g. `/superskills-marketing:meta-description`):
 ```bash
 /plugin marketplace add ariadoss/superskills
@@ -45,6 +45,11 @@ names, e.g. `/superskills-marketing:meta-description`):
 ```
 On a new release you'll see *"Plugins updated — run `/reload-plugins`"* at startup
 (with auto-update enabled for the marketplace).
+
+> `superskills-marketing` is served from `marketing-skills/plugin-skills/`, a
+> committed tree of symlinks. On Windows, enable symlinks before cloning
+> (`git config --global core.symlinks true`) or the plugin loads no skills;
+> `/superskills-doctor` reports this as a "Marketing shims" warning.
 
 **Codex CLI:**
 ```bash
@@ -252,7 +257,7 @@ agent that force-kills processes, so it stays a deliberate choice. macOS only.
 Threshold and process list are seam-injectable (`GSTACK_QA_REAP_IDLE_MIN`,
 `GSTACK_QA_REAP_PS_FILE`) and covered by `tests/gstack-qa-browser-reaper.bats`.
 
-## Marketing Skills (173)
+## Marketing Skills (174)
 
 From [kostja94/marketing-skills](https://github.com/kostja94/marketing-skills) — stored directly in this repo. SEO, content, paid ads, pages, channels, and strategies:
 

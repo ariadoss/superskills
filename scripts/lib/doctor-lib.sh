@@ -20,18 +20,12 @@ _DOCTOR_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$_DOCTOR_LIB_DIR/gstack-install-lib.sh"
 # shellcheck source=scripts/lib/skills-lib.sh
 . "$_DOCTOR_LIB_DIR/skills-lib.sh"
+# shellcheck source=scripts/lib/version-lib.sh
+. "$_DOCTOR_LIB_DIR/version-lib.sh"
 
-# Manifests that scripts/sync-version.sh stamps. One list, shared with the
-# doctor's manifest check (DRY: the sync script and the doctor agree by
-# construction).
-DOCTOR_MANIFESTS=(
-  ".claude-plugin/plugin.json"
-  ".claude-plugin/marketplace.json"
-  ".codex-plugin/plugin.json"
-  ".cursor-plugin/plugin.json"
-  ".cursor-plugin/marketplace.json"
-  "marketing-skills/.claude-plugin/plugin.json"
-)
+# The manifests the doctor checks: the stamped list from version-lib.sh (the
+# same array scripts/sync-version.sh iterates) plus the generated marketing one.
+DOCTOR_MANIFESTS=("${SUPERSKILLS_MANIFESTS[@]}" "marketing-skills/.claude-plugin/plugin.json")
 
 # Required rows: a "blocked" here blocks the overall verdict. Everything else
 # only ever warns.
@@ -50,15 +44,21 @@ doctor_check_repo() {
     v="$(tr -d '[:space:]' < "$root/VERSION")"
     _doctor_row "Repo" "ready" "superskills v$v at $root"
   else
-    _doctor_row "Repo" "blocked" "$root is not a superskills checkout (needs VERSION, setup, skills/). Re-install: git clone https://github.com/ariadoss/superskills.git ~/.claude/skills/superskills && cd there && ./setup"
+    _doctor_row "Repo" "blocked" "$root is not a superskills checkout (needs VERSION, setup, skills/). Re-install: git clone https://github.com/ariadoss/superskills.git ~/.claude/skills/superskills && cd ~/.claude/skills/superskills && ./setup"
   fi
 }
 
-# doctor_install_kind <root> <claude_skills_dir> → canonical | dev-repo | unlinked
+# doctor_install_kind <root> <claude_skills_dir> [plugin_version]
+#   → canonical | dev-repo | plugin | unlinked
 # canonical: the repo IS the managed clone at <skills>/superskills
 # dev-repo : skills are symlinked into <skills> from a checkout elsewhere
+# plugin   : nothing is linked, but superskills is installed as a Claude Code
+#            plugin (`claude plugin install superskills@superskills`) — either
+#            the CLI reports it (<plugin_version>) or <root> is the plugin
+#            cache copy itself. ./setup was never run; that is a valid install
+#            of the core + design skills (gstack skills are not part of it).
 doctor_install_kind() {
-  local root="$1" skills="$2" real_root link target
+  local root="$1" skills="$2" plugin_version="${3:-}" real_root link target
   real_root="$(_doctor_realpath "$root")"
   if [ -e "$skills/superskills" ] && [ "$(_doctor_realpath "$skills/superskills")" = "$real_root" ]; then
     echo canonical; return 0
@@ -68,25 +68,34 @@ doctor_install_kind() {
     target="$(_doctor_realpath "$link")"
     case "$target" in "$real_root"/*) echo dev-repo; return 0 ;; esac
   done
+  if [ -n "$plugin_version" ]; then echo plugin; return 0; fi
+  case "$real_root" in */plugins/cache/*) echo plugin; return 0 ;; esac
   echo unlinked
 }
 
-# doctor_check_install <root> <claude_skills_dir>
+# doctor_check_install <root> <claude_skills_dir> [plugin_version]
 doctor_check_install() {
   local kind
-  kind="$(doctor_install_kind "$1" "$2")"
+  kind="$(doctor_install_kind "$1" "$2" "${3:-}")"
   case "$kind" in
     canonical) _doctor_row "Install" "ready" "canonical install (managed clone at $2/superskills)" ;;
     dev-repo)  _doctor_row "Install" "ready" "dev-repo install (skills symlinked from $1)" ;;
+    plugin)    _doctor_row "Install" "ready" "plugin install (superskills@superskills${3:+ v$3}); skills load from the plugin cache, ./setup was not run — gstack, marketing and knowledge-base features need ./setup from a clone" ;;
     *)         _doctor_row "Install" "blocked" "no skill in $2 points at $1 — run ./setup from the repo" ;;
   esac
 }
 
-# doctor_check_links <root> <claude_skills_dir>
+# doctor_check_links <root> <claude_skills_dir> [kind]
 # Every skills/*/SKILL.md must be reachable as <skills>/<name>/SKILL.md, where
-# <name> is the frontmatter name (falling back to the directory name).
+# <name> is the frontmatter name (falling back to the directory name). A
+# plugin install has no links by design: the plugin loader reads skills/ itself.
 doctor_check_links() {
-  local root="$1" skills="$2" skill_md name link total=0 ok=0 missing="" broken=""
+  local root="$1" skills="$2" kind="${3:-}" skill_md name link total=0 ok=0 missing="" broken=""
+  if [ "$kind" = "plugin" ]; then
+    total=$(ls -d "$root"/skills/*/SKILL.md 2>/dev/null | wc -l | tr -d ' ')
+    _doctor_row "Links" "ready" "$total skills served by the plugin loader from $root/skills (no ./setup symlinks in a plugin install)"
+    return 0
+  fi
   for skill_md in "$root"/skills/*/SKILL.md; do
     [ -f "$skill_md" ] || continue
     total=$((total + 1))
@@ -111,32 +120,69 @@ doctor_check_links() {
 }
 
 # doctor_check_manifests <root>
+# A manifest that is absent is reported, not skipped: silence here would let a
+# broken or partial checkout read as "ready".
 doctor_check_manifests() {
-  local root="$1" v f stale="" found
+  local root="$1" v f stale="" missing="" found msg=""
   v="$(tr -d '[:space:]' < "$root/VERSION" 2>/dev/null)"
   for f in "${DOCTOR_MANIFESTS[@]}"; do
-    [ -f "$root/$f" ] || continue
+    if [ ! -f "$root/$f" ]; then missing="$missing $f"; continue; fi
     found="$(grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$root/$f" | grep -v "\"$v\"" || true)"
     [ -n "$found" ] && stale="$stale $f"
   done
-  if [ -z "$stale" ]; then
+  if [ -z "$stale" ] && [ -z "$missing" ]; then
     _doctor_row "Manifests" "ready" "all plugin manifests at v$v"
-  else
-    _doctor_row "Manifests" "warning" "stale version in:$stale — run ./scripts/sync-version.sh (VERSION is the source of truth)"
+    return 0
   fi
+  [ -n "$stale" ] && msg="stale version in:$stale."
+  [ -n "$missing" ] && msg="$msg missing:$missing."
+  _doctor_row "Manifests" "warning" "$msg Run ./scripts/sync-version.sh (VERSION is the source of truth); a missing manifest means the checkout is older than this doctor or was trimmed"
 }
 
-# doctor_check_gstack <gstack_dir>
+# doctor_check_gstack <gstack_dir> [kind]
+# gstack is installed by ./setup, so its absence blocks a setup-based install
+# but is only a warning for a plugin install (which never promised it).
 doctor_check_gstack() {
-  local dir="$1" state v
+  local dir="$1" kind="${2:-}" state v
   state="$(gstack_install_state "$dir")"
   v="$(cat "$dir/VERSION" 2>/dev/null | tr -d '[:space:]')"
   case "$state" in
     real)    _doctor_row "gstack" "ready" "real clone v$v at $dir" ;;
     vendor)  _doctor_row "gstack" "warning" "running on the vendor stopgap copy (v$v) — browser skills (/qa, /browse) need the real clone; ./setup retries it when online" ;;
     partial) _doctor_row "gstack" "blocked" "$dir exists but has no VERSION (broken install) — ./setup moves it aside and re-clones" ;;
-    *)       _doctor_row "gstack" "blocked" "not installed at $dir — run ./setup" ;;
+    *)
+      if [ "$kind" = "plugin" ]; then
+        _doctor_row "gstack" "warning" "not installed — the gstack skills (/qa, /browse, /review, /ship …) are not part of a plugin install; run ./setup from a clone to add them"
+      else
+        _doctor_row "gstack" "blocked" "not installed at $dir — run ./setup"
+      fi ;;
   esac
+}
+
+# doctor_check_shims <root>
+# marketing-skills/plugin-skills/ is a committed tree of relative symlinks (the
+# superskills-marketing plugin reads it). A checkout that cannot create
+# symlinks (Windows without core.symlinks) materialises them as text files
+# holding the target path, and the plugin then silently loads no skills.
+doctor_check_shims() {
+  local root="$1" shim e ok=0 text=0 dangling=0
+  shim="$root/marketing-skills/plugin-skills"   # own line: `local a=$1 b=$a/x` expands b first
+  [ -d "$shim" ] || { _doctor_row "Marketing shims" "ready" "no marketing-skills/plugin-skills tree (older checkout; only the superskills-marketing plugin needs it)"; return 0; }
+  for e in "$shim"/*; do
+    [ -e "$e" ] || [ -L "$e" ] || continue
+    if [ -L "$e" ]; then
+      if [ -f "$e/SKILL.md" ]; then ok=$((ok + 1)); else dangling=$((dangling + 1)); fi
+    else
+      text=$((text + 1))
+    fi
+  done
+  if [ "$text" -gt 0 ]; then
+    _doctor_row "Marketing shims" "warning" "$text of $((ok + text + dangling)) entries are plain files, not symlinks — git checked them out without symlink support. Fix: git config core.symlinks true, then re-checkout marketing-skills/plugin-skills (the superskills-marketing plugin loads nothing until then)"
+  elif [ "$dangling" -gt 0 ]; then
+    _doctor_row "Marketing shims" "warning" "$dangling dangling links — run ./scripts/sync-marketing-manifest.sh"
+  else
+    _doctor_row "Marketing shims" "ready" "$ok marketing skills exposed via plugin-skills/"
+  fi
 }
 
 # doctor_check_command <name> <why> [required]
@@ -150,6 +196,23 @@ doctor_check_command() {
   else
     _doctor_row "$name" "warning" "not on PATH — $why"
   fi
+}
+
+# _doctor_plugin_version <plugin-list-json> <id-prefix>
+# Version of the first plugin whose "id" starts with <id-prefix>, or empty.
+# `claude plugin list --json` pretty-prints one key per line, so this walks
+# the objects with awk (jq is optional on a fresh install; version-lib.sh is
+# jq-free for the same reason). Exact-prefix match: "superskills@" must not
+# match "superskills-marketing@".
+_doctor_plugin_version() {
+  printf '%s\n' "$1" | tr -d '\n' | tr '}' '\n' | awk -v pfx="$2" '
+    match($0, /"id"[[:space:]]*:[[:space:]]*"[^"]*"/) {
+      id = substr($0, RSTART, RLENGTH); sub(/^"id"[[:space:]]*:[[:space:]]*"/, "", id); sub(/"$/, "", id)
+      if (index(id, pfx) == 1 && match($0, /"version"[[:space:]]*:[[:space:]]*"[^"]*"/)) {
+        v = substr($0, RSTART, RLENGTH); sub(/^"version"[[:space:]]*:[[:space:]]*"/, "", v); sub(/"$/, "", v)
+        print v; exit
+      }
+    }'
 }
 
 # doctor_check_plugin <root> [claude_bin]
@@ -167,7 +230,7 @@ doctor_check_plugin() {
     _doctor_row "Plugin" "unverified" "'$bin plugin list --json' failed"
     return 0
   }
-  installed="$(printf '%s' "$out" | tr -d '\n' | grep -o '"id":"superskills@[^"]*"[^}]*"version":"[^"]*"' | head -1 | sed -E 's/.*"version":"([^"]*)".*/\1/')"
+  installed="$(_doctor_plugin_version "$out" "superskills@")"
   if [ -z "$installed" ]; then
     _doctor_row "Plugin" "ready" "not installed as a Claude Code plugin (skills are linked by ./setup); optional: /plugin marketplace add ariadoss/superskills"
   elif [ "$installed" = "$v" ]; then
@@ -190,14 +253,16 @@ doctor_check_hook() {
   fi
 }
 
-# doctor_check_knowledge <knowledge_conf>
+# doctor_check_knowledge <knowledge_conf> <home>
+# Paths in the conf are written as ~/…; they are expanded against <home>, the
+# install being inspected, never the caller's own HOME.
 doctor_check_knowledge() {
-  local conf="$1" n=0 missing="" name path desc url resolved
+  local conf="$1" home="$2" n=0 missing="" name path desc url resolved
   [ -s "$conf" ] || { _doctor_row "Knowledge bases" "ready" "none configured (optional; edit $conf)"; return 0; }
   while IFS='|' read -r name path desc url; do
     [ -z "$name" ] && continue; [[ "$name" = \#* ]] && continue
     n=$((n + 1))
-    resolved="${path/#\~/$HOME}"
+    resolved="${path/#\~/$home}"
     [ -d "$resolved/.git" ] || missing="$missing $name"
   done < "$conf"
   if [ -z "$missing" ]; then
@@ -212,13 +277,14 @@ doctor_check_knowledge() {
 # Never "ready" while any REQUIRED row is blocked or any row is unverified —
 # "unknown" is not "fine".
 doctor_verdict() {
-  local rows="$1" name status blocked=0 unverified=0 warning=0 req
+  local rows="$1" name status blocked=0 unverified=0 warning=0 req is_req
   while IFS=$'\t' read -r name status _; do
     [ -z "$name" ] && continue
     case "$status" in
       blocked)
-        for req in $DOCTOR_REQUIRED_CHECKS; do [ "$name" = "$req" ] && blocked=1; done
-        [ "$blocked" -eq 1 ] || warning=1 ;;
+        is_req=0
+        for req in $DOCTOR_REQUIRED_CHECKS; do [ "$name" = "$req" ] && is_req=1; done
+        if [ "$is_req" -eq 1 ]; then blocked=1; else warning=1; fi ;;
       unverified) unverified=1 ;;
       warning)    warning=1 ;;
     esac
@@ -234,16 +300,25 @@ doctor_verdict() {
 # container can be inspected) and prints a markdown table plus the verdict.
 doctor_report() {
   local root="$1" home="$2" bin="${3:-claude}"
-  local skills="$home/.claude/skills" rows verdict line name status evidence
+  local skills="$home/.claude/skills" rows verdict line name status evidence plugin_version kind
+  # The install kind decides how Links and gstack are judged, and a plugin
+  # install is only recognisable through the CLI (or the cache path), so probe
+  # the plugin once here and pass the answer down.
+  plugin_version=""
+  if command -v "$bin" >/dev/null 2>&1; then
+    plugin_version="$(_doctor_plugin_version "$("$bin" plugin list --json 2>/dev/null)" "superskills@")"
+  fi
+  kind="$(doctor_install_kind "$root" "$skills" "$plugin_version")"
   rows="$(
     doctor_check_repo "$root"
-    doctor_check_install "$root" "$skills"
-    doctor_check_links "$root" "$skills"
+    doctor_check_install "$root" "$skills" "$plugin_version"
+    doctor_check_links "$root" "$skills" "$kind"
     doctor_check_manifests "$root"
-    doctor_check_gstack "$skills/gstack"
+    doctor_check_shims "$root"
+    doctor_check_gstack "$skills/gstack" "$kind"
     doctor_check_plugin "$root" "$bin"
     doctor_check_hook "$root"
-    doctor_check_knowledge "$home/.superskills/knowledge.conf"
+    doctor_check_knowledge "$home/.superskills/knowledge.conf" "$home"
     doctor_check_command bun "gstack's browser tool (/qa, /browse) needs it — curl -fsSL https://bun.sh/install | bash"
     doctor_check_command bats "runs ./tests/run.sh — brew install bats-core"
     doctor_check_command clearwing "needed for /pentest — uv tool install clearwing && clearwing setup"

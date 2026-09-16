@@ -28,8 +28,16 @@ setup() {
   [[ "$output" == *"upstream: https://github.com/ariadoss/repomap"* ]]
 }
 
-@test "mirror_wrap leaves a file that already has frontmatter untouched" {
-  run mirror_wrap x "$FM"
+@test "mirror_wrap keeps upstream frontmatter but pins name: to the mirror's directory name" {
+  run mirror_wrap dbmap "$FM"
+  [ "$(printf '%s\n' "$output" | sed -n '2p')" = "name: dbmap" ]
+  [[ "$output" == *"description: already there"* ]]
+  [[ "$output" == *"Body."* ]]
+  [[ "$output" != *"upstream-name"* ]]
+}
+
+@test "mirror_wrap leaves a file whose frontmatter name already matches untouched" {
+  run mirror_wrap upstream-name "$FM"
   [ "$output" = "$(cat "$FM")" ]
 }
 

@@ -4,6 +4,18 @@
 # Dependency-free (perl only, always present on macOS/Linux) so it works in a
 # fresh clone without jq. Unit-tested in tests/version-lib.bats.
 
+# The manifests VERSION is stamped into. One list: scripts/sync-version.sh
+# iterates it and scripts/lib/doctor-lib.sh checks it, so they cannot drift.
+# marketing-skills/.claude-plugin/plugin.json is not here: it is regenerated
+# whole by scripts/sync-marketing-manifest.sh (the doctor still checks it).
+SUPERSKILLS_MANIFESTS=(
+  ".claude-plugin/plugin.json"
+  ".claude-plugin/marketplace.json"
+  ".codex-plugin/plugin.json"
+  ".cursor-plugin/plugin.json"
+  ".cursor-plugin/marketplace.json"
+)
+
 # stamp_json_version <version> <file>
 # Set every `"version": "..."` value in <file> to <version>. Idempotent.
 # Returns 0 on success, 1 if the file is missing or has no version field

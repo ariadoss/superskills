@@ -51,6 +51,21 @@ setup() {
   [[ "$output" == *"local-seo"* ]]
 }
 
+@test "write_marketing_shims refuses a frontmatter name that would escape plugin-skills/" {
+  mkdir -p "$MK/seo/evil"; printf -- '---\nname: ../../escape\n---\n' > "$MK/seo/evil/SKILL.md"
+  run write_marketing_shims "$MK"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"escape"* ]]
+  [ ! -e "$MK/escape" ]
+}
+
+@test "write_marketing_shims refuses an empty or missing root instead of touching /" {
+  run write_marketing_shims ""
+  [ "$status" -eq 1 ]
+  run write_marketing_shims "$BATS_TEST_TMPDIR/does-not-exist"
+  [ "$status" -eq 1 ]
+}
+
 @test "skill_entries ignores the shim tree itself" {
   write_marketing_shims "$MK"
   [ "$(skill_entries "$MK" | wc -l | tr -d ' ')" -eq 4 ]
@@ -64,6 +79,7 @@ setup() {
     [ "$(jq -r .version "$OUT")" = "9.9.9" ]
     [ "$(jq -r .name "$OUT")" = "superskills-marketing" ]
     [ "$(jq -r '.skills | join(",")' "$OUT")" = "./plugin-skills" ]
+    [[ "$(jq -r .description "$OUT")" == "The 4 marketing skills"* ]]   # count derived, not hardcoded
   else
     grep -q '"version": "9.9.9"' "$OUT"; grep -q '"./plugin-skills"' "$OUT"
   fi

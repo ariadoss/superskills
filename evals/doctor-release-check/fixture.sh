@@ -27,6 +27,10 @@ chmod +x "$R/setup"
 for s in tdd debug clean-code; do printf -- '---\nname: %s\ndescription: %s skill\n---\n' "$s" "$s" > "$R/skills/$s/SKILL.md"; done
 printf '{ "name": "superskills", "version": "2.24.0" }\n' > "$R/.claude-plugin/plugin.json"
 printf '{ "name": "superskills", "plugins": [{ "version": "2.24.0" }] }\n' > "$R/.claude-plugin/marketplace.json"
+mkdir -p "$R/.cursor-plugin" "$R/marketing-skills/.claude-plugin"
+printf '{ "name": "superskills", "version": "2.24.0" }\n' > "$R/.cursor-plugin/plugin.json"
+printf '{ "name": "superskills", "version": "2.24.0" }\n' > "$R/.cursor-plugin/marketplace.json"
+printf '{ "name": "superskills-marketing", "version": "2.24.0" }\n' > "$R/marketing-skills/.claude-plugin/plugin.json"
 # Manifests: codex one was not re-stamped after the VERSION bump.
 printf '{ "name": "superskills", "version": "2.23.0" }\n' > "$R/.codex-plugin/plugin.json"
 for s in tdd debug clean-code; do mkdir -p "$H/.claude/skills/$s"; ln -s "$R/skills/$s/SKILL.md" "$H/.claude/skills/$s/SKILL.md"; done

@@ -83,3 +83,9 @@ ver_of() { grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$1"; }
   run jq -e . "$TWO"
   [ "$status" -eq 0 ]
 }
+
+@test "SUPERSKILLS_MANIFESTS lists every stamped manifest and each exists in the repo" {
+  [ "${#SUPERSKILLS_MANIFESTS[@]}" -eq 5 ]
+  for f in "${SUPERSKILLS_MANIFESTS[@]}"; do [ -f "$REPO_ROOT/$f" ] || { echo "missing $f"; return 1; }; done
+}
+
