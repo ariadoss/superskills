@@ -7,7 +7,10 @@
 #   --bin <claude> the Claude Code CLI used for `plugin list --json` (default: claude)
 # Nothing is written, installed, pulled, or authenticated.
 set -e
-ROOT="$(cd "$(dirname "$0")/.." && pwd -P)"
+# The library always comes from this script's own repo; --root only changes
+# which checkout is inspected.
+LIB_ROOT="$(cd "$(dirname "$0")/.." && pwd -P)"
+ROOT="$LIB_ROOT"
 HOME_DIR="$HOME"
 BIN="claude"
 while [ $# -gt 0 ]; do
@@ -22,9 +25,6 @@ while [ $# -gt 0 ]; do
     *) echo "unknown option: $1" >&2; exit 2 ;;
   esac
 done
-# The library always comes from this script's own repo; --root only changes
-# which checkout is inspected.
-LIB_ROOT="$(cd "$(dirname "$0")/.." && pwd -P)"
 # shellcheck source=scripts/lib/doctor-lib.sh
 . "$LIB_ROOT/scripts/lib/doctor-lib.sh"
 doctor_report "$ROOT" "$HOME_DIR" "$BIN"
