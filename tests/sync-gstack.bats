@@ -73,8 +73,8 @@ setup() {
 @test "prints the version it synced and the skill count" {
   run "$SCRIPT" --upstream "$UP" --vendor "$VENDOR"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"1.80.0.0"* ]]
-  [[ "$output" == *"2 skills"* ]]
+  [[ "$output" == *"1.80.0.0"* ]] || false
+  [[ "$output" == *"2 skills"* ]] || false
 }
 
 @test "is idempotent" {
@@ -88,5 +88,5 @@ setup() {
 @test "fails clearly when the upstream is not a git checkout" {
   run "$SCRIPT" --upstream "$BATS_TEST_TMPDIR/nope" --vendor "$VENDOR"
   [ "$status" -ne 0 ]
-  [[ "$output" == *"git checkout"* ]]
+  [[ "$output" == *"git checkout"* ]] || false
 }

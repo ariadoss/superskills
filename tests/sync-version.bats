@@ -31,7 +31,7 @@ setup() {
   rm "$R/.cursor-plugin/marketplace.json"
   run bash "$R/scripts/sync-version.sh"
   [ "$status" -eq 1 ]
-  [[ "$output" == *"[skip] .cursor-plugin/marketplace.json"* ]]
+  [[ "$output" == *"[skip] .cursor-plugin/marketplace.json"* ]] || false
 }
 
 @test "exits non-zero when VERSION is empty" {

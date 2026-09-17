@@ -73,9 +73,9 @@ EOF
 
 @test "skill_body_from returns content after the second fence" {
   run skill_body_from "$FIX/alpha/SKILL.md"
-  [[ "$output" == *"# Alpha"* ]]
-  [[ "$output" == *"body line 1"* ]]
-  [[ "$output" != *"name: alpha-cmd"* ]]
+  [[ "$output" == *"# Alpha"* ]] || false
+  [[ "$output" == *"body line 1"* ]] || false
+  [[ "$output" != *"name: alpha-cmd"* ]] || false
 }
 
 @test "link_skill_into links SKILL.md under the resolved name" {
@@ -144,8 +144,8 @@ EOF
   ln -s "$SRC/design-skills/renamed-away/SKILL.md" "$DST/old-name/SKILL.md"
   run prune_dangling_links "$DST" "$SRC"
   [ "$status" -eq 0 ]
-  [ ! -e "$DST/old-name" ] && [ ! -L "$DST/old-name/SKILL.md" ]
-  [[ "$output" == *"old-name"* ]]
+  [ ! -e "$DST/old-name" ] && [ ! -L "$DST/old-name/SKILL.md" ] || false
+  [[ "$output" == *"old-name"* ]] || false
 }
 
 @test "prune_dangling_links keeps resolving links, links elsewhere, and the user's own files" {
@@ -159,7 +159,7 @@ EOF
   run prune_dangling_links "$DST" "$SRC"
   [ -L "$DST/live/SKILL.md" ]
   [ -L "$DST/foreign/SKILL.md" ]
-  [ ! -L "$DST/mixed/SKILL.md" ] && [ -f "$DST/mixed/notes.md" ]
+  [ ! -L "$DST/mixed/SKILL.md" ] && [ -f "$DST/mixed/notes.md" ] || false
 }
 
 @test "prune_dangling_links refuses an empty or root source (would match every link)" {

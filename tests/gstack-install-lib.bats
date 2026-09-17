@@ -47,13 +47,13 @@ setup() {
   [ "$(cat "$DEST/VERSION")" = "9.9.9.9" ]
   [ -f "$DEST/.setup-ran" ]
   [ ! -f "$DEST/.superskills-vendor-copy" ]
-  [[ "$output" == *"cloned"* ]]
+  [[ "$output" == *"cloned"* ]] || false
 }
 
 @test "ensure: retries a failing clone before giving up" {
   export GSTACK_CLONE_ATTEMPTS=3
   run gstack_ensure "$DEST" "$VENDOR" "$BATS_TEST_TMPDIR/does-not-exist.git"
-  [[ "$output" == *"attempt 3/3"* ]]
+  [[ "$output" == *"attempt 3/3"* ]] || false
 }
 
 @test "ensure: falls back to the vendor copy when the clone fails, and marks it" {
@@ -63,7 +63,7 @@ setup() {
   [ -f "$DEST/.superskills-vendor-copy" ]
   [ -f "$DEST/.vendor-setup-ran" ]
   [ ! -d "$DEST/.git" ]
-  [[ "$output" == *"vendor copy"* ]]
+  [[ "$output" == *"vendor copy"* ]] || false
 }
 
 @test "ensure: a vendor-copy install is promoted to a real clone on the next run" {
@@ -74,7 +74,7 @@ setup() {
   [ "$(gstack_install_state "$DEST")" = "real" ]
   [ "$(cat "$DEST/VERSION")" = "9.9.9.9" ]
   [ ! -f "$DEST/.superskills-vendor-copy" ]
-  [[ "$output" == *"promot"* ]]
+  [[ "$output" == *"promot"* ]] || false
 }
 
 @test "ensure: a vendor-copy install stays put when the clone still fails" {
@@ -83,7 +83,7 @@ setup() {
   [ "$status" -eq 0 ]
   [ "$(gstack_install_state "$DEST")" = "vendor" ]
   [ "$(cat "$DEST/VERSION")" = "1.15.0.0" ]
-  [[ "$output" == *"still on the vendor copy"* ]]
+  [[ "$output" == *"still on the vendor copy"* ]] || false
 }
 
 @test "ensure: a partial (broken) install is moved aside, not nested into" {
@@ -102,7 +102,7 @@ setup() {
   run gstack_ensure "$DEST" "$VENDOR" "$UPSTREAM"
   [ "$status" -eq 0 ]
   [ ! -f "$DEST/.setup-ran" ]
-  [[ "$output" == *"already installed"* ]]
+  [[ "$output" == *"already installed"* ]] || false
 }
 
 @test "ensure: never leaves a half-cloned directory behind on failure" {
@@ -115,5 +115,5 @@ setup() {
   run gstack_ensure "$DEST" "$BATS_TEST_TMPDIR/no-vendor" "$BATS_TEST_TMPDIR/does-not-exist.git"
   [ "$status" -ne 0 ]
   [ ! -e "$DEST" ]
-  [[ "$output" == *"not installed"* ]]
+  [[ "$output" == *"not installed"* ]] || false
 }

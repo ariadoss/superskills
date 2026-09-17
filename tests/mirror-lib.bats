@@ -20,20 +20,20 @@ setup() {
   [ "$(printf '%s\n' "$output" | sed -n '2p')" = "name: dbmap" ]
   [ "$(printf '%s\n' "$output" | sed -n '3p')" = 'description: "Generate a database schema map for the current project."' ]
   [ "$(printf '%s\n' "$output" | sed -n '6p')" = "---" ]
-  [[ "$output" == *"First, locate the install."* ]]
+  [[ "$output" == *"First, locate the install."* ]] || false
 }
 
 @test "mirror_wrap records the upstream in metadata so the source stays traceable" {
   run mirror_wrap dbmap "$SRC"
-  [[ "$output" == *"upstream: https://github.com/ariadoss/repomap"* ]]
+  [[ "$output" == *"upstream: https://github.com/ariadoss/repomap"* ]] || false
 }
 
 @test "mirror_wrap keeps upstream frontmatter but pins name: to the mirror's directory name" {
   run mirror_wrap dbmap "$FM"
   [ "$(printf '%s\n' "$output" | sed -n '2p')" = "name: dbmap" ]
-  [[ "$output" == *"description: already there"* ]]
-  [[ "$output" == *"Body."* ]]
-  [[ "$output" != *"upstream-name"* ]]
+  [[ "$output" == *"description: already there"* ]] || false
+  [[ "$output" == *"Body."* ]] || false
+  [[ "$output" != *"upstream-name"* ]] || false
 }
 
 @test "mirror_wrap leaves a file whose frontmatter name already matches untouched" {
@@ -53,7 +53,7 @@ setup() {
   run mirror_wrap dbmap "$BAD"
   [ "$(printf '%s\n' "$output" | sed -n '2p')" = "name: dbmap" ]
   [ "$(printf '%s\n' "$output" | grep -c '^---$')" -eq 3 ]   # synthetic open+close, then the original line
-  [[ "$output" == *"name: not-a-key"* ]]                        # body untouched
+  [[ "$output" == *"name: not-a-key"* ]]                        # body untouched || false
 }
 
 @test "mirror_wrap adds name: when upstream frontmatter has none" {
@@ -61,8 +61,8 @@ setup() {
   printf -- '---\ndescription: already there\n---\nBody.\n' > "$NO_NAME"
   run mirror_wrap dbmap "$NO_NAME"
   # name: lands inside the frontmatter (before the closing ---), position is irrelevant
-  [ "$(printf '%s\n' "$output" | awk 'NR>1 && /^---$/ {exit} /^name: dbmap$/ {found=1} END {print found+0}')" -eq 1 ]
-  [[ "$output" == *"description: already there"* ]]
+  [ "$(printf '%s\n' "$output" | awk 'NR>1 && /^---$/ {exit} /^name: dbmap$/ {found=1} END {print found+0}')" -eq 1 ] || false
+  [[ "$output" == *"description: already there"* ]] || false
   [ "$(printf '%s\n' "$output" | grep -c '^---$')" -eq 2 ]
 }
 

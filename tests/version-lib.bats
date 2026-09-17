@@ -39,13 +39,13 @@ ver_of() { grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$1"; }
   run stamp_json_version "2.12.1" "$ONE"
   [ "$status" -eq 0 ]
   grep -q '"version": "2.12.1"' "$ONE"
-  ! grep -q '1.0.0' "$ONE"
+  ! grep -q '1.0.0' "$ONE" || false
 }
 
 @test "stamps every version field (marketplace + entry)" {
   stamp_json_version "2.12.1" "$TWO"
   [ "$(ver_of "$TWO" | grep -c '2.12.1')" -eq 2 ]
-  ! grep -q '1.0.0' "$TWO"
+  ! grep -q '1.0.0' "$TWO" || false
 }
 
 @test "does not touch other fields" {
@@ -69,7 +69,7 @@ ver_of() { grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$1"; }
 @test "returns 1 when no version field present" {
   run stamp_json_version "2.12.1" "$NOVER"
   [ "$status" -eq 1 ]
-  ! grep -q '2.12.1' "$NOVER"
+  ! grep -q '2.12.1' "$NOVER" || false
 }
 
 @test "returns 1 on empty version arg" {

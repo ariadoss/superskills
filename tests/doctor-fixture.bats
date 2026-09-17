@@ -16,11 +16,11 @@ setup() {
   [ ! -e "$W/fixture-home/.claude/skills/clean-code" ]
   [ -f "$W/fixture-home/.claude/skills/gstack/.superskills-vendor-copy" ]
   run doctor_report "$W/fixture-repo" "$W/fixture-home" definitely-not-claude-xyz
-  [[ "$output" == *"| Repo | ready |"* ]]
-  [[ "$output" == *"| Links | blocked | 2/3 linked. Not linked: clean-code"* ]]
-  [[ "$output" == *"| Manifests | ready |"* ]]
-  [[ "$output" == *"| gstack | warning |"* ]]
-  [[ "$output" == *"Verdict: blocked"* ]]
+  [[ "$output" == *"| Repo | ready |"* ]] || false
+  [[ "$output" == *"| Links | blocked | 2/3 skills linked into "*"Not linked: clean-code"* ]] || false
+  [[ "$output" == *"| Manifests | ready |"* ]] || false
+  [[ "$output" == *"| gstack | warning |"* ]] || false
+  [[ "$output" == *"Verdict: blocked"* ]] || false
 }
 
 @test "release-check delta: all skills linked, codex manifest stale" {
@@ -28,8 +28,8 @@ setup() {
   [ -L "$W/fixture-home/.claude/skills/clean-code/SKILL.md" ]
   grep -q '"version": "2.23.0"' "$W/fixture-repo/.codex-plugin/plugin.json"
   run doctor_report "$W/fixture-repo" "$W/fixture-home" definitely-not-claude-xyz
-  [[ "$output" == *"| Links | ready | 3/3"* ]]
-  [[ "$output" == *"| Manifests | warning | stale version in: .codex-plugin/plugin.json"* ]]
+  [[ "$output" == *"| Links | ready | 3/3"* ]] || false
+  [[ "$output" == *"| Manifests | warning | stale version in: .codex-plugin/plugin.json"* ]] || false
 }
 
 @test "the fixture's embedded setup script is real bash (parses) and is executable" {

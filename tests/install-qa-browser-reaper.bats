@@ -35,7 +35,7 @@ SH
   plutil -lint "$PLIST" >/dev/null
   grep -q '^bootstrap gui/' "$LAUNCHCTL_LOG"
   grep -q '^kickstart -k gui/.*/com.superskills.gstack-qa-reaper$' "$LAUNCHCTL_LOG"
-  [[ "$output" == *"Installed com.superskills.gstack-qa-reaper"* ]]
+  [[ "$output" == *"Installed com.superskills.gstack-qa-reaper"* ]] || false
 }
 
 @test "defaults are idle-min 30 and interval 900" {
@@ -57,7 +57,7 @@ SH
   FAKE_LAUNCHCTL_FAIL=1 run bash "$SCRIPT"
   [ "$status" -eq 1 ]
   [ -f "$PLIST" ]
-  [[ "$output" == *"launchctl bootstrap gui/"* ]]
+  [[ "$output" == *"launchctl bootstrap gui/"* ]] || false
 }
 
 @test "--uninstall removes the plist and exits 0, also when nothing was installed" {
@@ -72,7 +72,7 @@ SH
 @test "non-integer values and unknown flags exit 2 without writing anything" {
   run bash "$SCRIPT" --idle-min soon
   [ "$status" -eq 2 ]
-  [[ "$output" == *"--idle-min needs a positive integer"* ]]
+  [[ "$output" == *"--idle-min needs a positive integer"* ]] || false
   run bash "$SCRIPT" --interval
   [ "$status" -eq 2 ]
   run bash "$SCRIPT" --bogus

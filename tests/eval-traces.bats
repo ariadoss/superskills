@@ -29,11 +29,11 @@ J
 
 @test "prints a per-run summary: case, arm, score, tool calls, failed graders, final text" {
   run bash "$REPO_ROOT/scripts/eval-traces.sh" "$RESULT" "$W/out"
-  [[ "$output" == *"doctor-direct / with-1 / score 1"* ]]
-  [[ "$output" == *"Skill superskills:superskills-doctor"* ]]
-  [[ "$output" == *"Bash bash doctor.sh --root r --home h"* ]]
-  [[ "$output" == *"Verdict: blocked."* ]]
-  [[ "$output" == *"doctor-direct / without-1 / score 0.5"* ]]
-  [[ "$output" == *"FAILED read-only"* ]]
-  [[ "$output" == *"trace missing"* ]]
+  [[ "$output" == *"doctor-direct / with-1 / score 1"* ]] || false
+  [[ "$output" == *"Skill superskills:superskills-doctor"* ]] || false
+  [[ "$output" == *"Bash bash doctor.sh --root r --home h"* ]] || false
+  [[ "$output" == *"Verdict: blocked."* ]] || false
+  [[ "$output" == *"doctor-direct / without-1 / score 0.5"* ]] || false
+  [[ "$output" == *"FAILED read-only"* ]] || false
+  [[ "$output" == *"trace missing"* ]] || false
 }

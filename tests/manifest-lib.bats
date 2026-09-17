@@ -48,14 +48,14 @@ setup() {
   mkdir -p "$MK/content/local"; printf -- '---\nname: local-seo\n---\n' > "$MK/content/local/SKILL.md"
   run write_marketing_shims "$MK"
   [ "$status" -eq 1 ]
-  [[ "$output" == *"local-seo"* ]]
+  [[ "$output" == *"local-seo"* ]] || false
 }
 
 @test "write_marketing_shims refuses a frontmatter name that would escape plugin-skills/" {
   mkdir -p "$MK/seo/evil"; printf -- '---\nname: ../../escape\n---\n' > "$MK/seo/evil/SKILL.md"
   run write_marketing_shims "$MK"
   [ "$status" -eq 1 ]
-  [[ "$output" == *"escape"* ]]
+  [[ "$output" == *"escape"* ]] || false
   [ ! -e "$MK/escape" ]
 }
 
@@ -104,7 +104,7 @@ setup() {
     [ "$(jq -r .version "$OUT")" = "9.9.9" ]
     [ "$(jq -r .name "$OUT")" = "superskills-marketing" ]
     [ "$(jq -r '.skills | join(",")' "$OUT")" = "./plugin-skills" ]
-    [[ "$(jq -r .description "$OUT")" == "The 4 marketing skills"* ]]   # count derived, not hardcoded
+    [[ "$(jq -r .description "$OUT")" == "The 4 marketing skills"* ]]   # count derived, not hardcoded || false
   else
     grep -q '"version": "9.9.9"' "$OUT"; grep -q '"./plugin-skills"' "$OUT"
   fi

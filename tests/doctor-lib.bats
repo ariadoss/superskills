@@ -40,14 +40,14 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
   run doctor_check_repo "$ROOT"
   [ "$status" -eq 0 ]
   [ "$(status_of "$output")" = "ready" ]
-  [[ "$(evidence_of "$output")" == *"2.24.0"* ]]
+  [[ "$(evidence_of "$output")" == *"2.24.0"* ]] || false
 }
 
 @test "check_repo: blocked when the root is not a superskills checkout, with a runnable reinstall command" {
   run doctor_check_repo "$BATS_TEST_TMPDIR/nope"
   [ "$(status_of "$output")" = "blocked" ]
-  [[ "$(evidence_of "$output")" == *"cd ~/.claude/skills/superskills && ./setup"* ]]
-  [[ "$(evidence_of "$output")" != *"cd there"* ]]
+  [[ "$(evidence_of "$output")" == *"cd ~/.claude/skills/superskills && ./setup"* ]] || false
+  [[ "$(evidence_of "$output")" != *"cd there"* ]] || false
 }
 
 # ── install kind ──
@@ -72,7 +72,7 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
 @test "check_install: blocked and tells you to run ./setup when unlinked" {
   run doctor_check_install "$ROOT" "$BATS_TEST_TMPDIR/empty"
   [ "$(status_of "$output")" = "blocked" ]
-  [[ "$(evidence_of "$output")" == *"./setup"* ]]
+  [[ "$(evidence_of "$output")" == *"./setup"* ]] || false
 }
 
 # ── plugin-only install (claude plugin install …, ./setup never run) ──
@@ -94,11 +94,11 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
   EMPTY_HOME="$BATS_TEST_TMPDIR/plugin-home"; mkdir -p "$EMPTY_HOME"
   run doctor_report "$ROOT" "$EMPTY_HOME" "$FAKE"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"| Install | ready | plugin install"* ]]
-  [[ "$output" == *"| Links | ready |"* ]]
-  [[ "$output" == *"| gstack | warning |"* ]]
-  [[ "$output" == *"| Plugin | ready | plugin superskills@superskills v2.24.0 matches VERSION"* ]]
-  [[ "$output" == *"Verdict: ready with warnings"* ]]
+  [[ "$output" == *"| Install | ready | plugin install"* ]] || false
+  [[ "$output" == *"| Links | ready |"* ]] || false
+  [[ "$output" == *"| gstack | warning |"* ]] || false
+  [[ "$output" == *"| Plugin | ready | plugin superskills@superskills v2.24.0 matches VERSION"* ]] || false
+  [[ "$output" == *"Verdict: ready with warnings"* ]] || false
 }
 
 # ── links ──
@@ -106,7 +106,7 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
 @test "check_links: ready when every skill resolves to the repo" {
   run doctor_check_links "$ROOT" "$SKILLS"
   [ "$(status_of "$output")" = "ready" ]
-  [[ "$(evidence_of "$output")" == *"2/2"* ]]
+  [[ "$(evidence_of "$output")" == *"2/2"* ]] || false
 }
 
 @test "check_links: blocked when a new skill has no link yet (needs ./setup)" {
@@ -114,8 +114,8 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
   printf -- '---\nname: gamma\ndescription: g\n---\n' > "$ROOT/skills/gamma/SKILL.md"
   run doctor_check_links "$ROOT" "$SKILLS"
   [ "$(status_of "$output")" = "blocked" ]
-  [[ "$(evidence_of "$output")" == *"gamma"* ]]
-  [[ "$(evidence_of "$output")" == *"./setup"* ]]
+  [[ "$(evidence_of "$output")" == *"gamma"* ]] || false
+  [[ "$(evidence_of "$output")" == *"./setup"* ]] || false
 }
 
 @test "check_links: blocked when a link is dangling" {
@@ -124,7 +124,7 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
   rm "$SKILLS/beta/SKILL.md"; ln -s "$ROOT/skills/beta/GONE.md" "$SKILLS/beta/SKILL.md"
   run doctor_check_links "$ROOT" "$SKILLS"
   [ "$(status_of "$output")" = "blocked" ]
-  [[ "$(evidence_of "$output")" == *"beta"* ]]
+  [[ "$(evidence_of "$output")" == *"beta"* ]] || false
 }
 
 @test "check_links: a dangling design-skills link is blocked, not ready (setup links design-skills too)" {
@@ -133,7 +133,7 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
   ln -s "$ROOT/design-skills/renamed-away/SKILL.md" "$SKILLS/gamma/SKILL.md"
   run doctor_check_links "$ROOT" "$SKILLS"
   [ "$(status_of "$output")" = "blocked" ]
-  [[ "$(evidence_of "$output")" == *"Dangling: gamma"* ]]
+  [[ "$(evidence_of "$output")" == *"Dangling: gamma"* ]] || false
 }
 
 @test "check_links: an unlinked marketing skill (nested) is reported, and linked ones count" {
@@ -143,8 +143,8 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
   ln -s "$ROOT/marketing-skills/seo/local/SKILL.md" "$SKILLS/local-seo/SKILL.md"
   run doctor_check_links "$ROOT" "$SKILLS"
   [ "$(status_of "$output")" = "blocked" ]
-  [[ "$(evidence_of "$output")" == *"3/4 linked"* ]]
-  [[ "$(evidence_of "$output")" == *"privacy-page-generator"* ]]
+  [[ "$(evidence_of "$output")" == *"3/4 skills linked"* ]] || false
+  [[ "$(evidence_of "$output")" == *"privacy-page-generator"* ]] || false
 }
 
 @test "check_links: the plugin-skills shim tree is not double-counted as marketing skills" {
@@ -154,14 +154,14 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
   ln -s "$ROOT/marketing-skills/seo/local/SKILL.md" "$SKILLS/local-seo/SKILL.md"
   run doctor_check_links "$ROOT" "$SKILLS"
   [ "$(status_of "$output")" = "ready" ]
-  [[ "$(evidence_of "$output")" == *"3/3"* ]]
+  [[ "$(evidence_of "$output")" == *"3/3"* ]] || false
 }
 
 @test "check_links: plugin install counts core and design skills served by the loader" {
   mkdir -p "$ROOT/design-skills/gamma-dir"; printf -- '---\nname: gamma\n---\n' > "$ROOT/design-skills/gamma-dir/SKILL.md"
   run doctor_check_links "$ROOT" "$SKILLS" plugin
   [ "$(status_of "$output")" = "ready" ]
-  [[ "$(evidence_of "$output")" == "3 skills served by the plugin loader"* ]]
+  [[ "$(evidence_of "$output")" == "3 skills served by the plugin loader"* ]] || false
 }
 
 @test "check_links: a link that resolves into a different checkout is a warning naming it" {
@@ -170,15 +170,15 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
   rm "$SKILLS/beta/SKILL.md"; ln -s "$OTHER/SKILL.md" "$SKILLS/beta/SKILL.md"
   run doctor_check_links "$ROOT" "$SKILLS"
   [ "$(status_of "$output")" = "warning" ]
-  [[ "$(evidence_of "$output")" == *"beta"* ]]
-  [[ "$(evidence_of "$output")" == *"other-checkout"* ]]
+  [[ "$(evidence_of "$output")" == *"beta"* ]] || false
+  [[ "$(evidence_of "$output")" == *"other-checkout"* ]] || false
 }
 
 @test "check_links: stale links left by a moved checkout are a warning (listed, never deleted)" {
   mkdir -p "$SKILLS/old-skill"; ln -s "$BATS_TEST_TMPDIR/moved-away/skills/old-skill/SKILL.md" "$SKILLS/old-skill/SKILL.md"
   run doctor_check_links "$ROOT" "$SKILLS"
   [ "$(status_of "$output")" = "warning" ]
-  [[ "$(evidence_of "$output")" == *"old-skill"* ]]
+  [[ "$(evidence_of "$output")" == *"old-skill"* ]] || false
   [ -L "$SKILLS/old-skill/SKILL.md" ]
 }
 
@@ -187,8 +187,8 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
   printf -- '---\nname: alpha\n---\n' > "$ROOT/design-skills/alpha-design/SKILL.md"
   run doctor_check_links "$ROOT" "$SKILLS"
   [ "$(status_of "$output")" = "ready" ]
-  [[ "$(evidence_of "$output")" == *"shadowed"* ]]
-  [[ "$(evidence_of "$output")" == *"alpha"* ]]
+  [[ "$(evidence_of "$output")" == *"shadowed"* ]] || false
+  [[ "$(evidence_of "$output")" == *"alpha"* ]] || false
 }
 
 @test "check_links: uses the frontmatter name, not the directory name" {
@@ -210,16 +210,16 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
   printf '{ "name": "superskills", "version": "2.23.0" }\n' > "$ROOT/.codex-plugin/plugin.json"
   run doctor_check_manifests "$ROOT"
   [ "$(status_of "$output")" = "warning" ]
-  [[ "$(evidence_of "$output")" == *".codex-plugin/plugin.json"* ]]
-  [[ "$(evidence_of "$output")" == *"sync-version.sh"* ]]
+  [[ "$(evidence_of "$output")" == *".codex-plugin/plugin.json"* ]] || false
+  [[ "$(evidence_of "$output")" == *"sync-version.sh"* ]] || false
 }
 
 @test "check_manifests: warning naming a manifest that is missing altogether (not silently ready)" {
   rm "$ROOT/.claude-plugin/marketplace.json"
   run doctor_check_manifests "$ROOT"
   [ "$(status_of "$output")" = "warning" ]
-  [[ "$(evidence_of "$output")" == *"missing"* ]]
-  [[ "$(evidence_of "$output")" == *".claude-plugin/marketplace.json"* ]]
+  [[ "$(evidence_of "$output")" == *"missing"* ]] || false
+  [[ "$(evidence_of "$output")" == *".claude-plugin/marketplace.json"* ]] || false
 }
 
 # ── gstack ──
@@ -228,14 +228,14 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
   G="$HOME_DIR/.claude/skills/gstack"; mkdir -p "$G/.git"; printf '1.80.0\n' > "$G/VERSION"
   run doctor_check_gstack "$G"
   [ "$(status_of "$output")" = "ready" ]
-  [[ "$(evidence_of "$output")" == *"1.80.0"* ]]
+  [[ "$(evidence_of "$output")" == *"1.80.0"* ]] || false
 }
 
 @test "check_gstack: warning on the vendor stopgap" {
   G="$HOME_DIR/.claude/skills/gstack"; mkdir -p "$G"; printf '1.80.0\n' > "$G/VERSION"; touch "$G/.superskills-vendor-copy"
   run doctor_check_gstack "$G"
   [ "$(status_of "$output")" = "warning" ]
-  [[ "$(evidence_of "$output")" == *"vendor"* ]]
+  [[ "$(evidence_of "$output")" == *"vendor"* ]] || false
 }
 
 @test "check_gstack: blocked when absent or partial" {
@@ -262,7 +262,7 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
   printf '../seo/local' > "$ROOT/marketing-skills/plugin-skills/local-seo"
   run doctor_check_shims "$ROOT"
   [ "$(status_of "$output")" = "warning" ]
-  [[ "$(evidence_of "$output")" == *"core.symlinks"* ]]
+  [[ "$(evidence_of "$output")" == *"core.symlinks"* ]] || false
 }
 
 @test "check_shims: warning when a plugin-skills entry is a dangling symlink" {
@@ -270,8 +270,8 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
   ln -s ../seo/does-not-exist "$ROOT/marketing-skills/plugin-skills/ghost"
   run doctor_check_shims "$ROOT"
   [ "$(status_of "$output")" = "warning" ]
-  [[ "$(evidence_of "$output")" == *"dangling"* ]]
-  [[ "$(evidence_of "$output")" == *"sync-marketing-manifest.sh"* ]]
+  [[ "$(evidence_of "$output")" == *"dangling"* ]] || false
+  [[ "$(evidence_of "$output")" == *"sync-marketing-manifest.sh"* ]] || false
 }
 
 @test "check_shims: warning when plugin-skills/ is empty but marketing skills exist (interrupted sync)" {
@@ -279,8 +279,8 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
   printf -- '---\nname: local-seo\n---\n' > "$ROOT/marketing-skills/seo/local/SKILL.md"
   run doctor_check_shims "$ROOT"
   [ "$(status_of "$output")" = "warning" ]
-  [[ "$(evidence_of "$output")" == *"0 of 1"* ]]
-  [[ "$(evidence_of "$output")" == *"sync-marketing-manifest.sh"* ]]
+  [[ "$(evidence_of "$output")" == *"0 of 1"* ]] || false
+  [[ "$(evidence_of "$output")" == *"sync-marketing-manifest.sh"* ]] || false
 }
 
 @test "check_shims: warning when plugin-skills/ is partial" {
@@ -290,7 +290,7 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
   ln -s ../seo/local "$ROOT/marketing-skills/plugin-skills/local-seo"
   run doctor_check_shims "$ROOT"
   [ "$(status_of "$output")" = "warning" ]
-  [[ "$(evidence_of "$output")" == *"1 of 2"* ]]
+  [[ "$(evidence_of "$output")" == *"1 of 2"* ]] || false
 }
 
 @test "check_shims: extra resolving entries beyond the marketing skill count do not claim an interrupted sync" {
@@ -300,7 +300,7 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
   ln -s ../seo/local "$ROOT/marketing-skills/plugin-skills/local-seo"
   ln -s "$BATS_TEST_TMPDIR/extra" "$ROOT/marketing-skills/plugin-skills/extra"
   run doctor_check_shims "$ROOT"
-  [[ "$(evidence_of "$output")" != *"interrupted"* ]]
+  [[ "$(evidence_of "$output")" != *"interrupted"* ]] || false
 }
 
 @test "check_shims: warning when marketing skills exist but plugin-skills/ is missing entirely" {
@@ -322,7 +322,7 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
   [ "$(status_of "$output")" = "ready" ]
   run doctor_check_command "definitely-not-a-command-xyz" "needed for /fuzz"
   [ "$(status_of "$output")" = "warning" ]
-  [[ "$(evidence_of "$output")" == *"/fuzz"* ]]
+  [[ "$(evidence_of "$output")" == *"/fuzz"* ]] || false
 }
 
 # ── knowledge bases ──
@@ -330,7 +330,7 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
 @test "check_knowledge: ready with 'none configured' when the conf is absent or empty" {
   run doctor_check_knowledge "$HOME_DIR/.superskills/knowledge.conf" "$HOME_DIR"
   [ "$(status_of "$output")" = "ready" ]
-  [[ "$(evidence_of "$output")" == *"none configured"* ]]
+  [[ "$(evidence_of "$output")" == *"none configured"* ]] || false
 }
 
 @test "check_knowledge: warning naming the configured base that is not cloned" {
@@ -338,7 +338,7 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
   printf '# comment\nkb1|~/.superskills/knowledge/kb1|desc|https://example.invalid/kb1.git\n' > "$CONF"
   run doctor_check_knowledge "$CONF" "$HOME_DIR"
   [ "$(status_of "$output")" = "warning" ]
-  [[ "$(evidence_of "$output")" == *"kb1"* ]]
+  [[ "$(evidence_of "$output")" == *"kb1"* ]] || false
 }
 
 # ── plugin (claude CLI) ──
@@ -371,7 +371,7 @@ fake_plugin_list() {
   fake_plugin_list "$FAKE" "superskills-marketing@superskills=2.24.0" "superskills@superskills=2.20.0"
   run doctor_check_plugin "$ROOT" "$FAKE"
   [ "$(status_of "$output")" = "warning" ]
-  [[ "$(evidence_of "$output")" == *"2.20.0"* ]]
+  [[ "$(evidence_of "$output")" == *"2.20.0"* ]] || false
 }
 
 @test "check_plugin: ready when the installed plugin matches VERSION" {
@@ -379,7 +379,7 @@ fake_plugin_list() {
   fake_plugin_list "$FAKE" "superskills@superskills=2.24.0"
   run doctor_check_plugin "$ROOT" "$FAKE"
   [ "$(status_of "$output")" = "ready" ]
-  [[ "$(evidence_of "$output")" == *"matches VERSION"* ]]
+  [[ "$(evidence_of "$output")" == *"matches VERSION"* ]] || false
 }
 
 @test "_doctor_plugin_version: survives a nested object and a } inside a string between id and version" {
@@ -437,7 +437,7 @@ JSON
   run doctor_check_plugin "$ROOT" "$FAKE"
   [ "$(status_of "$output")" = "unverified" ]
   run doctor_report "$ROOT" "$HOME_DIR" "$FAKE"
-  [[ "$output" == *"| Plugin | unverified |"* ]]
+  [[ "$output" == *"| Plugin | unverified |"* ]] || false
 }
 
 @test "_doctor_is_json_array: jq and the no-jq fallback agree on valid and invalid text" {
@@ -474,7 +474,7 @@ CASES
 
 @test "doctor_report scans for the install kind once (doctor_check_install accepts a precomputed kind)" {
   run doctor_check_install "$ROOT" "$BATS_TEST_TMPDIR/empty" "" dev-repo
-  [[ "$(evidence_of "$output")" == "dev-repo install"* ]]
+  [[ "$(evidence_of "$output")" == "dev-repo install"* ]] || false
   run grep -c 'doctor_install_kind "' "$REPO_ROOT/scripts/lib/doctor-lib.sh"
   [ "$output" -eq 2 ]   # the one in doctor_report, and the fallback inside doctor_check_install
 }
@@ -483,20 +483,20 @@ CASES
   ln -s "$ROOT" "$SKILLS/superskills"
   run doctor_check_install "$ROOT" "$SKILLS" "2.24.0"
   [ "$(status_of "$output")" = "warning" ]
-  [[ "$(evidence_of "$output")" == *"canonical install"* ]]
-  [[ "$(evidence_of "$output")" == *"twice"* ]]
+  [[ "$(evidence_of "$output")" == *"canonical install"* ]] || false
+  [[ "$(evidence_of "$output")" == *"twice"* ]] || false
 }
 
 @test "install: a ./setup install plus the plugin install is a warning (every skill appears twice)" {
   run doctor_check_install "$ROOT" "$SKILLS" "2.24.0"
   [ "$(status_of "$output")" = "warning" ]
-  [[ "$(evidence_of "$output")" == *"twice"* ]]
+  [[ "$(evidence_of "$output")" == *"twice"* ]] || false
 }
 
 @test "check_plugin: accepts pre-fetched JSON so doctor_report calls the CLI only once" {
   run doctor_check_plugin "$ROOT" "definitely-not-claude-xyz" '[{"id":"superskills@superskills","version":"2.24.0"}]'
   [ "$(status_of "$output")" = "ready" ]
-  [[ "$(evidence_of "$output")" == *"matches VERSION"* ]]
+  [[ "$(evidence_of "$output")" == *"matches VERSION"* ]] || false
 }
 
 @test "doctor_report invokes the claude CLI exactly once" {
@@ -512,14 +512,14 @@ CASES
   printf '#!/bin/sh\nsleep 30\n' > "$FAKE"; chmod +x "$FAKE"
   DOCTOR_CLI_TIMEOUT=1 run doctor_report "$ROOT" "$HOME_DIR" "$FAKE"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"| Plugin | unverified |"* ]]
+  [[ "$output" == *"| Plugin | unverified |"* ]] || false
 }
 
 @test "check_plugin: a sibling plugin alone does not count as the superskills plugin" {
   FAKE="$BATS_TEST_TMPDIR/claude"
   fake_plugin_list "$FAKE" "superskills-marketing@superskills=2.24.0"
   run doctor_check_plugin "$ROOT" "$FAKE"
-  [[ "$(evidence_of "$output")" == *"not installed as a Claude Code plugin"* ]]
+  [[ "$(evidence_of "$output")" == *"not installed as a Claude Code plugin"* ]] || false
 }
 
 @test "check_knowledge: expands ~ against the inspected home, not the real HOME" {
@@ -527,7 +527,7 @@ CASES
   printf 'kb1|~/.superskills/knowledge/kb1|desc|https://example.invalid/kb1.git\n' > "$CONF"
   run doctor_check_knowledge "$CONF" "$HOME_DIR"
   [ "$(status_of "$output")" = "ready" ]
-  [[ "$(evidence_of "$output")" == *"all cloned"* ]]
+  [[ "$(evidence_of "$output")" == *"all cloned"* ]] || false
 }
 
 # ── hook ──
@@ -535,14 +535,14 @@ CASES
 @test "check_hook: warning when the root is not a git checkout" {
   run doctor_check_hook "$ROOT"
   [ "$(status_of "$output")" = "warning" ]
-  [[ "$(evidence_of "$output")" == *"not a git checkout"* ]]
+  [[ "$(evidence_of "$output")" == *"not a git checkout"* ]] || false
 }
 
 @test "check_hook: warning when the checkout has no post-merge hook" {
   git -C "$ROOT" init -q
   run doctor_check_hook "$ROOT"
   [ "$(status_of "$output")" = "warning" ]
-  [[ "$(evidence_of "$output")" == *"not installed"* ]]
+  [[ "$(evidence_of "$output")" == *"not installed"* ]] || false
 }
 
 @test "check_hook: ready when our post-merge hook is installed" {
@@ -593,10 +593,10 @@ CASES
   [ "$status" -eq 0 ]
   after=$(find "$ROOT" "$HOME_DIR" | sort | md5)
   [ "$before" = "$after" ]
-  [[ "$output" == *"| Check"* ]]
-  [[ "$output" == *"Verdict:"* ]]
+  [[ "$output" == *"| Check"* ]] || false
+  [[ "$output" == *"Verdict:"* ]] || false
   # gstack is absent in this fixture, so the verdict must not be "ready"
-  [[ "$output" != *"Verdict: ready"* ]]
+  [[ "$output" != *"Verdict: ready"* ]] || false
 }
 
 # ── scripts/doctor.sh wrapper (arg parsing; the report itself is tested above) ──
@@ -605,27 +605,27 @@ CASES
   FAKE="$BATS_TEST_TMPDIR/claude"; printf '#!/bin/sh\necho "[]"\n' > "$FAKE"; chmod +x "$FAKE"
   run bash "$REPO_ROOT/scripts/doctor.sh" --root "$ROOT" --home "$HOME_DIR" --bin "$FAKE"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"superskills v2.24.0 at $ROOT"* ]]
-  [[ "$output" == *"| Plugin | ready | not installed"* ]]
-  [[ "$output" == *"linked into $SKILLS"* ]]
+  [[ "$output" == *"superskills v2.24.0 at $ROOT"* ]] || false
+  [[ "$output" == *"| Plugin | ready | not installed"* ]] || false
+  [[ "$output" == *"linked into $SKILLS"* ]] || false
 }
 
 @test "doctor.sh: --root=/--home= forms are accepted" {
   run bash "$REPO_ROOT/scripts/doctor.sh" "--root=$ROOT" "--home=$HOME_DIR" --bin=definitely-not-claude-xyz
   [ "$status" -eq 0 ]
-  [[ "$output" == *"| Plugin | unverified |"* ]]
-  [[ "$output" == *"at $ROOT"* ]]
+  [[ "$output" == *"| Plugin | unverified |"* ]] || false
+  [[ "$output" == *"at $ROOT"* ]] || false
 }
 
 @test "doctor.sh: an unknown option exits 2 with a message" {
   run bash "$REPO_ROOT/scripts/doctor.sh" --bogus
   [ "$status" -eq 2 ]
-  [[ "$output" == *"unknown option: --bogus"* ]]
+  [[ "$output" == *"unknown option: --bogus"* ]] || false
 }
 
 @test "doctor.sh: --help prints usage and exits 0" {
   run bash "$REPO_ROOT/scripts/doctor.sh" --help
   [ "$status" -eq 0 ]
-  [[ "$output" == *"--root"* ]]
+  [[ "$output" == *"--root"* ]] || false
 }
 

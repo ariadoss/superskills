@@ -18,7 +18,7 @@ setup() {
 @test "wraps each upstream file into skills/<name>/SKILL.md with frontmatter and reports sync" {
   run bash "$R/scripts/sync-mirrors.sh" --no-pull
   [ "$status" -eq 0 ]
-  [[ "$output" == *"sync:  dbmap"* ]]
+  [[ "$output" == *"sync:  dbmap"* ]] || false
   [ "$(sed -n '1p' "$R/skills/dbmap/SKILL.md")" = "---" ]
   [ "$(sed -n '2p' "$R/skills/dbmap/SKILL.md")" = "name: dbmap" ]
   grep -q '^description: "Generate a database schema map."$' "$R/skills/dbmap/SKILL.md"
@@ -30,21 +30,21 @@ setup() {
   before="$(cat "$R/skills/dbmap/SKILL.md")"
   run bash "$R/scripts/sync-mirrors.sh" --no-pull
   [ "$status" -eq 0 ]
-  [[ "$output" == *"ok:    dbmap"* ]]
-  [[ "$output" == *"all mirrors in sync."* ]]
+  [[ "$output" == *"ok:    dbmap"* ]] || false
+  [[ "$output" == *"all mirrors in sync."* ]] || false
   [ "$before" = "$(cat "$R/skills/dbmap/SKILL.md")" ]
 }
 
 @test "skips a mirror whose skills/<name> dir does not exist, and one with no upstream file" {
   run bash "$R/scripts/sync-mirrors.sh" --no-pull
-  [[ "$output" == *"skip:  dbmap-auto-on"* ]]
+  [[ "$output" == *"skip:  dbmap-auto-on"* ]] || false
 }
 
 @test "fails with the clone hint when no upstream can be found" {
   export REPOMAP_HOME="$BATS_TEST_TMPDIR/nowhere"
   HOME="$BATS_TEST_TMPDIR/fakehome" run bash "$R/scripts/sync-mirrors.sh" --no-pull
   [ "$status" -eq 1 ]
-  [[ "$output" == *"could not find the repomap upstream"* ]]
+  [[ "$output" == *"could not find the repomap upstream"* ]] || false
 }
 
 @test "upstream precedence: REPOMAP_HOME, then ~/claude-repomap-command, then ~/.claude-repomap-command, then ~/.local/share/…" {
@@ -53,21 +53,21 @@ setup() {
     mkdir -p "$H/$d"; printf 'Generate a database schema map.\n' > "$H/$d/dbmap.md"
   done
   run env HOME="$H" REPOMAP_HOME="$UP" bash "$R/scripts/sync-mirrors.sh" --no-pull
-  [[ "$output" == "upstream: $UP"* ]]
+  [[ "$output" == "upstream: $UP"* ]] || false
   run env -u REPOMAP_HOME HOME="$H" bash "$R/scripts/sync-mirrors.sh" --no-pull
-  [[ "$output" == "upstream: $H/claude-repomap-command"* ]]
+  [[ "$output" == "upstream: $H/claude-repomap-command"* ]] || false
   rm -rf "$H/claude-repomap-command"
   run env -u REPOMAP_HOME HOME="$H" bash "$R/scripts/sync-mirrors.sh" --no-pull
-  [[ "$output" == "upstream: $H/.claude-repomap-command"* ]]
+  [[ "$output" == "upstream: $H/.claude-repomap-command"* ]] || false
   rm -rf "$H/.claude-repomap-command"
   run env -u REPOMAP_HOME HOME="$H" bash "$R/scripts/sync-mirrors.sh" --no-pull
-  [[ "$output" == "upstream: $H/.local/share/claude-repomap-command"* ]]
+  [[ "$output" == "upstream: $H/.local/share/claude-repomap-command"* ]] || false
 }
 
 @test "an upstream dir without dbmap.md is skipped in favour of the next candidate" {
   H="$BATS_TEST_TMPDIR/fakehome"; mkdir -p "$H/claude-repomap-command" "$H/.claude-repomap-command"
   printf 'Generate a database schema map.\n' > "$H/.claude-repomap-command/dbmap.md"
   run env REPOMAP_HOME="$BATS_TEST_TMPDIR/empty-upstream" HOME="$H" bash "$R/scripts/sync-mirrors.sh" --no-pull
-  [[ "$output" == "upstream: $H/.claude-repomap-command"* ]]
+  [[ "$output" == "upstream: $H/.claude-repomap-command"* ]] || false
 }
 

@@ -42,12 +42,12 @@ EOF
 @test "dry-run reaps an idle QA browser" {
   run env GSTACK_QA_REAP_IDLE_MIN=30 bash "$SCRIPT" --dry-run
   [ "$status" -eq 0 ]
-  [[ "$output" == *"WOULD REAP  profile=testqa pid=999001"* ]]
+  [[ "$output" == *"WOULD REAP  profile=testqa pid=999001"* ]] || false
 }
 
 @test "dry-run spares a freshly-active QA browser" {
   run env GSTACK_QA_REAP_IDLE_MIN=30 bash "$SCRIPT" --dry-run
-  [[ "$output" != *"profile=freshqa"* ]]
+  [[ "$output" != *"profile=freshqa"* ]] || false
 }
 
 @test "scoping: ignores helpers, crashpad, real Chrome, and Firefox" {
@@ -60,14 +60,14 @@ EOF
 @test "idle threshold is honored (nothing reaped below it)" {
   run env GSTACK_QA_REAP_IDLE_MIN=60 bash "$SCRIPT" --dry-run
   [ "$status" -eq 0 ]
-  [[ "$output" != *"WOULD REAP"* ]]
+  [[ "$output" != *"WOULD REAP"* ]] || false
 }
 
 @test "skips a profile with no on-disk dir (safety)" {
   rm -rf "$IDLE_PROF"
   run env GSTACK_QA_REAP_IDLE_MIN=30 bash "$SCRIPT" --dry-run
   [ "$status" -eq 0 ]
-  [[ "$output" != *"profile=testqa"* ]]
+  [[ "$output" != *"profile=testqa"* ]] || false
 }
 
 @test "real run is best-effort: exit 0 and logs even when the pid is gone" {
@@ -82,5 +82,5 @@ EOF
   run env GSTACK_QA_REAP_IDLE_MIN=30 bash "$SCRIPT"
   [ "$status" -eq 0 ]
   # It must NOT reap while the lock is held.
-  ! grep -q "reaping profile=testqa" "$GSTACK_HOME/qa-reaper.log" 2>/dev/null
+  ! grep -q "reaping profile=testqa" "$GSTACK_HOME/qa-reaper.log" 2>/dev/null || false
 }
