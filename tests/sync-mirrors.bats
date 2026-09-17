@@ -46,3 +46,28 @@ setup() {
   [ "$status" -eq 1 ]
   [[ "$output" == *"could not find the repomap upstream"* ]]
 }
+
+@test "upstream precedence: REPOMAP_HOME, then ~/claude-repomap-command, then ~/.claude-repomap-command, then ~/.local/share/…" {
+  H="$BATS_TEST_TMPDIR/fakehome"
+  for d in claude-repomap-command .claude-repomap-command .local/share/claude-repomap-command; do
+    mkdir -p "$H/$d"; printf 'Generate a database schema map.\n' > "$H/$d/dbmap.md"
+  done
+  run env HOME="$H" REPOMAP_HOME="$UP" bash "$R/scripts/sync-mirrors.sh" --no-pull
+  [[ "$output" == "upstream: $UP"* ]]
+  run env -u REPOMAP_HOME HOME="$H" bash "$R/scripts/sync-mirrors.sh" --no-pull
+  [[ "$output" == "upstream: $H/claude-repomap-command"* ]]
+  rm -rf "$H/claude-repomap-command"
+  run env -u REPOMAP_HOME HOME="$H" bash "$R/scripts/sync-mirrors.sh" --no-pull
+  [[ "$output" == "upstream: $H/.claude-repomap-command"* ]]
+  rm -rf "$H/.claude-repomap-command"
+  run env -u REPOMAP_HOME HOME="$H" bash "$R/scripts/sync-mirrors.sh" --no-pull
+  [[ "$output" == "upstream: $H/.local/share/claude-repomap-command"* ]]
+}
+
+@test "an upstream dir without dbmap.md is skipped in favour of the next candidate" {
+  H="$BATS_TEST_TMPDIR/fakehome"; mkdir -p "$H/claude-repomap-command" "$H/.claude-repomap-command"
+  printf 'Generate a database schema map.\n' > "$H/.claude-repomap-command/dbmap.md"
+  run env REPOMAP_HOME="$BATS_TEST_TMPDIR/empty-upstream" HOME="$H" bash "$R/scripts/sync-mirrors.sh" --no-pull
+  [[ "$output" == "upstream: $H/.claude-repomap-command"* ]]
+}
+
