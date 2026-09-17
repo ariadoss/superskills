@@ -145,3 +145,10 @@ setup() {
   # every link resolves
   for l in "$REAL"/plugin-skills/*; do [ -f "$l/SKILL.md" ] || { echo "dangling: $l"; return 1; }; done
 }
+
+@test "skill_entries excludes a SKILL.md at the marketing root itself" {
+  printf -- '---\nname: root\n---\n' > "$MK/SKILL.md"
+  run skill_entries "$MK"
+  [[ "$output" != *$'\t'"SKILL.md" ]] || false
+  [[ "$output" != root* ]] || false
+}

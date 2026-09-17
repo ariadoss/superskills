@@ -171,9 +171,11 @@ EOF
   [ -L "$DST/x/SKILL.md" ]
 }
 
-@test "setup calls prune_dangling_links for the tools it links into" {
-  run grep -c 'prune_dangling_links' "$REPO_ROOT/setup"
-  [ "$output" -ge 3 ]
+@test "each prune_dangling_links call in setup targets its own tool's skills dir" {
+  for var in CLAUDE_SKILLS_DIR OPENCODE_SKILLS_DIR CODEX_SKILLS_DIR; do
+    run grep -c "prune_dangling_links \"\$$var\"" "$REPO_ROOT/setup"
+    [ "$output" -eq 1 ] || { echo "$var: $output occurrences (want exactly 1)"; return 1; }
+  done
 }
 
 @test "prune_dangling_links never descends into a symlinked directory (another tool's or the user's own tree)" {
@@ -291,4 +293,13 @@ root"
   run link_skill_into "$BATS_TEST_TMPDIR/pfx/dst" "$BATS_TEST_TMPDIR/pfx/src/superskills-doctor/SKILL.md" "" 0 "superskills-"
   [ -L "$BATS_TEST_TMPDIR/pfx/dst/superskills-doctor/SKILL.md" ] || false
   [ ! -e "$BATS_TEST_TMPDIR/pfx/dst/superskills-superskills-doctor" ] || false
+}
+
+@test "skill_names_from_files only reads name: at the start of a line, not a substring inside another field" {
+  D="$BATS_TEST_TMPDIR/embed"; mkdir -p "$D"
+  printf -- '---\ndescription: the name: field below is canonical\nname: real-name\n---\n' > "$D/SKILL.md"
+  expected="$(skill_name_from "$D/SKILL.md" real-name)"
+  actual="$(printf '%s\n' "$D/SKILL.md" | skill_names_from_files | cut -f2)"
+  [ "$actual" = "$expected" ] || false
+  [ "$actual" = "real-name" ] || false
 }

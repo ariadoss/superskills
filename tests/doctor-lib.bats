@@ -750,3 +750,37 @@ SH
   [ "$(status_of "$output")" = "warning" ] || false
   [[ "$(evidence_of "$output")" == *".codex-plugin/plugin.json"* ]] || false
 }
+
+@test "check_repo: blocked when VERSION is missing even though setup and skills/ exist" {
+  rm "$ROOT/VERSION"
+  run doctor_check_repo "$ROOT"
+  [ "$(status_of "$output")" = "blocked" ] || false
+}
+
+@test "install_kind: a path merely containing /plugins/ is not a plugin cache" {
+  C="$BATS_TEST_TMPDIR/somewhere/plugins/other/checkout"; mkdir -p "$C"; cp -R "$ROOT/." "$C/"
+  run doctor_install_kind "$C" "$BATS_TEST_TMPDIR/empty" ""
+  [ "$output" = "unlinked" ] || false
+}
+
+@test "check_knowledge: an existing non-git directory is still reported as not cloned" {
+  CONF="$HOME_DIR/.superskills/knowledge.conf"; mkdir -p "$(dirname "$CONF")" "$HOME_DIR/.superskills/knowledge/kb1"
+  printf 'kb1|~/.superskills/knowledge/kb1|desc|https://example.invalid/kb1.git\n' > "$CONF"
+  run doctor_check_knowledge "$CONF" "$HOME_DIR"
+  [ "$(status_of "$output")" = "warning" ] || false
+}
+
+@test "doctor_report renders every expected row" {
+  run doctor_report "$ROOT" "$HOME_DIR" "definitely-not-claude-xyz"
+  for row in Repo Install Links Manifests "Marketing shims" gstack Plugin "Post-merge hook" "Knowledge bases"; do
+    [[ "$output" == *"| $row |"* ]] || { echo "missing row: $row"; return 1; }
+  done
+}
+
+@test "install_kind: a real (non-symlink) SKILL.md is not dev-repo evidence" {
+  # Isolated from the suite's own dev-repo fixture links: a fresh, otherwise-empty skills dir.
+  ISO="$BATS_TEST_TMPDIR/iso-skills"; mkdir -p "$ISO/faketwin"
+  printf -- '---\nname: faketwin\n---\n' > "$ISO/faketwin/SKILL.md"   # a real file, not a link
+  run doctor_install_kind "$ROOT" "$ISO"
+  [ "$output" != "dev-repo" ] || { echo "a plain file was taken as dev-repo evidence"; return 1; }
+}
