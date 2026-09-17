@@ -45,6 +45,7 @@ calls do not share shell variables, so a path found in one call is gone in the n
 
 ```bash
 SKILL_DIR="${SKILL_DIR:-}"   # set to this skill's base directory when the host provides it
+case "$SKILL_DIR" in /*) : ;; *) SKILL_DIR="" ;; esac   # only an absolute path is trusted, never resolved against the cwd
 ROOT=""
 for cand in "${SKILL_DIR:+$SKILL_DIR/../..}" "${CLAUDE_PLUGIN_ROOT}"; do
   [ -n "$cand" ] && [ -f "$cand/scripts/doctor.sh" ] && { ROOT="$(cd "$cand" && pwd -P)"; break; }

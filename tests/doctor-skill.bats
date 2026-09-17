@@ -72,3 +72,15 @@ setup() {
   [ "$output" = "DOCTOR=missing" ] || false
 }
 
+@test "a relative SKILL_DIR is ignored (never trusted against the shell's cwd)" {
+  mkdir -p "$BATS_TEST_TMPDIR/decoy/skills/superskills-doctor"
+  cp "$REPO_ROOT/scripts/doctor.sh" "$BATS_TEST_TMPDIR/decoy-doctor.sh" 2>/dev/null || true
+  mkdir -p "$BATS_TEST_TMPDIR/decoy/scripts"
+  printf '#!/bin/sh
+echo DECOY_RAN
+' > "$BATS_TEST_TMPDIR/decoy/scripts/doctor.sh"
+  cd "$BATS_TEST_TMPDIR/decoy"
+  run env -u CLAUDE_PLUGIN_ROOT SKILL_DIR="skills/superskills-doctor" HOME="$EMPTY_HOME" bash "$SNIPPET" --bin definitely-not-claude
+  [ "$output" = "DOCTOR=missing" ] || { echo "$output"; return 1; }
+}
+

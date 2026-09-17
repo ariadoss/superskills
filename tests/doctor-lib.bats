@@ -722,3 +722,31 @@ SH
   DOCTOR_JQ=definitely-not-jq run doctor_check_plugin "$ROOT" "$FAKE" '[]' dev-repo
   [ "$(status_of "$output")" = "warning" ] || false
 }
+
+@test "plugin install: Links validates the CLI's installPath, not an unrelated --root" {
+  CACHE="$BATS_TEST_TMPDIR/plugin-cache/superskills/superskills/2.24.0"
+  mkdir -p "$CACHE/skills/onlyskill"
+  printf -- '---\nname: onlyskill\n---\n' > "$CACHE/skills/onlyskill/SKILL.md"
+  FAKE="$BATS_TEST_TMPDIR/claude"
+  printf '#!/bin/sh\necho %s\n' "'[{\"id\":\"superskills@superskills\",\"version\":\"2.24.0\",\"enabled\":true,\"installPath\":\"$CACHE\"}]'" > "$FAKE"; chmod +x "$FAKE"
+  EMPTY_HOME="$BATS_TEST_TMPDIR/plugin-home2"; mkdir -p "$EMPTY_HOME"
+  run doctor_report "$ROOT" "$EMPTY_HOME" "$FAKE"
+  [[ "$output" == *"| Links | ready | 1 skills served by the plugin loader from $CACHE"* ]] || { echo "$output"; return 1; }
+  [[ "$output" != *"$ROOT/skills"* ]] || false
+}
+
+@test "plugin install: no installPath in the CLI's answer falls back to --root, and says so" {
+  FAKE="$BATS_TEST_TMPDIR/claude"; fake_plugin_list "$FAKE" "superskills@superskills=2.24.0"
+  EMPTY_HOME="$BATS_TEST_TMPDIR/plugin-home3"; mkdir -p "$EMPTY_HOME"
+  run doctor_report "$ROOT" "$EMPTY_HOME" "$FAKE"
+  [[ "$output" == *"| Links | ready | 2 skills served by the plugin loader from $ROOT/skills"* ]] || false
+  [[ "$output" == *"unconfirmed"* ]] || false
+}
+
+@test "check_manifests: a top-level object with no top-level version, only a nested one, is a warning" {
+  command -v jq >/dev/null 2>&1 || skip "jq not installed"
+  printf '{ "name": "superskills", "source": { "version": "2.24.0" } }\n' > "$ROOT/.codex-plugin/plugin.json"
+  run doctor_check_manifests "$ROOT"
+  [ "$(status_of "$output")" = "warning" ] || false
+  [[ "$(evidence_of "$output")" == *".codex-plugin/plugin.json"* ]] || false
+}

@@ -126,24 +126,32 @@ _doctor_skill_files() {
 #             moved checkout (warning; listed, never removed)
 #   shadowed  a name shared by two sources (informational)
 # A plugin install has no links by design: the loader reads skills/ and
-# design-skills/ itself.
+# design-skills/ itself — from [plugin_install_path] when the CLI reported one
+# (the plugin's actual cache copy, which may differ from <root>, e.g. when
+# --root/--home inspect someone else's install), else from <root> itself,
+# flagged unconfirmed since that is then only an assumption, not a fact the CLI
+# gave us.
 doctor_check_links() {
-  local root="$1" skills="$2" kind="${3:-}" name winner count link resolved real_root entry
+  local root="$1" skills="$2" kind="${3:-}" install_path="${4:-}" name winner count link resolved real_root entry
   local total=0 ok=0 missing="" broken="" corrupt="" wrong="" elsewhere="" shadowed="" stale="" seen=" " status msg
   if [ "$kind" = "plugin" ]; then
+    local serve_root="$root" confirmed=1
+    if [ -n "$install_path" ]; then serve_root="$install_path"; else confirmed=0; fi
     # No links to check, but the loader can only serve files that are readable.
     local f bad=""
     while IFS= read -r f; do
       [ -n "$f" ] || continue
       total=$((total + 1))
       if [ -f "$f" ] && [ -r "$f" ]; then ok=$((ok + 1)); else bad="$bad $(basename "$(dirname "$f")")"; fi
-    done < <(_doctor_skill_files "$root" plugin)
+    done < <(_doctor_skill_files "$serve_root" plugin)
     if [ "$total" -eq 0 ]; then
-      _doctor_row "Links" "blocked" "no skills found under $root/skills or $root/design-skills — the plugin serves nothing; reinstall the plugin"
+      _doctor_row "Links" "blocked" "no skills found under $serve_root/skills or $serve_root/design-skills — the plugin serves nothing; reinstall the plugin"
     elif [ -n "$bad" ]; then
       _doctor_row "Links" "blocked" "$ok/$total plugin skills readable. SKILL.md is not a readable file:$bad — reinstall the plugin"
+    elif [ "$confirmed" -eq 1 ]; then
+      _doctor_row "Links" "ready" "$total skills served by the plugin loader from $serve_root/skills and $serve_root/design-skills (no ./setup symlinks in a plugin install; confirmed via the CLI's installPath)"
     else
-      _doctor_row "Links" "ready" "$total skills served by the plugin loader from $root/skills and $root/design-skills (no ./setup symlinks in a plugin install)"
+      _doctor_row "Links" "ready" "$total skills served by the plugin loader from $serve_root/skills and $serve_root/design-skills — unconfirmed: the CLI did not report an installPath, so this assumes --root is the plugin's serving copy"
     fi
     return 0
   fi
@@ -200,11 +208,24 @@ doctor_check_manifests() {
   local root="$1" v f stale="" missing="" noversion="" invalid="" msg="" jq="${DOCTOR_JQ:-jq}" have_jq=0
   command -v "$jq" >/dev/null 2>&1 && have_jq=1
   v="$(tr -d '[:space:]' < "$root/VERSION" 2>/dev/null)"
+  local manifest_version
   for f in "${DOCTOR_MANIFESTS[@]}"; do
     if [ ! -f "$root/$f" ]; then missing="$missing $f"; continue; fi
-    if [ "$have_jq" -eq 1 ] && ! "$jq" -e . "$root/$f" >/dev/null 2>&1; then invalid="$invalid $f"; continue; fi
-    if ! grep -q '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$root/$f"; then noversion="$noversion $f"; continue; fi
-    if grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$root/$f" | grep -qv "\"$v\""; then stale="$stale $f"; fi
+    if [ "$have_jq" -eq 1 ]; then
+      if ! "$jq" -e . "$root/$f" >/dev/null 2>&1; then invalid="$invalid $f"; continue; fi
+      # The top-level "version" field only — a match nested in another object
+      # (e.g. a "source" block) is not this manifest's own version.
+      manifest_version="$("$jq" -r '.version // empty' "$root/$f" 2>/dev/null)"
+      if [ -z "$manifest_version" ]; then
+        # A marketplace manifest nests version per plugin entry; check those too.
+        manifest_version="$("$jq" -r '(.plugins // [])[0].version // empty' "$root/$f" 2>/dev/null)"
+      fi
+      if [ -z "$manifest_version" ]; then noversion="$noversion $f"; continue; fi
+      [ "$manifest_version" = "$v" ] || stale="$stale $f"
+    else
+      if ! grep -q '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$root/$f"; then noversion="$noversion $f"; continue; fi
+      if grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$root/$f" | grep -qv "\"$v\""; then stale="$stale $f"; fi
+    fi
   done
   if [ -z "$stale$missing$noversion$invalid" ]; then
     _doctor_row "Manifests" "ready" "all plugin manifests at v$v"
@@ -316,7 +337,7 @@ _doctor_have_jq() { command -v "${DOCTOR_JQ:-jq}" >/dev/null 2>&1; }
 _doctor_plugin_info() {
   printf '%s' "$1" | "${DOCTOR_JQ:-jq}" -r --arg p "$2" \
     '[.[]? | select(type == "object" and ((.id // "") | startswith($p)))] | first // empty
-     | "\(.version // "")\t\(if .enabled == false then "false" else "true" end)"' 2>/dev/null
+     | "\(.version // "")\t\(if .enabled == false then "false" else "true" end)\t\(.installPath // "")"' 2>/dev/null
 }
 
 # _doctor_plugin_version <plugin-list-json> <id-prefix> — the version field of
@@ -396,7 +417,7 @@ doctor_check_plugin() {
     return 0
   fi
   info="$(_doctor_plugin_info "$out" "superskills@")"
-  installed="${info%%$'\t'*}"; enabled="${info#*$'\t'}"
+  installed="$(printf '%s' "$info" | cut -f1)"; enabled="$(printf '%s' "$info" | cut -f2)"
   if [ -z "$info" ]; then
     _doctor_row "Plugin" "ready" "not installed as a Claude Code plugin (skills are linked by ./setup); optional: /plugin marketplace add ariadoss/superskills"
   elif [ "$enabled" = "false" ]; then
@@ -474,20 +495,23 @@ doctor_report() {
   # The install kind decides how Links and gstack are judged, and a plugin
   # install is only recognisable through the CLI (or the cache path), so probe
   # the plugin once here and pass the answer down.
-  local plugin_json cli_state="unavailable" info
+  local plugin_json cli_state="unavailable" info plugin_install_path=""
   plugin_json="$(_doctor_cli_json "$bin" "$home")"
   plugin_version=""
   if [ "$plugin_json" != "$DOCTOR_CLI_UNAVAILABLE" ] && _doctor_have_jq; then
     cli_state="ok"
     info="$(_doctor_plugin_info "$plugin_json" "superskills@")"
     # Only an enabled plugin serves skills, so only it can make this a plugin install.
-    [ -n "$info" ] && [ "${info#*$'\t'}" != "false" ] && plugin_version="${info%%$'\t'*}"
+    if [ -n "$info" ] && [ "$(printf '%s' "$info" | cut -f2)" != "false" ]; then
+      plugin_version="$(printf '%s' "$info" | cut -f1)"
+      plugin_install_path="$(printf '%s' "$info" | cut -f3)"
+    fi
   fi
   kind="$(doctor_install_kind "$root" "$skills" "$plugin_version" "$cli_state")"
   rows="$(
     doctor_check_repo "$root"
     doctor_check_install "$root" "$skills" "$plugin_version" "$kind"
-    doctor_check_links "$root" "$skills" "$kind"
+    doctor_check_links "$root" "$skills" "$kind" "$plugin_install_path"
     doctor_check_manifests "$root"
     doctor_check_shims "$root"
     doctor_check_gstack "$skills/gstack" "$kind"
