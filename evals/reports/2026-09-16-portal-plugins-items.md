@@ -166,6 +166,13 @@ files; a missing manifest is a warning, not silence; the CLI is called once with
 A one-run pilot of `doctor-release-check` after these changes scored 1.0 (all seven graders).
 The four doctor fixtures now share `evals/_lib/doctor-fixture.sh`.
 
+A later `/daily-qa` code review found four more places the doctor could say "ready" wrongly,
+all fixed with tests: the Links row now covers design and marketing skills (it checked only
+`skills/`, so a broken design-skill link read ready); the skill's repo discovery no longer
+falls back to the working directory; an empty or partial `plugin-skills/` tree warns; the
+no-jq plugin-list parser reads id and version from the same object only. `./setup` now prunes
+links it created that no longer resolve. None of these changes were re-run through the eval.
+
 ### Follow-ups found and fixed after the eval
 
 - Four design skills were exposed under basename slash names in the main plugin (`superskills:composition-patterns` instead of `vercel-composition-patterns`). Fixed by renaming the four directories to their frontmatter names; `tests/plugin-manifests.bats` now fails on any dir/name mismatch in `skills/` or `design-skills/`. README and COMMANDS.md had documented the wrong slash names for these four (the `./setup` links were already `vercel-*`); corrected.
