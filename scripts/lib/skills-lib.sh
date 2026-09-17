@@ -89,7 +89,8 @@ link_skill_into() {
   skill_dir="$(dirname "$skill_md")"
   name="$(skill_name_from "$skill_md" "$fallback")"
   [ -z "$name" ] && return 1
-  target="$base_dir/${name_prefix}${name}"
+  # A skill already named with the prefix (superskills-doctor) is not doubled.
+  case "$name" in "$name_prefix"*) target="$base_dir/$name" ;; *) target="$base_dir/${name_prefix}${name}" ;; esac
   mkdir -p "$target"
   [ -L "$target/SKILL.md" ] && rm "$target/SKILL.md"
   ln -snf "$skill_md" "$target/SKILL.md"

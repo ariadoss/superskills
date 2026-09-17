@@ -1,6 +1,6 @@
 {
   "name": "superskills",
-  "description": "Superskills marketplace \u2014 the superskills plugin (core + design skills) and superskills-marketing (174 marketing skills), installable directly from this repo.",
+  "description": "Superskills marketplace \u2014 the superskills plugin (core + design skills) and superskills-marketing (the marketing skills), installable directly from this repo.",
   "owner": {
     "name": "Danilo Stern-Sapad",
     "email": "danilosapad@gmail.com"
@@ -33,7 +33,7 @@
       "displayName": "Superskills Marketing",
       "source": "./marketing-skills",
       "version": "2.24.0",
-      "description": "The 174 marketing skills (SEO, content, pages, ads, channels, strategies) as a separate plugin \u2014 install alongside superskills.",
+      "description": "The marketing skills (SEO, content, pages, ads, channels, strategies) as a separate plugin \u2014 install alongside superskills.",
       "author": {
         "name": "Danilo Stern-Sapad",
         "email": "danilosapad@gmail.com"

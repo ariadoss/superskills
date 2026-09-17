@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # version-lib.sh — pure helper for propagating the canonical VERSION into the
-# plugin manifests that drive native update detection (Claude Code, Codex).
+# plugin manifests that drive native update detection (Claude Code, Codex,
+# Cursor).
 # Dependency-free (perl only, always present on macOS/Linux) so it works in a
 # fresh clone without jq. Unit-tested in tests/version-lib.bats.
 

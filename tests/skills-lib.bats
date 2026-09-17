@@ -284,3 +284,11 @@ root"
   [ "$(printf '%s\n' "$out" | wc -l | tr -d ' ')" -eq 2 ] || false
   [[ "$out" == *"$E/b/SKILL.md	bee"* ]] || false
 }
+
+@test "link_skill_into does not double a name prefix the skill name already has" {
+  mkdir -p "$BATS_TEST_TMPDIR/pfx/src/superskills-doctor" "$BATS_TEST_TMPDIR/pfx/dst"
+  printf -- '---\nname: superskills-doctor\n---\n' > "$BATS_TEST_TMPDIR/pfx/src/superskills-doctor/SKILL.md"
+  run link_skill_into "$BATS_TEST_TMPDIR/pfx/dst" "$BATS_TEST_TMPDIR/pfx/src/superskills-doctor/SKILL.md" "" 0 "superskills-"
+  [ -L "$BATS_TEST_TMPDIR/pfx/dst/superskills-doctor/SKILL.md" ] || false
+  [ ! -e "$BATS_TEST_TMPDIR/pfx/dst/superskills-superskills-doctor" ] || false
+}

@@ -67,7 +67,7 @@ The plugin `version` is driven by the repo's `VERSION` file via
 watch. The `./setup` install above remains the way to get **all** skills across
 every supported tool.
 
-## Skills (40)
+## Skills (41)
 
 ### Dev Methodology (from [superpowers](https://github.com/obra/superpowers))
 | Command | Description |

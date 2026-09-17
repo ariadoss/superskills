@@ -9,15 +9,30 @@ EXTEND_FROM=""
 INSTALL_CURSOR=0
 INSTALL_CLINE=0
 
+usage() {
+  cat <<'USAGE'
+Usage: ./setup [options]
+  -q, --quiet            less output
+  --no-knowledge         skip knowledge-base prompts and clones
+  --extend-from <path>   overlay repo to extend from
+  --cursor               also write project-level Cursor rules (.cursor/rules)
+  --cline                also write project-level Cline/Roo rules (.clinerules)
+  -h, --help             show this help and exit (installs nothing)
+USAGE
+}
+
+# Unknown flags stop here: falling through would run a full install.
 while [ $# -gt 0 ]; do
   case "$1" in
     -q|--quiet)        QUIET=1; shift ;;
     --no-knowledge)    NO_KNOWLEDGE=1; shift ;;
-    --extend-from)     EXTEND_FROM="$2"; shift 2 ;;
+    --extend-from)     [ $# -ge 2 ] || { echo "--extend-from needs a path" >&2; exit 2; }
+                       EXTEND_FROM="$2"; shift 2 ;;
     --extend-from=*)   EXTEND_FROM="${1#--extend-from=}"; shift ;;
     --cursor)          INSTALL_CURSOR=1; shift ;;
     --cline)           INSTALL_CLINE=1; shift ;;
-    *) shift ;;
+    -h|--help)         usage; exit 0 ;;
+    *) echo "unknown option: $1" >&2; usage >&2; exit 2 ;;
   esac
 done
 
@@ -259,7 +274,7 @@ for skill_md in "$SKILLS_SRC_DIR"/*/SKILL.md; do
   link_skill_opencode "$skill_md" "$dir_name"
 done
 
-prune_dangling_links "$OPENCODE_SKILLS_DIR" "$SOURCE_DIR" >/dev/null
+while IFS= read -r pruned; do log "  [prune] $pruned"; done < <(prune_dangling_links "$OPENCODE_SKILLS_DIR" "$SOURCE_DIR")
 log "  done"
 log ""
 
@@ -285,7 +300,7 @@ if [ -d "$HOME/.codex" ]; then
     [ "$dir_name" = "node_modules" ] && continue
     link_skill_codex "$skill_md" "$dir_name"
   done
-  prune_dangling_links "$CODEX_SKILLS_DIR" "$SOURCE_DIR" >/dev/null
+  while IFS= read -r pruned; do log "  [prune] $pruned"; done < <(prune_dangling_links "$CODEX_SKILLS_DIR" "$SOURCE_DIR")
   log "  linked: $CODEX_LINKED skills"
   log ""
 fi
