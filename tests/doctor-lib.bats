@@ -247,6 +247,32 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
   [[ "$(evidence_of "$output")" == *"sync-marketing-manifest.sh"* ]]
 }
 
+@test "check_shims: warning when plugin-skills/ is empty but marketing skills exist (interrupted sync)" {
+  mkdir -p "$ROOT/marketing-skills/seo/local" "$ROOT/marketing-skills/plugin-skills"
+  printf -- '---\nname: local-seo\n---\n' > "$ROOT/marketing-skills/seo/local/SKILL.md"
+  run doctor_check_shims "$ROOT"
+  [ "$(status_of "$output")" = "warning" ]
+  [[ "$(evidence_of "$output")" == *"0 of 1"* ]]
+  [[ "$(evidence_of "$output")" == *"sync-marketing-manifest.sh"* ]]
+}
+
+@test "check_shims: warning when plugin-skills/ is partial" {
+  mkdir -p "$ROOT/marketing-skills/seo/local" "$ROOT/marketing-skills/seo/entity" "$ROOT/marketing-skills/plugin-skills"
+  printf -- '---\nname: local-seo\n---\n' > "$ROOT/marketing-skills/seo/local/SKILL.md"
+  printf -- '---\nname: entity-seo\n---\n' > "$ROOT/marketing-skills/seo/entity/SKILL.md"
+  ln -s ../seo/local "$ROOT/marketing-skills/plugin-skills/local-seo"
+  run doctor_check_shims "$ROOT"
+  [ "$(status_of "$output")" = "warning" ]
+  [[ "$(evidence_of "$output")" == *"1 of 2"* ]]
+}
+
+@test "check_shims: warning when marketing skills exist but plugin-skills/ is missing entirely" {
+  mkdir -p "$ROOT/marketing-skills/seo/local"
+  printf -- '---\nname: local-seo\n---\n' > "$ROOT/marketing-skills/seo/local/SKILL.md"
+  run doctor_check_shims "$ROOT"
+  [ "$(status_of "$output")" = "warning" ]
+}
+
 @test "check_shims: ready with a note when the checkout has no marketing shim tree (older checkout)" {
   run doctor_check_shims "$ROOT"
   [ "$(status_of "$output")" = "ready" ]
@@ -326,6 +352,46 @@ fake_plugin_list() {
   [ "$output" = "2.24.0" ]
   run _doctor_plugin_version '[]' "superskills@"
   [ -z "$output" ]
+}
+
+@test "_doctor_plugin_version without jq: reads the version from the matched object only" {
+  export DOCTOR_JQ=definitely-not-jq
+  # matched plugin has no version; the next plugin's version must not leak in
+  run _doctor_plugin_version '[{"id":"superskills@superskills","scope":"user"},{"id":"other@x","version":"9.9.9"}]' "superskills@"
+  [ -z "$output" ]
+  # a nested object carrying its own "version" key is not the plugin's version
+  run _doctor_plugin_version '[{"id":"superskills@superskills","source":{"version":"0.0.1"},"version":"2.24.0"}]' "superskills@"
+  [ "$output" = "2.24.0" ]
+  # version before id, a } and an escaped quote inside strings, pretty-printed
+  cat > "$BATS_TEST_TMPDIR/list.json" <<'JSON'
+[
+  {
+    "version": "1.0.0",
+    "id": "a@b",
+    "description": "has } and \" quote"
+  },
+  {
+    "description": "x } y",
+    "version": "2.24.0",
+    "id": "superskills@superskills"
+  }
+]
+JSON
+  run _doctor_plugin_version "$(cat "$BATS_TEST_TMPDIR/list.json")" "superskills@"
+  [ "$output" = "2.24.0" ]
+  # sibling prefix does not match
+  run _doctor_plugin_version '[{"id":"superskills-marketing@superskills","version":"2.24.0"}]' "superskills@"
+  [ -z "$output" ]
+}
+
+@test "_doctor_plugin_version: jq and fallback agree on the shared cases" {
+  command -v jq >/dev/null 2>&1 || skip "jq not installed"
+  for json in '[{"id":"superskills@superskills","author":{"name":"D"},"description":"has a } brace","version":"2.24.0"}]' \
+              '[{"id":"other@x","version":"9.9.9"},{"id":"superskills@superskills","version":"2.24.0"}]' '[]'; do
+    a="$(_doctor_plugin_version "$json" "superskills@")"
+    b="$(DOCTOR_JQ=definitely-not-jq _doctor_plugin_version "$json" "superskills@")"
+    [ "$a" = "$b" ] || { echo "jq=[$a] fallback=[$b] for $json"; return 1; }
+  done
 }
 
 @test "check_plugin: accepts pre-fetched JSON so doctor_report calls the CLI only once" {

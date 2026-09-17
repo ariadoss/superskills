@@ -177,14 +177,25 @@ doctor_check_gstack() {
 }
 
 # doctor_check_shims <root>
-# marketing-skills/plugin-skills/ is a committed tree of relative symlinks (the
-# superskills-marketing plugin reads it). A checkout that cannot create
-# symlinks (Windows without core.symlinks) materialises them as text files
-# holding the target path, and the plugin then silently loads no skills.
+# marketing-skills/plugin-skills/ is a committed tree of relative symlinks, one
+# per marketing skill (the superskills-marketing plugin reads it). Three ways it
+# can silently expose fewer skills than exist: a checkout without symlink
+# support (Windows, core.symlinks=false) materialises them as text files; a
+# moved skill leaves a dangling link; an interrupted sync (it rebuilds the tree
+# from scratch) leaves it empty or partial. All three warn with the fix.
 doctor_check_shims() {
-  local root="$1" shim e ok=0 text=0 dangling=0
+  local root="$1" shim e ok=0 text=0 dangling=0 expected
   shim="$root/marketing-skills/plugin-skills"   # own line: `local a=$1 b=$a/x` expands b first
-  [ -d "$shim" ] || { _doctor_row "Marketing shims" "ready" "no marketing-skills/plugin-skills tree (older checkout; only the superskills-marketing plugin needs it)"; return 0; }
+  expected=0
+  [ -d "$root/marketing-skills" ] && expected="$(find "$root/marketing-skills" -name SKILL.md -type f 2>/dev/null | wc -l | tr -d ' ')"
+  if [ ! -d "$shim" ]; then
+    if [ "$expected" -eq 0 ]; then
+      _doctor_row "Marketing shims" "ready" "no marketing-skills/plugin-skills tree (older checkout; only the superskills-marketing plugin needs it)"
+    else
+      _doctor_row "Marketing shims" "warning" "marketing-skills/plugin-skills/ is missing but $expected marketing skills exist — run ./scripts/sync-marketing-manifest.sh (the superskills-marketing plugin loads nothing until then)"
+    fi
+    return 0
+  fi
   for e in "$shim"/*; do
     [ -e "$e" ] || [ -L "$e" ] || continue
     if [ -L "$e" ]; then
@@ -197,6 +208,8 @@ doctor_check_shims() {
     _doctor_row "Marketing shims" "warning" "$text of $((ok + text + dangling)) entries are plain files, not symlinks — git checked them out without symlink support. Fix: git config core.symlinks true, then re-checkout marketing-skills/plugin-skills (the superskills-marketing plugin loads nothing until then)"
   elif [ "$dangling" -gt 0 ]; then
     _doctor_row "Marketing shims" "warning" "$dangling dangling links — run ./scripts/sync-marketing-manifest.sh"
+  elif [ "$ok" -ne "$expected" ]; then
+    _doctor_row "Marketing shims" "warning" "$ok of $expected marketing skills exposed via plugin-skills/ (interrupted or stale sync) — run ./scripts/sync-marketing-manifest.sh"
   else
     _doctor_row "Marketing shims" "ready" "$ok marketing skills exposed via plugin-skills/"
   fi
@@ -215,26 +228,42 @@ doctor_check_command() {
 }
 
 # _doctor_plugin_version <plugin-list-json> <id-prefix>
-# Version of the first plugin whose "id" starts with <id-prefix>, or empty.
-# jq when available; otherwise a position-based scan of the flattened text:
-# find the id, then the next "version" key after it — which survives nested
-# objects and braces inside strings (the CLI prints id before version).
-# Exact-prefix match: "superskills@" must not match "superskills-marketing@".
+# Version of the first plugin whose "id" starts with <id-prefix> (and that has
+# a version), or empty. Exact-prefix match: "superskills@" never matches
+# "superskills-marketing@". Uses jq when present ($DOCTOR_JQ, default jq);
+# otherwise a small awk JSON scanner that tracks strings, escapes and nesting
+# depth, so "id" and "version" are read only as top-level keys of the same
+# array element — never from a nested object or a neighbouring plugin.
 _doctor_plugin_version() {
-  local json="$1" pfx="$2"
-  if command -v jq >/dev/null 2>&1; then
-    printf '%s' "$json" | jq -r --arg p "$pfx" '[.[]? | select((.id // "") | startswith($p)) | .version // empty] | first // empty' 2>/dev/null
+  local json="$1" pfx="$2" jq="${DOCTOR_JQ:-jq}"
+  if command -v "$jq" >/dev/null 2>&1; then
+    printf '%s' "$json" | "$jq" -r --arg p "$pfx" '[.[]? | select((.id // "") | startswith($p)) | .version // empty] | first // empty' 2>/dev/null
     return 0
   fi
-  printf '%s\n' "$json" | tr -d '\n' | awk -v pfx="$pfx" '
-    {
-      rest = $0
-      while (match(rest, /"id"[[:space:]]*:[[:space:]]*"[^"]*"/)) {
-        id = substr(rest, RSTART, RLENGTH); sub(/^"id"[[:space:]]*:[[:space:]]*"/, "", id); sub(/"$/, "", id)
-        rest = substr(rest, RSTART + RLENGTH)
-        if (index(id, pfx) == 1 && match(rest, /"version"[[:space:]]*:[[:space:]]*"[^"]*"/)) {
-          v = substr(rest, RSTART, RLENGTH); sub(/^"version"[[:space:]]*:[[:space:]]*"/, "", v); sub(/"$/, "", v)
-          print v; exit
+  printf '%s\n' "$json" | awk -v pfx="$pfx" '
+    { s = s $0 "\n" }
+    END {
+      n = length(s); depth = 0; instr = 0; esc = 0; expect = 0; key = ""; buf = ""
+      for (i = 1; i <= n; i++) {
+        c = substr(s, i, 1)
+        if (instr) {
+          if (esc) { buf = buf c; esc = 0; continue }
+          if (c == "\\") { esc = 1; continue }
+          if (c != "\"") { buf = buf c; continue }
+          instr = 0
+          if (depth == 2) {
+            if (expect) { if (key == "id") id = buf; else if (key == "version") ver = buf; expect = 0 }
+            else pending = buf
+          }
+          continue
+        }
+        if (c == "\"") { instr = 1; buf = ""; continue }
+        if (c == ":") { if (depth == 2) { key = pending; expect = 1 }; continue }
+        if (c == ",") { if (depth == 2) expect = 0; continue }
+        if (c == "{" || c == "[") { if (depth == 2) expect = 0; depth++; if (c == "{" && depth == 2) { id = ""; ver = "" }; continue }
+        if (c == "}" || c == "]") {
+          if (c == "}" && depth == 2 && index(id, pfx) == 1 && ver != "") { print ver; exit }
+          depth--; continue
         }
       }
     }'
