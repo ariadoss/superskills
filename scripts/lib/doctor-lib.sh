@@ -73,10 +73,12 @@ doctor_install_kind() {
   echo unlinked
 }
 
-# doctor_check_install <root> <claude_skills_dir> [plugin_version]
+# doctor_check_install <root> <claude_skills_dir> [plugin_version] [kind]
+# [kind] is doctor_install_kind's answer when the caller already has it (the
+# scan walks every link under the skills dir, so doctor_report does it once).
 doctor_check_install() {
-  local kind
-  kind="$(doctor_install_kind "$1" "$2" "${3:-}")"
+  local kind="${4:-}"
+  [ -n "$kind" ] || kind="$(doctor_install_kind "$1" "$2" "${3:-}")"
   case "$kind" in
     canonical|dev-repo)
       local what="canonical install (managed clone at $2/superskills)"
@@ -447,7 +449,7 @@ doctor_report() {
   kind="$(doctor_install_kind "$root" "$skills" "$plugin_version")"
   rows="$(
     doctor_check_repo "$root"
-    doctor_check_install "$root" "$skills" "$plugin_version"
+    doctor_check_install "$root" "$skills" "$plugin_version" "$kind"
     doctor_check_links "$root" "$skills" "$kind"
     doctor_check_manifests "$root"
     doctor_check_shims "$root"

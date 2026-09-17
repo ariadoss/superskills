@@ -472,6 +472,13 @@ CASES
   [ "$(status_of "$output")" = "unverified" ]
 }
 
+@test "doctor_report scans for the install kind once (doctor_check_install accepts a precomputed kind)" {
+  run doctor_check_install "$ROOT" "$BATS_TEST_TMPDIR/empty" "" dev-repo
+  [[ "$(evidence_of "$output")" == "dev-repo install"* ]]
+  run grep -c 'doctor_install_kind "' "$REPO_ROOT/scripts/lib/doctor-lib.sh"
+  [ "$output" -eq 2 ]   # the one in doctor_report, and the fallback inside doctor_check_install
+}
+
 @test "install: a canonical install plus the plugin install is also a warning" {
   ln -s "$ROOT" "$SKILLS/superskills"
   run doctor_check_install "$ROOT" "$SKILLS" "2.24.0"
