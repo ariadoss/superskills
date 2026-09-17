@@ -440,6 +440,46 @@ JSON
   [[ "$output" == *"| Plugin | unverified |"* ]]
 }
 
+@test "_doctor_is_json_array: jq and the no-jq fallback agree on valid and invalid text" {
+  cat > "$BATS_TEST_TMPDIR/cases.txt" <<'CASES'
+valid	[]
+valid	[ {"id": "a@b", "version": "1.0.0", "enabled": true, "n": -1.5e3, "x": null, "s": "has ] and [ and \" and , : inside"} ]
+invalid	[this is not valid json, just text]
+invalid	[plugin registry unreachable, retry later]
+invalid	Error: could not reach marketplace registry (offline)
+invalid	[{"id": "a"}
+invalid	{"id": "a"}
+invalid	[{"id": "a"}]]
+invalid	["unterminated]
+invalid	[1, e, 2]
+invalid	[truex]
+valid	[1, -2.5E+10, true, false, null, "e"]
+CASES
+  while IFS=$'\t' read -r want text; do
+    if DOCTOR_JQ=definitely-not-jq _doctor_is_json_array "$text"; then got=valid; else got=invalid; fi
+    [ "$got" = "$want" ] || { echo "fallback: $text -> $got (want $want)"; return 1; }
+    if command -v jq >/dev/null 2>&1; then
+      if _doctor_is_json_array "$text"; then got=valid; else got=invalid; fi
+      [ "$got" = "$want" ] || { echo "jq: $text -> $got (want $want)"; return 1; }
+    fi
+  done < "$BATS_TEST_TMPDIR/cases.txt"
+}
+
+@test "without jq, a CLI that prints bracketed error text and exits 0 is unverified" {
+  FAKE="$BATS_TEST_TMPDIR/claude"
+  printf '#!/bin/sh\necho "[plugin registry unreachable, retry later]"\nexit 0\n' > "$FAKE"; chmod +x "$FAKE"
+  DOCTOR_JQ=definitely-not-jq run doctor_check_plugin "$ROOT" "$FAKE"
+  [ "$(status_of "$output")" = "unverified" ]
+}
+
+@test "install: a canonical install plus the plugin install is also a warning" {
+  ln -s "$ROOT" "$SKILLS/superskills"
+  run doctor_check_install "$ROOT" "$SKILLS" "2.24.0"
+  [ "$(status_of "$output")" = "warning" ]
+  [[ "$(evidence_of "$output")" == *"canonical install"* ]]
+  [[ "$(evidence_of "$output")" == *"twice"* ]]
+}
+
 @test "install: a ./setup install plus the plugin install is a warning (every skill appears twice)" {
   run doctor_check_install "$ROOT" "$SKILLS" "2.24.0"
   [ "$(status_of "$output")" = "warning" ]

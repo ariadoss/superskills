@@ -294,16 +294,47 @@ _doctor_plugin_version() {
     }'
 }
 
-# _doctor_is_json_array <text> — true when <text> is a JSON array (jq when
-# present, else: first non-blank character is "[" and last is "]").
+# _doctor_is_json_array <text> — true when <text> is a JSON array. Uses jq
+# when present ($DOCTOR_JQ, default jq). Without jq, an awk tokenizer checks the
+# text is a well-formed array: every character outside strings is structural,
+# whitespace, part of a number, or part of true/false/null; strings terminate;
+# brackets balance and close exactly once. That rejects error messages that
+# merely happen to be wrapped in brackets.
 _doctor_is_json_array() {
-  local jq="${DOCTOR_JQ:-jq}" t
+  local jq="${DOCTOR_JQ:-jq}"
   if command -v "$jq" >/dev/null 2>&1; then
     printf '%s' "$1" | "$jq" -e 'type == "array"' >/dev/null 2>&1
     return
   fi
-  t="$(printf '%s' "$1" | tr -d '[:space:]')"
-  case "$t" in \[*\]) return 0 ;; *) return 1 ;; esac
+  printf '%s\n' "$1" | awk '
+    { s = s $0 "\n" }
+    END {
+      n = length(s); depth = 0; instr = 0; esc = 0; started = 0; closed = 0; word = ""; innum = 0
+      for (i = 1; i <= n; i++) {
+        c = substr(s, i, 1)
+        if (instr) {
+          if (esc) esc = 0
+          else if (c == "\\") esc = 1
+          else if (c == "\"") instr = 0
+          continue
+        }
+        if (innum && c ~ /[0-9.eE+-]/) continue
+        innum = 0
+        if (c ~ /[a-z]/) { word = word c; continue }
+        if (word != "") { if (word != "true" && word != "false" && word != "null") exit 1; word = "" }
+        if (c ~ /[0-9-]/ && started && !closed) { innum = 1; continue }
+        if (c ~ /[ \t\r\n]/) continue
+        if (closed) exit 1
+        if (!started) { if (c != "[") exit 1; started = 1; depth = 1; continue }
+        if (c == "\"") { instr = 1; continue }
+        if (c == "[" || c == "{") { depth++; continue }
+        if (c == "]" || c == "}") { depth--; if (depth < 0) exit 1; if (depth == 0) closed = 1; continue }
+        if (c == "," || c == ":") continue
+        exit 1
+      }
+      if (word != "" && word != "true" && word != "false" && word != "null") exit 1
+      exit (started && closed && !instr) ? 0 : 1
+    }'
 }
 
 # _doctor_cli_json <claude_bin>

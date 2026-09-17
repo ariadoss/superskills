@@ -86,8 +86,10 @@ link_skill_into() {
 marketing_skill_files() {
   local root="${1%/}"
   [ -d "$root" ] || return 0
-  find "$root" \( -name .venv -o -name node_modules -o -path "$root/plugin-skills" \) -prune -o \
-    -name SKILL.md -type f -print 2>/dev/null | sort
+  # Run from inside the root so the plugin-skills prune is the literal "./plugin-skills";
+  # a root path containing [ ] * ? would otherwise be read as a -path glob.
+  (cd "$root" && find . \( -name .venv -o -name node_modules -o -path ./plugin-skills \) -prune -o \
+    -name SKILL.md -type f -print 2>/dev/null) | sed "s|^\.|$(printf '%s' "$root" | sed 's/[&|\\]/\\&/g')|" | sort
 }
 
 # prune_dangling_links <base_dir> <source_dir>

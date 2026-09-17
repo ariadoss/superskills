@@ -225,3 +225,12 @@ MD
   [ "$status" -eq 1 ]
 }
 
+@test "marketing_skill_files prunes plugin-skills even when the root path contains glob characters" {
+  M="$BATS_TEST_TMPDIR/mk[x]*?"
+  mkdir -p "$M/seo/local" "$M/plugin-skills/real-dir"
+  printf -- '---\nname: n\n---\n' > "$M/seo/local/SKILL.md"
+  printf -- '---\nname: n\n---\n' > "$M/plugin-skills/real-dir/SKILL.md"
+  run marketing_skill_files "$M"
+  [ "$output" = "$M/seo/local/SKILL.md" ]
+}
+
