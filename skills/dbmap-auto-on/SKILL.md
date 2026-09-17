@@ -1,6 +1,6 @@
 ---
 name: dbmap-auto-on
-description: Enable automatic database schema map updates. When enabled, DBMAP.md is regenerated every time a database migration command runs in the project.
+description: "Enable automatic database schema map updates. When enabled, DBMAP.md is regenerated every time a database migration command runs in the project."
 metadata:
   upstream: https://github.com/ariadoss/repomap
 ---

@@ -21,7 +21,7 @@ setup() {
   [[ "$output" == *"sync:  dbmap"* ]]
   [ "$(sed -n '1p' "$R/skills/dbmap/SKILL.md")" = "---" ]
   [ "$(sed -n '2p' "$R/skills/dbmap/SKILL.md")" = "name: dbmap" ]
-  grep -q '^description: Generate a database schema map.$' "$R/skills/dbmap/SKILL.md"
+  grep -q '^description: "Generate a database schema map."$' "$R/skills/dbmap/SKILL.md"
   grep -q '^Body.$' "$R/skills/dbmap/SKILL.md"
 }
 

@@ -128,3 +128,11 @@ EOF
   [ -z "$output" ]
   [ ! -e "$TARGET/gamma" ]
 }
+
+@test "skill_desc_from unwraps a double-quoted description and its escapes" {
+  Q="$BATS_TEST_TMPDIR/quoted/SKILL.md"; mkdir -p "$(dirname "$Q")"
+  printf -- '---\nname: q\ndescription: "Generate a map: fast, say \\"hi\\" \\\\ bye"\n---\n' > "$Q"
+  run skill_desc_from "$Q"
+  [ "$output" = 'Generate a map: fast, say "hi" \ bye' ]
+}
+

@@ -1,6 +1,6 @@
 ---
 name: dbmap-auto-off
-description: Disable automatic database schema map updates.
+description: "Disable automatic database schema map updates."
 metadata:
   upstream: https://github.com/ariadoss/repomap
 ---

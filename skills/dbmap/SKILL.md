@@ -1,6 +1,6 @@
 ---
 name: dbmap
-description: Generate a database schema map for the current project and analyze indexes.
+description: "Generate a database schema map for the current project and analyze indexes."
 metadata:
   upstream: https://github.com/ariadoss/repomap
 ---

@@ -25,6 +25,9 @@ mirror_wrap() {
     return 0
   fi
   first="$(grep -m1 -v '^[[:space:]]*$' "$src" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')"
-  printf -- '---\nname: %s\ndescription: %s\nmetadata:\n  upstream: %s\n---\n' "$name" "$first" "$MIRROR_UPSTREAM_URL"
+  # Double-quoted YAML scalar: a ': ', a leading '#', or quotes in the upstream
+  # line would otherwise produce invalid or silently different frontmatter.
+  first="$(printf '%s' "$first" | sed 's/\\/\\\\/g; s/"/\\"/g')"
+  printf -- '---\nname: %s\ndescription: "%s"\nmetadata:\n  upstream: %s\n---\n' "$name" "$first" "$MIRROR_UPSTREAM_URL"
   cat "$src"
 }

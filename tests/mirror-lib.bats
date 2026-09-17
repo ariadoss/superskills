@@ -18,7 +18,7 @@ setup() {
   [ "$status" -eq 0 ]
   [ "$(printf '%s\n' "$output" | sed -n '1p')" = "---" ]
   [ "$(printf '%s\n' "$output" | sed -n '2p')" = "name: dbmap" ]
-  [ "$(printf '%s\n' "$output" | sed -n '3p')" = "description: Generate a database schema map for the current project." ]
+  [ "$(printf '%s\n' "$output" | sed -n '3p')" = 'description: "Generate a database schema map for the current project."' ]
   [ "$(printf '%s\n' "$output" | sed -n '6p')" = "---" ]
   [[ "$output" == *"First, locate the install."* ]]
 }
@@ -64,5 +64,19 @@ setup() {
   [ "$(printf '%s\n' "$output" | awk 'NR>1 && /^---$/ {exit} /^name: dbmap$/ {found=1} END {print found+0}')" -eq 1 ]
   [[ "$output" == *"description: already there"* ]]
   [ "$(printf '%s\n' "$output" | grep -c '^---$')" -eq 2 ]
+}
+
+@test "mirror_wrap quotes the description so ': ', a leading # and quotes stay valid YAML" {
+  for line in 'Generate a map: fast' '# dbmap: schema mapper' 'Say "hi" \ bye'; do
+    printf '%s\n\nBody.\n' "$line" > "$BATS_TEST_TMPDIR/u.md"
+    out="$(mirror_wrap dbmap "$BATS_TEST_TMPDIR/u.md")"
+    desc="$(printf '%s\n' "$out" | sed -n '3p')"
+    expected="$(printf '%s' "$line" | sed 's/\\/\\\\/g; s/"/\\"/g')"
+    [ "$desc" = "description: \"$expected\"" ] || { echo "got: $desc"; return 1; }
+    if command -v python3 >/dev/null 2>&1 && python3 -c 'import yaml' 2>/dev/null; then
+      parsed="$(printf '%s\n' "$out" | awk 'NR>1 && /^---$/{exit} NR>1' | python3 -c 'import sys,yaml; print(yaml.safe_load(sys.stdin)["description"])')"
+      [ "$parsed" = "$line" ] || { echo "yaml parsed: $parsed"; return 1; }
+    fi
+  done
 }
 

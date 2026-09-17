@@ -15,6 +15,10 @@
 
 MARKETING_SHIM_DIR="plugin-skills"
 
+# The frontmatter-name rule lives in one place, shared with ./setup and the doctor.
+# shellcheck source=scripts/lib/skills-lib.sh
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/skills-lib.sh"
+
 # skill_entries <root>
 # Print "<frontmatter name>\t<relative dir>" for every skill under <root>,
 # sorted by name. Falls back to the directory basename when `name:` is absent.
@@ -23,20 +27,22 @@ skill_entries() {
   (cd "$root" && find . -mindepth 2 -name SKILL.md -type f -not -path "./$MARKETING_SHIM_DIR/*" | sort) |
   while IFS= read -r f; do
     rel="${f#./}"; rel="${rel%/SKILL.md}"
-    name="$(grep -m1 '^name:' "$root/$f" 2>/dev/null | sed 's/^name:[[:space:]]*//' | tr -d '[:space:]')"
-    [ -z "$name" ] && name="$(basename "$rel")"
+    name="$(skill_name_from "$root/$f" "$(basename "$rel")")"
     printf '%s\t%s\n' "$name" "$rel"
   done | sort
 }
 
-# write_marketing_shims <root>
+# write_marketing_shims <root> [entries]
 # Rebuild <root>/plugin-skills/ so it holds exactly one relative symlink per
 # skill, named by frontmatter name. Returns 1 on a duplicate name (two skills
 # would collide as one slash command) so the caller can fail loudly.
+# [entries] is skill_entries output already computed by the caller (walking
+# 174 SKILL.md files takes ~1 s); omitted, it is computed here.
 write_marketing_shims() {
-  local root="$1" name rel prev="" shim
+  local root="$1" entries="${2-}" name rel prev="" shim
   shim="$root/$MARKETING_SHIM_DIR"   # separate line: `local a=$1 b=$a` expands b before a is set
   [ -n "$root" ] && [ -d "$root" ] || { echo "write_marketing_shims: bad root '$root'" >&2; return 1; }
+  [ $# -ge 2 ] || entries="$(skill_entries "$root")"
   rm -rf "$shim"; mkdir -p "$shim"
   while IFS=$'\t' read -r name rel; do
     [ -z "$name" ] && continue
@@ -51,13 +57,13 @@ write_marketing_shims() {
       *[!A-Za-z0-9._-]*|-*|.*|"") echo "ERROR: unsafe skill name '$name' at $rel (letters, digits, . _ - only; must not start with - or .)" >&2; return 1 ;;
     esac
     ln -s "../$rel" "$shim/$name"
-  done < <(skill_entries "$root")
+  done <<< "$entries"
 }
 
-# write_marketing_manifest <root> <version> <out_file>
+# write_marketing_manifest <root> <version> <out_file> [skill_count]
 write_marketing_manifest() {
-  local root="$1" version="$2" out="$3" count
-  count="$(skill_entries "$root" | wc -l | tr -d ' ')"
+  local root="$1" version="$2" out="$3" count="${4-}"
+  [ -n "$count" ] || count="$(skill_entries "$root" | wc -l | tr -d ' ')"
   mkdir -p "$(dirname "$out")"
   {
     printf '{\n'

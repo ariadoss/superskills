@@ -74,6 +74,23 @@ setup() {
   [ "$status" -eq 1 ]
 }
 
+@test "write_marketing_shims and write_marketing_manifest reuse pre-computed entries instead of re-walking the tree" {
+  entries="$(printf 'local-seo\tseo/local\n')"
+  run write_marketing_shims "$MK" "$entries"
+  [ "$status" -eq 0 ]
+  [ "$(ls "$MK/plugin-skills" | wc -l | tr -d ' ')" -eq 1 ]      # only the passed entry, not all 4 on disk
+  OUT="$MK/.claude-plugin/plugin.json"
+  run write_marketing_manifest "$MK" "9.9.9" "$OUT" 99
+  grep -q '"description": "The 99 marketing skills' "$OUT"
+}
+
+@test "skill_entries uses the shared skill_name_from parser (same names ./setup links)" {
+  run grep -c 'skill_name_from' "$REPO_ROOT/scripts/lib/manifest-lib.sh"
+  [ "$output" -ge 1 ]
+  run grep -c "grep -m1 '\^name:'" "$REPO_ROOT/scripts/lib/manifest-lib.sh"
+  [ "$output" -eq 0 ]
+}
+
 @test "skill_entries ignores the shim tree itself" {
   write_marketing_shims "$MK"
   [ "$(skill_entries "$MK" | wc -l | tr -d ' ')" -eq 4 ]

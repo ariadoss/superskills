@@ -1,6 +1,6 @@
 ---
 name: repomap
-description: Generate a repo map for the current project.
+description: "Generate a repo map for the current project."
 metadata:
   upstream: https://github.com/ariadoss/repomap
 ---

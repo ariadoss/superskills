@@ -11,6 +11,9 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 VERSION="$(tr -d '[:space:]' < "$ROOT/VERSION")"
 [ -n "$VERSION" ] || { echo "ERROR: VERSION file is empty" >&2; exit 1; }
 MK="$ROOT/marketing-skills"
-write_marketing_shims "$MK"
-write_marketing_manifest "$MK" "$VERSION" "$MK/.claude-plugin/plugin.json"
-echo "  [ok]   marketing-skills/.claude-plugin/plugin.json → $VERSION ($(skill_entries "$MK" | wc -l | tr -d ' ') skills via plugin-skills/)"
+# Walk the tree once; both writers and the summary use the same entries.
+ENTRIES="$(skill_entries "$MK")"
+COUNT="$(printf '%s\n' "$ENTRIES" | grep -c .)"
+write_marketing_shims "$MK" "$ENTRIES"
+write_marketing_manifest "$MK" "$VERSION" "$MK/.claude-plugin/plugin.json" "$COUNT"
+echo "  [ok]   marketing-skills/.claude-plugin/plugin.json → $VERSION ($COUNT skills via plugin-skills/)"

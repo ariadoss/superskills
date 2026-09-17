@@ -34,6 +34,12 @@ skill_desc_from() {
       found && /^[^[:space:]]/ { exit }
     ' "$skill_md" 2>/dev/null)
   fi
+  # A double-quoted YAML scalar ("…") is unwrapped and its \" and \\ escapes
+  # resolved, so every tool receives the same text as an unquoted description.
+  case "$desc" in
+    \"*\") desc="${desc#\"}"; desc="${desc%\"}"
+          desc="$(printf '%s' "$desc" | sed 's/\\"/"/g; s/\\\\/\\/g')" ;;
+  esac
   printf '%s' "${desc:-skill}"
 }
 

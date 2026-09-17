@@ -9,7 +9,7 @@ setup() {
   R="$BATS_TEST_TMPDIR/repo"
   mkdir -p "$R/scripts/lib" "$R/.claude-plugin" "$R/.codex-plugin" "$R/.cursor-plugin" "$R/marketing-skills/seo/local"
   cp "$REPO_ROOT/scripts/sync-version.sh" "$REPO_ROOT/scripts/sync-marketing-manifest.sh" "$R/scripts/"
-  cp "$REPO_ROOT/scripts/lib/version-lib.sh" "$REPO_ROOT/scripts/lib/manifest-lib.sh" "$R/scripts/lib/"
+  cp "$REPO_ROOT/scripts/lib/version-lib.sh" "$REPO_ROOT/scripts/lib/manifest-lib.sh" "$REPO_ROOT/scripts/lib/skills-lib.sh" "$R/scripts/lib/"
   printf '3.1.4\n' > "$R/VERSION"
   for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json .codex-plugin/plugin.json .cursor-plugin/plugin.json .cursor-plugin/marketplace.json; do
     printf '{ "name": "superskills", "version": "0.0.0" }\n' > "$R/$f"
