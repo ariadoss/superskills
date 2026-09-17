@@ -136,3 +136,42 @@ EOF
   [ "$output" = 'Generate a map: fast, say "hi" \ bye' ]
 }
 
+
+# ── prune_dangling_links ──
+
+@test "prune_dangling_links removes dangling links into the source tree and the emptied skill dir" {
+  SRC="$BATS_TEST_TMPDIR/src-real"; DST="$BATS_TEST_TMPDIR/skills-dst"; mkdir -p "$SRC/design-skills" "$DST/old-name"
+  ln -s "$SRC/design-skills/renamed-away/SKILL.md" "$DST/old-name/SKILL.md"
+  run prune_dangling_links "$DST" "$SRC"
+  [ "$status" -eq 0 ]
+  [ ! -e "$DST/old-name" ] && [ ! -L "$DST/old-name/SKILL.md" ]
+  [[ "$output" == *"old-name"* ]]
+}
+
+@test "prune_dangling_links keeps resolving links, links elsewhere, and the user's own files" {
+  SRC="$BATS_TEST_TMPDIR/src-real"; DST="$BATS_TEST_TMPDIR/skills-dst"
+  mkdir -p "$SRC/skills/live" "$DST/live" "$DST/foreign" "$DST/mixed"
+  printf 'x\n' > "$SRC/skills/live/SKILL.md"
+  ln -s "$SRC/skills/live/SKILL.md" "$DST/live/SKILL.md"                 # resolves → keep
+  ln -s "$BATS_TEST_TMPDIR/other-repo/gone/SKILL.md" "$DST/foreign/SKILL.md"  # dangling, not ours → keep
+  ln -s "$SRC/skills/gone/SKILL.md" "$DST/mixed/SKILL.md"                # dangling, ours → remove link
+  printf 'mine\n' > "$DST/mixed/notes.md"                                 # user file → dir kept
+  run prune_dangling_links "$DST" "$SRC"
+  [ -L "$DST/live/SKILL.md" ]
+  [ -L "$DST/foreign/SKILL.md" ]
+  [ ! -L "$DST/mixed/SKILL.md" ] && [ -f "$DST/mixed/notes.md" ]
+}
+
+@test "prune_dangling_links refuses an empty or root source (would match every link)" {
+  DST="$BATS_TEST_TMPDIR/skills-dst"; mkdir -p "$DST/x"; ln -s /gone/SKILL.md "$DST/x/SKILL.md"
+  run prune_dangling_links "$DST" ""
+  [ "$status" -eq 1 ]
+  run prune_dangling_links "$DST" "/"
+  [ "$status" -eq 1 ]
+  [ -L "$DST/x/SKILL.md" ]
+}
+
+@test "setup calls prune_dangling_links for the tools it links into" {
+  run grep -c 'prune_dangling_links' "$REPO_ROOT/setup"
+  [ "$output" -ge 3 ]
+}

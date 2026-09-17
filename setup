@@ -219,6 +219,9 @@ for skill_md in "$SKILLS_SRC_DIR"/*/SKILL.md; do
 done
 
 log "  linked: ${#LINKED[@]} skills"
+# Links this checkout created that no longer resolve (a renamed or removed
+# skill) would otherwise linger as broken slash commands.
+while IFS= read -r pruned; do log "  [prune] $pruned"; done < <(prune_dangling_links "$CLAUDE_SKILLS_DIR" "$SOURCE_DIR")
 log ""
 
 # ── Link skills into OpenCode ─────────────────────────────────────────────────
@@ -256,6 +259,7 @@ for skill_md in "$SKILLS_SRC_DIR"/*/SKILL.md; do
   link_skill_opencode "$skill_md" "$dir_name"
 done
 
+prune_dangling_links "$OPENCODE_SKILLS_DIR" "$SOURCE_DIR" >/dev/null
 log "  done"
 log ""
 
@@ -281,6 +285,7 @@ if [ -d "$HOME/.codex" ]; then
     [ "$dir_name" = "node_modules" ] && continue
     link_skill_codex "$skill_md" "$dir_name"
   done
+  prune_dangling_links "$CODEX_SKILLS_DIR" "$SOURCE_DIR" >/dev/null
   log "  linked: $CODEX_LINKED skills"
   log ""
 fi

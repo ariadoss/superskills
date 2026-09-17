@@ -75,3 +75,27 @@ link_skill_into() {
   fi
   printf '%s' "$name"
 }
+
+# prune_dangling_links <base_dir> <source_dir>
+# Remove symlinks under <base_dir>/*/ that point INTO <source_dir> but no longer
+# resolve (a skill renamed, moved or deleted upstream), then remove a skill dir
+# left empty. Links pointing anywhere else, links that resolve, and real files
+# are never touched, so another tool's or the user's own entries are safe.
+# Echoes each removed link. Returns 1 for an empty or "/" source.
+prune_dangling_links() {
+  local base="$1" src="${2%/}" dir entry target
+  [ -n "$src" ] || return 1
+  [ -d "$base" ] || return 0
+  for dir in "$base"/*/; do
+    dir="${dir%/}"
+    for entry in "$dir"/* "$dir"/.[!.]*; do
+      [ -L "$entry" ] || continue
+      [ -e "$entry" ] && continue
+      target="$(readlink "$entry")"
+      case "$target" in "$src"/*) rm -f "$entry"; printf '%s\n' "$entry" ;; esac
+    done
+    rmdir "$dir" 2>/dev/null || true
+  done
+  return 0
+}
+
