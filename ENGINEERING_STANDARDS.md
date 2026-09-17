@@ -31,6 +31,10 @@ anything is called done.
 - **Tests must actually run in CI / a runner.** A test that can't be executed
   doesn't count. Shell code in this repo is tested with `bats` via
   `./tests/run.sh`; application code uses the project's own runner.
+- **A bats assertion that is not a test's last line ends in `|| false`**
+  (`[[ … ]] || false`, `! grep … || false`). macOS ships bash 3.2, where a
+  failing `[[ ]]`, `!` or `a && b` mid-test does not fail the test at all;
+  `tests/bats-assertions.bats` rejects a bare one.
 
 ## DRY — one source of truth
 
