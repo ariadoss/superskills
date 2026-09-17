@@ -234,3 +234,25 @@ MD
   [ "$output" = "$M/seo/local/SKILL.md" ]
 }
 
+
+# ── skill_names_from_files (batch form of skill_name_from) ──
+
+@test "skill_names_from_files matches skill_name_from on edge cases" {
+  E="$BATS_TEST_TMPDIR/edge"; mkdir -p "$E/plain" "$E/noname" "$E/crlf" "$E/spaced" "$E/late" "$E/empty"
+  printf -- '---\nname: plain-skill\n---\n' > "$E/plain/SKILL.md"
+  printf -- '---\ndescription: x\n---\n' > "$E/noname/SKILL.md"
+  printf -- '---\r\nname: crlf-skill\r\n---\r\n' > "$E/crlf/SKILL.md"
+  printf -- '---\nname:   spaced  skill  \n---\n' > "$E/spaced/SKILL.md"
+  printf -- '---\ndescription: x\n---\nname: body-name\n' > "$E/late/SKILL.md"
+  : > "$E/empty/SKILL.md"
+  expected="$(for d in plain noname crlf spaced late empty; do printf '%s\t%s\n' "$E/$d/SKILL.md" "$(skill_name_from "$E/$d/SKILL.md" "$d")"; done)"
+  actual="$(for d in plain noname crlf spaced late empty; do printf '%s\n' "$E/$d/SKILL.md"; done | skill_names_from_files)"
+  [ "$actual" = "$expected" ] || { diff <(echo "$expected") <(echo "$actual"); return 1; }
+}
+
+@test "skill_names_from_files matches skill_name_from on every real skill in the repo" {
+  files="$( { marketing_skill_files "$REPO_ROOT/marketing-skills"; ls -d "$REPO_ROOT"/design-skills/*/SKILL.md "$REPO_ROOT"/skills/*/SKILL.md; } )"
+  expected="$(while IFS= read -r f; do printf '%s\t%s\n' "$f" "$(skill_name_from "$f" "$(basename "$(dirname "$f")")")"; done <<< "$files")"
+  actual="$(printf '%s\n' "$files" | skill_names_from_files)"
+  [ "$actual" = "$expected" ] || { diff <(echo "$expected") <(echo "$actual") | head; return 1; }
+}

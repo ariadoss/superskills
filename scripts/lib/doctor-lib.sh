@@ -127,9 +127,8 @@ doctor_check_links() {
     return 0
   fi
   real_root="$(_doctor_realpath "$root")"
-  while IFS= read -r skill_md; do
+  while IFS=$'\t' read -r skill_md name; do
     [ -f "$skill_md" ] || continue
-    name="$(skill_name_from "$skill_md" "$(basename "$(dirname "$skill_md")")")"
     case "$seen" in *" $name "*) shadowed="$shadowed $name"; continue ;; esac
     seen="$seen$name "
     total=$((total + 1))
@@ -138,14 +137,16 @@ doctor_check_links() {
       missing="$missing $name"
     elif [ ! -e "$link" ]; then
       broken="$broken $name"
+    elif [ "$link" -ef "$skill_md" ]; then
+      ok=$((ok + 1))   # the common case, decided by the test builtin without resolving paths
     else
       resolved="$(_doctor_realpath "$link")"
       case "$resolved" in
-        "$real_root"/*) ok=$((ok + 1)) ;;
+        "$real_root"/*) ok=$((ok + 1)) ;;   # a same-named skill from another source in this checkout
         *) elsewhere="$elsewhere ${name} (${resolved})" ;;
       esac
     fi
-  done < <(_doctor_skill_files "$root")
+  done < <(_doctor_skill_files "$root" | skill_names_from_files)
   for entry in "$skills"/*/SKILL.md; do
     [ -L "$entry" ] && [ ! -e "$entry" ] || continue
     name="$(basename "$(dirname "$entry")")"

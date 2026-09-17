@@ -19,6 +19,24 @@ skill_name_from() {
   printf '%s' "$name"
 }
 
+# skill_names_from_files
+# Batch form of skill_name_from for many files at once (one awk process instead
+# of three per file): reads SKILL.md paths on stdin, prints "<path>\t<name>" in
+# the same order. Same rule: the first line starting with `name:`, whitespace
+# removed; else the parent directory name. tests/skills-lib.bats checks it
+# agrees with skill_name_from on every skill in the repo.
+skill_names_from_files() {
+  awk '{
+    f = $0; name = ""
+    while ((getline line < f) > 0) {
+      if (line ~ /^name:/) { sub(/^name:/, "", line); gsub(/[ \t\r\n\v\f]/, "", line); name = line; break }
+    }
+    close(f)
+    if (name == "") { d = f; sub(/\/[^\/]*$/, "", d); sub(/.*\//, "", d); name = d }
+    print f "\t" name
+  }'
+}
+
 # skill_desc_from <skill_md>
 # Echo the first line of a skill's description (single-line or block form).
 # Falls back to "skill" if none is found.
