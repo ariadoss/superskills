@@ -91,6 +91,20 @@ setup() {
   [ "$output" -eq 0 ]
 }
 
+@test "write_marketing_shims catches duplicate names that are not adjacent (locale-independent)" {
+  entries="$(printf 'a\tseo/local\nac\tpages/marketing/pricing\na\tpages/legal/privacy\n')"
+  run write_marketing_shims "$MK" "$entries"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"'a'"* ]] || false
+  [ ! -e "$MK/seo/local/privacy" ]          # no link written inside a source dir
+  [ ! -L "$MK/pages/legal/privacy/privacy" ]
+}
+
+@test "skill_entries and marketing_skill_files sort bytewise (LC_ALL=C) so output is identical on every platform" {
+  run grep -c 'LC_ALL=C sort' "$REPO_ROOT/scripts/lib/manifest-lib.sh" "$REPO_ROOT/scripts/lib/skills-lib.sh"
+  [[ "$output" != *":0"* ]] || false
+}
+
 @test "skill_entries ignores the shim tree itself" {
   write_marketing_shims "$MK"
   [ "$(skill_entries "$MK" | wc -l | tr -d ' ')" -eq 4 ]

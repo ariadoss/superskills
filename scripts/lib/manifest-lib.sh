@@ -30,7 +30,7 @@ skill_entries() {
     [ "$rel" = "SKILL.md" ] && continue   # a SKILL.md at the root itself is not a nested skill
     name="$(skill_name_from "$f" "$(basename "$rel")")"
     printf '%s\t%s\n' "$name" "$rel"
-  done | sort
+  done | LC_ALL=C sort
 }
 
 # write_marketing_shims <root> [entries]
@@ -44,6 +44,15 @@ write_marketing_shims() {
   shim="$root/$MARKETING_SHIM_DIR"   # separate line: `local a=$1 b=$a` expands b before a is set
   [ -n "$root" ] && [ -d "$root" ] || { echo "write_marketing_shims: bad root '$root'" >&2; return 1; }
   [ $# -ge 2 ] || entries="$(skill_entries "$root")"
+  # Duplicates are found over the whole list, not by adjacency after a sort:
+  # locale-aware sorts (glibc) can separate two equal names, and a second
+  # `ln -s` onto an existing directory link would write inside a source dir.
+  local dup
+  dup="$(printf '%s\n' "$entries" | cut -f1 | grep -v '^$' | LC_ALL=C sort | uniq -d | head -1)"
+  if [ -n "$dup" ]; then
+    echo "ERROR: two marketing skills share the name '$dup'" >&2
+    return 1
+  fi
   rm -rf "$shim"; mkdir -p "$shim"
   while IFS=$'\t' read -r name rel; do
     [ -z "$name" ] && continue

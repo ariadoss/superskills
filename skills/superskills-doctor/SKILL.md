@@ -34,11 +34,13 @@ Read-only health check. Report what is, never repair it.
 
 ## Steps
 
-### Step 1: Locate the doctor script
+### Step 1: Locate and run the doctor (one command)
 
 The script lives in the superskills repo at `scripts/doctor.sh`. Find the repo from
 the plugin root when this skill was loaded as a plugin, otherwise by resolving this
-skill's `./setup` symlink back to its checkout (never from the working directory):
+skill's `./setup` symlink back to its checkout (never from the working directory).
+Locate and run it **in a single Bash call** — separate calls do not share shell
+variables, so a path found in one call is gone in the next:
 
 ```bash
 ROOT="${CLAUDE_PLUGIN_ROOT}"
@@ -51,28 +53,27 @@ if [ -z "$ROOT" ] || [ ! -f "$ROOT/scripts/doctor.sh" ]; then
     [ -n "$real" ] && [ -f "$real" ] && ROOT="$(cd "$(dirname "$real")/../.." 2>/dev/null && pwd -P)"
   fi
 fi
-[ -n "$ROOT" ] && [ -f "$ROOT/scripts/doctor.sh" ] && echo "DOCTOR=$ROOT/scripts/doctor.sh" || echo "DOCTOR=missing"
+if [ -n "$ROOT" ] && [ -f "$ROOT/scripts/doctor.sh" ]; then
+  echo "DOCTOR=$ROOT/scripts/doctor.sh"
+  bash "$ROOT/scripts/doctor.sh" "$@"
+else
+  echo "DOCTOR=missing"
+fi
 ```
 
-If the script is missing, that is itself the finding: report **Repo: blocked** with
-the reinstall command below and stop. Do not improvise checks.
+If it prints `DOCTOR=missing`, that is itself the finding: report **Repo: blocked**
+with the reinstall command below and stop. Do not improvise checks.
 
 ```
 git clone https://github.com/ariadoss/superskills.git ~/.claude/skills/superskills && cd ~/.claude/skills/superskills && ./setup
 ```
 
-### Step 2: Run it
-
-```bash
-bash "$ROOT/scripts/doctor.sh"
-```
-
 To inspect an install that is not the current user's (a container, a test tree,
-a colleague's copy), pass the checkout and home directory explicitly:
+a colleague's copy), run the same block with the flags appended to the
+`bash "$ROOT/scripts/doctor.sh"` line: `--root <superskills-checkout> --home <home-dir>`.
+To call the script directly later, use the path from the `DOCTOR=` line.
 
-```bash
-bash "$ROOT/scripts/doctor.sh" --root <superskills-checkout> --home <home-dir>
-```
+### Step 2: Read the output
 
 The script prints a markdown table (`Check | Status | Evidence / next action`)
 and a final `Verdict:` line. Statuses:
