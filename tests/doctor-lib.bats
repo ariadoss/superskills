@@ -701,3 +701,24 @@ SH
   [[ "$(evidence_of "$output")" == *"delta"* ]] || false
   [[ "$(evidence_of "$output")" == *"zeta"* ]] || false      # unlinked skill after the bad one still reported
 }
+
+@test "plugin install: an unreadable or directory SKILL.md is blocked, not 'served'" {
+  mkdir -p "$ROOT/skills/delta/SKILL.md"
+  run doctor_check_links "$ROOT" "$SKILLS" plugin
+  [ "$(status_of "$output")" = "blocked" ] || false
+  [[ "$(evidence_of "$output")" == *"delta"* ]] || false
+}
+
+@test "plugin install: zero skills found is blocked, not 'ready — 0 skills served'" {
+  E="$BATS_TEST_TMPDIR/emptyroot"; mkdir -p "$E/skills"
+  run doctor_check_links "$E" "$SKILLS" plugin
+  [ "$(status_of "$output")" = "blocked" ] || false
+}
+
+@test "check_plugin: without jq, a plugin install (cache path) is unverified, not a warning" {
+  FAKE="$BATS_TEST_TMPDIR/claude"; fake_plugin_list "$FAKE" "superskills@superskills=2.24.0"
+  DOCTOR_JQ=definitely-not-jq run doctor_check_plugin "$ROOT" "$FAKE" '[]' plugin
+  [ "$(status_of "$output")" = "unverified" ] || false
+  DOCTOR_JQ=definitely-not-jq run doctor_check_plugin "$ROOT" "$FAKE" '[]' dev-repo
+  [ "$(status_of "$output")" = "warning" ] || false
+}

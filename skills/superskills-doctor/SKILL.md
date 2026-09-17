@@ -36,22 +36,32 @@ Read-only health check. Report what is, never repair it.
 
 ### Step 1: Locate and run the doctor (one command)
 
-The script lives in the superskills repo at `scripts/doctor.sh`. Find the repo from
-the plugin root when this skill was loaded as a plugin, otherwise by resolving this
-skill's `./setup` symlink back to its checkout (never from the working directory).
-Locate and run it **in a single Bash call** — separate calls do not share shell
-variables, so a path found in one call is gone in the next:
+The script lives in the superskills repo at `scripts/doctor.sh`. Find the repo, in
+order: the directory this skill was loaded from (if your host told you this skill's
+base directory, put it in `SKILL_DIR` on the first line), the Claude Code plugin
+root, then this skill's `./setup` symlink for Claude Code, Codex or OpenCode —
+never the working directory. Locate and run it **in a single Bash call**: separate
+calls do not share shell variables, so a path found in one call is gone in the next.
 
 ```bash
-ROOT="${CLAUDE_PLUGIN_ROOT}"
-if [ -z "$ROOT" ] || [ ! -f "$ROOT/scripts/doctor.sh" ]; then
-  ROOT=""
-  probe="$HOME/.claude/skills/superskills-doctor/SKILL.md"
-  # Only a link that resolves to a real file counts; never fall back to the cwd.
-  if [ -L "$probe" ]; then
+SKILL_DIR="${SKILL_DIR:-}"   # set to this skill's base directory when the host provides it
+ROOT=""
+for cand in "${SKILL_DIR:+$SKILL_DIR/../..}" "${CLAUDE_PLUGIN_ROOT}"; do
+  [ -n "$cand" ] && [ -f "$cand/scripts/doctor.sh" ] && { ROOT="$(cd "$cand" && pwd -P)"; break; }
+done
+if [ -z "$ROOT" ]; then
+  for probe in "$HOME/.claude/skills/superskills-doctor/SKILL.md" \
+               "$HOME/.codex/skills/superskills-doctor/SKILL.md" \
+               "$HOME/.config/opencode/skills/superskills-doctor/SKILL.md"; do
+    # Only a link that resolves to a real file counts; never fall back to the cwd.
+    [ -L "$probe" ] || continue
     real="$(readlink -f "$probe" 2>/dev/null || perl -MCwd=realpath -e 'print realpath($ARGV[0])' "$probe")"
-    [ -n "$real" ] && [ -f "$real" ] && ROOT="$(cd "$(dirname "$real")/../.." 2>/dev/null && pwd -P)"
-  fi
+    if [ -n "$real" ] && [ -f "$real" ]; then
+      ROOT="$(cd "$(dirname "$real")/../.." 2>/dev/null && pwd -P)"
+      [ -f "$ROOT/scripts/doctor.sh" ] && break
+      ROOT=""
+    fi
+  done
 fi
 if [ -n "$ROOT" ] && [ -f "$ROOT/scripts/doctor.sh" ]; then
   echo "DOCTOR=$ROOT/scripts/doctor.sh"

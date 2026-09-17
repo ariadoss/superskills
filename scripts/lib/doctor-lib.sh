@@ -131,8 +131,20 @@ doctor_check_links() {
   local root="$1" skills="$2" kind="${3:-}" name winner count link resolved real_root entry
   local total=0 ok=0 missing="" broken="" corrupt="" wrong="" elsewhere="" shadowed="" stale="" seen=" " status msg
   if [ "$kind" = "plugin" ]; then
-    total=$(_doctor_skill_files "$root" plugin | wc -l | tr -d ' ')
-    _doctor_row "Links" "ready" "$total skills served by the plugin loader from $root/skills and $root/design-skills (no ./setup symlinks in a plugin install)"
+    # No links to check, but the loader can only serve files that are readable.
+    local f bad=""
+    while IFS= read -r f; do
+      [ -n "$f" ] || continue
+      total=$((total + 1))
+      if [ -f "$f" ] && [ -r "$f" ]; then ok=$((ok + 1)); else bad="$bad $(basename "$(dirname "$f")")"; fi
+    done < <(_doctor_skill_files "$root" plugin)
+    if [ "$total" -eq 0 ]; then
+      _doctor_row "Links" "blocked" "no skills found under $root/skills or $root/design-skills — the plugin serves nothing; reinstall the plugin"
+    elif [ -n "$bad" ]; then
+      _doctor_row "Links" "blocked" "$ok/$total plugin skills readable. SKILL.md is not a readable file:$bad — reinstall the plugin"
+    else
+      _doctor_row "Links" "ready" "$total skills served by the plugin loader from $root/skills and $root/design-skills (no ./setup symlinks in a plugin install)"
+    fi
     return 0
   fi
   real_root="$(_doctor_realpath "$root")"
@@ -360,13 +372,13 @@ _doctor_cli_json() {
   printf '%s' "$out"
 }
 
-# doctor_check_plugin <root> [claude_bin] [plugin_list_json]
+# doctor_check_plugin <root> [claude_bin] [plugin_list_json] [kind]
 # Whether the plugin-install path (claude plugin install superskills@superskills)
 # is in step with the repo. Not being installed as a plugin is fine: the
 # ./setup symlink install is the primary path. doctor_report passes the JSON
 # it already fetched so the CLI runs once; direct callers may omit it.
 doctor_check_plugin() {
-  local root="$1" bin="${2:-claude}" out="${3-}" v info installed enabled
+  local root="$1" bin="${2:-claude}" out="${3-}" kind="${4:-}" v info installed enabled
   v="$(tr -d '[:space:]' < "$root/VERSION" 2>/dev/null)"
   [ $# -ge 3 ] || out="$(_doctor_cli_json "$bin")"
   if [ "$out" = "$DOCTOR_CLI_UNAVAILABLE" ]; then
@@ -374,7 +386,13 @@ doctor_check_plugin() {
     return 0
   fi
   if ! _doctor_have_jq; then
-    _doctor_row "Plugin" "warning" "plugin state not checked: jq is not installed (brew install jq / apt install jq)"
+    # For a plugin install the plugin IS the install, so not checking it leaves
+    # readiness unknown; for a ./setup install it is only an optional extra.
+    if [ "$kind" = "plugin" ]; then
+      _doctor_row "Plugin" "unverified" "plugin install, but its state (enabled, version) was not checked: jq is not installed (brew install jq / apt install jq)"
+    else
+      _doctor_row "Plugin" "warning" "plugin state not checked: jq is not installed (brew install jq / apt install jq)"
+    fi
     return 0
   fi
   info="$(_doctor_plugin_info "$out" "superskills@")"
@@ -473,7 +491,7 @@ doctor_report() {
     doctor_check_manifests "$root"
     doctor_check_shims "$root"
     doctor_check_gstack "$skills/gstack" "$kind"
-    doctor_check_plugin "$root" "$bin" "$plugin_json"
+    doctor_check_plugin "$root" "$bin" "$plugin_json" "$kind"
     doctor_check_hook "$root"
     doctor_check_knowledge "$home/.superskills/knowledge.conf" "$home"
     doctor_check_command bun "gstack's browser tool (/qa, /browse) needs it — curl -fsSL https://bun.sh/install | bash"

@@ -49,3 +49,26 @@ setup() {
   [[ "$output" != *'$ROOT'* ]] || false
 }
 
+@test "a host-provided skill directory (SKILL_DIR) locates the doctor when no Claude plugin root or link exists" {
+  cd "$BATS_TEST_TMPDIR"
+  run env -u CLAUDE_PLUGIN_ROOT SKILL_DIR="$REPO_ROOT/skills/superskills-doctor" HOME="$EMPTY_HOME" bash "$SNIPPET" --bin definitely-not-claude
+  [ "${lines[0]}" = "DOCTOR=$REPO_ROOT/scripts/doctor.sh" ] || false
+}
+
+@test "a Codex or OpenCode ./setup link locates the doctor" {
+  for d in .codex/skills/superskills-doctor .config/opencode/skills/superskills-doctor; do
+    H="$BATS_TEST_TMPDIR/h-$(echo "$d" | tr '/.' '__')"; mkdir -p "$H/$d"
+    ln -s "$REPO_ROOT/skills/superskills-doctor/SKILL.md" "$H/$d/SKILL.md"
+    cd "$BATS_TEST_TMPDIR"
+    run env -u CLAUDE_PLUGIN_ROOT HOME="$H" bash "$SNIPPET" --bin definitely-not-claude
+    [ "${lines[0]}" = "DOCTOR=$REPO_ROOT/scripts/doctor.sh" ] || { echo "$d -> ${lines[0]}"; return 1; }
+  done
+}
+
+@test "a SKILL_DIR that does not hold the doctor is ignored, not trusted" {
+  mkdir -p "$BATS_TEST_TMPDIR/fake/skills/superskills-doctor"
+  cd "$REPO_ROOT/marketing-skills/content"
+  run env -u CLAUDE_PLUGIN_ROOT SKILL_DIR="$BATS_TEST_TMPDIR/fake/skills/superskills-doctor" HOME="$EMPTY_HOME" bash "$SNIPPET" --bin definitely-not-claude
+  [ "$output" = "DOCTOR=missing" ] || false
+}
+
