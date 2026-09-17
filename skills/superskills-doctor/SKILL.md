@@ -43,11 +43,15 @@ skill back to its checkout:
 ```bash
 ROOT="${CLAUDE_PLUGIN_ROOT}"
 if [ -z "$ROOT" ] || [ ! -f "$ROOT/scripts/doctor.sh" ]; then
+  ROOT=""
   probe="$HOME/.claude/skills/superskills-doctor/SKILL.md"
-  real="$(readlink -f "$probe" 2>/dev/null || perl -MCwd=realpath -e 'print realpath($ARGV[0])' "$probe")"
-  ROOT="$(cd "$(dirname "$real")/../.." 2>/dev/null && pwd -P)"
+  # Only a link that resolves to a real file counts; never fall back to the cwd.
+  if [ -L "$probe" ]; then
+    real="$(readlink -f "$probe" 2>/dev/null || perl -MCwd=realpath -e 'print realpath($ARGV[0])' "$probe")"
+    [ -n "$real" ] && [ -f "$real" ] && ROOT="$(cd "$(dirname "$real")/../.." 2>/dev/null && pwd -P)"
+  fi
 fi
-[ -f "$ROOT/scripts/doctor.sh" ] && echo "DOCTOR=$ROOT/scripts/doctor.sh" || echo "DOCTOR=missing"
+[ -n "$ROOT" ] && [ -f "$ROOT/scripts/doctor.sh" ] && echo "DOCTOR=$ROOT/scripts/doctor.sh" || echo "DOCTOR=missing"
 ```
 
 If the script is missing, that is itself the finding: report **Repo: blocked** with
