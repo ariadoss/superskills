@@ -127,6 +127,43 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
   [[ "$(evidence_of "$output")" == *"beta"* ]]
 }
 
+@test "check_links: a dangling design-skills link is blocked, not ready (setup links design-skills too)" {
+  mkdir -p "$ROOT/design-skills/gamma-dir" "$SKILLS/gamma"
+  printf -- '---\nname: gamma\n---\n' > "$ROOT/design-skills/gamma-dir/SKILL.md"
+  ln -s "$ROOT/design-skills/renamed-away/SKILL.md" "$SKILLS/gamma/SKILL.md"
+  run doctor_check_links "$ROOT" "$SKILLS"
+  [ "$(status_of "$output")" = "blocked" ]
+  [[ "$(evidence_of "$output")" == *"Dangling: gamma"* ]]
+}
+
+@test "check_links: an unlinked marketing skill (nested) is reported, and linked ones count" {
+  mkdir -p "$ROOT/marketing-skills/seo/local" "$ROOT/marketing-skills/pages/legal/privacy" "$SKILLS/local-seo"
+  printf -- '---\nname: local-seo\n---\n' > "$ROOT/marketing-skills/seo/local/SKILL.md"
+  printf -- '---\nname: privacy-page-generator\n---\n' > "$ROOT/marketing-skills/pages/legal/privacy/SKILL.md"
+  ln -s "$ROOT/marketing-skills/seo/local/SKILL.md" "$SKILLS/local-seo/SKILL.md"
+  run doctor_check_links "$ROOT" "$SKILLS"
+  [ "$(status_of "$output")" = "blocked" ]
+  [[ "$(evidence_of "$output")" == *"3/4 linked"* ]]
+  [[ "$(evidence_of "$output")" == *"privacy-page-generator"* ]]
+}
+
+@test "check_links: the plugin-skills shim tree is not double-counted as marketing skills" {
+  mkdir -p "$ROOT/marketing-skills/seo/local" "$ROOT/marketing-skills/plugin-skills" "$SKILLS/local-seo"
+  printf -- '---\nname: local-seo\n---\n' > "$ROOT/marketing-skills/seo/local/SKILL.md"
+  ln -s ../seo/local "$ROOT/marketing-skills/plugin-skills/local-seo"
+  ln -s "$ROOT/marketing-skills/seo/local/SKILL.md" "$SKILLS/local-seo/SKILL.md"
+  run doctor_check_links "$ROOT" "$SKILLS"
+  [ "$(status_of "$output")" = "ready" ]
+  [[ "$(evidence_of "$output")" == *"3/3"* ]]
+}
+
+@test "check_links: plugin install counts core and design skills served by the loader" {
+  mkdir -p "$ROOT/design-skills/gamma-dir"; printf -- '---\nname: gamma\n---\n' > "$ROOT/design-skills/gamma-dir/SKILL.md"
+  run doctor_check_links "$ROOT" "$SKILLS" plugin
+  [ "$(status_of "$output")" = "ready" ]
+  [[ "$(evidence_of "$output")" == "3 skills served by the plugin loader"* ]]
+}
+
 @test "check_links: uses the frontmatter name, not the directory name" {
   mkdir -p "$ROOT/skills/delta-dir" "$SKILLS/delta-name"
   printf -- '---\nname: delta-name\n---\n' > "$ROOT/skills/delta-dir/SKILL.md"

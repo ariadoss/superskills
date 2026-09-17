@@ -85,21 +85,38 @@ doctor_check_install() {
   esac
 }
 
+# _doctor_skill_files <root> [plugin]
+# Every SKILL.md the install is expected to expose, in ./setup's order:
+# marketing-skills (nested; the plugin-skills/ symlink tree is not followed by
+# find), design-skills, skills. With "plugin", only what the root plugin's
+# loader reads: skills/ and design-skills/.
+_doctor_skill_files() {
+  local root="$1" mode="${2:-}"
+  if [ "$mode" != "plugin" ] && [ -d "$root/marketing-skills" ]; then
+    find "$root/marketing-skills" -name SKILL.md -type f 2>/dev/null | sort
+  fi
+  ls -d "$root"/design-skills/*/SKILL.md "$root"/skills/*/SKILL.md 2>/dev/null
+}
+
 # doctor_check_links <root> <claude_skills_dir> [kind]
-# Every skills/*/SKILL.md must be reachable as <skills>/<name>/SKILL.md, where
-# <name> is the frontmatter name (falling back to the directory name). A
-# plugin install has no links by design: the plugin loader reads skills/ itself.
+# Every skill ./setup links (skills/, design-skills/, marketing-skills/) must be
+# reachable as <skills>/<name>/SKILL.md, where <name> is the frontmatter name
+# (falling back to the directory name); a name shared by two sources is one
+# link, as setup makes it. A plugin install has no links by design: the plugin
+# loader reads skills/ and design-skills/ itself.
 doctor_check_links() {
-  local root="$1" skills="$2" kind="${3:-}" skill_md name link total=0 ok=0 missing="" broken=""
+  local root="$1" skills="$2" kind="${3:-}" skill_md name link total=0 ok=0 missing="" broken="" seen=" "
   if [ "$kind" = "plugin" ]; then
-    total=$(ls -d "$root"/skills/*/SKILL.md 2>/dev/null | wc -l | tr -d ' ')
-    _doctor_row "Links" "ready" "$total skills served by the plugin loader from $root/skills (no ./setup symlinks in a plugin install)"
+    total=$(_doctor_skill_files "$root" plugin | wc -l | tr -d ' ')
+    _doctor_row "Links" "ready" "$total skills served by the plugin loader from $root/skills and $root/design-skills (no ./setup symlinks in a plugin install)"
     return 0
   fi
-  for skill_md in "$root"/skills/*/SKILL.md; do
+  while IFS= read -r skill_md; do
     [ -f "$skill_md" ] || continue
-    total=$((total + 1))
     name="$(skill_name_from "$skill_md" "$(basename "$(dirname "$skill_md")")")"
+    case "$seen" in *" $name "*) continue ;; esac
+    seen="$seen$name "
+    total=$((total + 1))
     link="$skills/$name/SKILL.md"
     if [ ! -L "$link" ] && [ ! -f "$link" ]; then
       missing="$missing $name"
@@ -108,7 +125,7 @@ doctor_check_links() {
     else
       ok=$((ok + 1))
     fi
-  done
+  done < <(_doctor_skill_files "$root")
   if [ -z "$missing" ] && [ -z "$broken" ]; then
     _doctor_row "Links" "ready" "$ok/$total skills linked into $skills"
   else
