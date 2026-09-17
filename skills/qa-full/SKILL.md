@@ -261,10 +261,27 @@ the Codex state and the user's answer in the ledger. Never flip the global
 recognises a Codex login, so a Codex CLI configured for a custom provider
 (e.g. `model_provider = "azure"` with an API key in the environment) reads as
 unauthenticated while working fine. When the preflight says `not_authed` but
-`~/.codex/config.toml` sets a `model_provider`, probe once with
-`codex exec -s read-only "Reply with exactly: PONG" < /dev/null`; if it
-answers, treat Codex as `ready` (still ask-first) and run the passes with that
-provider. Record the probe result in the ledger either way.
+`${CODEX_HOME:-$HOME/.codex}/config.toml` sets a `model_provider`:
+
+1. **Ask first** — fold it into the one Codex question above: the probe is
+   itself a billed call on the user's provider. Declined ⇒ skip the probe and
+   the passes.
+2. **Probe the model the passes will use**, bounded, so a working default
+   model cannot hide an unusable review model and a stalled endpoint cannot
+   hang the pipeline:
+
+   ```bash
+   source ~/.claude/skills/gstack/bin/gstack-codex-probe 2>/dev/null
+   _gstack_codex_timeout_wrapper 120 codex exec -s read-only \
+     -c "model=\"${GSTACK_CODEX_MODEL:-gpt-6-astra}\"" "Reply with exactly: PONG" < /dev/null
+   ```
+
+3. Answers `PONG` ⇒ treat Codex as `ready` and run the passes with that
+   provider and model. Anything else (error, timeout, other text) ⇒ treat it as
+   `model_unusable`: skip the passes, tell the user to set
+   `GSTACK_CODEX_MODEL` to a deployment their provider serves.
+
+Record the probe command, model and result in the ledger either way.
 
 If `/review` cannot run at all (the gstack install is broken), apply its
 checklist
