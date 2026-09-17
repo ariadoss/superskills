@@ -26,12 +26,20 @@ skill_name_from() {
 # removed; else the parent directory name. tests/skills-lib.bats checks it
 # agrees with skill_name_from on every skill in the repo.
 skill_names_from_files() {
-  awk '{
-    f = $0; name = ""
-    while ((getline line < f) > 0) {
-      if (line ~ /^name:/) { sub(/^name:/, "", line); gsub(/[ \t\r\n\v\f]/, "", line); name = line; break }
+  # Tag each path R (regular, readable) or X (anything else) with builtins
+  # first: macOS awk aborts the whole run on `getline < dir`, which would
+  # silently drop every later skill from the caller's loop.
+  local f
+  while IFS= read -r f; do
+    if [ -f "$f" ] && [ -r "$f" ]; then printf 'R\t%s\n' "$f"; else printf 'X\t%s\n' "$f"; fi
+  done | awk -F'\t' '{
+    f = substr($0, 3); name = ""
+    if ($1 == "R") {
+      while ((getline line < f) > 0) {
+        if (line ~ /^name:/) { sub(/^name:/, "", line); gsub(/[ \t\r\n\v\f]/, "", line); name = line; break }
+      }
+      close(f)
     }
-    close(f)
     if (name == "") { d = f; sub(/\/[^\/]*$/, "", d); sub(/.*\//, "", d); name = d }
     print f "\t" name
   }'
@@ -103,6 +111,7 @@ link_skill_into() {
 # (.venv, node_modules), which a skill's own tooling may create in-tree.
 marketing_skill_files() {
   local root="${1%/}"
+  case "$root" in *$'\n'*) echo "marketing_skill_files: path contains a newline: $root" >&2; return 1 ;; esac
   [ -d "$root" ] || return 0
   # Run from inside the root so the plugin-skills prune is the literal "./plugin-skills";
   # a root path containing [ ] * ? would otherwise be read as a -path glob.
@@ -118,7 +127,7 @@ marketing_skill_files() {
 # the user's own entries are safe.
 # Echoes each removed link. Returns 1 for an empty or "/" source.
 prune_dangling_links() {
-  local base="$1" src="${2%/}" dir entry target
+  local base="$1" src="${2%/}" dir entry target pruned
   [ -n "$src" ] || return 1
   [ -d "$base" ] || return 0
   for dir in "$base"/*/; do
@@ -126,14 +135,19 @@ prune_dangling_links() {
     # A trailing-slash glob also matches symlinks to directories; those trees
     # belong to someone else (gstack, another tool, the user), never descend.
     [ -L "$dir" ] && continue
+    pruned=0
     for entry in "$dir"/* "$dir"/.[!.]*; do
       [ -L "$entry" ] || continue
       [ -e "$entry" ] && continue
       target="$(readlink "$entry")"
-      case "$target" in "$src"/*) rm -f "$entry"; printf '%s\n' "$entry" ;; esac
+      # Ownership is a literal, normalised path under the source: a target with
+      # . or .. segments can name a place outside it despite the prefix.
+      case "$target" in */./*|*/../*|*/.|*/..) continue ;; esac
+      case "$target" in "$src"/*) rm -f "$entry"; printf '%s\n' "$entry"; pruned=1 ;; esac
     done
-    rmdir "$dir" 2>/dev/null || true
+    # Only a directory this run emptied is removed — never one that was already
+    # empty (a user's or another installer's).
+    [ "$pruned" -eq 1 ] && { rmdir "$dir" 2>/dev/null || true; }
   done
   return 0
 }
-

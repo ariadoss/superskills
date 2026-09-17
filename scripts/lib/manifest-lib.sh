@@ -23,14 +23,14 @@ MARKETING_SHIM_DIR="plugin-skills"
 # Print "<frontmatter name>\t<relative dir>" for every skill under <root>,
 # sorted by name. Falls back to the directory basename when `name:` is absent.
 skill_entries() {
-  local root="$1" f rel name
-  marketing_skill_files "$root" |
-  while IFS= read -r f; do
-    rel="${f#"${root%/}"/}"; rel="${rel%/SKILL.md}"
-    [ "$rel" = "SKILL.md" ] && continue   # a SKILL.md at the root itself is not a nested skill
-    name="$(skill_name_from "$f" "$(basename "$rel")")"
-    printf '%s\t%s\n' "$name" "$rel"
-  done | LC_ALL=C sort
+  local root="${1%/}"
+  # One batch name lookup (skill_names_from_files) instead of three processes
+  # per skill; rel is the path below <root> without /SKILL.md.
+  marketing_skill_files "$root" | skill_names_from_files | awk -F'\t' -v root="$root/" '
+    index($1, root) == 1 {
+      rel = substr($1, length(root) + 1); sub(/\/SKILL\.md$/, "", rel)
+      if (rel != "SKILL.md" && rel != "") print $2 "\t" rel
+    }' | LC_ALL=C sort
 }
 
 # write_marketing_shims <root> [entries]
@@ -40,34 +40,34 @@ skill_entries() {
 # [entries] is skill_entries output already computed by the caller (walking
 # 174 SKILL.md files takes ~1 s); omitted, it is computed here.
 write_marketing_shims() {
-  local root="$1" entries="${2-}" name rel prev="" shim
+  local root="$1" entries="${2-}" name rel shim
   shim="$root/$MARKETING_SHIM_DIR"   # separate line: `local a=$1 b=$a` expands b before a is set
   [ -n "$root" ] && [ -d "$root" ] || { echo "write_marketing_shims: bad root '$root'" >&2; return 1; }
   [ $# -ge 2 ] || entries="$(skill_entries "$root")"
-  # Duplicates are found over the whole list, not by adjacency after a sort:
-  # locale-aware sorts (glibc) can separate two equal names, and a second
-  # `ln -s` onto an existing directory link would write inside a source dir.
+  # Validate everything before touching the existing tree: a bad name or a
+  # duplicate must not leave the plugin with an empty or half-built shim dir.
+  # Duplicates are found over the whole list, not by adjacency after a sort.
   local dup
   dup="$(printf '%s\n' "$entries" | cut -f1 | grep -v '^$' | LC_ALL=C sort | uniq -d | head -1)"
   if [ -n "$dup" ]; then
     echo "ERROR: two marketing skills share the name '$dup'" >&2
     return 1
   fi
-  rm -rf "$shim"; mkdir -p "$shim"
   while IFS=$'\t' read -r name rel; do
     [ -z "$name" ] && continue
-    if [ "$name" = "$prev" ]; then
-      echo "ERROR: two marketing skills share the name '$name' (second at $rel)" >&2
-      return 1
-    fi
-    prev="$name"
     # The name becomes a path component under plugin-skills/: refuse anything
     # that could escape it or be misparsed (../x, absolute, spaces, slashes).
     case "$name" in
-      *[!A-Za-z0-9._-]*|-*|.*|"") echo "ERROR: unsafe skill name '$name' at $rel (letters, digits, . _ - only; must not start with - or .)" >&2; return 1 ;;
+      *[!A-Za-z0-9._-]*|-*|.*) echo "ERROR: unsafe skill name '$name' at $rel (letters, digits, . _ - only; must not start with - or .)" >&2; return 1 ;;
     esac
-    ln -s "../$rel" "$shim/$name"
   done <<< "$entries"
+  local staging="$root/.$MARKETING_SHIM_DIR.new"
+  rm -rf "$staging"; mkdir -p "$staging"
+  while IFS=$'\t' read -r name rel; do
+    [ -z "$name" ] && continue
+    ln -s "../$rel" "$staging/$name"
+  done <<< "$entries"
+  rm -rf "$shim" && mv "$staging" "$shim"
 }
 
 # write_marketing_manifest <root> <version> <out_file> [skill_count]

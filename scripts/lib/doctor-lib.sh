@@ -11,9 +11,10 @@
 #   unverified  the probe itself could not run (e.g. no `claude` binary), so
 #               nothing is known either way — never treated as ready
 #
-# Nothing here writes, installs, clones, or authenticates. scripts/doctor.sh is
-# the thin wrapper that supplies real-world defaults. Unit-tested in
-# tests/doctor-lib.bats.
+# Nothing here installs, clones, authenticates, or writes to the inspected
+# install; the only write is a temporary file for the bounded CLI probe.
+# scripts/doctor.sh is the thin wrapper that supplies real-world defaults.
+# Unit-tested in tests/doctor-lib.bats.
 
 _DOCTOR_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=scripts/lib/gstack-install-lib.sh
@@ -22,6 +23,11 @@ _DOCTOR_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$_DOCTOR_LIB_DIR/skills-lib.sh"
 # shellcheck source=scripts/lib/version-lib.sh
 . "$_DOCTOR_LIB_DIR/version-lib.sh"
+# shellcheck source=scripts/lib/manifest-lib.sh
+. "$_DOCTOR_LIB_DIR/manifest-lib.sh"
+
+DOCTOR_CLI_TIMEOUT_DEFAULT=20
+DOCTOR_CLI_UNAVAILABLE="__unavailable__"
 
 # The manifests the doctor checks: the stamped list from version-lib.sh (the
 # same array scripts/sync-version.sh iterates) plus the generated marketing one.
@@ -48,17 +54,17 @@ doctor_check_repo() {
   fi
 }
 
-# doctor_install_kind <root> <claude_skills_dir> [plugin_version]
+# doctor_install_kind <root> <claude_skills_dir> [plugin_version] [cli_state]
 #   → canonical | dev-repo | plugin | unlinked
 # canonical: the repo IS the managed clone at <skills>/superskills
 # dev-repo : skills are symlinked into <skills> from a checkout elsewhere
-# plugin   : nothing is linked, but superskills is installed as a Claude Code
-#            plugin (`claude plugin install superskills@superskills`) — either
-#            the CLI reports it (<plugin_version>) or <root> is the plugin
-#            cache copy itself. ./setup was never run; that is a valid install
-#            of the core + design skills (gstack skills are not part of it).
+# plugin   : nothing is linked, but superskills is installed and enabled as a
+#            Claude Code plugin — the CLI reports it (<plugin_version>), or,
+#            only when the CLI could not be asked (<cli_state> is not "ok"),
+#            <root> is itself a plugin cache copy. A successful "not installed"
+#            answer always wins over the path.
 doctor_install_kind() {
-  local root="$1" skills="$2" plugin_version="${3:-}" real_root link target
+  local root="$1" skills="$2" plugin_version="${3:-}" cli_state="${4:-}" real_root link target
   real_root="$(_doctor_realpath "$root")"
   if [ -e "$skills/superskills" ] && [ "$(_doctor_realpath "$skills/superskills")" = "$real_root" ]; then
     echo canonical; return 0
@@ -69,7 +75,9 @@ doctor_install_kind() {
     case "$target" in "$real_root"/*) echo dev-repo; return 0 ;; esac
   done
   if [ -n "$plugin_version" ]; then echo plugin; return 0; fi
-  case "$real_root" in */plugins/cache/*) echo plugin; return 0 ;; esac
+  if [ "$cli_state" != "ok" ]; then
+    case "$real_root" in */plugins/cache/*) echo plugin; return 0 ;; esac
+  fi
   echo unlinked
 }
 
@@ -108,56 +116,63 @@ _doctor_skill_files() {
 
 # doctor_check_links <root> <claude_skills_dir> [kind]
 # Every skill ./setup links (skills/, design-skills/, marketing-skills/) must be
-# reachable as <skills>/<name>/SKILL.md, where <name> is the frontmatter name
-# (falling back to the directory name). Beyond present/absent it reports:
-#   shadowed  a name shared by two sources — setup's override order picks one
-#             (informational; the status does not change)
-#   elsewhere a link that resolves, but into a different checkout, so this
-#             checkout's copy is not the one Claude Code loads (warning)
-#   stale     a dangling SKILL.md link under <skills> that no expected skill
-#             owns, e.g. left by a moved checkout (warning; listed, never removed)
+# reachable as <skills>/<name>/SKILL.md and point at the exact file setup would
+# have linked: when two sources share a name, the last one in setup's order
+# (marketing, then design, then skills) wins. Reported beyond present/absent:
+#   corrupt   the winning SKILL.md is not a readable file (blocked)
+#   wrong     the link resolves inside this checkout but to another skill (blocked)
+#   elsewhere the link resolves into a different checkout (warning)
+#   stale     a dangling SKILL.md link no expected skill owns, e.g. left by a
+#             moved checkout (warning; listed, never removed)
+#   shadowed  a name shared by two sources (informational)
 # A plugin install has no links by design: the loader reads skills/ and
 # design-skills/ itself.
 doctor_check_links() {
-  local root="$1" skills="$2" kind="${3:-}" skill_md name link resolved real_root entry
-  local total=0 ok=0 missing="" broken="" elsewhere="" shadowed="" stale="" seen=" " status msg
+  local root="$1" skills="$2" kind="${3:-}" name winner count link resolved real_root entry
+  local total=0 ok=0 missing="" broken="" corrupt="" wrong="" elsewhere="" shadowed="" stale="" seen=" " status msg
   if [ "$kind" = "plugin" ]; then
     total=$(_doctor_skill_files "$root" plugin | wc -l | tr -d ' ')
     _doctor_row "Links" "ready" "$total skills served by the plugin loader from $root/skills and $root/design-skills (no ./setup symlinks in a plugin install)"
     return 0
   fi
   real_root="$(_doctor_realpath "$root")"
-  while IFS=$'\t' read -r skill_md name; do
-    [ -f "$skill_md" ] || continue
-    case "$seen" in *" $name "*) shadowed="$shadowed $name"; continue ;; esac
+  while IFS=$'\t' read -r name winner count; do
+    [ -n "$name" ] || continue
     seen="$seen$name "
     total=$((total + 1))
+    [ "$count" -gt 1 ] && shadowed="$shadowed $name"
     link="$skills/$name/SKILL.md"
-    if [ ! -L "$link" ] && [ ! -f "$link" ]; then
+    if [ ! -f "$winner" ] || [ ! -r "$winner" ]; then
+      corrupt="$corrupt $name"
+    elif [ ! -L "$link" ] && [ ! -f "$link" ]; then
       missing="$missing $name"
     elif [ ! -e "$link" ]; then
       broken="$broken $name"
-    elif [ "$link" -ef "$skill_md" ]; then
+    elif [ "$link" -ef "$winner" ]; then
       ok=$((ok + 1))   # the common case, decided by the test builtin without resolving paths
     else
       resolved="$(_doctor_realpath "$link")"
       case "$resolved" in
-        "$real_root"/*) ok=$((ok + 1)) ;;   # a same-named skill from another source in this checkout
+        "$real_root"/*) wrong="$wrong ${name} (points at ${resolved}, expected ${winner})" ;;
         *) elsewhere="$elsewhere ${name} (${resolved})" ;;
       esac
     fi
-  done < <(_doctor_skill_files "$root" | skill_names_from_files)
+  done < <(_doctor_skill_files "$root" | skill_names_from_files | awk -F'\t' '
+    { if (!($2 in first)) { first[$2] = NR; order[++n] = $2 }; win[$2] = $1; cnt[$2]++ }
+    END { for (i = 1; i <= n; i++) print order[i] "\t" win[order[i]] "\t" cnt[order[i]] }')
   for entry in "$skills"/*/SKILL.md; do
     [ -L "$entry" ] && [ ! -e "$entry" ] || continue
     name="$(basename "$(dirname "$entry")")"
     case "$seen" in *" $name "*) ;; *) stale="$stale $name" ;; esac
   done
-  if [ -n "$missing" ] || [ -n "$broken" ]; then status="blocked"
-  elif [ -n "$elsewhere" ] || [ -n "$stale" ]; then status="warning"
+  if [ -n "$missing$broken$corrupt$wrong" ]; then status="blocked"
+  elif [ -n "$elsewhere$stale" ]; then status="warning"
   else status="ready"; fi
   msg="$ok/$total skills linked into $skills."
   [ -n "$missing" ] && msg="$msg Not linked:${missing} (new skills stay invisible until ./setup runs)."
   [ -n "$broken" ] && msg="$msg Dangling:${broken} (re-run ./setup)."
+  [ -n "$corrupt" ] && msg="$msg SKILL.md is not a readable file:${corrupt} (restore it from git)."
+  [ -n "$wrong" ] && msg="$msg Linked to the wrong skill:${wrong} (re-run ./setup)."
   [ -n "$elsewhere" ] && msg="$msg Linked to another checkout:${elsewhere} (run ./setup from the checkout you want loaded)."
   [ -n "$stale" ] && msg="$msg Stale links no skill owns:${stale} (safe to delete those dirs)."
   [ -n "$shadowed" ] && msg="$msg Names shadowed by a same-named skill (setup's order: skills > design > marketing):${shadowed}."
@@ -166,23 +181,28 @@ doctor_check_links() {
 }
 
 # doctor_check_manifests <root>
-# A manifest that is absent is reported, not skipped: silence here would let a
-# broken or partial checkout read as "ready".
+# Each manifest must exist, carry the VERSION at least once and no other
+# version, and parse as JSON (checked when jq is present). Absent, empty or
+# unparsable manifests are reported, never read as "ready".
 doctor_check_manifests() {
-  local root="$1" v f stale="" missing="" found msg=""
+  local root="$1" v f stale="" missing="" noversion="" invalid="" msg="" jq="${DOCTOR_JQ:-jq}" have_jq=0
+  command -v "$jq" >/dev/null 2>&1 && have_jq=1
   v="$(tr -d '[:space:]' < "$root/VERSION" 2>/dev/null)"
   for f in "${DOCTOR_MANIFESTS[@]}"; do
     if [ ! -f "$root/$f" ]; then missing="$missing $f"; continue; fi
-    found="$(grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$root/$f" | grep -v "\"$v\"" || true)"
-    [ -n "$found" ] && stale="$stale $f"
+    if [ "$have_jq" -eq 1 ] && ! "$jq" -e . "$root/$f" >/dev/null 2>&1; then invalid="$invalid $f"; continue; fi
+    if ! grep -q '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$root/$f"; then noversion="$noversion $f"; continue; fi
+    if grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$root/$f" | grep -qv "\"$v\""; then stale="$stale $f"; fi
   done
-  if [ -z "$stale" ] && [ -z "$missing" ]; then
+  if [ -z "$stale$missing$noversion$invalid" ]; then
     _doctor_row "Manifests" "ready" "all plugin manifests at v$v"
     return 0
   fi
   [ -n "$stale" ] && msg="stale version in:$stale."
+  [ -n "$noversion" ] && msg="$msg no version field (empty or truncated?) in:$noversion."
+  [ -n "$invalid" ] && msg="$msg invalid JSON in:$invalid."
   [ -n "$missing" ] && msg="$msg missing:$missing."
-  _doctor_row "Manifests" "warning" "$msg Run ./scripts/sync-version.sh (VERSION is the source of truth); a missing manifest means the checkout is older than this doctor or was trimmed"
+  _doctor_row "Manifests" "warning" "${msg# } Run ./scripts/sync-version.sh (VERSION is the source of truth); restore a damaged manifest from git"
 }
 
 # doctor_check_gstack <gstack_dir> [kind]
@@ -206,16 +226,19 @@ doctor_check_gstack() {
 }
 
 # doctor_check_shims <root>
-# marketing-skills/plugin-skills/ is a committed tree of relative symlinks, one
-# per marketing skill (the superskills-marketing plugin reads it). Three ways it
-# can silently expose fewer skills than exist: a checkout without symlink
-# support (Windows, core.symlinks=false) materialises them as text files; a
-# moved skill leaves a dangling link; an interrupted sync (it rebuilds the tree
-# from scratch) leaves it empty or partial. All three warn with the fix.
+# marketing-skills/plugin-skills/ must hold exactly one relative symlink per
+# marketing skill, named by its frontmatter name and resolving to that skill's
+# directory (the superskills-marketing plugin reads it). Compared name by name
+# against skill_entries, so a renamed skill, two links to one skill, a dangling
+# or leftover entry, or an interrupted sync cannot hide behind a matching count.
+# Entries that are plain files mean git checked the tree out without symlink
+# support (Windows, core.symlinks=false).
 doctor_check_shims() {
-  local root="$1" shim e ok=0 text=0 dangling=0 expected
-  shim="$root/marketing-skills/plugin-skills"   # own line: `local a=$1 b=$a/x` expands b first
-  expected="$(_doctor_skill_files "$root" | grep -cF "$root/marketing-skills/" || true)"
+  local root="$1" mk shim name rel e ok=0 text=0 expected=0 missing="" wrong="" dangling="" extra="" want=" " msg
+  mk="$root/marketing-skills"; shim="$mk/plugin-skills"   # own line: `local a=$1 b=$a/x` expands b first
+  local entries=""
+  [ -d "$mk" ] && entries="$(skill_entries "$mk")"
+  expected="$(printf '%s\n' "$entries" | grep -c . || true)"
   if [ ! -d "$shim" ]; then
     if [ "$expected" -eq 0 ]; then
       _doctor_row "Marketing shims" "ready" "no marketing-skills/plugin-skills tree (older checkout; only the superskills-marketing plugin needs it)"
@@ -224,20 +247,34 @@ doctor_check_shims() {
     fi
     return 0
   fi
-  for e in "$shim"/*; do
-    [ -e "$e" ] || [ -L "$e" ] || continue
+  while IFS=$'\t' read -r name rel; do
+    [ -n "$name" ] || continue
+    want="$want$name "
+    e="$shim/$name"
     if [ -L "$e" ]; then
-      if [ -f "$e/SKILL.md" ]; then ok=$((ok + 1)); else dangling=$((dangling + 1)); fi
-    else
-      text=$((text + 1))
-    fi
+      if [ ! -e "$e" ]; then dangling="$dangling $name"
+      elif [ "$e" -ef "$mk/$rel" ]; then ok=$((ok + 1))
+      else wrong="$wrong $name"; fi
+    elif [ -e "$e" ]; then text=$((text + 1))
+    else missing="$missing $name"; fi
+  done <<< "$entries"
+  for e in "$shim"/* "$shim"/.[!.]*; do
+    [ -e "$e" ] || [ -L "$e" ] || continue
+    name="$(basename "$e")"
+    case "$want" in *" $name "*) continue ;; esac
+    if [ -L "$e" ] && [ ! -e "$e" ]; then dangling="$dangling $name"
+    elif [ -L "$e" ]; then extra="$extra $name"
+    else text=$((text + 1)); fi
   done
   if [ "$text" -gt 0 ]; then
-    _doctor_row "Marketing shims" "warning" "$text of $((ok + text + dangling)) entries are plain files, not symlinks — git checked them out without symlink support. Fix: git config core.symlinks true, then re-checkout marketing-skills/plugin-skills (the superskills-marketing plugin loads nothing until then)"
-  elif [ "$dangling" -gt 0 ]; then
-    _doctor_row "Marketing shims" "warning" "$dangling dangling links — run ./scripts/sync-marketing-manifest.sh"
-  elif [ "$ok" -lt "$expected" ]; then
-    _doctor_row "Marketing shims" "warning" "$ok of $expected marketing skills exposed via plugin-skills/ (interrupted or stale sync) — run ./scripts/sync-marketing-manifest.sh"
+    _doctor_row "Marketing shims" "warning" "$text entries in plugin-skills/ are plain files, not symlinks — git checked them out without symlink support. Fix: git config core.symlinks true, then re-checkout marketing-skills/plugin-skills (the superskills-marketing plugin loads nothing until then)"
+  elif [ -n "$missing$wrong$dangling$extra" ]; then
+    msg="$ok of $expected marketing skills exposed via plugin-skills/."
+    [ -n "$missing" ] && msg="$msg No shim for:${missing}."
+    [ -n "$wrong" ] && msg="$msg Shim points at the wrong skill:${wrong}."
+    [ -n "$dangling" ] && msg="$msg dangling links:${dangling}."
+    [ -n "$extra" ] && msg="$msg Not a current skill name:${extra}."
+    _doctor_row "Marketing shims" "warning" "$msg Run ./scripts/sync-marketing-manifest.sh"
   else
     _doctor_row "Marketing shims" "ready" "$ok marketing skills exposed via plugin-skills/"
   fi
@@ -255,105 +292,72 @@ doctor_check_command() {
   fi
 }
 
-# _doctor_plugin_version <plugin-list-json> <id-prefix>
-# Version of the first plugin whose "id" starts with <id-prefix> (and that has
-# a version), or empty. Exact-prefix match: "superskills@" never matches
-# "superskills-marketing@". Uses jq when present ($DOCTOR_JQ, default jq);
-# otherwise a small awk JSON scanner that tracks strings, escapes and nesting
-# depth, so "id" and "version" are read only as top-level keys of the same
-# array element — never from a nested object or a neighbouring plugin.
-_doctor_plugin_version() {
-  local json="$1" pfx="$2" jq="${DOCTOR_JQ:-jq}"
-  if command -v "$jq" >/dev/null 2>&1; then
-    printf '%s' "$json" | "$jq" -r --arg p "$pfx" '[.[]? | select((.id // "") | startswith($p)) | .version // empty] | first // empty' 2>/dev/null
-    return 0
-  fi
-  printf '%s\n' "$json" | awk -v pfx="$pfx" '
-    { s = s $0 "\n" }
-    END {
-      n = length(s); depth = 0; instr = 0; esc = 0; expect = 0; key = ""; buf = ""
-      for (i = 1; i <= n; i++) {
-        c = substr(s, i, 1)
-        if (instr) {
-          if (esc) { buf = buf c; esc = 0; continue }
-          if (c == "\\") { esc = 1; continue }
-          if (c != "\"") { buf = buf c; continue }
-          instr = 0
-          if (depth == 2) {
-            if (expect) { if (key == "id") id = buf; else if (key == "version") ver = buf; expect = 0 }
-            else pending = buf
-          }
-          continue
-        }
-        if (c == "\"") { instr = 1; buf = ""; continue }
-        if (c == ":") { if (depth == 2) { key = pending; expect = 1 }; continue }
-        if (c == ",") { if (depth == 2) expect = 0; continue }
-        if (c == "{" || c == "[") { if (depth == 2) expect = 0; depth++; if (c == "{" && depth == 2) { id = ""; ver = "" }; continue }
-        if (c == "}" || c == "]") {
-          if (c == "}" && depth == 2 && index(id, pfx) == 1 && ver != "") { print ver; exit }
-          depth--; continue
-        }
-      }
-    }'
+# _doctor_have_jq — the plugin probe reads JSON with jq only ($DOCTOR_JQ,
+# default jq). Hand-written JSON parsing produced wrong verdicts in review, so
+# without jq the plugin state is reported as not checked, never guessed.
+_doctor_have_jq() { command -v "${DOCTOR_JQ:-jq}" >/dev/null 2>&1; }
+
+# _doctor_plugin_info <plugin-list-json> <id-prefix>
+# "<version>\t<enabled>" for the first plugin whose id starts with <id-prefix>
+# (exact prefix: "superskills@" never matches "superskills-marketing@"), or
+# nothing. <enabled> is "false" only when the CLI says so explicitly.
+_doctor_plugin_info() {
+  printf '%s' "$1" | "${DOCTOR_JQ:-jq}" -r --arg p "$2" \
+    '[.[]? | select(type == "object" and ((.id // "") | startswith($p)))] | first // empty
+     | "\(.version // "")\t\(if .enabled == false then "false" else "true" end)"' 2>/dev/null
 }
 
-# _doctor_is_json_array <text> — true when <text> is a JSON array. Uses jq
-# when present ($DOCTOR_JQ, default jq). Without jq, an awk tokenizer checks the
-# text is a well-formed array: every character outside strings is structural,
-# whitespace, part of a number, or part of true/false/null; strings terminate;
-# brackets balance and close exactly once. That rejects error messages that
-# merely happen to be wrapped in brackets.
+# _doctor_plugin_version <plugin-list-json> <id-prefix> — the version field of
+# _doctor_plugin_info (enabled or not).
+_doctor_plugin_version() { _doctor_plugin_info "$1" "$2" | cut -f1; }
+
+# _doctor_is_json_array <text> — true when <text> parses as a JSON array (jq).
 _doctor_is_json_array() {
-  local jq="${DOCTOR_JQ:-jq}"
-  if command -v "$jq" >/dev/null 2>&1; then
-    printf '%s' "$1" | "$jq" -e 'type == "array"' >/dev/null 2>&1
-    return
-  fi
-  printf '%s\n' "$1" | awk '
-    { s = s $0 "\n" }
-    END {
-      n = length(s); depth = 0; instr = 0; esc = 0; started = 0; closed = 0; word = ""; innum = 0
-      for (i = 1; i <= n; i++) {
-        c = substr(s, i, 1)
-        if (instr) {
-          if (esc) esc = 0
-          else if (c == "\\") esc = 1
-          else if (c == "\"") instr = 0
-          continue
-        }
-        if (innum && c ~ /[0-9.eE+-]/) continue
-        innum = 0
-        if (c ~ /[a-z]/) { word = word c; continue }
-        if (word != "") { if (word != "true" && word != "false" && word != "null") exit 1; word = "" }
-        if (c ~ /[0-9-]/ && started && !closed) { innum = 1; continue }
-        if (c ~ /[ \t\r\n]/) continue
-        if (closed) exit 1
-        if (!started) { if (c != "[") exit 1; started = 1; depth = 1; continue }
-        if (c == "\"") { instr = 1; continue }
-        if (c == "[" || c == "{") { depth++; continue }
-        if (c == "]" || c == "}") { depth--; if (depth < 0) exit 1; if (depth == 0) closed = 1; continue }
-        if (c == "," || c == ":") continue
-        exit 1
-      }
-      if (word != "" && word != "true" && word != "false" && word != "null") exit 1
-      exit (started && closed && !instr) ? 0 : 1
-    }'
+  printf '%s' "$1" | "${DOCTOR_JQ:-jq}" -e 'type == "array"' >/dev/null 2>&1
 }
 
-# _doctor_cli_json <claude_bin>
-# `claude plugin list --json`, bounded by DOCTOR_CLI_TIMEOUT seconds (default
-# 20) so a hung CLI cannot stall a read-only report. Prints the JSON, or the
-# sentinel "__unavailable__" when the binary is missing, fails, or times out.
-DOCTOR_CLI_UNAVAILABLE="__unavailable__"
+# _doctor_run_bounded <seconds> <out_file> <cmd…>
+# Run <cmd> with stdout to <out_file>, killing it after <seconds>. Output goes
+# to a file, not a pipe, so a child that keeps stdout open cannot hold the
+# caller; the wait is a builtin loop, so no timeout/gtimeout/perl is needed.
+# Returns the command's status, or 124 when it was killed.
+_doctor_run_bounded() {
+  local secs="$1" out="$2" pid ticks=0 limit
+  shift 2
+  limit=$((secs * 10))
+  "$@" > "$out" 2>/dev/null &
+  pid=$!
+  while kill -0 "$pid" 2>/dev/null; do
+    if [ "$ticks" -ge "$limit" ]; then
+      kill "$pid" 2>/dev/null; sleep 0.1; kill -9 "$pid" 2>/dev/null
+      wait "$pid" 2>/dev/null
+      return 124
+    fi
+    sleep 0.1; ticks=$((ticks + 1))
+  done
+  wait "$pid"
+}
+
+# _doctor_cli_json <claude_bin> [home]
+# `claude plugin list --json`, bounded by DOCTOR_CLI_TIMEOUT seconds, asked
+# about <home> (the install being inspected): when <home> is not the caller's
+# own HOME, the CLI runs with HOME=<home> and without CLAUDE_CONFIG_DIR, so the
+# caller's plugins are never reported as the inspected install's. Prints the
+# JSON, or DOCTOR_CLI_UNAVAILABLE when the binary is missing, fails, times out,
+# or (jq present) prints anything that is not a JSON array.
 _doctor_cli_json() {
-  local bin="$1" secs="${DOCTOR_CLI_TIMEOUT:-20}" out rc
+  local bin="$1" home="${2:-$HOME}" secs="${DOCTOR_CLI_TIMEOUT:-$DOCTOR_CLI_TIMEOUT_DEFAULT}" tmp rc out
   command -v "$bin" >/dev/null 2>&1 || { printf '%s' "$DOCTOR_CLI_UNAVAILABLE"; return 0; }
-  if command -v timeout >/dev/null 2>&1; then out="$(timeout "$secs" "$bin" plugin list --json 2>/dev/null)"; rc=$?
-  elif command -v gtimeout >/dev/null 2>&1; then out="$(gtimeout "$secs" "$bin" plugin list --json 2>/dev/null)"; rc=$?
-  else out="$(perl -e 'alarm shift; exec @ARGV' "$secs" "$bin" plugin list --json 2>/dev/null)"; rc=$?
+  tmp="$(mktemp "${TMPDIR:-/tmp}/superskills-doctor.XXXXXX")" || { printf '%s' "$DOCTOR_CLI_UNAVAILABLE"; return 0; }
+  if [ "$home" = "$HOME" ]; then
+    _doctor_run_bounded "$secs" "$tmp" "$bin" plugin list --json; rc=$?
+  else
+    _doctor_run_bounded "$secs" "$tmp" env -u CLAUDE_CONFIG_DIR HOME="$home" "$bin" plugin list --json; rc=$?
   fi
-  # Exit 0 is not enough: an error printed to stdout must not read as "no plugins".
-  if [ "$rc" -ne 0 ] || ! _doctor_is_json_array "$out"; then printf '%s' "$DOCTOR_CLI_UNAVAILABLE"; else printf '%s' "$out"; fi
+  out="$(cat "$tmp" 2>/dev/null)"; rm -f "$tmp"
+  if [ "$rc" -ne 0 ]; then printf '%s' "$DOCTOR_CLI_UNAVAILABLE"; return 0; fi
+  if _doctor_have_jq && ! _doctor_is_json_array "$out"; then printf '%s' "$DOCTOR_CLI_UNAVAILABLE"; return 0; fi
+  printf '%s' "$out"
 }
 
 # doctor_check_plugin <root> [claude_bin] [plugin_list_json]
@@ -362,20 +366,27 @@ _doctor_cli_json() {
 # ./setup symlink install is the primary path. doctor_report passes the JSON
 # it already fetched so the CLI runs once; direct callers may omit it.
 doctor_check_plugin() {
-  local root="$1" bin="${2:-claude}" out="${3-}" v installed
+  local root="$1" bin="${2:-claude}" out="${3-}" v info installed enabled
   v="$(tr -d '[:space:]' < "$root/VERSION" 2>/dev/null)"
   [ $# -ge 3 ] || out="$(_doctor_cli_json "$bin")"
   if [ "$out" = "$DOCTOR_CLI_UNAVAILABLE" ]; then
-    _doctor_row "Plugin" "unverified" "could not read '$bin plugin list --json' (not on PATH, failed, printed non-JSON, or exceeded ${DOCTOR_CLI_TIMEOUT:-20}s)"
+    _doctor_row "Plugin" "unverified" "could not read '$bin plugin list --json' (not on PATH, failed, printed non-JSON, or exceeded ${DOCTOR_CLI_TIMEOUT:-$DOCTOR_CLI_TIMEOUT_DEFAULT}s)"
     return 0
   fi
-  installed="$(_doctor_plugin_version "$out" "superskills@")"
-  if [ -z "$installed" ]; then
+  if ! _doctor_have_jq; then
+    _doctor_row "Plugin" "warning" "plugin state not checked: jq is not installed (brew install jq / apt install jq)"
+    return 0
+  fi
+  info="$(_doctor_plugin_info "$out" "superskills@")"
+  installed="${info%%$'\t'*}"; enabled="${info#*$'\t'}"
+  if [ -z "$info" ]; then
     _doctor_row "Plugin" "ready" "not installed as a Claude Code plugin (skills are linked by ./setup); optional: /plugin marketplace add ariadoss/superskills"
+  elif [ "$enabled" = "false" ]; then
+    _doctor_row "Plugin" "warning" "plugin superskills@superskills${installed:+ v$installed} is installed but disabled — its skills are not loaded (claude plugin enable superskills@superskills, or uninstall it)"
   elif [ "$installed" = "$v" ]; then
     _doctor_row "Plugin" "ready" "plugin superskills@superskills v$installed matches VERSION"
   else
-    _doctor_row "Plugin" "warning" "plugin superskills@superskills is v$installed but the repo is v$v — update the marketplace, then /reload-plugins"
+    _doctor_row "Plugin" "warning" "plugin superskills@superskills is v${installed:-unknown} but the repo is v$v — update the marketplace, then /reload-plugins"
   fi
 }
 
@@ -385,7 +396,9 @@ doctor_check_hook() {
   hooks="$(git -C "$root" rev-parse --git-path hooks 2>/dev/null || true)"
   case "$hooks" in "") _doctor_row "Post-merge hook" "warning" "$root is not a git checkout — git pull cannot auto-link new skills"; return 0 ;; /*) : ;; *) hooks="$root/$hooks" ;; esac
   hook="$hooks/post-merge"
-  if [ -f "$hook" ] && grep -qF "superskills post-merge hook" "$hook" 2>/dev/null; then
+  if [ -f "$hook" ] && grep -qF "superskills post-merge hook" "$hook" 2>/dev/null && [ ! -x "$hook" ]; then
+    _doctor_row "Post-merge hook" "warning" "installed but not executable, so git will not run it — chmod +x $hook (or re-run ./setup)"
+  elif [ -f "$hook" ] && grep -qF "superskills post-merge hook" "$hook" 2>/dev/null; then
     _doctor_row "Post-merge hook" "ready" "installed — git pull re-runs setup"
   else
     _doctor_row "Post-merge hook" "warning" "not installed — after git pull you must run ./setup by hand (./setup installs the hook)"
@@ -443,11 +456,16 @@ doctor_report() {
   # The install kind decides how Links and gstack are judged, and a plugin
   # install is only recognisable through the CLI (or the cache path), so probe
   # the plugin once here and pass the answer down.
-  local plugin_json
-  plugin_json="$(_doctor_cli_json "$bin")"
+  local plugin_json cli_state="unavailable" info
+  plugin_json="$(_doctor_cli_json "$bin" "$home")"
   plugin_version=""
-  [ "$plugin_json" = "$DOCTOR_CLI_UNAVAILABLE" ] || plugin_version="$(_doctor_plugin_version "$plugin_json" "superskills@")"
-  kind="$(doctor_install_kind "$root" "$skills" "$plugin_version")"
+  if [ "$plugin_json" != "$DOCTOR_CLI_UNAVAILABLE" ] && _doctor_have_jq; then
+    cli_state="ok"
+    info="$(_doctor_plugin_info "$plugin_json" "superskills@")"
+    # Only an enabled plugin serves skills, so only it can make this a plugin install.
+    [ -n "$info" ] && [ "${info#*$'\t'}" != "false" ] && plugin_version="${info%%$'\t'*}"
+  fi
+  kind="$(doctor_install_kind "$root" "$skills" "$plugin_version" "$cli_state")"
   rows="$(
     doctor_check_repo "$root"
     doctor_check_install "$root" "$skills" "$plugin_version" "$kind"

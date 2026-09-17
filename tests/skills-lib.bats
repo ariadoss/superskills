@@ -256,3 +256,31 @@ MD
   actual="$(printf '%s\n' "$files" | skill_names_from_files)"
   [ "$actual" = "$expected" ] || { diff <(echo "$expected") <(echo "$actual") | head; return 1; }
 }
+
+@test "prune_dangling_links leaves an unrelated empty skill dir alone (only dirs it pruned are removed)" {
+  SRC="$BATS_TEST_TMPDIR/src-real"; DST="$BATS_TEST_TMPDIR/skills-dst"; mkdir -p "$SRC/skills" "$DST/users-new-empty-skill"
+  run prune_dangling_links "$DST" "$SRC"
+  [ -d "$DST/users-new-empty-skill" ] || false
+}
+
+@test "prune_dangling_links does not treat $src/../elsewhere as inside the source tree" {
+  SRC="$BATS_TEST_TMPDIR/work/superskills"; DST="$BATS_TEST_TMPDIR/skills-dst"; mkdir -p "$SRC/skills" "$DST/personal"
+  ln -s "$SRC/../personal/pending.md" "$DST/personal/SKILL.md"
+  run prune_dangling_links "$DST" "$SRC"
+  [ -L "$DST/personal/SKILL.md" ] || false
+}
+
+@test "marketing_skill_files refuses a root containing a newline instead of silently returning nothing" {
+  run marketing_skill_files "$BATS_TEST_TMPDIR/bad
+root"
+  [ "$status" -ne 0 ] || false
+}
+
+
+@test "skill_names_from_files survives a SKILL.md that is a directory and keeps every later entry" {
+  E="$BATS_TEST_TMPDIR/dirs"; mkdir -p "$E/a/SKILL.md" "$E/b"
+  printf -- '---\nname: bee\n---\n' > "$E/b/SKILL.md"
+  out="$(printf '%s\n%s\n' "$E/a/SKILL.md" "$E/b/SKILL.md" | skill_names_from_files)"
+  [ "$(printf '%s\n' "$out" | wc -l | tr -d ' ')" -eq 2 ] || false
+  [[ "$out" == *"$E/b/SKILL.md	bee"* ]] || false
+}

@@ -32,6 +32,12 @@ setup() {
 }
 
 status_of() { printf '%s\n' "$1" | cut -f2; }
+# Portable (POSIX cksum, no md5/md5sum) snapshot of names, file contents,
+# symlink targets and modes — changes to any of them change the snapshot.
+tree_snapshot() {
+  find "$@" \( -type f -exec cksum {} + \) -o \( -type l -exec sh -c 'for l; do printf "%s -> %s\n" "$l" "$(readlink "$l")"; done' _ {} + \) -o -print | LC_ALL=C sort
+  find "$@" -exec ls -ld {} + 2>/dev/null | awk '{print $1, $NF}' | LC_ALL=C sort
+}
 evidence_of() { printf '%s\n' "$1" | cut -f3-; }
 
 # ── repo ──
@@ -391,46 +397,6 @@ fake_plugin_list() {
   [ -z "$output" ]
 }
 
-@test "_doctor_plugin_version without jq: reads the version from the matched object only" {
-  export DOCTOR_JQ=definitely-not-jq
-  # matched plugin has no version; the next plugin's version must not leak in
-  run _doctor_plugin_version '[{"id":"superskills@superskills","scope":"user"},{"id":"other@x","version":"9.9.9"}]' "superskills@"
-  [ -z "$output" ]
-  # a nested object carrying its own "version" key is not the plugin's version
-  run _doctor_plugin_version '[{"id":"superskills@superskills","source":{"version":"0.0.1"},"version":"2.24.0"}]' "superskills@"
-  [ "$output" = "2.24.0" ]
-  # version before id, a } and an escaped quote inside strings, pretty-printed
-  cat > "$BATS_TEST_TMPDIR/list.json" <<'JSON'
-[
-  {
-    "version": "1.0.0",
-    "id": "a@b",
-    "description": "has } and \" quote"
-  },
-  {
-    "description": "x } y",
-    "version": "2.24.0",
-    "id": "superskills@superskills"
-  }
-]
-JSON
-  run _doctor_plugin_version "$(cat "$BATS_TEST_TMPDIR/list.json")" "superskills@"
-  [ "$output" = "2.24.0" ]
-  # sibling prefix does not match
-  run _doctor_plugin_version '[{"id":"superskills-marketing@superskills","version":"2.24.0"}]' "superskills@"
-  [ -z "$output" ]
-}
-
-@test "_doctor_plugin_version: jq and fallback agree on the shared cases" {
-  command -v jq >/dev/null 2>&1 || skip "jq not installed"
-  for json in '[{"id":"superskills@superskills","author":{"name":"D"},"description":"has a } brace","version":"2.24.0"}]' \
-              '[{"id":"other@x","version":"9.9.9"},{"id":"superskills@superskills","version":"2.24.0"}]' '[]'; do
-    a="$(_doctor_plugin_version "$json" "superskills@")"
-    b="$(DOCTOR_JQ=definitely-not-jq _doctor_plugin_version "$json" "superskills@")"
-    [ "$a" = "$b" ] || { echo "jq=[$a] fallback=[$b] for $json"; return 1; }
-  done
-}
-
 @test "a CLI that prints an error and exits 0 is unverified, not 'not installed'" {
   FAKE="$BATS_TEST_TMPDIR/claude"
   printf '#!/bin/sh\necho "Error: could not reach marketplace registry (offline)"\nexit 0\n' > "$FAKE"; chmod +x "$FAKE"
@@ -438,38 +404,6 @@ JSON
   [ "$(status_of "$output")" = "unverified" ]
   run doctor_report "$ROOT" "$HOME_DIR" "$FAKE"
   [[ "$output" == *"| Plugin | unverified |"* ]] || false
-}
-
-@test "_doctor_is_json_array: jq and the no-jq fallback agree on valid and invalid text" {
-  cat > "$BATS_TEST_TMPDIR/cases.txt" <<'CASES'
-valid	[]
-valid	[ {"id": "a@b", "version": "1.0.0", "enabled": true, "n": -1.5e3, "x": null, "s": "has ] and [ and \" and , : inside"} ]
-invalid	[this is not valid json, just text]
-invalid	[plugin registry unreachable, retry later]
-invalid	Error: could not reach marketplace registry (offline)
-invalid	[{"id": "a"}
-invalid	{"id": "a"}
-invalid	[{"id": "a"}]]
-invalid	["unterminated]
-invalid	[1, e, 2]
-invalid	[truex]
-valid	[1, -2.5E+10, true, false, null, "e"]
-CASES
-  while IFS=$'\t' read -r want text; do
-    if DOCTOR_JQ=definitely-not-jq _doctor_is_json_array "$text"; then got=valid; else got=invalid; fi
-    [ "$got" = "$want" ] || { echo "fallback: $text -> $got (want $want)"; return 1; }
-    if command -v jq >/dev/null 2>&1; then
-      if _doctor_is_json_array "$text"; then got=valid; else got=invalid; fi
-      [ "$got" = "$want" ] || { echo "jq: $text -> $got (want $want)"; return 1; }
-    fi
-  done < "$BATS_TEST_TMPDIR/cases.txt"
-}
-
-@test "without jq, a CLI that prints bracketed error text and exits 0 is unverified" {
-  FAKE="$BATS_TEST_TMPDIR/claude"
-  printf '#!/bin/sh\necho "[plugin registry unreachable, retry later]"\nexit 0\n' > "$FAKE"; chmod +x "$FAKE"
-  DOCTOR_JQ=definitely-not-jq run doctor_check_plugin "$ROOT" "$FAKE"
-  [ "$(status_of "$output")" = "unverified" ]
 }
 
 @test "doctor_report scans for the install kind once (doctor_check_install accepts a precomputed kind)" {
@@ -547,7 +481,7 @@ CASES
 
 @test "check_hook: ready when our post-merge hook is installed" {
   git -C "$ROOT" init -q
-  cp "$ROOT/scripts/git-hooks/post-merge" "$ROOT/.git/hooks/post-merge"
+  cp "$ROOT/scripts/git-hooks/post-merge" "$ROOT/.git/hooks/post-merge"; chmod +x "$ROOT/.git/hooks/post-merge"
   run doctor_check_hook "$ROOT"
   [ "$(status_of "$output")" = "ready" ]
 }
@@ -588,10 +522,10 @@ CASES
 # ── report (end-to-end, no claude binary) ──
 
 @test "doctor_report never mutates the tree and renders a table with a verdict" {
-  before=$(find "$ROOT" "$HOME_DIR" | sort | md5)
+  before="$(tree_snapshot "$ROOT" "$HOME_DIR")"
   run doctor_report "$ROOT" "$HOME_DIR" "definitely-not-claude-xyz"
   [ "$status" -eq 0 ]
-  after=$(find "$ROOT" "$HOME_DIR" | sort | md5)
+  after="$(tree_snapshot "$ROOT" "$HOME_DIR")"
   [ "$before" = "$after" ]
   [[ "$output" == *"| Check"* ]] || false
   [[ "$output" == *"Verdict:"* ]] || false
@@ -629,3 +563,141 @@ CASES
   [[ "$output" == *"--root"* ]] || false
 }
 
+# ── rounds found by Codex (outside-model review) ──
+
+@test "doctor_report does not mutate the tree even when a file's content changes would be the only difference (snapshot sees contents)" {
+  a="$(tree_snapshot "$ROOT")"; printf 'x' >> "$ROOT/VERSION"; b="$(tree_snapshot "$ROOT")"
+  [ "$a" != "$b" ] || false
+}
+
+@test "check_plugin: without jq the plugin state is a warning asking for jq, never ready or not-installed" {
+  FAKE="$BATS_TEST_TMPDIR/claude"; fake_plugin_list "$FAKE" "superskills@superskills=2.24.0"
+  DOCTOR_JQ=definitely-not-jq run doctor_check_plugin "$ROOT" "$FAKE"
+  [ "$(status_of "$output")" = "warning" ] || false
+  [[ "$(evidence_of "$output")" == *"jq"* ]] || false
+}
+
+@test "a CLI that prints malformed JSON ([}, trailing comma) and exits 0 is unverified" {
+  FAKE="$BATS_TEST_TMPDIR/claude"
+  for bad in '[}' '[,]' '[{"id":"superskills@superskills","version":"2.24.0",}]'; do
+    printf '#!/bin/sh\nprintf %%s %s\nexit 0\n' "'$bad'" > "$FAKE"; chmod +x "$FAKE"
+    run doctor_check_plugin "$ROOT" "$FAKE"
+    [ "$(status_of "$output")" = "unverified" ] || { echo "$bad -> $output"; return 1; }
+  done
+}
+
+@test "check_plugin: an installed but disabled plugin is a warning, and does not make the install a plugin install" {
+  FAKE="$BATS_TEST_TMPDIR/claude"
+  printf '#!/bin/sh\necho %s\n' "'[{\"id\":\"superskills@superskills\",\"version\":\"2.24.0\",\"enabled\":false}]'" > "$FAKE"; chmod +x "$FAKE"
+  run doctor_check_plugin "$ROOT" "$FAKE"
+  [ "$(status_of "$output")" = "warning" ] || false
+  [[ "$(evidence_of "$output")" == *"disabled"* ]] || false
+  EMPTY_HOME="$BATS_TEST_TMPDIR/plugin-home"; mkdir -p "$EMPTY_HOME"
+  run doctor_report "$ROOT" "$EMPTY_HOME" "$FAKE"
+  [[ "$output" == *"| Install | blocked |"* ]] || false
+}
+
+@test "--home: the plugin CLI is asked about the inspected home, not the caller's" {
+  FAKE="$BATS_TEST_TMPDIR/claude"
+  cat > "$FAKE" <<'SH'
+#!/bin/sh
+if [ -f "$HOME/.fake-plugins.json" ]; then cat "$HOME/.fake-plugins.json"; else echo "[]"; fi
+SH
+  chmod +x "$FAKE"
+  CALLER="$BATS_TEST_TMPDIR/caller"; INSPECTED="$BATS_TEST_TMPDIR/inspected"; mkdir -p "$CALLER" "$INSPECTED"
+  printf '[{"id":"superskills@superskills","version":"2.24.0","enabled":true}]' > "$CALLER/.fake-plugins.json"
+  HOME="$CALLER" run doctor_report "$ROOT" "$INSPECTED" "$FAKE"
+  [[ "$output" == *"| Install | blocked |"* ]] || false
+  [[ "$output" == *"| Plugin | ready | not installed"* ]] || false
+}
+
+@test "install_kind: a cache-shaped path does not override a successful 'not installed' answer from the CLI" {
+  C="$BATS_TEST_TMPDIR/x/plugins/cache/superskills/superskills/2.24.0"; mkdir -p "$C"; cp -R "$ROOT/." "$C/"
+  run doctor_install_kind "$C" "$BATS_TEST_TMPDIR/empty" "" ok
+  [ "$output" = "unlinked" ] || false
+  run doctor_install_kind "$C" "$BATS_TEST_TMPDIR/empty" "" unavailable
+  [ "$output" = "plugin" ] || false
+}
+
+@test "check_links: a link to a different skill inside this checkout is blocked, naming both" {
+  rm "$SKILLS/beta/SKILL.md"; ln -s "$ROOT/skills/alpha/SKILL.md" "$SKILLS/beta/SKILL.md"
+  run doctor_check_links "$ROOT" "$SKILLS"
+  [ "$(status_of "$output")" = "blocked" ] || false
+  [[ "$(evidence_of "$output")" == *"beta"* ]] || false
+  [[ "$(evidence_of "$output")" == *"skills/alpha/SKILL.md"* ]] || false
+}
+
+@test "check_links: a shadowed name must link to setup's winner (skills > design > marketing)" {
+  mkdir -p "$ROOT/design-skills/alpha-design"; printf -- '---\nname: alpha\n---\n' > "$ROOT/design-skills/alpha-design/SKILL.md"
+  run doctor_check_links "$ROOT" "$SKILLS"          # alpha links to skills/alpha — the winner
+  [ "$(status_of "$output")" = "ready" ] || false
+  rm "$SKILLS/alpha/SKILL.md"; ln -s "$ROOT/design-skills/alpha-design/SKILL.md" "$SKILLS/alpha/SKILL.md"
+  run doctor_check_links "$ROOT" "$SKILLS"          # now the loser is linked
+  [ "$(status_of "$output")" = "blocked" ] || false
+}
+
+@test "check_manifests: an empty manifest or one with no version field is a warning" {
+  : > "$ROOT/.codex-plugin/plugin.json"
+  run doctor_check_manifests "$ROOT"
+  [ "$(status_of "$output")" = "warning" ] || false
+  [[ "$(evidence_of "$output")" == *".codex-plugin/plugin.json"* ]] || false
+  printf '{ "name": "superskills" }\n' > "$ROOT/.codex-plugin/plugin.json"
+  run doctor_check_manifests "$ROOT"
+  [ "$(status_of "$output")" = "warning" ] || false
+}
+
+@test "check_manifests: invalid JSON is a warning even when it contains the right version (jq present)" {
+  command -v jq >/dev/null 2>&1 || skip "jq not installed"
+  printf '{ "name": "superskills", "version": "2.24.0", }\n' > "$ROOT/.codex-plugin/plugin.json"
+  run doctor_check_manifests "$ROOT"
+  [ "$(status_of "$output")" = "warning" ] || false
+  [[ "$(evidence_of "$output")" == *"invalid JSON"* ]] || false
+}
+
+@test "check_shims: a renamed marketing skill whose old shim still resolves is a warning (name→target mapping, not counts)" {
+  mkdir -p "$ROOT/marketing-skills/seo/local" "$ROOT/marketing-skills/plugin-skills"
+  printf -- '---\nname: local-seo-renamed\n---\n' > "$ROOT/marketing-skills/seo/local/SKILL.md"
+  ln -s ../seo/local "$ROOT/marketing-skills/plugin-skills/local-seo"
+  run doctor_check_shims "$ROOT"
+  [ "$(status_of "$output")" = "warning" ] || false
+  [[ "$(evidence_of "$output")" == *"local-seo-renamed"* ]] || false
+}
+
+@test "check_shims: two shims pointing at one skill cannot hide a missing one" {
+  mkdir -p "$ROOT/marketing-skills/seo/local" "$ROOT/marketing-skills/seo/entity" "$ROOT/marketing-skills/plugin-skills"
+  printf -- '---\nname: local-seo\n---\n' > "$ROOT/marketing-skills/seo/local/SKILL.md"
+  printf -- '---\nname: entity-seo\n---\n' > "$ROOT/marketing-skills/seo/entity/SKILL.md"
+  ln -s ../seo/local "$ROOT/marketing-skills/plugin-skills/local-seo"
+  ln -s ../seo/local "$ROOT/marketing-skills/plugin-skills/entity-seo"
+  run doctor_check_shims "$ROOT"
+  [ "$(status_of "$output")" = "warning" ] || false
+  [[ "$(evidence_of "$output")" == *"entity-seo"* ]] || false
+}
+
+@test "check_hook: a hook that is not executable is a warning (git will not run it)" {
+  git -C "$ROOT" init -q
+  cp "$ROOT/scripts/git-hooks/post-merge" "$ROOT/.git/hooks/post-merge"; chmod -x "$ROOT/.git/hooks/post-merge"
+  run doctor_check_hook "$ROOT"
+  [ "$(status_of "$output")" = "warning" ] || false
+  [[ "$(evidence_of "$output")" == *"executable"* ]] || false
+}
+
+@test "the CLI probe is bounded even when the CLI leaves a child holding stdout open" {
+  FAKE="$BATS_TEST_TMPDIR/claude"
+  printf '#!/bin/sh\nsleep 30 &\nsleep 30\n' > "$FAKE"; chmod +x "$FAKE"
+  start=$(date +%s)
+  DOCTOR_CLI_TIMEOUT=1 run _doctor_cli_json "$FAKE"
+  elapsed=$(( $(date +%s) - start ))
+  [ "$output" = "__unavailable__" ] || false
+  [ "$elapsed" -le 5 ] || { echo "took ${elapsed}s"; return 1; }
+}
+
+
+@test "check_links: a SKILL.md that is a directory is reported, and skills after it are still checked" {
+  mkdir -p "$ROOT/skills/delta/SKILL.md" "$ROOT/skills/zeta"
+  printf -- '---\nname: zeta\n---\n' > "$ROOT/skills/zeta/SKILL.md"
+  run doctor_check_links "$ROOT" "$SKILLS"
+  [ "$(status_of "$output")" = "blocked" ] || false
+  [[ "$(evidence_of "$output")" == *"delta"* ]] || false
+  [[ "$(evidence_of "$output")" == *"zeta"* ]] || false      # unlinked skill after the bad one still reported
+}

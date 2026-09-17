@@ -80,3 +80,11 @@ setup() {
   done
 }
 
+@test "mirror_wrap detects frontmatter in a large file under set -o pipefail (as sync-mirrors.sh runs it)" {
+  BIG="$BATS_TEST_TMPDIR/big.md"
+  { printf -- '---\nname: upstream\ndescription: d\n---\n'; for i in $(seq 1 20000); do echo "line $i of a long body that fills the pipe buffer"; done; } > "$BIG"
+  out="$(set -o pipefail; mirror_wrap dbmap "$BIG")"
+  [ "$(printf '%s\n' "$out" | grep -c '^---$')" -eq 2 ] || false
+  [ "$(printf '%s\n' "$out" | sed -n '2p')" = "name: dbmap" ] || false
+}
+

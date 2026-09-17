@@ -37,3 +37,16 @@ J
   [[ "$output" == *"FAILED read-only"* ]] || false
   [[ "$output" == *"trace missing"* ]] || false
 }
+
+@test "a case or arm name that is not a plain path component is skipped, never written outside the archive" {
+  RESULT2="$W/evil.json"
+  cat > "$RESULT2" <<J
+{"cases":[{"name":"../../outside-archive","arms":{"with":[{"score":1,"tracePath":"$TRACE","graders":[]}]}},
+          {"name":"ok-case","arms":{"../x":[{"score":1,"tracePath":"$TRACE","graders":[]}]}}]}
+J
+  run bash "$REPO_ROOT/scripts/eval-traces.sh" "$RESULT2" "$W/out2"
+  [ ! -e "$W/outside-archive" ] || false
+  [ ! -e "$W/out2/x-1.jsonl" ] && [ ! -e "$W/x-1.jsonl" ] || false
+  [[ "$output" == *"skipped"* ]] || false
+}
+

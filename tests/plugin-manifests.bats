@@ -12,6 +12,7 @@ setup() {
   for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json .codex-plugin/plugin.json \
            .cursor-plugin/plugin.json .cursor-plugin/marketplace.json marketing-skills/.claude-plugin/plugin.json; do
     [ -f "$REPO_ROOT/$f" ] || { echo "missing $f"; return 1; }
+    [ "$(grep -c "\"version\"[[:space:]]*:[[:space:]]*\"$VERSION\"" "$REPO_ROOT/$f")" -ge 1 ] || { echo "$f has no version $VERSION"; return 1; }
     stale=$(grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$REPO_ROOT/$f" | grep -v "\"$VERSION\"" || true)
     [ -z "$stale" ] || { echo "$f has stale version: $stale"; return 1; }
   done

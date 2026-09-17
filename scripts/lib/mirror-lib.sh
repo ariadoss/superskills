@@ -16,7 +16,9 @@ mirror_wrap() {
   local name="$1" src="$2" first
   # Frontmatter only counts when a closing `---` exists after the opening one;
   # a lone leading rule is treated as body so we never emit an unterminated block.
-  if [ "$(head -c 3 "$src")" = "---" ] && tail -n +2 "$src" | grep -q '^---[[:space:]]*$'; then
+  # awk reads the whole file, so an early match cannot SIGPIPE a producer and
+  # fail the test under `set -o pipefail` (sync-mirrors.sh sets it).
+  if [ "$(head -c 3 "$src")" = "---" ] && awk 'NR > 1 && /^---[[:space:]]*$/ { f = 1 } END { exit !f }' "$src"; then
     awk -v name="$name" '
       NR == 1 { print; next }
       !closed && /^---[[:space:]]*$/ { if (!seen) print "name: " name; closed = 1 }

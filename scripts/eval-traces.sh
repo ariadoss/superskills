@@ -18,6 +18,11 @@ jq -r '.cases[] | .name as $c | .arms | to_entries[] | .key as $arm | .value | t
   | map(tostring) | join("\u001f")' "$RESULT" |
 # Unit separator, not tab: tab is IFS whitespace, so empty fields would collapse.
 while IFS=$'\x1f' read -r case arm n score err trace failed; do
+  # Case and arm names come from the JSON and become path components: accept
+  # only plain names so a crafted report cannot write outside $OUT.
+  case "$case$arm" in *[!A-Za-z0-9._-]*|.*) echo "  (skipped: unsafe case/arm name '$case' / '$arm')"; continue ;; esac
+  case "$case" in .*|*..*) echo "  (skipped: unsafe case name '$case')"; continue ;; esac
+  case "$arm" in .*|*..*) echo "  (skipped: unsafe arm name '$arm')"; continue ;; esac
   dest="$OUT/$case/$arm-$n.jsonl"
   mkdir -p "$OUT/$case"
   echo "════ $case / $arm-$n / score $score"

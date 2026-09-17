@@ -84,11 +84,11 @@ setup() {
   grep -q '"description": "The 99 marketing skills' "$OUT"
 }
 
-@test "skill_entries uses the shared skill_name_from parser (same names ./setup links)" {
-  run grep -c 'skill_name_from' "$REPO_ROOT/scripts/lib/manifest-lib.sh"
-  [ "$output" -ge 1 ]
+@test "skill_entries uses the shared batch name parser (proven equal to skill_name_from in skills-lib.bats)" {
+  run grep -c 'skill_names_from_files' "$REPO_ROOT/scripts/lib/manifest-lib.sh"
+  [ "$output" -ge 1 ] || false
   run grep -c "grep -m1 '\^name:'" "$REPO_ROOT/scripts/lib/manifest-lib.sh"
-  [ "$output" -eq 0 ]
+  [ "$output" -eq 0 ] || false
 }
 
 @test "write_marketing_shims catches duplicate names that are not adjacent (locale-independent)" {
@@ -103,6 +103,18 @@ setup() {
 @test "skill_entries and marketing_skill_files sort bytewise (LC_ALL=C) so output is identical on every platform" {
   run grep -c 'LC_ALL=C sort' "$REPO_ROOT/scripts/lib/manifest-lib.sh" "$REPO_ROOT/scripts/lib/skills-lib.sh"
   [[ "$output" != *":0"* ]] || false
+}
+
+@test "write_marketing_shims keeps the existing tree when the new input is invalid" {
+  write_marketing_shims "$MK"
+  before="$(ls "$MK/plugin-skills")"
+  mkdir -p "$MK/seo/evil"; printf -- '---\nname: ../escape\n---\n' > "$MK/seo/evil/SKILL.md"
+  run write_marketing_shims "$MK"
+  [ "$status" -eq 1 ] || false
+  [ "$(ls "$MK/plugin-skills")" = "$before" ] || false
+  run write_marketing_shims "$MK" "$(printf 'dup\tseo/local\ndup\tads/google\n')"
+  [ "$status" -eq 1 ] || false
+  [ "$(ls "$MK/plugin-skills")" = "$before" ] || false
 }
 
 @test "skill_entries ignores the shim tree itself" {
