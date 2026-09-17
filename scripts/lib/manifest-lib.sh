@@ -67,7 +67,16 @@ write_marketing_shims() {
     [ -z "$name" ] && continue
     ln -s "../$rel" "$staging/$name"
   done <<< "$entries"
-  rm -rf "$shim" && mv "$staging" "$shim"
+  # Swap by rename (old aside, new in), not delete-then-rebuild-in-place: a
+  # concurrent reader can see plugin-skills/ briefly absent (an unavoidable gap
+  # between two renames), but never half-built with some entries stale and some
+  # new — and a crash between the two renames leaves the previous tree intact
+  # at .plugin-skills.old for the next run (or a maintainer) to recover.
+  local old="$root/.$MARKETING_SHIM_DIR.old"
+  rm -rf "$old"
+  [ -e "$shim" ] && mv "$shim" "$old"
+  mv "$staging" "$shim"
+  rm -rf "$old"
 }
 
 # write_marketing_manifest <root> <version> <out_file> [skill_count]

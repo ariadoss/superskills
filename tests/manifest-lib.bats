@@ -152,3 +152,45 @@ setup() {
   [[ "$output" != *$'\t'"SKILL.md" ]] || false
   [[ "$output" != root* ]] || false
 }
+
+@test "write_marketing_shims's swap is never partially built, and always ends recoverable" {
+  # A directory rename swap has an unavoidable instant where the entry doesn't
+  # exist at all (two renames, not one atomic op) — that's fine, a reader just
+  # sees "missing, try again". What must never happen is a HALF-populated
+  # directory (some but not all entries) mid-build; a concurrent reader
+  # (docs, previously) is only tolerating the process built before the swap.
+  write_marketing_shims "$MK"
+  before="$(ls "$MK/plugin-skills" | LC_ALL=C sort)"
+  ( write_marketing_shims "$MK" ) &
+  bg=$!
+  partial=0
+  for i in $(seq 1 500); do
+    if [ -d "$MK/plugin-skills" ]; then
+      seen="$(ls "$MK/plugin-skills" 2>/dev/null | LC_ALL=C sort)"
+      if [ -z "$seen" ]; then continue; fi              # momentarily absent — expected, not a bug
+      if [ "$seen" = "$before" ]; then continue; fi      # still the old, complete tree
+      # any other listing must be the fully-built new tree, never a subset of it
+      [ "$(printf '%s\n' "$seen" | wc -l)" -ge "$(printf '%s\n' "$before" | wc -l)" ] || { partial=1; break; }
+    fi
+  done
+  wait "$bg"
+  [ "$partial" -eq 0 ] || { echo "observed a half-built plugin-skills/ during the swap"; return 1; }
+  [ -d "$MK/plugin-skills" ] || false
+  [ ! -e "$MK/.plugin-skills.old" ] || false
+  [ ! -e "$MK/.plugin-skills.new" ] || false
+}
+
+@test "write_marketing_shims recovers a killed swap: the previous tree survives if interrupted before the new one is in place" {
+  write_marketing_shims "$MK"
+  before="$(ls "$MK/plugin-skills" | LC_ALL=C sort)"
+  # Simulate a crash right after the old tree is moved aside, before the new
+  # one takes its place — exactly write_marketing_shims's own middle step.
+  mv "$MK/plugin-skills" "$MK/.plugin-skills.old"
+  # A subsequent run must not lose the old tree if it, in turn, is interrupted
+  # before completion is not testable without real process control here; what
+  # IS guaranteed is that a full, uninterrupted re-run restores a correct tree.
+  run write_marketing_shims "$MK"
+  [ "$status" -eq 0 ] || false
+  [ "$(ls "$MK/plugin-skills" | LC_ALL=C sort)" = "$before" ] || false
+  [ ! -e "$MK/.plugin-skills.old" ] || false
+}

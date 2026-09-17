@@ -784,3 +784,49 @@ SH
   run doctor_install_kind "$ROOT" "$ISO"
   [ "$output" != "dev-repo" ] || { echo "a plain file was taken as dev-repo evidence"; return 1; }
 }
+
+@test "install_kind: a plain (non-symlink) copy of a skill nested inside root is not dev-repo evidence" {
+  mkdir -p "$ROOT/fake-skills-nested"
+  cp "$ROOT/skills/alpha/SKILL.md" "$ROOT/fake-skills-nested/SKILL.md"   # a real file whose own realpath IS under $ROOT
+  run doctor_install_kind "$ROOT" "$ROOT/fake-skills-nested"
+  [ "$output" != "dev-repo" ] || { echo "a plain file resolved under root was taken as dev-repo evidence"; return 1; }
+}
+
+@test "plugin install: an unreadable (chmod 000) regular SKILL.md is blocked, not served" {
+  mkdir -p "$ROOT/skills/epsilon"
+  printf -- '---\nname: epsilon\n---\n' > "$ROOT/skills/epsilon/SKILL.md"
+  chmod 000 "$ROOT/skills/epsilon/SKILL.md"
+  run doctor_check_links "$ROOT" "$SKILLS" plugin
+  chmod 644 "$ROOT/skills/epsilon/SKILL.md"   # restore so cleanup can remove it
+  [ "$(status_of "$output")" = "blocked" ] || false
+  [[ "$(evidence_of "$output")" == *"epsilon"* ]] || false
+}
+
+@test "check_links: a resolving link belonging to another tool is never called stale" {
+  OTHER="$BATS_TEST_TMPDIR/other-tool-real/SKILL.md"; mkdir -p "$(dirname "$OTHER")"; printf 'x\n' > "$OTHER"
+  mkdir -p "$SKILLS/other-tool"; ln -s "$OTHER" "$SKILLS/other-tool/SKILL.md"
+  run doctor_check_links "$ROOT" "$SKILLS"
+  [[ "$(evidence_of "$output")" != *"other-tool"* ]] || { echo "$output"; return 1; }
+}
+
+@test "_doctor_run_bounded kills the whole process group, not just the direct child" {
+  MARKER="$BATS_TEST_TMPDIR/grandchild-alive"
+  cat > "$BATS_TEST_TMPDIR/forker.sh" <<SH
+#!/bin/sh
+( while [ -e "$MARKER" ] || true; do :; done ) &
+echo \$! > "$BATS_TEST_TMPDIR/grandchild.pid"
+touch "$MARKER"
+sleep 30
+SH
+  chmod +x "$BATS_TEST_TMPDIR/forker.sh"
+  ( _doctor_run_bounded 1 "$BATS_TEST_TMPDIR/out" "$BATS_TEST_TMPDIR/forker.sh" ) &
+  runner=$!
+  for i in $(seq 1 50); do [ -f "$BATS_TEST_TMPDIR/grandchild.pid" ] && break; sleep 0.1; done
+  gcpid="$(cat "$BATS_TEST_TMPDIR/grandchild.pid" 2>/dev/null)"
+  wait "$runner" || true   # the bounded run is expected to return 124 (killed)
+  sleep 0.3
+  if [ -n "$gcpid" ]; then
+    run kill -0 "$gcpid"
+    [ "$status" -ne 0 ] || { echo "grandchild $gcpid still alive after the bounded run returned"; kill -9 "$gcpid" 2>/dev/null; return 1; }
+  fi
+}

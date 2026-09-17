@@ -358,17 +358,30 @@ _doctor_run_bounded() {
   local secs="$1" out="$2" pid ticks=0 limit
   shift 2
   limit=$((secs * 10))
-  "$@" > "$out" 2>/dev/null &
+  # A new process group (setsid when available, else bash job control) so the
+  # kill below reaches anything the command forks, not just the direct child —
+  # and killing this function itself (e.g. the whole script) still leaves the
+  # group to become a set of unreaped orphans, so also trap our own exit.
+  if command -v setsid >/dev/null 2>&1; then
+    setsid "$@" > "$out" 2>/dev/null &
+  else
+    set -m
+    "$@" > "$out" 2>/dev/null &
+  fi
   pid=$!
+  trap 'kill -TERM -- -"$pid" 2>/dev/null; kill -KILL -- -"$pid" 2>/dev/null' EXIT
   while kill -0 "$pid" 2>/dev/null; do
     if [ "$ticks" -ge "$limit" ]; then
-      kill "$pid" 2>/dev/null; sleep 0.1; kill -9 "$pid" 2>/dev/null
+      kill -TERM -- -"$pid" 2>/dev/null; sleep 0.1; kill -KILL -- -"$pid" 2>/dev/null
       wait "$pid" 2>/dev/null
+      trap - EXIT
       return 124
     fi
     sleep 0.1; ticks=$((ticks + 1))
   done
   wait "$pid"
+  trap - EXIT
+  command -v setsid >/dev/null 2>&1 || set +m
 }
 
 # _doctor_cli_json <claude_bin> [home]

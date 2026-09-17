@@ -84,3 +84,17 @@ echo DECOY_RAN
   [ "$output" = "DOCTOR=missing" ] || { echo "$output"; return 1; }
 }
 
+@test "a plain (non-symlink) SKILL.md at the probe path is never trusted" {
+  mkdir -p "$EMPTY_HOME/.claude/skills/superskills-doctor"
+  cp "$REPO_ROOT/skills/superskills-doctor/SKILL.md" "$EMPTY_HOME/.claude/skills/superskills-doctor/SKILL.md"   # copy, not a symlink
+  cd "$REPO_ROOT/marketing-skills/content"
+  run env -u CLAUDE_PLUGIN_ROOT HOME="$EMPTY_HOME" bash "$SNIPPET" --bin definitely-not-claude
+  [ "$output" = "DOCTOR=missing" ] || { echo "$output"; return 1; }
+}
+
+@test "a stale SKILL_DIR falls through to a correct CLAUDE_PLUGIN_ROOT instead of committing to it" {
+  cd "$BATS_TEST_TMPDIR"
+  run env SKILL_DIR="$BATS_TEST_TMPDIR/nonexistent" CLAUDE_PLUGIN_ROOT="$REPO_ROOT" HOME="$EMPTY_HOME" bash "$SNIPPET" --bin definitely-not-claude
+  [ "${lines[0]}" = "DOCTOR=$REPO_ROOT/scripts/doctor.sh" ] || { echo "$output"; return 1; }
+}
+
