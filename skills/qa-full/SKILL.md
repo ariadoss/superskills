@@ -257,6 +257,15 @@ adversarial subagent still runs). Record
 the Codex state and the user's answer in the ledger. Never flip the global
 `codex_reviews` config on the user's behalf.
 
+`CODEX_MODE: not_authed` can be a false negative: gstack's preflight only
+recognises a Codex login, so a Codex CLI configured for a custom provider
+(e.g. `model_provider = "azure"` with an API key in the environment) reads as
+unauthenticated while working fine. When the preflight says `not_authed` but
+`~/.codex/config.toml` sets a `model_provider`, probe once with
+`codex exec -s read-only "Reply with exactly: PONG" < /dev/null`; if it
+answers, treat Codex as `ready` (still ask-first) and run the passes with that
+provider. Record the probe result in the ledger either way.
+
 If `/review` cannot run at all (the gstack install is broken), apply its
 checklist
 (`~/.claude/skills/gstack/review/checklist.md`) to `origin/<base>..HEAD` via a
