@@ -2,7 +2,7 @@
 
 Curated AI skills pack for Claude Code, OpenCode, Codex CLI, Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Bundles [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
-43 core skills + 53 gstack skills + 174 marketing skills + 35 design skills. gstack is installed automatically and vendored in this repo so skills are available even if the upstream repo is removed.
+43 core skills + 53 gstack skills + 174 marketing skills + 36 design skills. gstack is installed automatically and vendored in this repo so skills are available even if the upstream repo is removed.
 
 > **[Full command reference →](COMMANDS.md)** — all skills with descriptions and overlap notes
 > **[10x+ Engineering Workflow →](DEVELOPER_WORKFLOW.md)** — run 10+ parallel AI agents, each with a full quality pipeline ([deep dive](https://hyperion360.com/blog/parallel-ai-agents-engineering-workflow/))
@@ -272,7 +272,7 @@ From [kostja94/marketing-skills](https://github.com/kostja94/marketing-skills) �
 | **Platforms** | `/linkedin-posts`, `/twitter-x-posts`, `/reddit-posts`, `/tiktok-captions`, `/youtube-seo` |
 | **Analytics** | `/google-search-console`, `/seo-monitoring`, `/traffic-analysis`, `/analytics-tracking` |
 
-## Design Skills (35)
+## Design Skills (36)
 
 
 | Category | Skills |

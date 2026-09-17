@@ -24,10 +24,11 @@ MARKETING_SHIM_DIR="plugin-skills"
 # sorted by name. Falls back to the directory basename when `name:` is absent.
 skill_entries() {
   local root="$1" f rel name
-  (cd "$root" && find . -mindepth 2 -name SKILL.md -type f -not -path "./$MARKETING_SHIM_DIR/*" | sort) |
+  marketing_skill_files "$root" |
   while IFS= read -r f; do
-    rel="${f#./}"; rel="${rel%/SKILL.md}"
-    name="$(skill_name_from "$root/$f" "$(basename "$rel")")"
+    rel="${f#"${root%/}"/}"; rel="${rel%/SKILL.md}"
+    [ "$rel" = "SKILL.md" ] && continue   # a SKILL.md at the root itself is not a nested skill
+    name="$(skill_name_from "$f" "$(basename "$rel")")"
     printf '%s\t%s\n' "$name" "$rel"
   done | sort
 }

@@ -25,6 +25,17 @@ setup() {
   done
 }
 
+@test "the root plugin.json itself validates, with CLAUDE.md-at-root as the only accepted warning" {
+  command -v claude >/dev/null 2>&1 || skip "claude CLI not installed"
+  # Validating the repo directory only reaches marketplace.json; the manifest
+  # file must be validated directly. CLAUDE.md at the root is contributor
+  # context, deliberately not plugin context, so that one warning is expected.
+  run claude plugin validate "$REPO_ROOT/.claude-plugin/plugin.json"
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+  warnings="$(printf '%s\n' "$output" | grep '❯' | grep -v 'CLAUDE.md at the plugin root is not loaded' || true)"
+  [ -z "$warnings" ] || { echo "unexpected: $warnings"; return 1; }
+}
+
 @test "every skill dir in the root plugin is named exactly like its frontmatter name (the loader uses the dir name)" {
   # Claude Code exposes a plugin skill as /<plugin>:<directory basename>, ignoring
   # frontmatter `name:`. A mismatch silently publishes the skill under the wrong

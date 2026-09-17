@@ -194,7 +194,7 @@ if [ -d "$MARKETING_SRC_DIR" ]; then
     rel_path="${skill_dir#$MARKETING_SRC_DIR/}"
     fallback_name=$(echo "$rel_path" | tr '/' '-')
     link_skill_claude "$skill_md" "$fallback_name"
-  done < <(find "$MARKETING_SRC_DIR" -name "SKILL.md" -type f | sort)
+  done < <(marketing_skill_files "$MARKETING_SRC_DIR")
 fi
 
 # Design skills (override any marketing-skills name conflicts)
@@ -238,7 +238,7 @@ if [ -d "$MARKETING_SRC_DIR" ]; then
     rel_path="${skill_dir#$MARKETING_SRC_DIR/}"
     fallback_name=$(echo "$rel_path" | tr '/' '-')
     link_skill_opencode "$skill_md" "$fallback_name"
-  done < <(find "$MARKETING_SRC_DIR" -name "SKILL.md" -type f | sort)
+  done < <(marketing_skill_files "$MARKETING_SRC_DIR")
 fi
 
 if [ -d "$DESIGN_SRC_DIR" ]; then

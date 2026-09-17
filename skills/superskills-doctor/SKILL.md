@@ -36,9 +36,9 @@ Read-only health check. Report what is, never repair it.
 
 ### Step 1: Locate the doctor script
 
-The script lives in the superskills repo at `scripts/doctor.sh`. Find the repo the
-same way `/superskills-upgrade` does — plugin root first, then the symlink of this
-skill back to its checkout:
+The script lives in the superskills repo at `scripts/doctor.sh`. Find the repo from
+the plugin root when this skill was loaded as a plugin, otherwise by resolving this
+skill's `./setup` symlink back to its checkout (never from the working directory):
 
 ```bash
 ROOT="${CLAUDE_PLUGIN_ROOT}"

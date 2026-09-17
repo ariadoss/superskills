@@ -164,6 +164,33 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
   [[ "$(evidence_of "$output")" == "3 skills served by the plugin loader"* ]]
 }
 
+@test "check_links: a link that resolves into a different checkout is a warning naming it" {
+  OTHER="$BATS_TEST_TMPDIR/other-checkout/skills/beta"; mkdir -p "$OTHER"
+  printf -- '---\nname: beta\n---\n' > "$OTHER/SKILL.md"
+  rm "$SKILLS/beta/SKILL.md"; ln -s "$OTHER/SKILL.md" "$SKILLS/beta/SKILL.md"
+  run doctor_check_links "$ROOT" "$SKILLS"
+  [ "$(status_of "$output")" = "warning" ]
+  [[ "$(evidence_of "$output")" == *"beta"* ]]
+  [[ "$(evidence_of "$output")" == *"other-checkout"* ]]
+}
+
+@test "check_links: stale links left by a moved checkout are a warning (listed, never deleted)" {
+  mkdir -p "$SKILLS/old-skill"; ln -s "$BATS_TEST_TMPDIR/moved-away/skills/old-skill/SKILL.md" "$SKILLS/old-skill/SKILL.md"
+  run doctor_check_links "$ROOT" "$SKILLS"
+  [ "$(status_of "$output")" = "warning" ]
+  [[ "$(evidence_of "$output")" == *"old-skill"* ]]
+  [ -L "$SKILLS/old-skill/SKILL.md" ]
+}
+
+@test "check_links: a name shared by two sources is reported as shadowed, status follows setup's override" {
+  mkdir -p "$ROOT/design-skills/alpha-design"
+  printf -- '---\nname: alpha\n---\n' > "$ROOT/design-skills/alpha-design/SKILL.md"
+  run doctor_check_links "$ROOT" "$SKILLS"
+  [ "$(status_of "$output")" = "ready" ]
+  [[ "$(evidence_of "$output")" == *"shadowed"* ]]
+  [[ "$(evidence_of "$output")" == *"alpha"* ]]
+}
+
 @test "check_links: uses the frontmatter name, not the directory name" {
   mkdir -p "$ROOT/skills/delta-dir" "$SKILLS/delta-name"
   printf -- '---\nname: delta-name\n---\n' > "$ROOT/skills/delta-dir/SKILL.md"
@@ -264,6 +291,16 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
   run doctor_check_shims "$ROOT"
   [ "$(status_of "$output")" = "warning" ]
   [[ "$(evidence_of "$output")" == *"1 of 2"* ]]
+}
+
+@test "check_shims: extra resolving entries beyond the marketing skill count do not claim an interrupted sync" {
+  mkdir -p "$ROOT/marketing-skills/seo/local" "$ROOT/marketing-skills/plugin-skills" "$BATS_TEST_TMPDIR/extra"
+  printf -- '---\nname: local-seo\n---\n' > "$ROOT/marketing-skills/seo/local/SKILL.md"
+  printf -- '---\nname: extra\n---\n' > "$BATS_TEST_TMPDIR/extra/SKILL.md"
+  ln -s ../seo/local "$ROOT/marketing-skills/plugin-skills/local-seo"
+  ln -s "$BATS_TEST_TMPDIR/extra" "$ROOT/marketing-skills/plugin-skills/extra"
+  run doctor_check_shims "$ROOT"
+  [[ "$(evidence_of "$output")" != *"interrupted"* ]]
 }
 
 @test "check_shims: warning when marketing skills exist but plugin-skills/ is missing entirely" {
@@ -392,6 +429,21 @@ JSON
     b="$(DOCTOR_JQ=definitely-not-jq _doctor_plugin_version "$json" "superskills@")"
     [ "$a" = "$b" ] || { echo "jq=[$a] fallback=[$b] for $json"; return 1; }
   done
+}
+
+@test "a CLI that prints an error and exits 0 is unverified, not 'not installed'" {
+  FAKE="$BATS_TEST_TMPDIR/claude"
+  printf '#!/bin/sh\necho "Error: could not reach marketplace registry (offline)"\nexit 0\n' > "$FAKE"; chmod +x "$FAKE"
+  run doctor_check_plugin "$ROOT" "$FAKE"
+  [ "$(status_of "$output")" = "unverified" ]
+  run doctor_report "$ROOT" "$HOME_DIR" "$FAKE"
+  [[ "$output" == *"| Plugin | unverified |"* ]]
+}
+
+@test "install: a ./setup install plus the plugin install is a warning (every skill appears twice)" {
+  run doctor_check_install "$ROOT" "$SKILLS" "2.24.0"
+  [ "$(status_of "$output")" = "warning" ]
+  [[ "$(evidence_of "$output")" == *"twice"* ]]
 }
 
 @test "check_plugin: accepts pre-fetched JSON so doctor_report calls the CLI only once" {

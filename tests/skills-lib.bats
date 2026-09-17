@@ -175,3 +175,53 @@ EOF
   run grep -c 'prune_dangling_links' "$REPO_ROOT/setup"
   [ "$output" -ge 3 ]
 }
+
+@test "prune_dangling_links never descends into a symlinked directory (another tool's or the user's own tree)" {
+  SRC="$BATS_TEST_TMPDIR/src-real"; DST="$BATS_TEST_TMPDIR/skills-dst"; FOREIGN="$BATS_TEST_TMPDIR/foreign-tree"
+  mkdir -p "$SRC/skills" "$DST" "$FOREIGN"
+  printf 'keep\n' > "$FOREIGN/keepme.txt"
+  ln -s "$SRC/skills/realskill/DELETED.md" "$FOREIGN/dangling_but_foreign"
+  ln -s "$FOREIGN" "$DST/user_custom_tree"
+  run prune_dangling_links "$DST" "$SRC"
+  [ "$status" -eq 0 ]
+  [ -L "$FOREIGN/dangling_but_foreign" ]
+  [ -f "$FOREIGN/keepme.txt" ]
+  [ -L "$DST/user_custom_tree" ]
+}
+
+@test "skill_desc_from unwraps a single-quoted description ('' is a literal quote)" {
+  Q="$BATS_TEST_TMPDIR/single/SKILL.md"; mkdir -p "$(dirname "$Q")"
+  cat > "$Q" <<'MD'
+---
+name: q
+description: 'Say ''hi'' fast: go'
+---
+MD
+  run skill_desc_from "$Q"
+  [ "$output" = "Say 'hi' fast: go" ]
+}
+
+@test "skill_desc_from on the real single-quoted skills returns no wrapping quotes" {
+  for f in marketing-skills/pages/content/api/SKILL.md design-skills/ux-heuristics/SKILL.md design-skills/hooked-ux/SKILL.md; do
+    [ -f "$REPO_ROOT/$f" ] || continue
+    d="$(skill_desc_from "$REPO_ROOT/$f")"
+    case "$d" in "'"*|*"'") echo "$f -> $d"; return 1 ;; esac
+  done
+}
+
+# ── marketing_skill_files ──
+
+@test "marketing_skill_files lists nested SKILL.md files, sorted, skipping .venv, node_modules and the plugin-skills shim tree" {
+  M="$BATS_TEST_TMPDIR/mk"
+  mkdir -p "$M/seo/local" "$M/pages/legal/privacy" "$M/content/video/.venv/lib/pkg" "$M/content/video/node_modules/x" "$M/plugin-skills/local-seo"
+  for d in seo/local pages/legal/privacy content/video/.venv/lib/pkg content/video/node_modules/x plugin-skills/local-seo; do printf -- '---\nname: n\n---\n' > "$M/$d/SKILL.md"; done
+  run marketing_skill_files "$M"
+  [ "$status" -eq 0 ]
+  [ "$output" = "$(printf '%s\n%s' "$M/pages/legal/privacy/SKILL.md" "$M/seo/local/SKILL.md")" ]
+}
+
+@test "marketing_skill_files is the only marketing tree walk in setup, doctor-lib and manifest-lib" {
+  run grep -n 'find .*SKILL.md' "$REPO_ROOT/setup" "$REPO_ROOT/scripts/lib/doctor-lib.sh" "$REPO_ROOT/scripts/lib/manifest-lib.sh"
+  [ "$status" -eq 1 ]
+}
+

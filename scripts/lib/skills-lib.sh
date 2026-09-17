@@ -34,9 +34,11 @@ skill_desc_from() {
       found && /^[^[:space:]]/ { exit }
     ' "$skill_md" 2>/dev/null)
   fi
-  # A double-quoted YAML scalar ("…") is unwrapped and its \" and \\ escapes
-  # resolved, so every tool receives the same text as an unquoted description.
+  # A quoted YAML scalar is unwrapped so every tool receives the same text as an
+  # unquoted description: "…" resolves \" and \\; '…' resolves '' to '.
   case "$desc" in
+    \'*\') desc="${desc#\'}"; desc="${desc%\'}"
+          desc="$(printf '%s' "$desc" | sed "s/''/'/g")" ;;
     \"*\") desc="${desc#\"}"; desc="${desc%\"}"
           desc="$(printf '%s' "$desc" | sed 's/\\"/"/g; s/\\\\/\\/g')" ;;
   esac
@@ -76,11 +78,24 @@ link_skill_into() {
   printf '%s' "$name"
 }
 
+# marketing_skill_files <marketing_root>
+# Every marketing SKILL.md, nested at any depth, sorted — the one tree walk
+# shared by ./setup, the doctor and the marketing plugin generator. Skips the
+# generated plugin-skills/ shim tree and vendored project environments
+# (.venv, node_modules), which a skill's own tooling may create in-tree.
+marketing_skill_files() {
+  local root="${1%/}"
+  [ -d "$root" ] || return 0
+  find "$root" \( -name .venv -o -name node_modules -o -path "$root/plugin-skills" \) -prune -o \
+    -name SKILL.md -type f -print 2>/dev/null | sort
+}
+
 # prune_dangling_links <base_dir> <source_dir>
 # Remove symlinks under <base_dir>/*/ that point INTO <source_dir> but no longer
 # resolve (a skill renamed, moved or deleted upstream), then remove a skill dir
-# left empty. Links pointing anywhere else, links that resolve, and real files
-# are never touched, so another tool's or the user's own entries are safe.
+# left empty. Links pointing anywhere else, links that resolve, real files, and
+# anything inside a symlinked directory are never touched, so another tool's or
+# the user's own entries are safe.
 # Echoes each removed link. Returns 1 for an empty or "/" source.
 prune_dangling_links() {
   local base="$1" src="${2%/}" dir entry target
@@ -88,6 +103,9 @@ prune_dangling_links() {
   [ -d "$base" ] || return 0
   for dir in "$base"/*/; do
     dir="${dir%/}"
+    # A trailing-slash glob also matches symlinks to directories; those trees
+    # belong to someone else (gstack, another tool, the user), never descend.
+    [ -L "$dir" ] && continue
     for entry in "$dir"/* "$dir"/.[!.]*; do
       [ -L "$entry" ] || continue
       [ -e "$entry" ] && continue

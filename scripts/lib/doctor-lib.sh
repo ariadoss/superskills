@@ -78,8 +78,14 @@ doctor_check_install() {
   local kind
   kind="$(doctor_install_kind "$1" "$2" "${3:-}")"
   case "$kind" in
-    canonical) _doctor_row "Install" "ready" "canonical install (managed clone at $2/superskills)" ;;
-    dev-repo)  _doctor_row "Install" "ready" "dev-repo install (skills symlinked from $1)" ;;
+    canonical|dev-repo)
+      local what="canonical install (managed clone at $2/superskills)"
+      [ "$kind" = "dev-repo" ] && what="dev-repo install (skills symlinked from $1)"
+      if [ -n "${3:-}" ]; then
+        _doctor_row "Install" "warning" "$what AND the superskills@superskills plugin (v$3) — every skill appears twice (/tdd and /superskills:tdd). Keep one: claude plugin uninstall superskills@superskills, or remove the ./setup links"
+      else
+        _doctor_row "Install" "ready" "$what"
+      fi ;;
     plugin)    _doctor_row "Install" "ready" "plugin install (superskills@superskills${3:+ v$3}); skills load from the plugin cache, ./setup was not run — gstack, marketing and knowledge-base features need ./setup from a clone" ;;
     *)         _doctor_row "Install" "blocked" "no skill in $2 points at $1 — run ./setup from the repo" ;;
   esac
@@ -93,7 +99,7 @@ doctor_check_install() {
 _doctor_skill_files() {
   local root="$1" mode="${2:-}"
   if [ "$mode" != "plugin" ] && [ -d "$root/marketing-skills" ]; then
-    find "$root/marketing-skills" -name SKILL.md -type f 2>/dev/null | sort
+    marketing_skill_files "$root/marketing-skills"
   fi
   ls -d "$root"/design-skills/*/SKILL.md "$root"/skills/*/SKILL.md 2>/dev/null
 }
@@ -101,20 +107,28 @@ _doctor_skill_files() {
 # doctor_check_links <root> <claude_skills_dir> [kind]
 # Every skill ./setup links (skills/, design-skills/, marketing-skills/) must be
 # reachable as <skills>/<name>/SKILL.md, where <name> is the frontmatter name
-# (falling back to the directory name); a name shared by two sources is one
-# link, as setup makes it. A plugin install has no links by design: the plugin
-# loader reads skills/ and design-skills/ itself.
+# (falling back to the directory name). Beyond present/absent it reports:
+#   shadowed  a name shared by two sources — setup's override order picks one
+#             (informational; the status does not change)
+#   elsewhere a link that resolves, but into a different checkout, so this
+#             checkout's copy is not the one Claude Code loads (warning)
+#   stale     a dangling SKILL.md link under <skills> that no expected skill
+#             owns, e.g. left by a moved checkout (warning; listed, never removed)
+# A plugin install has no links by design: the loader reads skills/ and
+# design-skills/ itself.
 doctor_check_links() {
-  local root="$1" skills="$2" kind="${3:-}" skill_md name link total=0 ok=0 missing="" broken="" seen=" "
+  local root="$1" skills="$2" kind="${3:-}" skill_md name link resolved real_root entry
+  local total=0 ok=0 missing="" broken="" elsewhere="" shadowed="" stale="" seen=" " status msg
   if [ "$kind" = "plugin" ]; then
     total=$(_doctor_skill_files "$root" plugin | wc -l | tr -d ' ')
     _doctor_row "Links" "ready" "$total skills served by the plugin loader from $root/skills and $root/design-skills (no ./setup symlinks in a plugin install)"
     return 0
   fi
+  real_root="$(_doctor_realpath "$root")"
   while IFS= read -r skill_md; do
     [ -f "$skill_md" ] || continue
     name="$(skill_name_from "$skill_md" "$(basename "$(dirname "$skill_md")")")"
-    case "$seen" in *" $name "*) continue ;; esac
+    case "$seen" in *" $name "*) shadowed="$shadowed $name"; continue ;; esac
     seen="$seen$name "
     total=$((total + 1))
     link="$skills/$name/SKILL.md"
@@ -123,17 +137,29 @@ doctor_check_links() {
     elif [ ! -e "$link" ]; then
       broken="$broken $name"
     else
-      ok=$((ok + 1))
+      resolved="$(_doctor_realpath "$link")"
+      case "$resolved" in
+        "$real_root"/*) ok=$((ok + 1)) ;;
+        *) elsewhere="$elsewhere ${name} (${resolved})" ;;
+      esac
     fi
   done < <(_doctor_skill_files "$root")
-  if [ -z "$missing" ] && [ -z "$broken" ]; then
-    _doctor_row "Links" "ready" "$ok/$total skills linked into $skills"
-  else
-    local msg="$ok/$total linked."
-    [ -n "$missing" ] && msg="$msg Not linked:${missing} (new skills stay invisible until ./setup runs)."
-    [ -n "$broken" ] && msg="$msg Dangling:${broken} (re-run ./setup)."
-    _doctor_row "Links" "blocked" "$msg Run ./setup"
-  fi
+  for entry in "$skills"/*/SKILL.md; do
+    [ -L "$entry" ] && [ ! -e "$entry" ] || continue
+    name="$(basename "$(dirname "$entry")")"
+    case "$seen" in *" $name "*) ;; *) stale="$stale $name" ;; esac
+  done
+  if [ -n "$missing" ] || [ -n "$broken" ]; then status="blocked"
+  elif [ -n "$elsewhere" ] || [ -n "$stale" ]; then status="warning"
+  else status="ready"; fi
+  msg="$ok/$total skills linked into $skills."
+  [ -n "$missing" ] && msg="$msg Not linked:${missing} (new skills stay invisible until ./setup runs)."
+  [ -n "$broken" ] && msg="$msg Dangling:${broken} (re-run ./setup)."
+  [ -n "$elsewhere" ] && msg="$msg Linked to another checkout:${elsewhere} (run ./setup from the checkout you want loaded)."
+  [ -n "$stale" ] && msg="$msg Stale links no skill owns:${stale} (safe to delete those dirs)."
+  [ -n "$shadowed" ] && msg="$msg Names shadowed by a same-named skill (setup's order: skills > design > marketing):${shadowed}."
+  [ "$status" = "blocked" ] && msg="$msg Run ./setup"
+  _doctor_row "Links" "$status" "$msg"
 }
 
 # doctor_check_manifests <root>
@@ -186,8 +212,7 @@ doctor_check_gstack() {
 doctor_check_shims() {
   local root="$1" shim e ok=0 text=0 dangling=0 expected
   shim="$root/marketing-skills/plugin-skills"   # own line: `local a=$1 b=$a/x` expands b first
-  expected=0
-  [ -d "$root/marketing-skills" ] && expected="$(find "$root/marketing-skills" -name SKILL.md -type f 2>/dev/null | wc -l | tr -d ' ')"
+  expected="$(_doctor_skill_files "$root" | grep -cF "$root/marketing-skills/" || true)"
   if [ ! -d "$shim" ]; then
     if [ "$expected" -eq 0 ]; then
       _doctor_row "Marketing shims" "ready" "no marketing-skills/plugin-skills tree (older checkout; only the superskills-marketing plugin needs it)"
@@ -208,7 +233,7 @@ doctor_check_shims() {
     _doctor_row "Marketing shims" "warning" "$text of $((ok + text + dangling)) entries are plain files, not symlinks — git checked them out without symlink support. Fix: git config core.symlinks true, then re-checkout marketing-skills/plugin-skills (the superskills-marketing plugin loads nothing until then)"
   elif [ "$dangling" -gt 0 ]; then
     _doctor_row "Marketing shims" "warning" "$dangling dangling links — run ./scripts/sync-marketing-manifest.sh"
-  elif [ "$ok" -ne "$expected" ]; then
+  elif [ "$ok" -lt "$expected" ]; then
     _doctor_row "Marketing shims" "warning" "$ok of $expected marketing skills exposed via plugin-skills/ (interrupted or stale sync) — run ./scripts/sync-marketing-manifest.sh"
   else
     _doctor_row "Marketing shims" "ready" "$ok marketing skills exposed via plugin-skills/"
@@ -269,6 +294,18 @@ _doctor_plugin_version() {
     }'
 }
 
+# _doctor_is_json_array <text> — true when <text> is a JSON array (jq when
+# present, else: first non-blank character is "[" and last is "]").
+_doctor_is_json_array() {
+  local jq="${DOCTOR_JQ:-jq}" t
+  if command -v "$jq" >/dev/null 2>&1; then
+    printf '%s' "$1" | "$jq" -e 'type == "array"' >/dev/null 2>&1
+    return
+  fi
+  t="$(printf '%s' "$1" | tr -d '[:space:]')"
+  case "$t" in \[*\]) return 0 ;; *) return 1 ;; esac
+}
+
 # _doctor_cli_json <claude_bin>
 # `claude plugin list --json`, bounded by DOCTOR_CLI_TIMEOUT seconds (default
 # 20) so a hung CLI cannot stall a read-only report. Prints the JSON, or the
@@ -281,7 +318,8 @@ _doctor_cli_json() {
   elif command -v gtimeout >/dev/null 2>&1; then out="$(gtimeout "$secs" "$bin" plugin list --json 2>/dev/null)"; rc=$?
   else out="$(perl -e 'alarm shift; exec @ARGV' "$secs" "$bin" plugin list --json 2>/dev/null)"; rc=$?
   fi
-  if [ "$rc" -ne 0 ]; then printf '%s' "$DOCTOR_CLI_UNAVAILABLE"; else printf '%s' "$out"; fi
+  # Exit 0 is not enough: an error printed to stdout must not read as "no plugins".
+  if [ "$rc" -ne 0 ] || ! _doctor_is_json_array "$out"; then printf '%s' "$DOCTOR_CLI_UNAVAILABLE"; else printf '%s' "$out"; fi
 }
 
 # doctor_check_plugin <root> [claude_bin] [plugin_list_json]
@@ -294,7 +332,7 @@ doctor_check_plugin() {
   v="$(tr -d '[:space:]' < "$root/VERSION" 2>/dev/null)"
   [ $# -ge 3 ] || out="$(_doctor_cli_json "$bin")"
   if [ "$out" = "$DOCTOR_CLI_UNAVAILABLE" ]; then
-    _doctor_row "Plugin" "unverified" "could not run '$bin plugin list --json' (not on PATH, failed, or exceeded ${DOCTOR_CLI_TIMEOUT:-20}s)"
+    _doctor_row "Plugin" "unverified" "could not read '$bin plugin list --json' (not on PATH, failed, printed non-JSON, or exceeded ${DOCTOR_CLI_TIMEOUT:-20}s)"
     return 0
   fi
   installed="$(_doctor_plugin_version "$out" "superskills@")"
