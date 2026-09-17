@@ -272,14 +272,20 @@ unauthenticated while working fine. When the preflight says `not_authed` but
 
    ```bash
    source ~/.claude/skills/gstack/bin/gstack-codex-probe 2>/dev/null
-   _gstack_codex_timeout_wrapper 120 codex exec -s read-only \
-     -c "model=\"${GSTACK_CODEX_MODEL:-gpt-6-astra}\"" "Reply with exactly: PONG" < /dev/null
+   if ! command -v _gstack_codex_timeout_wrapper >/dev/null 2>&1; then
+     echo "CODEX_PROBE: broken_install (gstack-codex-probe helper not found)"
+   else
+     _gstack_codex_timeout_wrapper 120 codex exec -s read-only \
+       -c "model=\"${GSTACK_CODEX_MODEL:-gpt-6-astra}\"" "Reply with exactly: PONG" < /dev/null
+   fi
    ```
 
 3. Answers `PONG` ⇒ treat Codex as `ready` and run the passes with that
-   provider and model. Anything else (error, timeout, other text) ⇒ treat it as
-   `model_unusable`: skip the passes, tell the user to set
-   `GSTACK_CODEX_MODEL` to a deployment their provider serves.
+   provider and model. `CODEX_PROBE: broken_install`, or exit code 126/127 ⇒
+   treat it as `broken_install` (gstack's branch: reinstall advice, no model
+   advice). Any other error, timeout or text ⇒ `model_unusable`: skip the
+   passes, tell the user to set `GSTACK_CODEX_MODEL` to a deployment their
+   provider serves.
 
 Record the probe command, model and result in the ledger either way.
 
