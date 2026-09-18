@@ -77,11 +77,10 @@ setup() {
   [[ "$output" == *"marketing-skills/"* ]] || false
 }
 
-@test "--packs persists the selection for upgrades; no flag preserves it" {
+@test "--packs persists the selection for upgrades; a plain run stamps the loaded default" {
   run bash "$REPO_ROOT/setup" --list-skills --packs coding,design
   [ "$status" -eq 0 ] || false
   [ ! -f "$HOME/.superskills/packs.conf" ] || false
-  grep -q '^packs=' "$HOME/.superskills/packs.conf" 2>/dev/null && false
   run bash -c "HOME='$HOME' bash '$REPO_ROOT/setup' --packs coding,design --persist-only"
   [ "$status" -eq 0 ] || false
   grep -q '^packs=coding,design$' "$HOME/.superskills/packs.conf" || false
@@ -89,6 +88,12 @@ setup() {
   [ "$status" -eq 0 ] || false
   [[ "$output" == *"/design-skills/ux-designer/SKILL.md"* ]] || false
   grep -q '^packs=coding,design$' "$HOME/.superskills/packs.conf" || false
+  # Every FULL run must persist the effective selection (not only --packs
+  # runs): without it, a fresh default install has no packs.conf and the
+  # doctor misreads it as a pre-packs install. bats cannot run the full
+  # installer (it clones), so this pins the call itself.
+  run grep -c 'packs_save "\${SS_PACKS:-coding}"' "$REPO_ROOT/setup"
+  [ "$output" -eq 1 ] || false
 }
 
 @test "media pack selects the video-editing subtree, marketing pack does not" {
@@ -103,26 +108,30 @@ setup() {
 }
 
 @test "design-review resolves through gstack name only when the gstack pack is on" {
-  run bash "$REPO_ROOT/setup" --list-skills --packs coding
-  [[ "$output" != *"design-review"* ]] || false
-  run bash "$REPO_ROOT/setup" --list-skills --packs coding,gstack
-  [[ "$output" != *"/skills/design-review/"* ]] || false
+  # design-review exists only in gstack, never in this repo's trees, so
+  # --list-skills can never print it; the real gate is gstack_pack_action,
+  # unit-tested in tests/profiles.bats and wired into setup's gstack section.
+  run grep -c "gstack_pack_action" "$REPO_ROOT/setup"
+  [ "$output" -eq 1 ] || false
 }
 
-@test "media predicate: skill_selected gates video-editing by category, not name" {
-  cat > "$BATS_TEST_TMPDIR/probe.sh" <<PROBE
-source "$REPO_ROOT/scripts/lib/skills-lib.sh"
-SS_PACKS=coding,media
-skill_selected video-editing media && echo V_YES || echo V_NO
-SS_PACKS=coding,marketing
-skill_selected video-editing media && echo V2_YES || echo V2_NO
-PROBE
-  run bash "$BATS_TEST_TMPDIR/probe.sh"
-  [[ "$output" == *"V_YES"* ]] || false
-  [[ "$output" == *"V2_NO"* ]] || false
+@test "--list-skills stdout is pure paths (the banner never reaches it)" {
+  run bash "$REPO_ROOT/setup" --list-skills
+  [ "$status" -eq 0 ] || false
+  [[ "$output" != *"superskills setup"* ]] || false
 }
 
-@test "every per-tool walk is filtered through skill_selected (no unfiltered loops)" {
-  run grep -c "ss_selected" "$REPO_ROOT/setup"
-  [ "$output" -ge 8 ] || false
+@test "a plain run emits no shell errors (PACKS_GIVEN and friends initialised)" {
+  run bash "$REPO_ROOT/setup" --list-skills
+  [ "$status" -eq 0 ] || false
+  [[ "$output" != *"integer expression"* ]] || false
+  [[ "$output" != *"unbound variable"* ]] || false
+}
+
+@test "the deselected prune runs for every tool dir (Claude, OpenCode, Codex)" {
+  run grep -c "prune_deselected_skills" "$REPO_ROOT/setup"
+  [ "$output" -eq 3 ] || false
+  # Gated on a persisted selection: a pre-packs install is never mass-pruned.
+  run grep -c 'CONFIG_DIR/packs.conf' "$REPO_ROOT/setup"
+  [ "$output" -eq 3 ] || false
 }

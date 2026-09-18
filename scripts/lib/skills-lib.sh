@@ -26,13 +26,12 @@ packs_conf_path() {
 packs_load() {
   local conf line
   conf="$(packs_conf_path)"
-  [ -f "$conf" ] || { SS_PACKS="${SS_PACKS_DEFAULT:-coding}"; return 0; }
+  [ -f "$conf" ] || { SS_PACKS="coding"; return 0; }
   while IFS= read -r line || [ -n "$line" ]; do
-    case "$line" in \#*|"") continue ;; esac
-    SS_PACKS="${line#packs=}"
-    [ "$SS_PACKS" = "$line" ] && SS_PACKS=""
+    # Only a packs= line speaks; anything else (a stray note, a typo) is
+    # ignored so a hand-edit cannot silently reset the selection.
+    case "$line" in packs=*) SS_PACKS="${line#packs=}" ;; esac
   done < "$conf"
-  [ -n "$SS_PACKS" ] && SS_PACKS="${SS_PACKS_DEFAULT:-$SS_PACKS}"
   return 0
 }
 
@@ -47,11 +46,10 @@ packs_save() {
 packs_validate() {
   local input="$1" pack
   case ",$input," in
-    *,,|,|,) echo "invalid pack list: $input" >&2; return 1 ;;
+    *,,) echo "invalid pack list: $input" >&2; return 1 ;;
   esac
   local -a list
   IFS=',' read -r -a list <<<"$input" || return 1
-  [ "${#list[@]}" -eq 0 ] && { echo "invalid pack list: $input" >&2; return 1; }
   for pack in "${list[@]}"; do
     case "$pack" in
       coding|core|design|marketing|media|gstack|all) : ;;
@@ -79,17 +77,14 @@ pack_category_included() {
 # core share the skills/ roster; design, marketing, media are their own trees;
 # a gstack-installed skill passes its own category, so the same predicate
 # drives gstack links by name).
-# Rules: `all` includes everything; otherwise the requested categories must be
-# listed in SS_PACKS (coding is itself a listed pack, and is the default value
-# of SS_PACKS, so it is in force unless the user picks other packs), and the
-# name must be claimed by a pack of that same category — the coding roster
-# (category coding) or, for the other trees, the matching listed category.
-# A tree-walked skill (design, marketing, media, gstack) is therefore selected
-# exactly when its category is listed; a core-tree skill is selected when
-# coding is in force and the name is on the coding roster.
-# design-review ships in gstack but is a coding-pack default, so its coding
-# roster entry claims it whenever its tree is gstack's (the pack_category gate
-# for gstack runs in setup) or its category is coding/core.
+# Contract: `all` includes every tree. For every other selection the coding
+# roster is UNCONDITIONAL — a roster name is selected whenever its tree is
+# walked, whatever SS_PACKS says, because coding is the always-on base of the
+# product: listing `coding` in --packs is accepted but decorative, and no pack
+# list excludes it. Every non-roster skill is selected exactly when its
+# category is listed in SS_PACKS. design-review ships in gstack but is a
+# coding-pack default, so its roster entry claims it when its tree is gstack's
+# too (the gstack install gate itself lives in setup's gstack section).
 skill_selected() {
   local name="$1" category="$2" roster
   roster=0
@@ -102,12 +97,19 @@ skill_selected() {
     esac
   fi
   pack_category_included "$category" || return 1
-  packs_all_included && return 0
   case "$category" in
-    coding) return 1 ;;
     core) pack_category_included core ;;
     *) return 0 ;;
   esac
+}
+
+# gstack_pack_action — echo "ensure" when the gstack pack is selected (setup
+# then installs/promotes gstack and its bun dependency) or "skip" when it is
+# not (setup leaves any existing gstack install untouched and installs
+# nothing). The single decision point for the gstack pack's install gate.
+gstack_pack_action() {
+  pack_category_included gstack && { printf 'ensure'; return 0; }
+  printf 'skip'
 }
 
 # packs_category_of <name> — echo the pack category owning <name>; exit 1 when
@@ -121,24 +123,19 @@ packs_category_of() {
   return 1
 }
 
-# selected_source_paths <repo_root> <skills_dir> <design_dir> <marketing_dir>
-# Read-only: for --list-skills. Walks the three superskills trees the same way
-# setup links them (marketing nested via marketing_skill_files) and echoes the
-# SKILL.md path of every skill the active pack selection keeps. Echoes nothing
-# for deselected skills; never touches the filesystem beyond reading.
-# The marketing tree is split at walk time: the media pack owns
-# content/video-editing (its whole subtree, media category), everything else
-# under marketing-skills is the marketing category.
+# selected_source_paths <skills_dir> <design_dir> <marketing_dir>
+# Read-only: for --list-skills and the doctor's pack-filtered Links check.
+# Walks the three superskills trees the same way setup links them (marketing
+# nested via marketing_skill_files, media subtree split by
+# pack_category_for_path) and echoes the SKILL.md path of every skill the
+# active pack selection keeps. Echoes nothing for deselected skills; never
+# touches the filesystem beyond reading.
 selected_source_paths() {
-  local root="$1" skills_dir="$2" design_dir="$3" marketing_dir="$4"
-  local name skill_md fallback rel_path category
+  local skills_dir="$1" design_dir="$2" marketing_dir="$3"
+  local name skill_md fallback category
   if [ -d "$marketing_dir" ]; then
     while IFS= read -r skill_md; do
-      rel_path="${skill_md#"$marketing_dir"/}"
-      case "$rel_path" in
-        content/video-editing/*) category=media ;;
-        *) category=marketing ;;
-      esac
+      category="$(pack_category_for_path "$skill_md" "$marketing_dir")"
       fallback="$(basename "$(dirname "$skill_md")")"
       name="$(skill_name_from "$skill_md" "$fallback")"
       skill_selected "$name" "$category" && printf '%s\n' "$skill_md"
@@ -159,6 +156,70 @@ selected_source_paths() {
     category=core
     packs_category_of "$name" >/dev/null && category=coding
     skill_selected "$name" "$category" && printf '%s\n' "$skill_md"
+  done
+  return 0
+}
+
+# pack_category_for_path <skill_md> <marketing_dir>
+# The pack category a SKILL.md belongs to, by its tree. The marketing walk's
+# media subtree (content/video-editing) answers to the media pack, everything
+# else under marketing-skills to marketing, design-skills to design, and the
+# skills/ tree to core (a roster name upgrades it to coding at the
+# skill_selected call sites). One mapping shared by setup's link gates, the
+# --list-skills walk and the deselected-prune.
+pack_category_for_path() {
+  local skill_md="$1" marketing_dir="${2:-}" rel
+  if [ -n "$marketing_dir" ]; then
+    rel="${skill_md#"$marketing_dir"/}"
+    if [ "$rel" != "$skill_md" ]; then
+      case "$rel" in content/video-editing/*) printf 'media' ;; *) printf 'marketing' ;; esac
+      return 0
+    fi
+  fi
+  case "$skill_md" in
+    */design-skills/*) printf 'design' ;;
+    *) printf 'core' ;;
+  esac
+}
+
+# prune_deselected_skills <target_dir> <source_root>
+# Echo nothing; remove the installs of THIS checkout under <target_dir> that
+# the active pack selection no longer includes (via remove_owned_skill, which
+# fails closed per dir). Only dirs whose SKILL.md is a resolving symlink into
+# <source_root> are candidates — gstack, other tools' skills and the user's
+# own entries are never touched. Dangling links belong to
+# prune_dangling_links, so they are skipped here. Callers gate on a persisted
+# selection: no packs.conf means a pre-packs install and nothing is pruned.
+prune_deselected_skills() {
+  local base="$1" src="${2%/}" src_canon dir target resolved name category
+  [ -d "$base" ] || return 0
+  [ -n "$src" ] || return 0
+  # readlink -f canonicalises (macOS /tmp → /private/tmp): the resolved target
+  # is compared against both the raw and the canonical source root, while
+  # remove_owned_skill sees the raw root, matching the raw symlink values it
+  # reads (the same convention as prune_dangling_links).
+  src_canon="$(readlink -f "$src" 2>/dev/null)" || src_canon=""
+  for dir in "$base"/*/; do
+    dir="${dir%/}"
+    [ -L "$dir" ] && continue
+    target="$dir/SKILL.md"
+    [ -L "$target" ] && [ -e "$target" ] || continue
+    resolved="$(readlink -f "$target" 2>/dev/null)" || resolved=""
+    [ -n "$resolved" ] || continue
+    case "$resolved" in
+      "$src"/*) : ;;
+      "$src_canon"/*) [ -n "$src_canon" ] || continue ;;
+      *) continue ;;
+    esac
+    name="$(skill_name_from "$resolved" "")"
+    [ -n "$name" ] || name="$(basename "$dir")"
+    if packs_category_of "$name" >/dev/null; then
+      category=coding
+    else
+      category="$(pack_category_for_path "$resolved" "${src_canon:-$src}/marketing-skills")"
+    fi
+    skill_selected "$name" "$category" && continue
+    SS_OWNED_SRC="$src" remove_owned_skill "$dir"
   done
   return 0
 }
@@ -308,13 +369,16 @@ prune_dangling_links() {
 }
 
 # remove_owned_skill <skill_dir>... — safe removal of OUR deselected installs.
-# A directory qualifies only when it is NOT a symlink, not "/" and not empty,
-# and every entry inside is a symlink owned by this checkout: it resolves, its
-# target lies under the caller's source root (passed via SS_OWNED_SRC), the
-# target has no . or .. traversal, and the link is not a directory. Anything
-# else — a regular file, a link to somewhere foreign, a symlinked directory —
-# aborts the whole call and removes nothing (fail-closed, never partial).
-# Echoes each removed skill dir; exit 1 when nothing was removed.
+# Judged per directory: a directory qualifies only when it is NOT a symlink,
+# not "/" and not empty, and every entry inside is a symlink owned by this
+# checkout: its target lies under the caller's source root (passed via
+# SS_OWNED_SRC), the target has no . or .. traversal, and the link is not a
+# directory. A directory containing anything else — a regular file, a link to
+# somewhere foreign, a symlinked directory, or a dangling link (the [ -e ]
+# check fails on those) — is skipped and left untouched; the remaining
+# directories in the argument list are still processed. Fail-closed, never
+# partial within one directory. Echoes each removed symlink path; exit status
+# is always 0 (callers log from the echoed lines).
 remove_owned_skill() {
   local dir entry target owned
   [ "$#" -ge 1 ] || return 0

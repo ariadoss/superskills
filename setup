@@ -9,6 +9,7 @@ EXTEND_FROM=""
 INSTALL_CURSOR=0
 INSTALL_CLINE=0
 PACKS_ARG=""
+PACKS_GIVEN=0
 LIST_SKILLS=0
 PERSIST_ONLY=0
 
@@ -18,8 +19,9 @@ Usage: ./setup [options]
   -q, --quiet            less output
   --no-knowledge         skip knowledge-base prompts and clones
   --extend-from <path>   overlay repo to extend from
-  --packs <list>         comma list of packs: coding (default), core, design,
-                         marketing, media, gstack, all. Persisted for upgrades.
+  --packs <list>         comma list of packs: coding (always included; listed
+                         by default), core, design, marketing, media, gstack,
+                         all. Persisted for upgrades.
   --list-skills          print the resolved source paths of the selected skills
                          and exit (read-only: installs nothing, saves nothing)
   --persist-only         save the --packs selection and exit (installs nothing)
@@ -51,12 +53,6 @@ done
 
 log() { [ "$QUIET" -eq 0 ] && echo "$@" || true; }
 
-# ── Banner ─────────────────────────────────────────────────────────────────────
-log ""
-log "  superskills setup  (v$(cat "$(dirname "$0")/VERSION" 2>/dev/null | tr -d '[:space:]'))"
-log "  ──────────────────────────────"
-log ""
-
 # ── Directories ────────────────────────────────────────────────────────────────
 SOURCE_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 SKILLS_SRC_DIR="$SOURCE_DIR/skills"
@@ -79,8 +75,9 @@ else
   packs_load
 fi
 
+# Before the banner so --list-skills stdout stays pure machine-readable paths.
 if [ "$LIST_SKILLS" -eq 1 ]; then
-  selected_source_paths "$SOURCE_DIR" "$SKILLS_SRC_DIR" "$SOURCE_DIR/design-skills" "$SOURCE_DIR/marketing-skills"
+  selected_source_paths "$SKILLS_SRC_DIR" "$SOURCE_DIR/design-skills" "$SOURCE_DIR/marketing-skills"
   exit 0
 fi
 
@@ -91,9 +88,17 @@ if [ "$PERSIST_ONLY" -eq 1 ]; then
   exit 0
 fi
 
-# A --packs run re-persists; a plain run preserves whatever is on disk.
-[ "$PACKS_GIVEN" -eq 1 ] && packs_save "$PACKS_ARG"
+# Every full run persists the effective selection: a --packs run re-persists
+# the given list, a plain run stamps the loaded (default: coding) selection so
+# the doctor can tell a packs-era install from a pre-packs one and the
+# deselected prune below knows what this checkout owns.
+packs_save "${SS_PACKS:-coding}"
 
+# ── Banner ─────────────────────────────────────────────────────────────────────
+log ""
+log "  superskills setup  (v$(cat "$SOURCE_DIR/VERSION" 2>/dev/null | tr -d '[:space:]'))"
+log "  ──────────────────────────────"
+log ""
 log "  packs: ${SS_PACKS:-coding}"
 
 # Canonical version, stamped into artifacts for tools that have no native
@@ -122,7 +127,7 @@ if [ "$NO_KNOWLEDGE" -eq 0 ]; then
     log "  Knowledge Base Setup"
     log "  ────────────────────"
     log "  You can connect git repos as knowledge bases that /kb-advisor"
-    log "  and /content-writer will search and reference."
+    log "  and /content-writer (core pack) will search and reference."
     log ""
     log "  Format: name, git URL (or 'done' to finish, 'skip' to skip)"
     log ""
@@ -195,22 +200,29 @@ log ""
 GSTACK_DIR="$HOME/.claude/skills/gstack"
 GSTACK_VENDOR_DIR="$SOURCE_DIR/vendor/gstack"
 
-# Ensure bun is installed (required by gstack's browser tool) unless gstack is
-# already a real install that has been through its own setup.
-if [ "$(gstack_install_state "$GSTACK_DIR")" != "real" ] && ! command -v bun >/dev/null 2>&1; then
-  log "  [install] bun (required by gstack)..."
-  curl -fsSL https://bun.sh/install | bash >/dev/null 2>&1 || {
-    log "  [warn] bun install failed — gstack browse tool may not work"
-    log "         Install manually: curl -fsSL https://bun.sh/install | bash"
-  }
-  # Reload PATH to pick up bun
-  export PATH="$HOME/.bun/bin:$PATH"
-fi
+# The gstack pack's install gate: without gstack selected, nothing is installed
+# or updated here — an existing gstack install is left exactly as it is.
+if [ "$(gstack_pack_action)" = "ensure" ]; then
+  # Ensure bun is installed (required by gstack's browser tool) unless gstack is
+  # already a real install that has been through its own setup.
+  if [ "$(gstack_install_state "$GSTACK_DIR")" != "real" ] && ! command -v bun >/dev/null 2>&1; then
+    log "  [install] bun (required by gstack)..."
+    curl -fsSL https://bun.sh/install | bash >/dev/null 2>&1 || {
+      log "  [warn] bun install failed — gstack browse tool may not work"
+      log "         Install manually: curl -fsSL https://bun.sh/install | bash"
+    }
+    # Reload PATH to pick up bun
+    export PATH="$HOME/.bun/bin:$PATH"
+  fi
 
-# State machine (scripts/lib/gstack-install-lib.sh): a real clone is the goal;
-# the vendor snapshot is a stopgap that every later run tries to promote.
-# `|| true`: a failed install is logged, never aborts setup under `set -e`.
-gstack_ensure "$GSTACK_DIR" "$GSTACK_VENDOR_DIR" || true
+  # State machine (scripts/lib/gstack-install-lib.sh): a real clone is the goal;
+  # the vendor snapshot is a stopgap that every later run tries to promote.
+  # `|| true`: a failed install is logged, never aborts setup under `set -e`.
+  gstack_ensure "$GSTACK_DIR" "$GSTACK_VENDOR_DIR" || true
+else
+  log "  [skip] gstack pack not selected — gstack left as-is"
+  log "         (add gstack to --packs to install or update it)"
+fi
 log ""
 
 # ── Dependency checks ─────────────────────────────────────────────────────────
@@ -238,10 +250,11 @@ LINKED=()
 # (content/video-editing) answers to the media pack, everything else to its
 # own category. Deselected skills return 1 — never linked, never fatal.
 ss_selected() {
-  local name="$1" category="$2" skill_md="$3" rel_path
+  local name="$1" category="$2" skill_md="$3"
   if [ "$category" = "marketing" ]; then
-    rel_path="${skill_md#"$MARKETING_SRC_DIR"/}"
-    case "$rel_path" in content/video-editing/*) category=media ;; esac
+    # The media-subtree mapping lives once in skills-lib (shared with
+    # --list-skills, the doctor and the deselected prune).
+    category="$(pack_category_for_path "$skill_md" "$MARKETING_SRC_DIR")"
   fi
   skill_selected "$name" "$category"
 }
@@ -297,6 +310,13 @@ log "  linked: ${#LINKED[@]} skills"
 # Links this checkout created that no longer resolve (a renamed or removed
 # skill) would otherwise linger as broken slash commands.
 while IFS= read -r pruned; do log "  [prune] $pruned"; done < <(prune_dangling_links "$CLAUDE_SKILLS_DIR" "$SOURCE_DIR")
+# A persisted pack selection also prunes THIS checkout's now-deselected
+# installs — without this, upgrading a full install leaves every deselected
+# skill's description loading in every session forever. No packs.conf means a
+# pre-packs install: nothing is deselected by surprise.
+if [ -f "$CONFIG_DIR/packs.conf" ]; then
+  while IFS= read -r pruned; do log "  [prune] $pruned (deselected)"; done < <(prune_deselected_skills "$CLAUDE_SKILLS_DIR" "$SOURCE_DIR")
+fi
 log ""
 
 # ── Link skills into OpenCode ─────────────────────────────────────────────────
@@ -342,6 +362,9 @@ for skill_md in "$SKILLS_SRC_DIR"/*/SKILL.md; do
 done
 
 while IFS= read -r pruned; do log "  [prune] $pruned"; done < <(prune_dangling_links "$OPENCODE_SKILLS_DIR" "$SOURCE_DIR")
+if [ -f "$CONFIG_DIR/packs.conf" ]; then
+  while IFS= read -r pruned; do log "  [prune] $pruned (deselected)"; done < <(prune_deselected_skills "$OPENCODE_SKILLS_DIR" "$SOURCE_DIR")
+fi
 log "  done"
 log ""
 
@@ -375,6 +398,9 @@ if [ -d "$HOME/.codex" ]; then
     link_codex_filtered "$skill_md" "$dir_name"
   done
   while IFS= read -r pruned; do log "  [prune] $pruned"; done < <(prune_dangling_links "$CODEX_SKILLS_DIR" "$SOURCE_DIR")
+  if [ -f "$CONFIG_DIR/packs.conf" ]; then
+    while IFS= read -r pruned; do log "  [prune] $pruned (deselected)"; done < <(prune_deselected_skills "$CODEX_SKILLS_DIR" "$SOURCE_DIR")
+  fi
   log "  linked: $CODEX_LINKED skills"
   log ""
 fi

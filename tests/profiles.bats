@@ -11,12 +11,13 @@ setup() {
 
 @test "coding selects exactly the requested names including external design-review" {
   local name count=0
-  for name in specify clarify write-plan analyze repomap dbmap worktrees tdd debug verify test-coverage qa-full finish-branch daily-qa superskills-doctor superskills-upgrade clean-code defense db-optimize web-perf a11y playwright checklist; do
-    skill_selected "$name" coding
+  # Iterate the roster itself so the test cannot drift from PACK_CODING
+  # (design-review is on the roster and must select from the gstack tree too).
+  for name in $PACK_CODING; do
+    skill_selected "$name" coding || false
     count=$((count + 1))
   done
   skill_selected design-review design
-  count=$((count + 1))
   [ "$count" -eq 24 ] || false
   run skill_selected cache-strategy core
   [ "$status" -eq 1 ] || false
@@ -24,6 +25,25 @@ setup() {
   [ "$status" -eq 1 ] || false
   run skill_selected tdd marketing
   [ "$status" -eq 1 ] || false
+}
+
+@test "the coding roster is unconditional: no pack list excludes or re-includes it" {
+  # Contract (see skill_selected): coding is the always-on base. A non-coding
+  # selection still selects roster names from the trees it walks, and listing
+  # coding is decorative.
+  SS_PACKS=design
+  skill_selected tdd core
+  run skill_selected cache-strategy core
+  [ "$status" -eq 1 ] || false
+}
+
+@test "gstack_pack_action ensures only when the gstack pack is selected" {
+  SS_PACKS=coding,gstack
+  [ "$(gstack_pack_action)" = "ensure" ] || false
+  SS_PACKS=coding
+  [ "$(gstack_pack_action)" = "skip" ] || false
+  SS_PACKS=all
+  [ "$(gstack_pack_action)" = "ensure" ] || false
 }
 
 @test "pack selection includes coding plus only requested categories" {
@@ -48,11 +68,12 @@ setup() {
   grep -q '^packs=coding,design$' "$SS_PACKS_CONF" || false
   run bash -c "set -e; source '$REPO_ROOT/scripts/lib/skills-lib.sh'; SS_PACKS_CONF='$SS_PACKS_CONF'; packs_load; printf '%s' \"\$SS_PACKS\""
   [ "$output" = "coding,design" ] || false
+  # A junk line must not reset the selection (parsed, never sourced).
+  printf '# a note\npack=coding\npacks=coding,design\n' >> "$SS_PACKS_CONF"
   SS_PACKS=""
   SS_PACKS_CONF="$SS_PACKS_CONF"
-  SS_PACKS_DEFAULT="coding,media"
   packs_load
-  [ "$SS_PACKS" = "coding,media" ] || false
+  [ "$SS_PACKS" = "coding,design" ] || false
 }
 
 @test "packs_load defaults to coding when conf is absent and survives a missing file" {
@@ -82,13 +103,13 @@ setup() {
   printf '%s\n' '---' 'name: tdd' '---' 'body' > "$FIX/skills/tdd/SKILL.md"
   printf '%s\n' '---' 'name: cache-strategy' '---' 'body' > "$FIX/skills/cache-strategy/SKILL.md"
   printf '%s\n' '---' 'name: typography' '---' 'body' > "$FIX/design-skills/typography/SKILL.md"
-  run selected_source_paths "$FIX" "$FIX/skills" "$FIX/design-skills" ""
+  run selected_source_paths "$FIX/skills" "$FIX/design-skills" ""
   [ "$status" -eq 0 ] || false
   [ "$(printf '%s\n' "$output" | grep -c 'skills/tdd/SKILL.md')" -eq 1 ] || false
   [[ "$output" != *"cache-strategy"* ]] || false
   [[ "$output" != *"typography"* ]] || false
   SS_PACKS=all
-  run selected_source_paths "$FIX" "$FIX/skills" "$FIX/design-skills" ""
+  run selected_source_paths "$FIX/skills" "$FIX/design-skills" ""
   [[ "$output" == *"cache-strategy"* ]] || false
   [[ "$output" == *"typography"* ]] || false
 }
@@ -127,4 +148,53 @@ setup() {
   [ -L "$TGT/has-linkdir/SKILL.md" ] || false
   [ -L "$TGT/has-traversal/SKILL.md" ] || false
   [ -d "$TGT/has-regular" ] || false
+}
+
+@test "prune_deselected_skills removes deselected owned installs, keeps selected and foreign" {
+  SRC="$FIX/src"; TGT="$FIX/tgt"
+  mkdir -p "$SRC/skills/tdd" "$SRC/skills/cache-strategy" "$SRC/design-skills/typography"
+  printf '%s\n' '---' 'name: tdd' '---' > "$SRC/skills/tdd/SKILL.md"
+  printf '%s\n' '---' 'name: cache-strategy' '---' > "$SRC/skills/cache-strategy/SKILL.md"
+  printf '%s\n' '---' 'name: typography' '---' > "$SRC/design-skills/typography/SKILL.md"
+  link_skill_into "$TGT" "$SRC/skills/tdd/SKILL.md" "tdd" >/dev/null
+  link_skill_into "$TGT" "$SRC/skills/cache-strategy/SKILL.md" "cache-strategy" >/dev/null
+  link_skill_into "$TGT" "$SRC/design-skills/typography/SKILL.md" "typography" >/dev/null
+  mkdir -p "$TGT/gstack" && ln -s /etc/hostname "$TGT/gstack/SKILL.md"
+  run prune_deselected_skills "$TGT" "$SRC"
+  [ "$status" -eq 0 ] || false
+  [ ! -e "$TGT/cache-strategy" ] || false
+  [ ! -e "$TGT/typography" ] || false
+  [ -L "$TGT/tdd/SKILL.md" ] || false
+  [ -d "$TGT/gstack" ] || false
+  SS_PACKS=all
+  link_skill_into "$TGT" "$SRC/skills/cache-strategy/SKILL.md" "cache-strategy" >/dev/null
+  run prune_deselected_skills "$TGT" "$SRC"
+  [ -L "$TGT/cache-strategy/SKILL.md" ] || false
+}
+
+@test "prune_deselected_skills maps the marketing media subtree onto the media pack" {
+  SRC="$FIX/src2"; TGT="$FIX/tgt2"
+  mkdir -p "$SRC/marketing-skills/content/video-editing"
+  printf '%s\n' '---' 'name: video-editing' '---' > "$SRC/marketing-skills/content/video-editing/SKILL.md"
+  link_skill_into "$TGT" "$SRC/marketing-skills/content/video-editing/SKILL.md" "video-editing" >/dev/null
+  SS_PACKS=coding,marketing
+  run prune_deselected_skills "$TGT" "$SRC"
+  [ "$status" -eq 0 ] || false
+  [ ! -e "$TGT/video-editing" ] || false
+  SS_PACKS=coding,marketing,media
+  link_skill_into "$TGT" "$SRC/marketing-skills/content/video-editing/SKILL.md" "video-editing" >/dev/null
+  run prune_deselected_skills "$TGT" "$SRC"
+  [ -L "$TGT/video-editing/SKILL.md" ] || false
+}
+
+@test "prune_deselected_skills leaves dangling links to prune_dangling_links and never aborts" {
+  SRC="$FIX/src3"; TGT="$FIX/tgt3"
+  mkdir -p "$SRC/skills/tdd"
+  printf '%s\n' '---' 'name: tdd' '---' > "$SRC/skills/tdd/SKILL.md"
+  link_skill_into "$TGT" "$SRC/skills/tdd/SKILL.md" "tdd" >/dev/null
+  mkdir -p "$TGT/gone" && ln -s "$SRC/skills/renamed-away/SKILL.md" "$TGT/gone/SKILL.md"
+  run prune_deselected_skills "$TGT" "$SRC"
+  [ "$status" -eq 0 ] || false
+  [ -L "$TGT/gone/SKILL.md" ] || false
+  [ -L "$TGT/tdd/SKILL.md" ] || false
 }
