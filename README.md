@@ -22,6 +22,31 @@ Setup will:
 - Auto-detect and install into: **Claude Code**, **OpenCode**, **Codex CLI**, **Continue.dev**, **Augment Code**, **Windsurf**
 - Offer to add the developer workflow guide to `~/.claude/CLAUDE.md`
 
+### Packs — choose what gets installed
+
+Every skill belongs to a pack. `./setup` installs the **coding pack by
+default** (24 skills: the spec → plan → TDD → QA → ship workflow plus its
+`/qa-full` fan-out) so your harness's always-on context stays small. Skill
+*descriptions* load on every turn; only a triggered skill's body does — so
+every extra pack is a real per-token cost in every session.
+
+| Pack | Contents |
+|------|----------|
+| `coding` (default) | `/specify`, `/write-plan`, `/tdd`, `/qa-full`, `/debug`, `/verify`, `/design-review`, … |
+| `core` | the rest of the core skills (`/cache-strategy`, `/pentest`, `/graphify`, …) |
+| `design` | the 36 design skills (UX, typography, SwiftUI, Vercel) |
+| `marketing` | the 174 marketing skills (SEO, content, pages, ads) |
+| `media` | the video-editing subtree |
+| `gstack` | links the installed gstack skills too |
+| `all` | everything (pre-2.25 behavior) |
+
+```bash
+./setup --packs coding,design      # coding + design; persisted for upgrades
+./setup                            # re-uses the persisted selection
+./setup --list-skills              # print what a selection installs (no changes)
+./setup --packs all                # everything
+```
+
 **Project-level installs** (run from your project root):
 ```bash
 ~/.claude/skills/superskills/setup --cursor   # Cursor (.cursor/rules/)
@@ -34,13 +59,15 @@ Claude Code and Codex can install superskills as a versioned **plugin**, which
 gives you a native "updated" notification when a new version ships — no manual
 `git pull` needed.
 
-**Claude Code** — two plugins from one marketplace: `superskills` (core + design
-skills) and `superskills-marketing` (the 174 marketing skills under their usual
-names, e.g. `/superskills-marketing:meta-description`):
+**Claude Code** — three plugins from one marketplace: `superskills` (the coding
+skills), `superskills-design` (the 36 design skills) and `superskills-marketing`
+(the 174 marketing skills under their usual names, e.g.
+`/superskills-marketing:meta-description`):
 ```bash
 /plugin marketplace add ariadoss/superskills
 /plugin install superskills@superskills
-/plugin install superskills-marketing@superskills   # optional
+/plugin install superskills-design@superskills    # optional
+/plugin install superskills-marketing@superskills # optional
 /reload-plugins
 ```
 On a new release you'll see *"Plugins updated — run `/reload-plugins`"* at startup
@@ -64,8 +91,8 @@ manifests; `./setup --cursor` remains the project-level `.mdc` rules install.
 
 The plugin `version` is driven by the repo's `VERSION` file via
 `scripts/sync-version.sh`, so every release bumps the version the plugin systems
-watch. The `./setup` install above remains the way to get **all** skills across
-every supported tool.
+watch. The `./setup` install above remains the way to get a chosen pack
+selection across every supported tool.
 
 ## Skills (41)
 
