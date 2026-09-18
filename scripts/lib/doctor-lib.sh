@@ -114,7 +114,7 @@ _doctor_skill_files() {
   ls -d "$root"/design-skills/*/SKILL.md "$root"/skills/*/SKILL.md 2>/dev/null
 }
 
-# doctor_check_links <root> <claude_skills_dir> [kind]
+# doctor_check_links <root> <claude_skills_dir> [kind] [install_path] [home]
 # Every skill ./setup links (skills/, design-skills/, marketing-skills/) must be
 # reachable as <skills>/<name>/SKILL.md and point at the exact file setup would
 # have linked: when two sources share a name, the last one in setup's order
@@ -125,6 +125,10 @@ _doctor_skill_files() {
 #   stale     a dangling SKILL.md link no expected skill owns, e.g. left by a
 #             moved checkout (warning; listed, never removed)
 #   shadowed  a name shared by two sources (informational)
+# Pack awareness: when <home>/.superskills/packs.conf exists, only the skills
+# the recorded selection installs are expected — a coding-only install is not
+# "missing" its unselected marketing/design skills. No packs.conf means a
+# pre-packs install: every skill is expected, as before.
 # A plugin install has no links by design: the loader reads skills/ and
 # design-skills/ itself — from [plugin_install_path] when the CLI reported one
 # (the plugin's actual cache copy, which may differ from <root>, e.g. when
@@ -132,7 +136,7 @@ _doctor_skill_files() {
 # flagged unconfirmed since that is then only an assumption, not a fact the CLI
 # gave us.
 doctor_check_links() {
-  local root="$1" skills="$2" kind="${3:-}" install_path="${4:-}" name winner count link resolved real_root entry
+  local root="$1" skills="$2" kind="${3:-}" install_path="${4:-}" home="${5:-}" name winner count link resolved real_root entry
   local total=0 ok=0 missing="" broken="" corrupt="" wrong="" elsewhere="" shadowed="" stale="" seen=" " status msg
   if [ "$kind" = "plugin" ]; then
     local serve_root="$root" confirmed=1
@@ -156,6 +160,13 @@ doctor_check_links() {
     return 0
   fi
   real_root="$(_doctor_realpath "$root")"
+  local expected
+  if [ -n "$home" ] && [ -f "$home/.superskills/packs.conf" ]; then
+    SS_PACKS_CONF="$home/.superskills/packs.conf" packs_load
+    expected="$(selected_source_paths "$root" "$root/skills" "$root/design-skills" "$root/marketing-skills")"
+  else
+    expected="$(_doctor_skill_files "$root")"
+  fi
   while IFS=$'\t' read -r name winner count; do
     [ -n "$name" ] || continue
     seen="$seen$name "
@@ -177,7 +188,7 @@ doctor_check_links() {
         *) elsewhere="$elsewhere ${name} (${resolved})" ;;
       esac
     fi
-  done < <(_doctor_skill_files "$root" | skill_names_from_files | awk -F'\t' '
+  done < <(printf '%s\n' "$expected" | skill_names_from_files | awk -F'\t' '
     { if (!($2 in first)) { first[$2] = NR; order[++n] = $2 }; win[$2] = $1; cnt[$2]++ }
     END { for (i = 1; i <= n; i++) print order[i] "\t" win[order[i]] "\t" cnt[order[i]] }')
   for entry in "$skills"/*/SKILL.md; do
@@ -524,7 +535,7 @@ doctor_report() {
   rows="$(
     doctor_check_repo "$root"
     doctor_check_install "$root" "$skills" "$plugin_version" "$kind"
-    doctor_check_links "$root" "$skills" "$kind" "$plugin_install_path"
+    doctor_check_links "$root" "$skills" "$kind" "$plugin_install_path" "$home"
     doctor_check_manifests "$root"
     doctor_check_shims "$root"
     doctor_check_gstack "$skills/gstack" "$kind"

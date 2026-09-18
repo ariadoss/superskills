@@ -17,7 +17,8 @@ setup() {
   printf '{ "name": "superskills", "version": "2.24.0" }\n' > "$ROOT/.claude-plugin/plugin.json"
   printf '{ "name": "superskills", "plugins": [{ "version": "2.24.0" }] }\n' > "$ROOT/.claude-plugin/marketplace.json"
   printf '{ "name": "superskills", "version": "2.24.0" }\n' > "$ROOT/.codex-plugin/plugin.json"
-  mkdir -p "$ROOT/.cursor-plugin" "$ROOT/marketing-skills/.claude-plugin"
+  mkdir -p "$ROOT/.cursor-plugin" "$ROOT/design-skills/.claude-plugin" "$ROOT/marketing-skills/.claude-plugin"
+  printf '{ "name": "superskills-design", "version": "2.24.0" }\n' > "$ROOT/design-skills/.claude-plugin/plugin.json"
   printf '{ "name": "superskills", "version": "2.24.0" }\n' > "$ROOT/.cursor-plugin/plugin.json"
   printf '{ "name": "superskills", "version": "2.24.0" }\n' > "$ROOT/.cursor-plugin/marketplace.json"
   printf '{ "name": "superskills-marketing", "version": "2.24.0" }\n' > "$ROOT/marketing-skills/.claude-plugin/plugin.json"
@@ -113,6 +114,31 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
   run doctor_check_links "$ROOT" "$SKILLS"
   [ "$(status_of "$output")" = "ready" ]
   [[ "$(evidence_of "$output")" == *"2/2"* ]] || false
+}
+
+@test "check_links: pack selection narrows the expected set (unselected skills are not 'missing')" {
+  # A home with packs.conf selecting a pack that excludes alpha/beta: the
+  # unlinked alpha must not block, and the count covers only selected skills.
+  mkdir -p "$HOME_DIR/.superskills"
+  printf 'packs=coding\n' > "$HOME_DIR/.superskills/packs.conf"
+  mkdir -p "$ROOT/skills/tdd"
+  printf -- '---\nname: tdd\ndescription: t\n---\n' > "$ROOT/skills/tdd/SKILL.md"
+  mkdir -p "$SKILLS/tdd"
+  ln -s "$ROOT/skills/tdd/SKILL.md" "$SKILLS/tdd/SKILL.md"
+  run doctor_check_links "$ROOT" "$SKILLS" "" "" "$HOME_DIR"
+  [ "$(status_of "$output")" = "ready" ]
+  [[ "$(evidence_of "$output")" == *"1/1"* ]] || false
+}
+
+@test "check_links: without packs.conf a pre-packs install expects every skill" {
+  # Same tree as above but no packs.conf in the home: tdd (a coding-roster
+  # skill) and alpha/beta are all expected, so the unlinked tdd blocks at 2/3.
+  mkdir -p "$ROOT/skills/tdd"
+  printf -- '---\nname: tdd\ndescription: t\n---\n' > "$ROOT/skills/tdd/SKILL.md"
+  run doctor_check_links "$ROOT" "$SKILLS" "" "" "$HOME_DIR"
+  [ "$(status_of "$output")" = "blocked" ]
+  [[ "$(evidence_of "$output")" == *"2/3"* ]] || false
+  [[ "$(evidence_of "$output")" == *"tdd"* ]] || false
 }
 
 @test "check_links: blocked when a new skill has no link yet (needs ./setup)" {

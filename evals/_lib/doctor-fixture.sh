@@ -16,7 +16,7 @@ doctor_fixture() {
   local linked="$1" codex_version="$2" s
   local R="$PWD/fixture-repo" H="$PWD/fixture-home"
   mkdir -p "$R/skills/tdd" "$R/skills/debug" "$R/skills/clean-code" "$R/.claude-plugin" "$R/.codex-plugin" \
-           "$R/.cursor-plugin" "$R/marketing-skills/.claude-plugin" "$H/.claude/skills/gstack"
+           "$R/.cursor-plugin" "$R/design-skills/.claude-plugin" "$R/marketing-skills/.claude-plugin" "$H/.claude/skills/gstack"
   printf '2.24.0\n' > "$R/VERSION"
   # A realistic (abridged) installer, so the baseline cannot diagnose "setup is a stub".
   cat > "$R/setup" <<'S'
@@ -43,6 +43,7 @@ S
   printf '{ "name": "superskills", "version": "%s" }\n' "$codex_version" > "$R/.codex-plugin/plugin.json"
   printf '{ "name": "superskills", "version": "2.24.0" }\n' > "$R/.cursor-plugin/plugin.json"
   printf '{ "name": "superskills", "version": "2.24.0" }\n' > "$R/.cursor-plugin/marketplace.json"
+  printf '{ "name": "superskills-design", "version": "2.24.0" }\n' > "$R/design-skills/.claude-plugin/plugin.json"
   printf '{ "name": "superskills-marketing", "version": "2.24.0" }\n' > "$R/marketing-skills/.claude-plugin/plugin.json"
   for s in $linked; do mkdir -p "$H/.claude/skills/$s"; ln -s "$R/skills/$s/SKILL.md" "$H/.claude/skills/$s/SKILL.md"; done
   printf '1.80.0.0\n' > "$H/.claude/skills/gstack/VERSION"; touch "$H/.claude/skills/gstack/.superskills-vendor-copy"
