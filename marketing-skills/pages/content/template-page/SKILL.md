@@ -1,6 +1,6 @@
 ---
 name: template-page-generator
-description: When the user wants to design template pages—aggregation (gallery/hub) or detail (individual template). Also use when the user mentions "template page," "template gallery," "template hub," "template detail page," "template marketplace," "programmatic template," "CMS templates," "design templates," "vibe coding templates," "UI templates," "template for users to use," or "template + data pages." For SEO-at-scale strategy (data-driven URL sets), use programmatic-seo.
+description: When the user wants to design template pages—aggregation (gallery/hub) or detail (individual template). Also use when the user mentions "template page", "template gallery", "template hub" or "template detail page". For SEO-at-scale strategy (data-driven URL sets), use programmatic-seo.
 metadata:
   version: 1.2.0
 ---

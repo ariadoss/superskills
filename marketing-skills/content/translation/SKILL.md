@@ -1,6 +1,6 @@
 ---
 name: translation
-description: When the user wants to translate content, create translation workflows, manage terminology, or optimize translation quality. Also use when the user mentions "translate," "translation," "localization copy," "glossary," "terminology," "style guide translation," "machine translation," "human translation," "TMS," or "multilingual content." For strategy, use localization-strategy.
+description: When the user wants to translate content, create translation workflows, manage terminology, or optimize translation quality. Also use when the user mentions "translate", "translation", "localization copy" or "glossary". For strategy, use localization-strategy.
 metadata:
   version: 1.0.1
 ---

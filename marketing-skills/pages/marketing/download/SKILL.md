@@ -1,6 +1,6 @@
 ---
 name: download-page-generator
-description: When the user wants to create, optimize, or audit a download page for desktop or mobile app. Also use when the user mentions "download page," "app download," "desktop download," "mobile app download," "App Store," "Play Store," "get the app," "install app," or "download CTA." For app install ads, use app-ads.
+description: When the user wants to create, optimize, or audit a download page for desktop or mobile app. Also use when the user mentions "download page", "app download", "desktop download" or "mobile app download". For app install ads, use app-ads.
 metadata:
   version: 1.0.1
 ---

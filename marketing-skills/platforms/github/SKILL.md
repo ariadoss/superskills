@@ -1,6 +1,6 @@
 ---
 name: github
-description: When the user wants to use GitHub for SEO, parasite SEO, GEO, open source marketing, README optimization, or curated Awesome lists. Also use when the user mentions "GitHub," "GitHub SEO," "GitHub parasite SEO," "GitHub GEO," "awesome list," "GitHub README," "profile README," "pinned repositories," "Trending," "Explore," "repository name," "About section," "GitHub description," "GitHub topics," "Website field," "GitHub Pages," "github.io," "user site," "project site," "GitHub gist," "curated list," or "navigation list." Not for Medium or other non-GitHub platforms—use parasite-seo or medium-posts. For OSS business model, use open-source-strategy.
+description: When the user wants to use GitHub for SEO, parasite SEO, GEO, open source marketing, README optimization, or curated Awesome lists. Also use when the user mentions "GitHub", "GitHub SEO", "GitHub parasite SEO" or "GitHub GEO". Not for Medium or other non-GitHub platforms—use parasite-seo or medium-posts. For OSS business model, use open-source-strategy.
 metadata:
   version: 1.3.0
 ---

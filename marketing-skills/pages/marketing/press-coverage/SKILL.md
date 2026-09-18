@@ -1,6 +1,6 @@
 ---
 name: press-coverage-page-generator
-description: When the user wants to create a press coverage page, "As Seen In" section, or media mentions aggregation. Also use when the user mentions "press coverage," "media mentions," "as seen in," "as featured in," "in the news," "press mentions," "media coverage page," or "trusted by publications." For pitching journalists and press releases, use public-relations.
+description: When the user wants to create a press coverage page, "As Seen In" section, or media mentions aggregation. Also use when the user mentions "press coverage", "media mentions", "as seen in" or "as featured in". For pitching journalists and press releases, use public-relations.
 metadata:
   version: 1.1.0
 ---

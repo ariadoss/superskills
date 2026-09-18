@@ -1,6 +1,6 @@
 ---
 name: community-forum
-description: When the user wants to promote via forums, communities, or invite users to join a community. Also use when the user mentions "forum promotion," "Indie Hacker," "Hacker News," "community growth," "Discord promotion," "vertical community," "brand encyclopedia," "Wikipedia," "Quora," "Reddit community," "community building," "forum marketing," or "community invite." For Reddit copy, use reddit-posts. For strategy, use integrated-marketing.
+description: When the user wants to promote via forums, communities, or invite users to join a community. Also use when the user mentions "forum promotion", "Indie Hacker", "Hacker News" or "community growth". For Reddit copy, use reddit-posts. For strategy, use integrated-marketing.
 metadata:
   version: 1.1.1
 ---

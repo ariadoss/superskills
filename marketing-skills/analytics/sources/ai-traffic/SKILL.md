@@ -1,6 +1,6 @@
 ---
 name: ai-traffic-tracking
-description: When the user wants to track AI search traffic in GA4 or GSC. Also use when the user mentions "AI traffic," "ChatGPT referral," "Perplexity traffic," "AI Overviews," "GA4 AI sources," "AI search analytics," "track AI referrals," "AI search traffic," "Claude traffic," or "how to track AI traffic." For AI SEO strategy, use generative-engine-optimization.
+description: When the user wants to track AI search traffic in GA4 or GSC. Also use when the user mentions "AI traffic", "ChatGPT referral", "Perplexity traffic" or "AI Overviews". For AI SEO strategy, use generative-engine-optimization.
 metadata:
   version: 1.0.1
 ---

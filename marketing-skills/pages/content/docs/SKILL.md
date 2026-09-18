@@ -1,6 +1,6 @@
 ---
 name: docs-page-generator
-description: When the user wants to create, optimize, or structure a documentation site. Also use when the user mentions "docs," "documentation site," "docs subdomain," "docs.yourdomain.com," "help center," "knowledge base," "Getting Started," "API Reference," "user guides," or "tutorials." For API marketing landing, use api-page-generator.
+description: When the user wants to create, optimize, or structure a documentation site. Also use when the user mentions "docs", "documentation site", "docs subdomain" or "docs.yourdomain.com". For API marketing landing, use api-page-generator.
 metadata:
   version: 1.0.1
 ---

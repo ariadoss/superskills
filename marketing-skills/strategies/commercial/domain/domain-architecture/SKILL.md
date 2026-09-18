@@ -1,6 +1,6 @@
 ---
 name: domain-architecture
-description: When the user wants to decide domain structure for multiple products or brands—subfolder vs subdomain vs independent domain. Also use when the user mentions "subfolder vs subdomain," "subdirectory vs subdomain," "multiple products domain," "multiple websites," "brand architecture," "branded house," "house of brands," "where to host product," "domain structure," or "hub-spoke domain." For brand SERP, use multi-domain-brand-seo.
+description: When the user wants to decide domain structure for multiple products or brands—subfolder vs subdomain vs independent domain. Also use when the user mentions "subfolder vs subdomain", "subdirectory vs subdomain", "multiple products domain" or "multiple websites". For brand SERP, use multi-domain-brand-seo.
 metadata:
   version: 1.0.1
 ---

@@ -1,6 +1,6 @@
 ---
 name: localization-strategy
-description: When the user wants to plan or implement localization strategy for multilingual and global growth. Also use when the user mentions "localization," "multilingual," "i18n," "global expansion," "market entry," "localization strategy," "hreflang," "multi-language SEO," or "international SEO." For translation workflow, glossary, and style guide, use translation.
+description: When the user wants to plan or implement localization strategy for multilingual and global growth. Also use when the user mentions "localization", "multilingual", "i18n" or "global expansion". For translation workflow, glossary, and style guide, use translation.
 metadata:
   version: 1.1.0
 ---

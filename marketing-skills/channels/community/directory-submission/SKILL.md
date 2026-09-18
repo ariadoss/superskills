@@ -1,6 +1,6 @@
 ---
 name: directory-submission
-description: When the user wants to submit a product or app to directories, curated lists, launch platforms, or app stores—and needs ready-to-paste copy per platform. Reads project-context.md when present. Also use when the user mentions "directory submission," "get listed," "app store listing," "submit to directories," "curated list," "best tools list," "Taaft," "Product Hunt," "directory ads," "newsletter feature," "directory campaign," "tailor description per platform," "Shopify App Store," "Chrome Web Store," "navigation site," or "product directory." For Product Hunt launch day tactics (hunter, first comment, timing), use product-hunt-launch. For full 0→1 channel planning, use cold-start-strategy.
+description: When the user wants to submit a product or app to directories, curated lists, launch platforms, or app stores—and needs ready-to-paste copy per platform. Reads project-context.md when present. Also use when the user mentions "directory submission", "get listed", "app store listing" or "submit to directories".
 metadata:
   version: 1.2.0
 ---

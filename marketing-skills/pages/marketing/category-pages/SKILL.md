@@ -1,6 +1,6 @@
 ---
 name: category-page-generator
-description: When the user wants to create, optimize, or audit e-commerce category pages or listing pages. Also use when the user mentions "category page," "product category," "faceted navigation," "filter URLs," "e-commerce listing," "category SEO," "category structure," "product filters," or "listing page." For programmatic SEO at scale, use programmatic-seo.
+description: When the user wants to create, optimize, or audit e-commerce category pages or listing pages. Also use when the user mentions "category page", "product category", "faceted navigation" or "filter URLs". For programmatic SEO at scale, use programmatic-seo.
 metadata:
   version: 1.0.1
 ---

@@ -1,6 +1,6 @@
 ---
 name: seo-strategy
-description: When the user wants to plan SEO strategy, prioritize SEO work, or understand the SEO workflow. Also use when the user mentions "SEO strategy," "SEO plan," "SEO roadmap," "SEO priority," "SEO audit," "SEO workflow," "where to start SEO," "SEO approach," "organic growth strategy," "why SEO," "SEO value," or "search strategy." For technical/crawl audit execution, use seo-audit. For keyword research, use keyword-research. For AI search visibility, use generative-engine-optimization.
+description: When the user wants to plan SEO strategy, prioritize SEO work, or understand the SEO workflow. Also use when the user mentions "SEO strategy", "SEO plan", "SEO roadmap" or "SEO priority". For technical/crawl audit execution, use seo-audit. For keyword research, use keyword-research. For AI search visibility, use generative-engine-optimization.
 metadata:
   version: 1.3.0
 ---

@@ -1,6 +1,6 @@
 ---
 name: canonical-tag
-description: When the user wants to configure canonical URLs, fix duplicate content, or consolidate URL signals. Also use when the user mentions "canonical," "canonical URL," "duplicate content," "duplicate content fix," "preferred URL," or "URL consolidation." For GSC duplicates, use google-search-console.
+description: When the user wants to configure canonical URLs, fix duplicate content, or consolidate URL signals. Also use when the user mentions "canonical", "canonical URL", "duplicate content" or "duplicate content fix". For GSC duplicates, use google-search-console.
 metadata:
   version: 1.0.1
 ---

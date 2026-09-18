@@ -1,6 +1,6 @@
 ---
 name: open-graph
-description: When the user wants to add or optimize Open Graph metadata for social sharing. Also use when the user mentions "Open Graph," "og:tags," "og:title," "og:image," "og:description," "Facebook preview," "LinkedIn preview," or "social share preview." For X (Twitter) link previews, use twitter-cards. For SERP title/description, use title-tag and meta-description.
+description: When the user wants to add or optimize Open Graph metadata for social sharing. Also use when the user mentions "Open Graph", "og:tags", "og:title" or "og:image". For X (Twitter) link previews, use twitter-cards. For SERP title/description, use title-tag and meta-description.
 metadata:
   version: 1.1.0
 ---

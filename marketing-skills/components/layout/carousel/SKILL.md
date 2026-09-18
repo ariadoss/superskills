@@ -1,6 +1,6 @@
 ---
 name: carousel
-description: When the user wants to design, optimize, or audit carousel/slider layouts for content display. Also use when the user mentions "carousel," "slider," "carousel layout," "testimonial carousel," "gallery carousel," "quote carousel," "image slider," or "carousel accessibility." For hero-area patterns, use hero-generator.
+description: When the user wants to design, optimize, or audit carousel/slider layouts for content display. Also use when the user mentions "carousel", "slider", "carousel layout" or "testimonial carousel". For hero-area patterns, use hero-generator.
 metadata:
   version: 1.1.0
 ---

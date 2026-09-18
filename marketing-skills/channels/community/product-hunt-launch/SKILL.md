@@ -1,6 +1,6 @@
 ---
 name: product-hunt-launch
-description: When the user wants to launch on Product Hunt, prepare a PH submission, or plan launch day (hunter, first comment, timing, upvotes). Also use when the user mentions "Product Hunt," "launch on Product Hunt," "PH launch," "Product Hunt submission," "hunter," "Product of the Day," "upvotes," or "Product Hunt first comment." For multi-platform directory listings and paste-ready copy beyond PH, use directory-submission.
+description: When the user wants to launch on Product Hunt, prepare a PH submission, or plan launch day (hunter, first comment, timing, upvotes). Also use when the user mentions "Product Hunt", "launch on Product Hunt", "PH launch" or "Product Hunt submission". For multi-platform directory listings and paste-ready copy beyond PH, use directory-submission.
 metadata:
   version: 1.1.0
 ---

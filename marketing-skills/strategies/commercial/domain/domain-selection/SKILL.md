@@ -1,6 +1,6 @@
 ---
 name: domain-selection
-description: When the user wants to choose an SEO-friendly domain for a new site—brand vs keyword domain, TLD selection, or domain best practices. Also use when the user mentions "domain choice," "pick domain," "SEO-friendly domain," "brand domain," "EMD," "PMD," "exact match domain," "partial match domain," "TLD," ".ai domain," ".com vs .io," "domain length," "domain history," or "defensive domain registration." For migration, use rebranding-strategy.
+description: When the user wants to choose an SEO-friendly domain for a new site—brand vs keyword domain, TLD selection, or domain best practices. Also use when the user mentions "domain choice", "pick domain", "SEO-friendly domain" or "brand domain". For migration, use rebranding-strategy.
 metadata:
   version: 1.0.1
 ---

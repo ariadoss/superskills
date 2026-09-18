@@ -1,6 +1,6 @@
 ---
 name: competitor-research
-description: When the user wants to analyze competitors for SEO, content, backlinks, or positioning. Also use when the user mentions "competitor analysis," "competitor research," "competitor keywords," "competitor backlinks," "link gap," "content gap," "competitor content," "competitive analysis," or "competitor comparison." For content roadmap, use content-strategy.
+description: When the user wants to analyze competitors for SEO, content, backlinks, or positioning. Also use when the user mentions "competitor analysis", "competitor research", "competitor keywords" or "competitor backlinks". For content roadmap, use content-strategy.
 metadata:
   version: 1.2.1
 ---

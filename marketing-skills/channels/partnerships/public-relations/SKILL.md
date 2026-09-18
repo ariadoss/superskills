@@ -1,6 +1,6 @@
 ---
 name: public-relations
-description: When the user wants to plan PR, write a press release, or manage media relations. Also use when the user mentions "public relations," "PR," "press release," "media relations," "news release," "journalist," "media coverage," "product announcement," or "earned media." For on-site "As Seen In" or logos page, use press-coverage-page-generator.
+description: When the user wants to plan PR, write a press release, or manage media relations. Also use when the user mentions "public relations", "PR", "press release" or "media relations". For on-site "As Seen In" or logos page, use press-coverage-page-generator.
 metadata:
   version: 1.1.0
 ---

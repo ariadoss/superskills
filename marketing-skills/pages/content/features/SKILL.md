@@ -1,6 +1,6 @@
 ---
 name: features-page-generator
-description: When the user wants to create, optimize, or audit features page content. Also use when the user mentions "features page," "product features," "capabilities," "what it does," "feature list," "feature comparison," "product capabilities," or "features section." For sitewide page planning, use website-structure.
+description: When the user wants to create, optimize, or audit features page content. Also use when the user mentions "features page", "product features", "capabilities" or "what it does". For sitewide page planning, use website-structure.
 metadata:
   version: 1.1.1
 ---

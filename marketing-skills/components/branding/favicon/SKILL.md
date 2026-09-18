@@ -1,6 +1,6 @@
 ---
 name: favicon-generator
-description: When the user wants to implement, optimize, or audit favicon and app icons. Also use when the user mentions "favicon," "app icon," "browser icon," "touch icon," "PWA icon," "favicon sizes," "apple-touch-icon," "favicon.ico," "site icon," or "tab icon." For visual system, use brand-visual-generator.
+description: When the user wants to implement, optimize, or audit favicon and app icons. Also use when the user mentions "favicon", "app icon", "browser icon" or "touch icon". For visual system, use brand-visual-generator.
 metadata:
   version: 1.0.1
 ---

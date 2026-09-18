@@ -1,6 +1,6 @@
 ---
 name: showcase-page-generator
-description: When the user wants to create, optimize, or audit a showcase or gallery page for user-generated content. Also use when the user mentions "showcase," "gallery," "user work," "UGC," "creator showcase," "examples," or "made with [product]." For social proof components, use testimonials-generator.
+description: When the user wants to create, optimize, or audit a showcase or gallery page for user-generated content. Also use when the user mentions "showcase", "gallery", "user work" or "UGC". For social proof components, use testimonials-generator.
 metadata:
   version: 1.0.1
 ---

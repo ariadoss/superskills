@@ -1,6 +1,6 @@
 ---
 name: homepage-generator
-description: When the user wants to create, optimize, or audit the main site homepage (primary entry page). Also use when the user mentions "homepage," "main page," "home page," "hero section," "above the fold," "home page design," "homepage conversion," or "homepage structure." Not for paid campaign or ad landing pages—use landing-page-generator. For sitewide page planning, use website-structure.
+description: When the user wants to create, optimize, or audit the main site homepage (primary entry page). Also use when the user mentions "homepage", "main page", "home page" or "hero section". Not for paid campaign or ad landing pages—use landing-page-generator. For sitewide page planning, use website-structure.
 metadata:
   version: 1.2.0
 ---

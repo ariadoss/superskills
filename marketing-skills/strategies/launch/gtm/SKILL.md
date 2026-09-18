@@ -1,6 +1,6 @@
 ---
 name: gtm-strategy
-description: When the user wants to plan go-to-market strategy, GTM framework, or market entry. Also use when the user mentions "GTM," "go-to-market," "market entry," "new market," "repositioning," "PLG," "sales-led," "product-led," "marketing-led," "ICP," "buyer persona," "GTM motion," or "market expansion." For launch checklist, use product-launch.
+description: When the user wants to plan go-to-market strategy, GTM framework, or market entry. Also use when the user mentions "GTM", "go-to-market", "market entry" or "new market". For launch checklist, use product-launch.
 metadata:
   version: 1.1.1
 ---

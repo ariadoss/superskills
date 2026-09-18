@@ -1,6 +1,6 @@
 ---
 name: affiliate-page-generator
-description: When the user wants to create, optimize, or audit affiliate program page content. Also use when the user mentions "affiliate program," "affiliate page," "partner program," "referral program page," "affiliate landing," "partner landing," "commission page," or "affiliate signup." For affiliate program strategy, use affiliate-marketing.
+description: When the user wants to create, optimize, or audit affiliate program page content. Also use when the user mentions "affiliate program", "affiliate page", "partner program" or "referral program page". For affiliate program strategy, use affiliate-marketing.
 metadata:
   version: 1.0.1
 ---

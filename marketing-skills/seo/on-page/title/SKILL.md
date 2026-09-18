@@ -1,6 +1,6 @@
 ---
 name: title-tag
-description: When the user wants to optimize the title tag, page title, or SERP title. Also use when the user mentions "title tag," "meta title," "page title," "SEO title," "SERP title," "browser tab title," "title optimization," "headline for search," "title too long," "title tag length," "duplicate title tags," or "optimize title for CTR." For meta description, use meta-description. For structured data, use schema-markup.
+description: When the user wants to optimize the title tag, page title, or SERP title. Also use when the user mentions "title tag", "meta title", "page title" or "SEO title". For meta description, use meta-description. For structured data, use schema-markup.
 metadata:
   version: 1.4.0
 ---

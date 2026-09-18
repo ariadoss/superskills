@@ -1,6 +1,6 @@
 ---
 name: brand-visual-generator
-description: When the user wants to define, audit, or apply visual identity (typography, colors, spacing, design tokens, frontend aesthetics). Also use when the user mentions "brand style guide," "visual identity," "design system," "typography," "color palette," "brand guidelines," "AI brand aesthetics," "brand colors," "font choices," "spacing system," "design tokens," "motion," "distinctive design," "frontend aesthetics," "PowerPoint theme," "Google Slides brand," or "slide master colors." For brand story, positioning, and voice, use branding.
+description: When the user wants to define, audit, or apply visual identity (typography, colors, spacing, design tokens, frontend aesthetics). Also use when the user mentions "brand style guide", "visual identity", "design system" or "typography". For brand story, positioning, and voice, use branding.
 license: MIT
 metadata:
   version: 1.4.0

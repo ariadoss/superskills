@@ -1,6 +1,6 @@
 ---
 name: footer-generator
-description: When the user wants to design, optimize, or audit website footers. Also use when the user mentions "footer," "page footer," "site footer," "footer links," "footer navigation," "footer SEO," "footer design," "footer CTA," "multi-column footer," or "footer sitemap." For main nav, use navigation-menu-generator.
+description: When the user wants to design, optimize, or audit website footers. Also use when the user mentions "footer", "page footer", "site footer" or "footer links". For main nav, use navigation-menu-generator.
 metadata:
   version: 1.0.1
 ---

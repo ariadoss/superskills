@@ -1,6 +1,6 @@
 ---
 name: landing-page-generator
-description: When the user wants to create, optimize, or audit campaign landing pages for paid ads, email, or other traffic. Also use when the user mentions "landing page," "PPC landing page," "SEM landing page," "conversion page," "campaign page," "lead capture page," "landing page optimization," "LP conversion," "single-page funnel," or "squeeze page." Not for the main site homepage; use homepage-generator.
+description: When the user wants to create, optimize, or audit campaign landing pages for paid ads, email, or other traffic. Also use when the user mentions "landing page", "PPC landing page", "SEM landing page" or "conversion page". Not for the main site homepage; use homepage-generator.
 metadata:
   version: 1.4.1
 ---

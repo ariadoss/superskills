@@ -1,6 +1,6 @@
 ---
 name: traffic-analysis
-description: When the user wants to analyze website traffic sources, attribution, or dark traffic. Also use when the user mentions "traffic sources," "dark traffic," "direct traffic," "UTM parameters," "traffic attribution," "channel attribution," "attribution optimization," "channel analysis," "traffic analysis," "traffic diversification," "natural traffic benchmark," or "organic vs paid traffic." For GA4 setup, use analytics-tracking.
+description: When the user wants to analyze website traffic sources, attribution, or dark traffic. Also use when the user mentions "traffic sources", "dark traffic", "direct traffic" or "UTM parameters". For GA4 setup, use analytics-tracking.
 metadata:
   version: 1.1.1
 ---

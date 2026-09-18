@@ -1,6 +1,6 @@
 ---
 name: branding
-description: When the user wants to define, audit, or apply brand strategy—purpose, values, positioning, storytelling, voice, narrative (not only visuals). Also use when the user mentions "brand strategy," "brand story," "brand storytelling," "brand voice," "brand identity," "brand guidelines," "brand purpose," "brand values," "origin story," "brand narrative," "brand personality," "brand archetype," "slide deck branding," "PPT brand colors," or "document style guide." For typography, colors, design tokens, and frontend visuals, use brand-visual-generator.
+description: When the user wants to define, audit, or apply brand strategy—purpose, values, positioning, storytelling, voice, narrative (not only visuals). Also use when the user mentions "brand strategy", "brand story", "brand storytelling" or "brand voice". For typography, colors, design tokens, and frontend visuals, use brand-visual-generator.
 license: MIT
 metadata:
   version: 1.2.0

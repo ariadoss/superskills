@@ -1,6 +1,6 @@
 ---
 name: meta-description
-description: When the user wants to optimize the meta description or meta tag description. Also use when the user mentions "meta description," "meta desc," "page description," "SEO description," "search snippet," "SERP description," "description tag," "snippet for search," "meta description length," "rewrite meta description," or "description not showing." For title tag, use title-tag. For hreflang, robots, viewport, use page-metadata.
+description: When the user wants to optimize the meta description or meta tag description. Also use when the user mentions "meta description", "meta desc", "page description" or "SEO description". For title tag, use title-tag. For hreflang, robots, viewport, use page-metadata.
 metadata:
   version: 1.4.0
 ---

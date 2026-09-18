@@ -1,6 +1,6 @@
 ---
 name: use-cases-page-generator
-description: When the user wants to create, optimize, or audit use case pages. Also use when the user mentions "use cases," "use case page," "for [role]," "by persona," "by scenario," "by business goal," "ICP pages," or "audience-specific pages." For sitewide page planning, use website-structure.
+description: When the user wants to create, optimize, or audit use case pages. Also use when the user mentions "use cases", "use case page", "for [role]" or "by persona". For sitewide page planning, use website-structure.
 metadata:
   version: 1.2.1
 ---

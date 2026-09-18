@@ -1,6 +1,6 @@
 ---
 name: referral-program
-description: When the user wants to plan, implement, or optimize referral program strategy. Also use when the user mentions "referral program," "referral marketing," "user referral," "refer-a-friend," "word-of-mouth growth," "referral rewards," "referral tracking," "referral code," "referral incentives," or "viral loop." For referral landing copy, use landing-page-generator.
+description: When the user wants to plan, implement, or optimize referral program strategy. Also use when the user mentions "referral program", "referral marketing", "user referral" or "refer-a-friend". For referral landing copy, use landing-page-generator.
 metadata:
   version: 1.0.1
 ---
