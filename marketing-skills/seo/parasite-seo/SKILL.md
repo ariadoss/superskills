@@ -1,6 +1,6 @@
 ---
 name: parasite-seo
-description: When the user wants to choose or execute third-party platform SEO (high-authority sites for rankings or backlinks). Also use when the user mentions "parasite SEO", "parasitic SEO", "barnacle SEO" or "hosted content".
+description: When the user wants to choose or execute third-party platform SEO (high-authority sites for rankings or backlinks). Also use when the user mentions "parasite SEO", "parasitic SEO", "barnacle SEO" or "hosted content". For GitHub-specific playbooks, use github. For Medium.com posts, use medium-posts. For Grokipedia, use grokipedia-recommendations. For AI answer-engine visibility (not platform selection), use generative-engine-optimization.
 metadata:
   version: 1.1.0
 ---

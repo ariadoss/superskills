@@ -15,8 +15,8 @@ cd ~/.claude/skills/superskills && ./setup
 ```
 
 Setup will:
-- Install gstack (Garry Tan's virtual engineering team skills) — required, auto-installed. A real clone is the goal: the clone is retried with backoff, a broken partial install is moved aside, and if the network is down the vendored snapshot goes in as a stopgap that every later `./setup` run (including `/superskills-upgrade` and the post-merge hook) tries to promote to a real clone
-- Install `bun` if needed (required by gstack's browser tool)
+- Install gstack (Garry Tan's virtual engineering team skills) when the `gstack` pack is selected (off by default; an existing gstack install is left as-is either way). A real clone is the goal: the clone is retried with backoff, a broken partial install is moved aside, and if the network is down the vendored snapshot goes in as a stopgap that every later `./setup` run (including `/superskills-upgrade` and the post-merge hook) tries to promote to a real clone
+- Install `bun` if needed (only when gstack is being installed; required by gstack's browser tool)
 - Prompt you to connect knowledge base repos (optional)
 - Check for optional dependencies (clearwing, ffuf)
 - Auto-detect and install into: **Claude Code**, **OpenCode**, **Codex CLI**, **Continue.dev**, **Augment Code**, **Windsurf**
@@ -28,17 +28,24 @@ Every skill belongs to a pack. `./setup` installs the **coding pack by
 default** (24 skills: the spec → plan → TDD → QA → ship workflow plus its
 `/qa-full` fan-out) so your harness's always-on context stays small. Skill
 *descriptions* load on every turn; only a triggered skill's body does — so
-every extra pack is a real per-token cost in every session.
+every extra pack is a real per-token cost in every session. The coding pack is
+always on: no pack list excludes it.
 
 | Pack | Contents |
 |------|----------|
-| `coding` (default) | `/specify`, `/write-plan`, `/tdd`, `/qa-full`, `/debug`, `/verify`, `/design-review`, … |
+| `coding` (default, always on) | `/specify`, `/write-plan`, `/tdd`, `/qa-full`, `/debug`, `/verify`, … |
 | `core` | the rest of the core skills (`/cache-strategy`, `/pentest`, `/graphify`, …) |
 | `design` | the 36 design skills (UX, typography, SwiftUI, Vercel) |
 | `marketing` | the 174 marketing skills (SEO, content, pages, ads) |
 | `media` | the video-editing subtree |
-| `gstack` | links the installed gstack skills too |
-| `all` | everything (pre-2.25 behavior) |
+| `gstack` | installs/promotes gstack itself (`/review`, `/qa`, `/ship`, `/design-review`, …) |
+| `all` | everything (pre-packs behavior) |
+
+Every full `./setup` run persists the effective selection to
+`~/.superskills/packs.conf` and prunes this checkout's now-deselected installs
+(never another tool's or your own entries — only links into the superskills
+checkout are removed). Switching from `all` to a smaller set therefore
+actually shrinks your context; switching back re-links on the next run.
 
 ```bash
 ./setup --packs coding,design      # coding + design; persisted for upgrades

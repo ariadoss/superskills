@@ -1,6 +1,6 @@
 ---
 name: article-content
-description: When the user wants to write, generate, or create article body content—blog post body, long-form content, how-to guide, listicle. Also use when the user mentions "write article", "article content", "blog post content" or "article body".
+description: When the user wants to write, generate, or create article body content—blog post body, long-form content, how-to guide, listicle. Also use when the user mentions "write article", "article content", "blog post content" or "article body". For single post page structure, schema, and SEO metadata, use article-page-generator. For blog index/listing page, use blog-page-generator. For short ad, landing, or email copy, use copywriting.
 metadata:
   version: 1.1.0
 ---

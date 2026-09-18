@@ -1,6 +1,6 @@
 ---
 name: comparison-table-generator
-description: When the user wants to create, optimize, or audit a comparison table section—an in-page block (HTML table or responsive equivalent) comparing products, methods, or approaches, with optional supporting copy. Also use when the user mentions "comparison table", "compare table", "feature matrix" or "vs table".
+description: When the user wants to create, optimize, or audit a comparison table section—an in-page block (HTML table or responsive equivalent) comparing products, methods, or approaches, with optional supporting copy. Also use when the user mentions "comparison table", "compare table", "feature matrix" or "vs table". This skill is for a section inside a page, not a full alternatives URL or blog post wireframe—use alternatives-page-generator for page-level layout, keywords, and PPC destination strategy. For full-page structured data rules, use schema-markup. For FAQ blocks paired with the table, use faq-page-generator.
 metadata:
   version: 1.0.0
 ---
