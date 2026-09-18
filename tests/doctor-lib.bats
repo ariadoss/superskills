@@ -189,11 +189,12 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
   [[ "$(evidence_of "$output")" == *"3/3"* ]] || false
 }
 
-@test "check_links: plugin install counts core and design skills served by the loader" {
+@test "check_links: plugin mode counts only skills/ — design ships as superskills-design now" {
   mkdir -p "$ROOT/design-skills/gamma-dir"; printf -- '---\nname: gamma\n---\n' > "$ROOT/design-skills/gamma-dir/SKILL.md"
   run doctor_check_links "$ROOT" "$SKILLS" plugin
   [ "$(status_of "$output")" = "ready" ]
-  [[ "$(evidence_of "$output")" == "3 skills served by the plugin loader"* ]] || false
+  [[ "$(evidence_of "$output")" == "2 skills served by the plugin loader"* ]] || false
+  [[ "$(evidence_of "$output")" != *"design-skills"* ]] || false
 }
 
 @test "check_links: a link that resolves into a different checkout is a warning naming it" {

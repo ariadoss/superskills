@@ -104,14 +104,19 @@ doctor_check_install() {
 # _doctor_skill_files <root> [plugin]
 # Every SKILL.md the install is expected to expose, in ./setup's order:
 # marketing-skills (nested; the plugin-skills/ symlink tree is not followed by
-# find), design-skills, skills. With "plugin", only what the root plugin's
-# loader reads: skills/ and design-skills/.
+# find), design-skills, skills. With "plugin", only what the ROOT plugin's
+# loader reads: skills/ (design ships as the separate superskills-design
+# plugin since the marketplace split, so it is not the root plugin's to serve).
 _doctor_skill_files() {
   local root="$1" mode="${2:-}"
   if [ "$mode" != "plugin" ] && [ -d "$root/marketing-skills" ]; then
     marketing_skill_files "$root/marketing-skills"
   fi
-  ls -d "$root"/design-skills/*/SKILL.md "$root"/skills/*/SKILL.md 2>/dev/null
+  if [ "$mode" = "plugin" ]; then
+    ls -d "$root"/skills/*/SKILL.md 2>/dev/null
+  else
+    ls -d "$root"/design-skills/*/SKILL.md "$root"/skills/*/SKILL.md 2>/dev/null
+  fi
 }
 
 # doctor_check_links <root> <claude_skills_dir> [kind] [install_path] [home]
@@ -149,21 +154,27 @@ doctor_check_links() {
       if [ -f "$f" ] && [ -r "$f" ]; then ok=$((ok + 1)); else bad="$bad $(basename "$(dirname "$f")")"; fi
     done < <(_doctor_skill_files "$serve_root" plugin)
     if [ "$total" -eq 0 ]; then
-      _doctor_row "Links" "blocked" "no skills found under $serve_root/skills or $serve_root/design-skills — the plugin serves nothing; reinstall the plugin"
+      _doctor_row "Links" "blocked" "no skills found under $serve_root/skills — the plugin serves nothing; reinstall the plugin"
     elif [ -n "$bad" ]; then
       _doctor_row "Links" "blocked" "$ok/$total plugin skills readable. SKILL.md is not a readable file:$bad — reinstall the plugin"
     elif [ "$confirmed" -eq 1 ]; then
-      _doctor_row "Links" "ready" "$total skills served by the plugin loader from $serve_root/skills and $serve_root/design-skills (no ./setup symlinks in a plugin install; confirmed via the CLI's installPath)"
+      _doctor_row "Links" "ready" "$total skills served by the plugin loader from $serve_root/skills (no ./setup symlinks in a plugin install; confirmed via the CLI's installPath)"
     else
-      _doctor_row "Links" "ready" "$total skills served by the plugin loader from $serve_root/skills and $serve_root/design-skills — unconfirmed: the CLI did not report an installPath, so this assumes --root is the plugin's serving copy"
+      _doctor_row "Links" "ready" "$total skills served by the plugin loader from $serve_root/skills — unconfirmed: the CLI did not report an installPath, so this assumes --root is the plugin's serving copy"
     fi
     return 0
   fi
   real_root="$(_doctor_realpath "$root")"
+  # Two enumerators on purpose, and the divergence is the contract: with a
+  # packs.conf the expected set is exactly what the selection installs (the
+  # selected_source_paths walk, which skips node_modules); without one the
+  # install predates packs and every skill is expected (the looser
+  # _doctor_skill_files walk, kept verbatim so old installs are judged by the
+  # old rules).
   local expected
   if [ -n "$home" ] && [ -f "$home/.superskills/packs.conf" ]; then
     SS_PACKS_CONF="$home/.superskills/packs.conf" packs_load
-    expected="$(selected_source_paths "$root" "$root/skills" "$root/design-skills" "$root/marketing-skills")"
+    expected="$(selected_source_paths "$root/skills" "$root/design-skills" "$root/marketing-skills")"
   else
     expected="$(_doctor_skill_files "$root")"
   fi
