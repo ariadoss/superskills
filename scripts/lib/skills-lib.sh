@@ -372,13 +372,15 @@ prune_dangling_links() {
 # Judged per directory: a directory qualifies only when it is NOT a symlink,
 # not "/" and not empty, and every entry inside is a symlink owned by this
 # checkout: its target lies under the caller's source root (passed via
-# SS_OWNED_SRC), the target has no . or .. traversal, and the link is not a
-# directory. A directory containing anything else — a regular file, a link to
-# somewhere foreign, a symlinked directory, or a dangling link (the [ -e ]
-# check fails on those) — is skipped and left untouched; the remaining
-# directories in the argument list are still processed. Fail-closed, never
-# partial within one directory. Echoes each removed symlink path; exit status
-# is always 0 (callers log from the echoed lines).
+# SS_OWNED_SRC), the target has no . or .. traversal. Directory symlinks count
+# as ours when their target is under the source root — our own installer links
+# sibling directories (references/, scripts/, …) exactly that way — but the
+# removal never descends: only the links themselves are deleted. A directory
+# containing anything else — a regular file, a link pointing outside the
+# source root — is skipped and left untouched; the remaining directories in
+# the argument list are still processed. Fail-closed, never partial within one
+# directory. Echoes each removed symlink path; exit status is always 0
+# (callers log from the echoed lines).
 remove_owned_skill() {
   local dir entry target owned
   [ "$#" -ge 1 ] || return 0
@@ -394,11 +396,9 @@ remove_owned_skill() {
     for entry in "$dir"/* "$dir"/.[!.]*; do
       [ -e "$entry" ] || [ -L "$entry" ] || continue
       if [ ! -L "$entry" ]; then owned=0; break; fi
-      if [ -d "$entry" ]; then owned=0; break; fi
       target="$(readlink "$entry")"
       case "$target" in */./*|*/../*|*/.|*/..) owned=0; break ;; esac
       case "$target" in "$src_root"/*) : ;; *) owned=0; break ;; esac
-      [ -e "$entry" ] || owned=0
     done
     [ "$owned" -eq 1 ] || continue
     for entry in "$dir"/* "$dir"/.[!.]*; do

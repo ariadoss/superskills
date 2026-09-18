@@ -133,6 +133,21 @@ setup() {
   [ -L "$TGT/keep-skill/SKILL.md" ] || false
 }
 
+@test "remove_owned_skill owns the directory symlinks our own linker creates" {
+  SRC="$FIX/src4"; TGT="$FIX/tgt4"; OUT="$FIX/outside-tree"
+  mkdir -p "$SRC/skill-with-dirs/references" "$OUT"
+  printf '%s\n' '---' 'name: skill-with-dirs' '---' > "$SRC/skill-with-dirs/SKILL.md"
+  printf 'x\n' > "$SRC/skill-with-dirs/references/api.md"
+  link_skill_into "$TGT" "$SRC/skill-with-dirs/SKILL.md" "skill-with-dirs" >/dev/null
+  # A dir-symlink pointing OUTSIDE the source root is never ours.
+  mkdir -p "$TGT/mixed" && ln -s "$SRC/skill-with-dirs/SKILL.md" "$TGT/mixed/SKILL.md" \
+    && ln -s "$OUT" "$TGT/mixed/references"
+  SS_OWNED_SRC="$SRC" run remove_owned_skill "$TGT/skill-with-dirs" "$TGT/mixed"
+  [ "$status" -eq 0 ] || false
+  [ ! -e "$TGT/skill-with-dirs" ] || false
+  [ -L "$TGT/mixed/references" ] || false
+}
+
 @test "remove_owned_skill never touches a dir holding a regular file, foreign link, link-dir or traversal" {
   SRC="$FIX/src"; TGT="$FIX/dst2"; mkdir -p "$SRC/real"
   mkdir -p "$TGT/has-regular" "$TGT/has-foreign" "$TGT/has-linkdir" "$TGT/has-traversal"
