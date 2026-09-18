@@ -85,7 +85,7 @@ ver_of() { grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$1"; }
 }
 
 @test "SUPERSKILLS_MANIFESTS lists every stamped manifest and each exists in the repo" {
-  [ "${#SUPERSKILLS_MANIFESTS[@]}" -eq 5 ]
+  [ "${#SUPERSKILLS_MANIFESTS[@]}" -eq 6 ]
   for f in "${SUPERSKILLS_MANIFESTS[@]}"; do [ -f "$REPO_ROOT/$f" ] || { echo "missing $f"; return 1; }; done
 }
 

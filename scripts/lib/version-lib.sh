@@ -12,6 +12,7 @@
 SUPERSKILLS_MANIFESTS=(
   ".claude-plugin/plugin.json"
   ".claude-plugin/marketplace.json"
+  "design-skills/.claude-plugin/plugin.json"
   ".codex-plugin/plugin.json"
   ".cursor-plugin/plugin.json"
   ".cursor-plugin/marketplace.json"

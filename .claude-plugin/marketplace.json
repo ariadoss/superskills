@@ -1,6 +1,6 @@
 {
   "name": "superskills",
-  "description": "Superskills marketplace \u2014 the superskills plugin (core + design skills) and superskills-marketing (the marketing skills), installable directly from this repo.",
+  "description": "Superskills marketplace — the superskills plugin (coding skills), superskills-design (the design skills) and superskills-marketing (the marketing skills), installable directly from this repo.",
   "owner": {
     "name": "Danilo Stern-Sapad",
     "email": "danilosapad@gmail.com"
@@ -11,7 +11,7 @@
       "displayName": "Superskills",
       "source": "./",
       "version": "2.24.0",
-      "description": "Core + design skills with a Google/Meta-quality workflow (TDD, DRY, SOLID). Full marketing-skills set via ./setup.",
+      "description": "Coding skills with a Google/Meta-quality workflow (TDD, DRY, SOLID) — the coding pack is the default; design, marketing, media and gstack ship as separate plugins or opt-in via ./setup --packs.",
       "author": {
         "name": "Danilo Stern-Sapad",
         "email": "danilosapad@gmail.com"
@@ -23,9 +23,31 @@
         "skills",
         "agents",
         "tdd",
+        "workflow",
+        "coding",
+        "qa"
+      ]
+    },
+    {
+      "name": "superskills-design",
+      "displayName": "Superskills Design",
+      "source": "./design-skills",
+      "version": "2.24.0",
+      "description": "The design skills (UX, interface design, typography, frontend engineering, SwiftUI, Vercel) as a separate plugin — install alongside superskills.",
+      "author": {
+        "name": "Danilo Stern-Sapad",
+        "email": "danilosapad@gmail.com"
+      },
+      "homepage": "https://github.com/ariadoss/superskills",
+      "repository": "https://github.com/ariadoss/superskills",
+      "license": "MIT",
+      "keywords": [
         "design",
-        "marketing",
-        "workflow"
+        "ux",
+        "typography",
+        "frontend",
+        "swiftui",
+        "skills"
       ]
     },
     {
@@ -33,7 +55,7 @@
       "displayName": "Superskills Marketing",
       "source": "./marketing-skills",
       "version": "2.24.0",
-      "description": "The marketing skills (SEO, content, pages, ads, channels, strategies) as a separate plugin \u2014 install alongside superskills.",
+      "description": "The marketing skills (SEO, content, pages, ads, channels, strategies) as a separate plugin — install alongside superskills.",
       "author": {
         "name": "Danilo Stern-Sapad",
         "email": "danilosapad@gmail.com"

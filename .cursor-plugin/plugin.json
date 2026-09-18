@@ -2,7 +2,7 @@
   "name": "superskills",
   "displayName": "Superskills",
   "version": "2.24.0",
-  "description": "Curated AI engineering + design skills with a Google/Meta-quality workflow (TDD, DRY, SOLID). Skills are discovered from ./skills; the full set (design, marketing, gstack) installs via ./setup --cursor.",
+  "description": "Curated AI coding skills with a Google/Meta-quality workflow (TDD, DRY, SOLID). Skills are discovered from ./skills; other packs install project-level via ./setup --packs --cursor.",
   "author": {
     "name": "Danilo Stern-Sapad",
     "url": "https://github.com/ariadoss"

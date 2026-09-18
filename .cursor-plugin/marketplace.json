@@ -8,7 +8,7 @@
     {
       "name": "superskills",
       "version": "2.24.0",
-      "description": "Curated AI engineering + design skills with a Google/Meta-quality workflow (TDD, DRY, SOLID). Skills are discovered from ./skills; the full set (design, marketing, gstack) installs via ./setup --cursor.",
+      "description": "Curated AI coding skills with a Google/Meta-quality workflow (TDD, DRY, SOLID). Other packs (design, marketing, media, gstack) install via ./setup --packs.",
       "source": {
         "source": "url",
         "url": "https://github.com/ariadoss/superskills.git"

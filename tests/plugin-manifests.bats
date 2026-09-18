@@ -10,7 +10,8 @@ setup() {
 
 @test "every plugin manifest carries the canonical VERSION" {
   for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json .codex-plugin/plugin.json \
-           .cursor-plugin/plugin.json .cursor-plugin/marketplace.json marketing-skills/.claude-plugin/plugin.json; do
+           .cursor-plugin/plugin.json .cursor-plugin/marketplace.json marketing-skills/.claude-plugin/plugin.json \
+           design-skills/.claude-plugin/plugin.json; do
     [ -f "$REPO_ROOT/$f" ] || { echo "missing $f"; return 1; }
     [ "$(grep -c "\"version\"[[:space:]]*:[[:space:]]*\"$VERSION\"" "$REPO_ROOT/$f")" -ge 1 ] || { echo "$f has no version $VERSION"; return 1; }
     stale=$(grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$REPO_ROOT/$f" | grep -v "\"$VERSION\"" || true)
@@ -20,7 +21,7 @@ setup() {
 
 @test "claude plugin validate --strict accepts the marketplace, both plugin dirs and every core skill" {
   command -v claude >/dev/null 2>&1 || skip "claude CLI not installed"
-  for target in . marketing-skills skills; do
+  for target in . marketing-skills design-skills skills; do
     run claude plugin validate --strict "$REPO_ROOT/$target"
     [ "$status" -eq 0 ] || { echo "validate failed for $target: $output"; return 1; }
   done
