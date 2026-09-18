@@ -17,7 +17,13 @@
 # skill_selected answers for one skill: setup's per-tool linkers and the
 # output adapters consult it; gstack links by name with a category hint.
 
-PACK_CODING="specify clarify write-plan analyze repomap dbmap worktrees tdd debug verify test-coverage qa-full finish-branch daily-qa superskills-doctor superskills-upgrade clean-code defense db-optimize web-perf a11y playwright checklist design-review iac-scan pentest fuzz perf-profile"
+# The coding pack's roster, in two parts: the names this repo serves from
+# skills/, and the gstack-served names the /qa-full matrix triggers (they link
+# whenever a valid gstack install is present, and only then — an upstream
+# gstack skill that ever shadows a repo name is NOT claimable from gstack).
+PACK_CODING_REPO="specify clarify write-plan analyze repomap dbmap worktrees tdd debug verify test-coverage qa-full finish-branch daily-qa superskills-doctor superskills-upgrade clean-code defense db-optimize web-perf a11y playwright checklist iac-scan pentest fuzz perf-profile"
+PACK_CODING_GSTACK="review qa cso design-review"
+PACK_CODING="$PACK_CODING_REPO $PACK_CODING_GSTACK"
 
 packs_conf_path() {
   printf '%s' "${SS_PACKS_CONF:-$HOME/.superskills/packs.conf}"
@@ -82,16 +88,23 @@ pack_category_included() {
 # walked, whatever SS_PACKS says, because coding is the always-on base of the
 # product: listing `coding` in --packs is accepted but decorative, and no pack
 # list excludes it. Every non-roster skill is selected exactly when its
-# category is listed in SS_PACKS. design-review ships in gstack but is a
-# coding-pack default, so its roster entry claims it when its tree is gstack's
-# too (the gstack install gate itself lives in setup's gstack section).
+# category is listed in SS_PACKS. A roster name is claimable from the tree
+# that serves it: the skills/ tree for every name, plus gstack for exactly
+# PACK_CODING_GSTACK (review, qa, cso, design-review) — a gstack skill whose
+# name matches a repo-roster entry is deselected, so the walk order can never
+# let upstream gstack shadow a repo skill.
 skill_selected() {
-  local name="$1" category="$2" roster
+  local name="$1" category="$2" roster word
   roster=0
   packs_category_of "$name" >/dev/null && roster=1
   if [ "$roster" -eq 1 ]; then
     case "$category" in
       design) [ "$name" = "design-review" ] && return 0 ;;
+      gstack)
+        for word in $PACK_CODING_GSTACK; do
+          [ "$word" = "$name" ] && return 0
+        done
+        return 1 ;;
       coding|core) return 0 ;;
       *) return 1 ;;
     esac
@@ -182,16 +195,20 @@ pack_category_for_path() {
   esac
 }
 
-# prune_deselected_skills <target_dir> <source_root>
-# Echo nothing; remove the installs of THIS checkout under <target_dir> that
+# prune_deselected_skills <target_dir> <source_root> [fixed_category]
+# Echo nothing; remove the installs of <source_root> under <target_dir> that
 # the active pack selection no longer includes (via remove_owned_skill, which
 # fails closed per dir). Only dirs whose SKILL.md is a resolving symlink into
-# <source_root> are candidates — gstack, other tools' skills and the user's
-# own entries are never touched. Dangling links belong to
+# <source_root> are candidates — gstack's own clone dir, other tools' skills
+# and the user's entries are never touched. Dangling links belong to
 # prune_dangling_links, so they are skipped here. Callers gate on a persisted
 # selection: no packs.conf means a pre-packs install and nothing is pruned.
+# For a foreign tree whose paths carry no category markers (a gstack clone),
+# pass fixed_category: every skill — roster names included — then answers to
+# that category, exactly as the linking walk judged it, so a link the walk
+# would not create is a link this removes.
 prune_deselected_skills() {
-  local base="$1" src="${2%/}" src_canon dir target resolved name category
+  local base="$1" src="${2%/}" fixed_category="${3:-}" src_canon dir target resolved name category
   [ -d "$base" ] || return 0
   [ -n "$src" ] || return 0
   # readlink -f canonicalises (macOS /tmp → /private/tmp): the resolved target
@@ -213,7 +230,9 @@ prune_deselected_skills() {
     esac
     name="$(skill_name_from "$resolved" "")"
     [ -n "$name" ] || name="$(basename "$dir")"
-    if packs_category_of "$name" >/dev/null; then
+    if [ -n "$fixed_category" ]; then
+      category="$fixed_category"
+    elif packs_category_of "$name" >/dev/null; then
       category=coding
     else
       category="$(pack_category_for_path "$resolved" "${src_canon:-$src}/marketing-skills")"

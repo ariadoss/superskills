@@ -12,19 +12,46 @@ setup() {
 @test "coding selects exactly the requested names including external design-review" {
   local name count=0
   # Iterate the roster itself so the test cannot drift from PACK_CODING
-  # (design-review is on the roster and must select from the gstack tree too).
+  # (the qa-full matrix's gstack names must select from the gstack tree too).
   for name in $PACK_CODING; do
     skill_selected "$name" coding || false
     count=$((count + 1))
   done
   skill_selected design-review design
-  [ "$count" -eq 28 ] || false
+  skill_selected review gstack
+  skill_selected qa gstack
+  skill_selected cso gstack
+  [ "$count" -eq 31 ] || false
   run skill_selected cache-strategy core
   [ "$status" -eq 1 ] || false
-  run skill_selected review gstack
+  run skill_selected ship gstack
   [ "$status" -eq 1 ] || false
   run skill_selected tdd marketing
   [ "$status" -eq 1 ] || false
+}
+
+@test "non-roster gstack skills select only under the gstack pack" {
+  SS_PACKS=coding
+  run skill_selected ship gstack
+  [ "$status" -eq 1 ] || false
+  SS_PACKS=coding,gstack
+  skill_selected ship gstack
+  SS_PACKS=all
+  skill_selected ship gstack
+}
+
+@test "a repo-roster name is NOT claimable from gstack (upstream cannot shadow the repo)" {
+  SS_PACKS=coding
+  run skill_selected verify gstack
+  [ "$status" -eq 1 ] || false
+  SS_PACKS=all
+  run skill_selected verify gstack
+  [ "$status" -eq 1 ] || false
+  SS_PACKS=coding,gstack
+  run skill_selected verify gstack
+  [ "$status" -eq 1 ] || false
+  skill_selected verify core
+  skill_selected review gstack
 }
 
 @test "the coding roster is unconditional: no pack list excludes or re-includes it" {
@@ -202,6 +229,23 @@ setup() {
   [ -L "$TGT/video-editing/SKILL.md" ] || false
 }
 
+@test "prune_dangling_links cleans gstack-sourced links, even after the clone is deleted" {
+  GS="$FIX/gstack-clone2"; TGT="$FIX/tgt6"
+  mkdir -p "$GS/review"
+  printf '%s\n' '---' 'name: review' '---' > "$GS/review/SKILL.md"
+  link_skill_into "$TGT" "$GS/review/SKILL.md" "review" 0 >/dev/null
+  # Upstream removes the skill: the link dangles and must go.
+  rm "$GS/review/SKILL.md"
+  run prune_dangling_links "$TGT" "$GS"
+  [ ! -e "$TGT/review" ] || false
+  # The whole clone deleted: every remaining gstack link dangles and must go.
+  link_skill_into "$TGT" "$GS/review/SKILL.md" "review" 0 >/dev/null 2>&1 || true
+  mkdir -p "$GS/review" && printf '%s\n' '---' 'name: review' '---' > "$GS/review/SKILL.md"
+  rm -rf "$GS"
+  run prune_dangling_links "$TGT" "$GS"
+  [ ! -e "$TGT/review" ] || false
+}
+
 @test "prune_deselected_skills leaves dangling links to prune_dangling_links and never aborts" {
   SRC="$FIX/src3"; TGT="$FIX/tgt3"
   mkdir -p "$SRC/skills/tdd"
@@ -212,4 +256,35 @@ setup() {
   [ "$status" -eq 0 ] || false
   [ -L "$TGT/gone/SKILL.md" ] || false
   [ -L "$TGT/tdd/SKILL.md" ] || false
+}
+
+@test "prune_deselected_skills with fixed_category gstack prunes non-roster links, keeps roster and the clone itself" {
+  GS="$FIX/gstack-clone"; TGT="$FIX/tgt5"
+  mkdir -p "$GS/review" "$GS/ship" "$GS/verify"
+  printf '%s\n' '---' 'name: review' '---' > "$GS/review/SKILL.md"
+  printf '%s\n' '---' 'name: ship' '---' > "$GS/ship/SKILL.md"
+  printf '%s\n' '---' 'name: verify' '---' > "$GS/verify/SKILL.md"
+  # Production links carry sibling symlinks (link_extras=1), incl. dirs.
+  mkdir -p "$GS/ship/sections" && printf 'x\n' > "$GS/ship/sections/one.md"
+  link_skill_into "$TGT" "$GS/review/SKILL.md" "review" >/dev/null
+  link_skill_into "$TGT" "$GS/ship/SKILL.md" "ship" >/dev/null
+  # An upstream collision with a repo-roster name: linked by gstack's own
+  # installer once, pruned by us under every selection.
+  link_skill_into "$TGT" "$GS/verify/SKILL.md" "verify" >/dev/null
+  # A foreign entry and the clone dir itself must survive.
+  mkdir -p "$TGT/user-skill" && printf 'user' > "$TGT/user-skill/SKILL.md"
+  mkdir -p "$TGT/gstack" && printf 'clone root' > "$TGT/gstack/SKILL.md"
+  SS_PACKS=coding
+  run prune_deselected_skills "$TGT" "$GS" gstack
+  [ "$status" -eq 0 ] || false
+  [ ! -e "$TGT/ship" ] || false
+  [ ! -e "$TGT/verify" ] || false
+  [ -L "$TGT/review/SKILL.md" ] || false
+  [ -f "$TGT/user-skill/SKILL.md" ] || false
+  [ -f "$TGT/gstack/SKILL.md" ] || false
+  SS_PACKS=coding,gstack
+  link_skill_into "$TGT" "$GS/ship/SKILL.md" "ship" >/dev/null
+  run prune_deselected_skills "$TGT" "$GS" gstack
+  [ -L "$TGT/ship/SKILL.md" ] || false
+  [ ! -e "$TGT/verify" ] || false
 }

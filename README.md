@@ -1,8 +1,8 @@
 # Superskills `v2.24.0`
 
-Curated AI skills pack for Claude Code, OpenCode, Codex CLI, Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Bundles [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
+Curated AI skills pack for Claude Code, OpenCode, Codex CLI, Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Integrates [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team; an opt-in pack) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
-43 core skills + 53 gstack skills + 174 marketing skills + 36 design skills. gstack is installed automatically and vendored in this repo so skills are available even if the upstream repo is removed.
+43 core skills + 53 gstack skills + 174 marketing skills + 36 design skills, selected by [packs](#packs--choose-what-gets-installed). gstack is vendored in this repo so its skills are available even if the upstream repo is removed.
 
 > **[Full command reference →](COMMANDS.md)** — all skills with descriptions and overlap notes
 > **[10x+ Engineering Workflow →](DEVELOPER_WORKFLOW.md)** — run 10+ parallel AI agents, each with a full quality pipeline ([deep dive](https://hyperion360.com/blog/parallel-ai-agents-engineering-workflow/))
@@ -25,14 +25,15 @@ Setup will:
 ### Packs — choose what gets installed
 
 Every skill belongs to a pack. `./setup` installs the **coding pack by
-default** (28 skills: the spec → plan → TDD → QA → ship workflow plus every
-check `/qa-full` can trigger — security (`/defense`, `/iac-scan`, `/pentest`,
-`/fuzz`), performance (`/db-optimize`, `/web-perf`, `/perf-profile`), and
-browser/design QA (`/playwright`, `/a11y`, `/design-review` via gstack)) so
-your harness's always-on context stays small. Skill
-*descriptions* load on every turn; only a triggered skill's body does — so
-every extra pack is a real per-token cost in every session. The coding pack is
-always on: no pack list excludes it.
+default** (31 skills: 27 in-repo + 4 via gstack when a clone exists — the
+spec → plan → TDD → QA → ship workflow plus every check `/qa-full` can
+trigger: security (`/defense`, `/iac-scan`, `/pentest`, `/fuzz`, `/cso`),
+performance (`/db-optimize`, `/web-perf`, `/perf-profile`), browser/design QA
+(`/playwright`, `/a11y`, `/design-review`) and the gstack review loop
+(`/review`, `/qa`)) so your harness's always-on context stays small.
+Skill *descriptions* load on every turn; only a triggered skill's body does —
+so every extra pack is a real per-token cost in every session. The coding
+pack is always on: no pack list excludes it.
 
 | Pack | Contents |
 |------|----------|
@@ -41,7 +42,7 @@ always on: no pack list excludes it.
 | `design` | the 36 design skills (UX, typography, SwiftUI, Vercel) |
 | `marketing` | the 174 marketing skills (SEO, content, pages, ads) |
 | `media` | the video-editing subtree |
-| `gstack` | installs/promotes gstack itself (`/review`, `/qa`, `/ship`, `/design-review`, …) |
+| `gstack` | installs/promotes gstack itself and links **every** gstack skill; without it only the four coding-pack gstack skills (`/review`, `/qa`, `/cso`, `/design-review`) stay linked — the rest of a pre-existing clone's links are pruned, the clone is never touched |
 | `all` | everything (pre-packs behavior) |
 
 Every full `./setup` run persists the effective selection to

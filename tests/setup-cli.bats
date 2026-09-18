@@ -128,10 +128,16 @@ setup() {
   [[ "$output" != *"unbound variable"* ]] || false
 }
 
-@test "the deselected prune runs for every tool dir (Claude, OpenCode, Codex)" {
+@test "the deselected prune runs for every tool dir (Claude, OpenCode, Codex) plus gstack" {
   run grep -c "prune_deselected_skills" "$REPO_ROOT/setup"
-  [ "$output" -eq 3 ] || false
+  [ "$output" -eq 4 ] || false
   # Gated on a persisted selection: a pre-packs install is never mass-pruned.
   run grep -c 'CONFIG_DIR/packs.conf' "$REPO_ROOT/setup"
-  [ "$output" -eq 3 ] || false
+  [ "$output" -eq 4 ] || false
+  # Dangling gstack links are pruned ungated (must clean up after clone removal).
+  run grep -cF 'prune_dangling_links "$CLAUDE_SKILLS_DIR" "$GSTACK_DIR"' "$REPO_ROOT/setup"
+  [ "$output" -eq 1 ] || false
+  # The gstack walk runs only from a validated install, never a partial dir.
+  run grep -cF 'real|vendor) walk_flat_claude "$GSTACK_DIR" gstack' "$REPO_ROOT/setup"
+  [ "$output" -eq 1 ] || false
 }

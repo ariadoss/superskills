@@ -285,37 +285,58 @@ if [ -d "$MARKETING_SRC_DIR" ]; then
   done < <(marketing_skill_files "$MARKETING_SRC_DIR")
 fi
 
+# walk_flat_claude <src_dir> <category> — link every flat-tree skill the pack
+# selection keeps (shared by design-skills, skills/ and the gstack clone; the
+# marketing tree has its own nested walk). Dir symlinks inside a source tree
+# (gstack's connect-chrome → open-gstack-browser alias) are skipped: the real
+# dir links once, and the count stays honest.
+walk_flat_claude() {
+  local skill_md dir_name
+  for skill_md in "$1"/*/SKILL.md; do
+    [ -f "$skill_md" ] || continue
+    [ -L "$(dirname "$skill_md")" ] && continue
+    dir_name="$(basename "$(dirname "$skill_md")")"
+    [ "$dir_name" = "node_modules" ] && continue
+    link_claude_filtered "$skill_md" "$dir_name" "$2"
+  done
+}
+
 # Design skills (override any marketing-skills name conflicts)
 DESIGN_SRC_DIR="$SOURCE_DIR/design-skills"
 if [ -d "$DESIGN_SRC_DIR" ]; then
-  for skill_md in "$DESIGN_SRC_DIR"/*/SKILL.md; do
-    [ -f "$skill_md" ] || continue
-    skill_dir="$(dirname "$skill_md")"
-    dir_name="$(basename "$skill_dir")"
-    [ "$dir_name" = "node_modules" ] && continue
-    link_claude_filtered "$skill_md" "$dir_name" design
-  done
+  walk_flat_claude "$DESIGN_SRC_DIR" design
 fi
 
 # Superskills (override any design/marketing-skills name conflicts)
-for skill_md in "$SKILLS_SRC_DIR"/*/SKILL.md; do
-  [ -f "$skill_md" ] || continue
-  skill_dir="$(dirname "$skill_md")"
-  dir_name="$(basename "$skill_dir")"
-  [ "$dir_name" = "node_modules" ] && continue
-  link_claude_filtered "$skill_md" "$dir_name" core
-done
+walk_flat_claude "$SKILLS_SRC_DIR" core
+
+# gstack skills ride the same selection — but only from a valid install (a
+# partial or foreign dir at that path is never walked). The coding roster's
+# gstack names (review, qa, cso, design-review — the /qa-full matrix) always
+# link; every other gstack skill links only under the gstack pack.
+case "$(gstack_install_state "$GSTACK_DIR")" in
+  real|vendor) walk_flat_claude "$GSTACK_DIR" gstack ;;
+esac
 
 log "  linked: ${#LINKED[@]} skills"
-# Links this checkout created that no longer resolve (a renamed or removed
-# skill) would otherwise linger as broken slash commands.
+# Links this checkout or the gstack install created that no longer resolve (a
+# renamed, moved or deleted upstream skill — or a removed gstack clone) would
+# otherwise linger as broken slash commands. The gstack call is ungated on
+# purpose: it must still clean up after the clone itself is gone.
 while IFS= read -r pruned; do log "  [prune] $pruned"; done < <(prune_dangling_links "$CLAUDE_SKILLS_DIR" "$SOURCE_DIR")
+while IFS= read -r pruned; do log "  [prune] $pruned"; done < <(prune_dangling_links "$CLAUDE_SKILLS_DIR" "$GSTACK_DIR")
 # A persisted pack selection also prunes THIS checkout's now-deselected
 # installs — without this, upgrading a full install leaves every deselected
 # skill's description loading in every session forever. No packs.conf means a
 # pre-packs install: nothing is deselected by surprise.
 if [ -f "$CONFIG_DIR/packs.conf" ]; then
   while IFS= read -r pruned; do log "  [prune] $pruned (deselected)"; done < <(prune_deselected_skills "$CLAUDE_SKILLS_DIR" "$SOURCE_DIR")
+fi
+# Deselected gstack links follow the same rule, owned by the gstack clone:
+# only top-level symlinks into it are removed (a real file, a foreign link or
+# the clone dir itself never qualifies — remove_owned_skill fails closed).
+if [ -f "$CONFIG_DIR/packs.conf" ] && [ -d "$GSTACK_DIR" ]; then
+  while IFS= read -r pruned; do log "  [prune] $pruned (deselected gstack)"; done < <(prune_deselected_skills "$CLAUDE_SKILLS_DIR" "$GSTACK_DIR" gstack)
 fi
 log ""
 
