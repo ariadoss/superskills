@@ -9,6 +9,160 @@
 # These functions never mutate the source tree. link_skill_into only writes
 # symlinks under the target dir it is given.
 
+# ── Pack selection (profiles) ─────────────────────────────────────────────────
+#
+# SS_PACKS is a comma-separated list of pack names held in
+# ~/.superskills/packs.conf as plain text — the value is parsed, never sourced.
+# Packs: coding (default), core, design, marketing, media, gstack, all.
+# skill_selected answers for one skill: setup's per-tool linkers and the
+# output adapters consult it; gstack links by name with a category hint.
+
+PACK_CODING="specify clarify write-plan analyze repomap dbmap worktrees tdd debug verify test-coverage qa-full finish-branch daily-qa superskills-doctor superskills-upgrade clean-code defense db-optimize web-perf a11y playwright checklist design-review"
+
+packs_conf_path() {
+  printf '%s' "${SS_PACKS_CONF:-$HOME/.superskills/packs.conf}"
+}
+
+packs_load() {
+  local conf line
+  conf="$(packs_conf_path)"
+  [ -f "$conf" ] || { SS_PACKS="${SS_PACKS_DEFAULT:-coding}"; return 0; }
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in \#*|"") continue ;; esac
+    SS_PACKS="${line#packs=}"
+    [ "$SS_PACKS" = "$line" ] && SS_PACKS=""
+  done < "$conf"
+  [ -n "$SS_PACKS" ] && SS_PACKS="${SS_PACKS_DEFAULT:-$SS_PACKS}"
+  return 0
+}
+
+packs_save() {
+  local packs="$1" conf
+  case ",$packs," in *,all,*) packs="all" ;; esac
+  conf="$(packs_conf_path)"
+  mkdir -p "$(dirname "$conf")"
+  printf '# superskills pack selection — parsed by setup, never sourced\npacks=%s\n' "$packs" > "$conf"
+}
+
+packs_validate() {
+  local input="$1" pack
+  case ",$input," in
+    *,,|,|,) echo "invalid pack list: $input" >&2; return 1 ;;
+  esac
+  local -a list
+  IFS=',' read -r -a list <<<"$input" || return 1
+  [ "${#list[@]}" -eq 0 ] && { echo "invalid pack list: $input" >&2; return 1; }
+  for pack in "${list[@]}"; do
+    case "$pack" in
+      coding|core|design|marketing|media|gstack|all) : ;;
+      *) echo "invalid pack: $pack" >&2; return 1 ;;
+    esac
+  done
+  return 0
+}
+
+packs_all_included() {
+  case ",${SS_PACKS:-coding}," in *",all,"*) return 0 ;; *) return 1 ;; esac
+}
+
+# pack_category_included <category> — is a tree's category installed? The
+# coding pack's roster is served by the skills/ tree, so a selection that
+# lists coding (or defaults to it) includes the core tree.
+pack_category_included() {
+  packs_all_included && return 0
+  case ",${SS_PACKS:-coding}," in *",$1,"*) return 0 ;; *) return 1 ;; esac
+}
+
+# skill_selected <name> <category> — the shared predicate. Exit 0 means the
+# skill is installed under the active pack selection. <category> is coding,
+# core, design, marketing, media or gstack: the tree that walks it (coding and
+# core share the skills/ roster; design, marketing, media are their own trees;
+# a gstack-installed skill passes its own category, so the same predicate
+# drives gstack links by name).
+# Rules: `all` includes everything; otherwise the requested categories must be
+# listed in SS_PACKS (coding is itself a listed pack, and is the default value
+# of SS_PACKS, so it is in force unless the user picks other packs), and the
+# name must be claimed by a pack of that same category — the coding roster
+# (category coding) or, for the other trees, the matching listed category.
+# A tree-walked skill (design, marketing, media, gstack) is therefore selected
+# exactly when its category is listed; a core-tree skill is selected when
+# coding is in force and the name is on the coding roster.
+# design-review ships in gstack but is a coding-pack default, so its coding
+# roster entry claims it whenever its tree is gstack's (the pack_category gate
+# for gstack runs in setup) or its category is coding/core.
+skill_selected() {
+  local name="$1" category="$2" roster
+  roster=0
+  packs_category_of "$name" >/dev/null && roster=1
+  if [ "$roster" -eq 1 ]; then
+    case "$category" in
+      design) [ "$name" = "design-review" ] && return 0 ;;
+      coding|core) return 0 ;;
+      *) return 1 ;;
+    esac
+  fi
+  pack_category_included "$category" || return 1
+  packs_all_included && return 0
+  case "$category" in
+    coding) return 1 ;;
+    core) pack_category_included core ;;
+    *) return 0 ;;
+  esac
+}
+
+# packs_category_of <name> — echo the pack category owning <name>; exit 1 when
+# no pack claims it. Only the coding roster resolves by name; every other tree
+# walks under its category.
+packs_category_of() {
+  local name="$1" word
+  for word in $PACK_CODING; do
+    [ "$word" = "$name" ] && { printf 'core\n'; return 0; }
+  done
+  return 1
+}
+
+# selected_source_paths <repo_root> <skills_dir> <design_dir> <marketing_dir>
+# Read-only: for --list-skills. Walks the three superskills trees the same way
+# setup links them (marketing nested via marketing_skill_files) and echoes the
+# SKILL.md path of every skill the active pack selection keeps. Echoes nothing
+# for deselected skills; never touches the filesystem beyond reading.
+# The marketing tree is split at walk time: the media pack owns
+# content/video-editing (its whole subtree, media category), everything else
+# under marketing-skills is the marketing category.
+selected_source_paths() {
+  local root="$1" skills_dir="$2" design_dir="$3" marketing_dir="$4"
+  local name skill_md fallback rel_path category
+  if [ -d "$marketing_dir" ]; then
+    while IFS= read -r skill_md; do
+      rel_path="${skill_md#"$marketing_dir"/}"
+      case "$rel_path" in
+        content/video-editing/*) category=media ;;
+        *) category=marketing ;;
+      esac
+      fallback="$(basename "$(dirname "$skill_md")")"
+      name="$(skill_name_from "$skill_md" "$fallback")"
+      skill_selected "$name" "$category" && printf '%s\n' "$skill_md"
+    done < <(marketing_skill_files "$marketing_dir")
+  fi
+  if [ -d "$design_dir" ]; then
+    for skill_md in "$design_dir"/*/SKILL.md; do
+      [ -f "$skill_md" ] || continue
+      [ "$(basename "$(dirname "$skill_md")")" = "node_modules" ] && continue
+      name="$(skill_name_from "$skill_md" "$(basename "$(dirname "$skill_md")")")"
+      skill_selected "$name" design && printf '%s\n' "$skill_md"
+    done
+  fi
+  for skill_md in "$skills_dir"/*/SKILL.md; do
+    [ -f "$skill_md" ] || continue
+    [ "$(basename "$(dirname "$skill_md")")" = "node_modules" ] && continue
+    name="$(skill_name_from "$skill_md" "$(basename "$(dirname "$skill_md")")")"
+    category=core
+    packs_category_of "$name" >/dev/null && category=coding
+    skill_selected "$name" "$category" && printf '%s\n' "$skill_md"
+  done
+  return 0
+}
+
 # skill_name_from <skill_md> [fallback]
 # Echo a skill's canonical name from its `name:` frontmatter, else the fallback.
 # Echoes empty string if neither is available.
@@ -149,6 +303,46 @@ prune_dangling_links() {
     # Only a directory this run emptied is removed — never one that was already
     # empty (a user's or another installer's).
     [ "$pruned" -eq 1 ] && { rmdir "$dir" 2>/dev/null || true; }
+  done
+  return 0
+}
+
+# remove_owned_skill <skill_dir>... — safe removal of OUR deselected installs.
+# A directory qualifies only when it is NOT a symlink, not "/" and not empty,
+# and every entry inside is a symlink owned by this checkout: it resolves, its
+# target lies under the caller's source root (passed via SS_OWNED_SRC), the
+# target has no . or .. traversal, and the link is not a directory. Anything
+# else — a regular file, a link to somewhere foreign, a symlinked directory —
+# aborts the whole call and removes nothing (fail-closed, never partial).
+# Echoes each removed skill dir; exit 1 when nothing was removed.
+remove_owned_skill() {
+  local dir entry target owned
+  [ "$#" -ge 1 ] || return 0
+  local src_root="${SS_OWNED_SRC%/}"
+  [ -n "$src_root" ] || return 1
+  for dir in "$@"; do
+    dir="${dir%/}"
+    [ -n "$dir" ] || continue
+    case "$dir" in /|"") continue ;; esac
+    [ -d "$dir" ] || continue
+    [ -L "$dir" ] && continue
+    owned=1
+    for entry in "$dir"/* "$dir"/.[!.]*; do
+      [ -e "$entry" ] || [ -L "$entry" ] || continue
+      if [ ! -L "$entry" ]; then owned=0; break; fi
+      if [ -d "$entry" ]; then owned=0; break; fi
+      target="$(readlink "$entry")"
+      case "$target" in */./*|*/../*|*/.|*/..) owned=0; break ;; esac
+      case "$target" in "$src_root"/*) : ;; *) owned=0; break ;; esac
+      [ -e "$entry" ] || owned=0
+    done
+    [ "$owned" -eq 1 ] || continue
+    for entry in "$dir"/* "$dir"/.[!.]*; do
+      [ -L "$entry" ] || continue
+      rm -f "$entry"
+      printf '%s\n' "$entry"
+    done
+    rmdir "$dir" 2>/dev/null || true
   done
   return 0
 }

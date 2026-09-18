@@ -8,6 +8,9 @@ NO_KNOWLEDGE=0
 EXTEND_FROM=""
 INSTALL_CURSOR=0
 INSTALL_CLINE=0
+PACKS_ARG=""
+LIST_SKILLS=0
+PERSIST_ONLY=0
 
 usage() {
   cat <<'USAGE'
@@ -15,6 +18,11 @@ Usage: ./setup [options]
   -q, --quiet            less output
   --no-knowledge         skip knowledge-base prompts and clones
   --extend-from <path>   overlay repo to extend from
+  --packs <list>         comma list of packs: coding (default), core, design,
+                         marketing, media, gstack, all. Persisted for upgrades.
+  --list-skills          print the resolved source paths of the selected skills
+                         and exit (read-only: installs nothing, saves nothing)
+  --persist-only         save the --packs selection and exit (installs nothing)
   --cursor               also write project-level Cursor rules (.cursor/rules)
   --cline                also write project-level Cline/Roo rules (.clinerules)
   -h, --help             show this help and exit (installs nothing)
@@ -29,6 +37,11 @@ while [ $# -gt 0 ]; do
     --extend-from)     [ $# -ge 2 ] || { echo "--extend-from needs a path" >&2; exit 2; }
                        EXTEND_FROM="$2"; shift 2 ;;
     --extend-from=*)   EXTEND_FROM="${1#--extend-from=}"; shift ;;
+    --packs)           [ $# -ge 2 ] || { echo "--packs needs a comma list" >&2; exit 2; }
+                       PACKS_ARG="$2"; PACKS_GIVEN=1; shift 2 ;;
+    --packs=*)         PACKS_ARG="${1#--packs=}"; PACKS_GIVEN=1; shift ;;
+    --list-skills)     LIST_SKILLS=1; shift ;;
+    --persist-only)    PERSIST_ONLY=1; shift ;;
     --cursor)          INSTALL_CURSOR=1; shift ;;
     --cline)           INSTALL_CLINE=1; shift ;;
     -h|--help)         usage; exit 0 ;;
@@ -54,6 +67,34 @@ SKILLS_SRC_DIR="$SOURCE_DIR/skills"
 . "$SOURCE_DIR/scripts/lib/skills-lib.sh"
 # shellcheck source=scripts/lib/gstack-install-lib.sh
 . "$SOURCE_DIR/scripts/lib/gstack-install-lib.sh"
+
+# ── Pack selection ─────────────────────────────────────────────────────────────
+# Validate before anything else: an invalid list must never mutate or install.
+# Flags are validated before the conf is read, and --packs (given) wins over a
+# persisted selection; with no flag the persisted selection is preserved.
+if [ "$PACKS_GIVEN" -eq 1 ]; then
+  packs_validate "$PACKS_ARG" || exit 2
+  SS_PACKS="$PACKS_ARG"
+else
+  packs_load
+fi
+
+if [ "$LIST_SKILLS" -eq 1 ]; then
+  selected_source_paths "$SOURCE_DIR" "$SKILLS_SRC_DIR" "$SOURCE_DIR/design-skills" "$SOURCE_DIR/marketing-skills"
+  exit 0
+fi
+
+if [ "$PERSIST_ONLY" -eq 1 ]; then
+  [ "$PACKS_GIVEN" -eq 1 ] || { echo "--persist-only needs --packs" >&2; exit 2; }
+  packs_save "$PACKS_ARG"
+  log "  [ok] pack selection saved: $PACKS_ARG"
+  exit 0
+fi
+
+# A --packs run re-persists; a plain run preserves whatever is on disk.
+[ "$PACKS_GIVEN" -eq 1 ] && packs_save "$PACKS_ARG"
+
+log "  packs: ${SS_PACKS:-coding}"
 
 # Canonical version, stamped into artifacts for tools that have no native
 # update detection (Windsurf/Cursor/Cline/Continue) so the active version is
@@ -193,12 +234,31 @@ log ""
 log "  Linking skills (Claude Code)..."
 LINKED=()
 
+# Pack gate shared by every per-tool walk: marketing's media subtree
+# (content/video-editing) answers to the media pack, everything else to its
+# own category. Deselected skills return 1 — never linked, never fatal.
+ss_selected() {
+  local name="$1" category="$2" skill_md="$3" rel_path
+  if [ "$category" = "marketing" ]; then
+    rel_path="${skill_md#"$MARKETING_SRC_DIR"/}"
+    case "$rel_path" in content/video-editing/*) category=media ;; esac
+  fi
+  skill_selected "$name" "$category"
+}
+
 link_skill_claude() {
   local skill_name
   # `|| return 0`: a skill with no resolvable name is skipped, not fatal — keeps
   # the old skip-semantics so a standalone call can't abort setup under `set -e`.
   skill_name="$(link_skill_into "$CLAUDE_SKILLS_DIR" "$1" "$2" 1)" || return 0
   [ -n "$skill_name" ] && LINKED+=("$skill_name")
+}
+
+link_claude_filtered() {
+  local skill_md="$1" fallback_name="$2" category="$3" name
+  name="$(skill_name_from "$skill_md" "$fallback_name")"
+  ss_selected "$name" "$category" "$skill_md" || return 0
+  link_skill_claude "$skill_md" "$fallback_name"
 }
 
 # Marketing skills (processed first; design and superskills override any name conflicts)
@@ -208,7 +268,7 @@ if [ -d "$MARKETING_SRC_DIR" ]; then
     skill_dir="$(dirname "$skill_md")"
     rel_path="${skill_dir#$MARKETING_SRC_DIR/}"
     fallback_name=$(echo "$rel_path" | tr '/' '-')
-    link_skill_claude "$skill_md" "$fallback_name"
+    link_claude_filtered "$skill_md" "$fallback_name" marketing
   done < <(marketing_skill_files "$MARKETING_SRC_DIR")
 fi
 
@@ -220,7 +280,7 @@ if [ -d "$DESIGN_SRC_DIR" ]; then
     skill_dir="$(dirname "$skill_md")"
     dir_name="$(basename "$skill_dir")"
     [ "$dir_name" = "node_modules" ] && continue
-    link_skill_claude "$skill_md" "$dir_name"
+    link_claude_filtered "$skill_md" "$dir_name" design
   done
 fi
 
@@ -230,7 +290,7 @@ for skill_md in "$SKILLS_SRC_DIR"/*/SKILL.md; do
   skill_dir="$(dirname "$skill_md")"
   dir_name="$(basename "$skill_dir")"
   [ "$dir_name" = "node_modules" ] && continue
-  link_skill_claude "$skill_md" "$dir_name"
+  link_claude_filtered "$skill_md" "$dir_name" core
 done
 
 log "  linked: ${#LINKED[@]} skills"
@@ -247,12 +307,19 @@ link_skill_opencode() {
   link_skill_into "$OPENCODE_SKILLS_DIR" "$1" "$2" 0 "superskills-" >/dev/null || return 0
 }
 
+link_opencode_filtered() {
+  local skill_md="$1" fallback_name="$2" category="$3" name
+  name="$(skill_name_from "$skill_md" "$fallback_name")"
+  ss_selected "$name" "$category" "$skill_md" || return 0
+  link_skill_opencode "$skill_md" "$fallback_name"
+}
+
 if [ -d "$MARKETING_SRC_DIR" ]; then
   while IFS= read -r skill_md; do
     skill_dir="$(dirname "$skill_md")"
     rel_path="${skill_dir#$MARKETING_SRC_DIR/}"
     fallback_name=$(echo "$rel_path" | tr '/' '-')
-    link_skill_opencode "$skill_md" "$fallback_name"
+    link_opencode_filtered "$skill_md" "$fallback_name" marketing
   done < <(marketing_skill_files "$MARKETING_SRC_DIR")
 fi
 
@@ -262,7 +329,7 @@ if [ -d "$DESIGN_SRC_DIR" ]; then
     skill_dir="$(dirname "$skill_md")"
     dir_name="$(basename "$skill_dir")"
     [ "$dir_name" = "node_modules" ] && continue
-    link_skill_opencode "$skill_md" "$dir_name"
+    link_opencode_filtered "$skill_md" "$dir_name" design
   done
 fi
 
@@ -271,7 +338,7 @@ for skill_md in "$SKILLS_SRC_DIR"/*/SKILL.md; do
   skill_dir="$(dirname "$skill_md")"
   dir_name="$(basename "$skill_dir")"
   [ "$dir_name" = "node_modules" ] && continue
-  link_skill_opencode "$skill_md" "$dir_name"
+  link_opencode_filtered "$skill_md" "$dir_name" core
 done
 
 while IFS= read -r pruned; do log "  [prune] $pruned"; done < <(prune_dangling_links "$OPENCODE_SKILLS_DIR" "$SOURCE_DIR")
@@ -294,11 +361,18 @@ if [ -d "$HOME/.codex" ]; then
     fi
   }
 
+  link_codex_filtered() {
+    local skill_md="$1" dir_name="$2" name
+    name="$(skill_name_from "$skill_md" "$dir_name")"
+    ss_selected "$name" core "$skill_md" || return 0
+    link_skill_codex "$skill_md" "$dir_name"
+  }
+
   for skill_md in "$SKILLS_SRC_DIR"/*/SKILL.md; do
     [ -f "$skill_md" ] || continue
     dir_name="$(basename "$(dirname "$skill_md")")"
     [ "$dir_name" = "node_modules" ] && continue
-    link_skill_codex "$skill_md" "$dir_name"
+    link_codex_filtered "$skill_md" "$dir_name"
   done
   while IFS= read -r pruned; do log "  [prune] $pruned"; done < <(prune_dangling_links "$CODEX_SKILLS_DIR" "$SOURCE_DIR")
   log "  linked: $CODEX_LINKED skills"
@@ -316,6 +390,7 @@ if [ -d "$HOME/.continue" ]; then
     local name desc body
     name="$(skill_name_from "$skill_md" "$fallback_name")"
     [ -z "$name" ] && return
+    ss_selected "$name" core "$skill_md" || return 0
     desc=$(skill_desc_from "$skill_md")
     body=$(skill_body_from "$skill_md")
     printf 'name: %s\ndescription: %s\n---\n%s\n' "$name" "$desc" "$body" \
@@ -344,6 +419,7 @@ if [ -d "$HOME/.augment" ]; then
     local name body
     name="$(skill_name_from "$skill_md" "$fallback_name")"
     [ -z "$name" ] && return
+    ss_selected "$name" core "$skill_md" || return 0
     body=$(skill_body_from "$skill_md")
     printf '# /%s\n\n%s\n' "$name" "$body" > "$AUGMENT_COMMANDS_DIR/$name.md"
     AUGMENT_LINKED=$((AUGMENT_LINKED + 1))
@@ -372,6 +448,7 @@ if [ -d "$HOME/.codeium/windsurf" ]; then
       dir_name="$(basename "$(dirname "$skill_md")")"
       [ "$dir_name" = "node_modules" ] && continue
       name="$(skill_name_from "$skill_md" "$dir_name")"
+      ss_selected "$name" core "$skill_md" || continue
       desc=$(skill_desc_from "$skill_md")
       echo "- \`/$name\` — $desc"
     done
@@ -392,6 +469,7 @@ if [ "$INSTALL_CURSOR" -eq 1 ]; then
     dir_name="$(basename "$(dirname "$skill_md")")"
     [ "$dir_name" = "node_modules" ] && continue
     name="$(skill_name_from "$skill_md" "$dir_name")"
+    ss_selected "$name" core "$skill_md" || continue
     desc=$(skill_desc_from "$skill_md")
     body=$(skill_body_from "$skill_md")
     printf -- '---\nname: %s\ndescription: %s\nalwaysApply: false\n---\n%s\n' \
@@ -419,6 +497,7 @@ if [ "$INSTALL_CLINE" -eq 1 ]; then
       dir_name="$(basename "$(dirname "$skill_md")")"
       [ "$dir_name" = "node_modules" ] && continue
       name="$(skill_name_from "$skill_md" "$dir_name")"
+      ss_selected "$name" core "$skill_md" || continue
       desc=$(skill_desc_from "$skill_md")
       echo "- \`/$name\` — $desc"
     done
@@ -470,8 +549,16 @@ log ""
 log "  superskills ready"
 log "  ${#LINKED[@]} skills linked"
 log "  tools: Claude Code, OpenCode$([ -d "$HOME/.codex" ] && echo ', Codex CLI')$([ -d "$HOME/.continue" ] && echo ', Continue.dev')$([ -d "$HOME/.augment" ] && echo ', Augment')$([ -d "$HOME/.codeium/windsurf" ] && echo ', Windsurf')"
-log "  includes marketing-skills: SEO, content, pages, ads, channels, strategies"
-log "  includes design-skills: UX, frontend engineering, animation, Swift/iOS, Vercel"
+# Only advertise the packs the run actually installed (packs_all_included covers 'all').
+if packs_all_included; then
+  log "  includes marketing-skills: SEO, content, pages, ads, channels, strategies"
+  log "  includes design-skills: UX, frontend engineering, animation, Swift/iOS, Vercel"
+else
+  pack_category_included marketing && log "  includes marketing-skills: SEO, content, pages, ads, channels, strategies"
+  pack_category_included media && log "  includes media pack: video editing"
+  pack_category_included design && log "  includes design-skills: UX, frontend engineering, animation, Swift/iOS, Vercel"
+  log "  packs: ${SS_PACKS:-coding} (change with ./setup --packs)"
+fi
 if [ -f "$KB_CONF" ] && [ -s "$KB_CONF" ]; then
   kb_count=$(grep -c '.' "$KB_CONF" 2>/dev/null || echo 0)
   log "  $kb_count knowledge base(s) configured"
