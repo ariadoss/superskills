@@ -18,7 +18,7 @@ setup() {
     count=$((count + 1))
   done
   skill_selected design-review design
-  [ "$count" -eq 24 ] || false
+  [ "$count" -eq 28 ] || false
   run skill_selected cache-strategy core
   [ "$status" -eq 1 ] || false
   run skill_selected review gstack

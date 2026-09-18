@@ -17,7 +17,7 @@
 # skill_selected answers for one skill: setup's per-tool linkers and the
 # output adapters consult it; gstack links by name with a category hint.
 
-PACK_CODING="specify clarify write-plan analyze repomap dbmap worktrees tdd debug verify test-coverage qa-full finish-branch daily-qa superskills-doctor superskills-upgrade clean-code defense db-optimize web-perf a11y playwright checklist design-review"
+PACK_CODING="specify clarify write-plan analyze repomap dbmap worktrees tdd debug verify test-coverage qa-full finish-branch daily-qa superskills-doctor superskills-upgrade clean-code defense db-optimize web-perf a11y playwright checklist design-review iac-scan pentest fuzz perf-profile"
 
 packs_conf_path() {
   printf '%s' "${SS_PACKS_CONF:-$HOME/.superskills/packs.conf}"

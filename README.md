@@ -25,8 +25,11 @@ Setup will:
 ### Packs — choose what gets installed
 
 Every skill belongs to a pack. `./setup` installs the **coding pack by
-default** (24 skills: the spec → plan → TDD → QA → ship workflow plus its
-`/qa-full` fan-out) so your harness's always-on context stays small. Skill
+default** (28 skills: the spec → plan → TDD → QA → ship workflow plus every
+check `/qa-full` can trigger — security (`/defense`, `/iac-scan`, `/pentest`,
+`/fuzz`), performance (`/db-optimize`, `/web-perf`, `/perf-profile`), and
+browser/design QA (`/playwright`, `/a11y`, `/design-review` via gstack)) so
+your harness's always-on context stays small. Skill
 *descriptions* load on every turn; only a triggered skill's body does — so
 every extra pack is a real per-token cost in every session. The coding pack is
 always on: no pack list excludes it.
