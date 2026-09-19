@@ -21,7 +21,8 @@ setup() {
   skill_selected review gstack
   skill_selected qa gstack
   skill_selected cso gstack
-  [ "$count" -eq 31 ] || false
+  skill_selected plan-eng-review gstack
+  [ "$count" -eq 32 ] || false
   run skill_selected cache-strategy core
   [ "$status" -eq 1 ] || false
   run skill_selected ship gstack
