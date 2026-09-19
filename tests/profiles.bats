@@ -9,6 +9,20 @@ setup() {
   mkdir -p "$FIX"
 }
 
+@test "the write-plan chain member plan-eng-review is pinned on the gstack slice by name" {
+  # /write-plan auto-runs /plan-eng-review ("don't ask permission, just run
+  # it"), so the default coding install is broken without it. Named pin, not
+  # just loop coverage: removing it from the slice must fail THIS test.
+  case " $PACK_CODING_GSTACK " in
+    *" plan-eng-review "*) : ;;
+    *) false ;;
+  esac
+  SS_PACKS=coding
+  skill_selected plan-eng-review gstack
+  SS_PACKS=all
+  skill_selected plan-eng-review gstack
+}
+
 @test "coding selects exactly the requested names including external design-review" {
   local name count=0
   # Iterate the rosters themselves so the test cannot drift from the constants:
