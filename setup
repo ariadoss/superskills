@@ -312,9 +312,8 @@ walk_flat_claude "$SKILLS_SRC_DIR" core
 
 # gstack skills ride the same selection — but only from a valid install (a
 # partial or foreign dir at that path is never walked). The coding roster's
-# gstack names (the /qa-full closure: review, qa, cso, design-review, ship,
-# plan-eng-review, browse, setup-browser-cookies) always link; every other
-# gstack skill links only under the gstack pack.
+# gstack names (the PACK_CODING_GSTACK closure in skills-lib.sh) always
+# link; every other gstack skill links only under the gstack pack.
 case "$(gstack_install_state "$GSTACK_DIR")" in
   real|vendor) walk_flat_claude "$GSTACK_DIR" gstack ;;
 esac

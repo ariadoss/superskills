@@ -11,20 +11,17 @@ setup() {
 
 @test "coding selects exactly the requested names including external design-review" {
   local name count=0
-  # Iterate the roster itself so the test cannot drift from PACK_CODING
-  # (the qa-full matrix's gstack names must select from the gstack tree too).
+  # Iterate the rosters themselves so the test cannot drift from the constants:
+  # every name must select from the coding pack, and every gstack-slice name
+  # must be claimable from the gstack tree (the whitelist branch).
   for name in $PACK_CODING; do
     skill_selected "$name" coding || false
     count=$((count + 1))
   done
+  for name in $PACK_CODING_GSTACK; do
+    skill_selected "$name" gstack || false
+  done
   skill_selected design-review design
-  skill_selected review gstack
-  skill_selected qa gstack
-  skill_selected cso gstack
-  skill_selected plan-eng-review gstack
-  skill_selected ship gstack
-  skill_selected browse gstack
-  skill_selected setup-browser-cookies gstack
   [ "$count" -eq 35 ] || false
   run skill_selected cache-strategy core
   [ "$status" -eq 1 ] || false

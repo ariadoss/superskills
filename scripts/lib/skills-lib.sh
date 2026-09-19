@@ -18,17 +18,18 @@
 # output adapters consult it; gstack links by name with a category hint.
 
 # The coding pack's roster, in two parts: the names this repo serves from
-# skills/, and the gstack-served names the /qa-full matrix triggers (they link
-# whenever a valid gstack install is present, and only then — an upstream
-# gstack skill that ever shadows a repo name is NOT claimable from gstack).
+# skills/, and the gstack-served names the coding pack claims (closure note
+# below).
 PACK_CODING_REPO="specify clarify write-plan analyze repomap dbmap worktrees tdd debug verify test-coverage qa-full finish-branch daily-qa superskills-doctor superskills-upgrade clean-code defense db-optimize web-perf a11y playwright checklist iac-scan pentest fuzz perf-profile"
 # The gstack slice is the /qa-full closure, not every gstack skill: its four
 # gstack checks (review, qa, cso, design-review), the /ship hand-off the gate
 # names as its successor, plan-eng-review (the /write-plan chain), and the
 # browse toolchain /qa and /design-review execute through (their script
 # cookbook and command reference live IN browse/SKILL.md — a hard, file-level
-# dependency; setup-browser-cookies is its authenticated-page path). Every
-# other gstack skill is only cross-referenced in see-also prose.
+# dependency; setup-browser-cookies is its authenticated-page path). Anything
+# else a roster skill executes resolves inside the clone itself (absolute
+# clone paths) or degrades to a designed skip; no other gstack skill needs a
+# link.
 PACK_CODING_GSTACK="review qa cso design-review ship plan-eng-review browse setup-browser-cookies"
 PACK_CODING="$PACK_CODING_REPO $PACK_CODING_GSTACK"
 
@@ -97,10 +98,9 @@ pack_category_included() {
 # list excludes it. Every non-roster skill is selected exactly when its
 # category is listed in SS_PACKS. A roster name is claimable from the tree
 # that serves it: the skills/ tree for every name, plus gstack for exactly
-# PACK_CODING_GSTACK (review, qa, cso, design-review, ship, browse, …) — a
-# gstack skill whose
-# name matches a repo-roster entry is deselected, so the walk order can never
-# let upstream gstack shadow a repo skill.
+# the PACK_CODING_GSTACK names — a gstack skill whose name matches a
+# repo-roster entry is deselected, so the walk order can never let upstream
+# gstack shadow a repo skill.
 skill_selected() {
   local name="$1" category="$2" roster word
   roster=0

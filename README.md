@@ -42,7 +42,7 @@ pack is always on: no pack list excludes it.
 | `design` | the 36 design skills (UX, typography, SwiftUI, Vercel) |
 | `marketing` | the 174 marketing skills (SEO, content, pages, ads) |
 | `media` | the video-editing subtree |
-| `gstack` | installs/promotes gstack itself and links **every** gstack skill; without it only the eight coding-pack gstack skills stay linked — the /qa-full closure (`/review`, `/qa`, `/cso`, `/design-review`, `/ship`, `/plan-eng-review`) plus the browse toolchain those checks execute through (`/browse`, `/setup-browser-cookies`). Everything else a gstack skill mentions is see-also prose, not a call — the rest of a pre-existing clone's links are pruned, the clone is never touched |
+| `gstack` | installs/promotes gstack itself and links **every** gstack skill; without it only the eight coding-pack gstack skills stay linked — the /qa-full closure (`/review`, `/qa`, `/cso`, `/design-review`, `/ship`, `/plan-eng-review`) plus the browse toolchain those checks execute through (`/browse`, `/setup-browser-cookies`). The rest of a pre-existing clone's links are pruned, the clone is never touched. Note: a roster skill's end-of-flow suggestions may still name gstack-pack skills (e.g. `/plan-design-review`) — they resolve from the clone or are designed skips, but aren't one-keystroke available without this pack |
 | `all` | everything (pre-packs behavior) |
 
 Every full `./setup` run persists the effective selection to
