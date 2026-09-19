@@ -25,7 +25,7 @@ Setup will:
 ### Packs — choose what gets installed
 
 Every skill belongs to a pack. `./setup` installs the **coding pack by
-default** (32 skills: 27 in-repo + 5 via gstack when a clone exists — the
+default** (35 skills: 27 in-repo + 8 via gstack when a clone exists — the
 spec → plan → TDD → QA → ship workflow plus every check `/qa-full` can
 trigger: security (`/defense`, `/iac-scan`, `/pentest`, `/fuzz`, `/cso`),
 performance (`/db-optimize`, `/web-perf`, `/perf-profile`), browser/design QA
@@ -42,7 +42,7 @@ pack is always on: no pack list excludes it.
 | `design` | the 36 design skills (UX, typography, SwiftUI, Vercel) |
 | `marketing` | the 174 marketing skills (SEO, content, pages, ads) |
 | `media` | the video-editing subtree |
-| `gstack` | installs/promotes gstack itself and links **every** gstack skill; without it only the five coding-pack gstack skills (`/review`, `/qa`, `/cso`, `/design-review`, `/plan-eng-review`) stay linked — the rest of a pre-existing clone's links are pruned, the clone is never touched |
+| `gstack` | installs/promotes gstack itself and links **every** gstack skill; without it only the eight coding-pack gstack skills stay linked — the /qa-full closure (`/review`, `/qa`, `/cso`, `/design-review`, `/ship`, `/plan-eng-review`) plus the browse toolchain those checks execute through (`/browse`, `/setup-browser-cookies`). Everything else a gstack skill mentions is see-also prose, not a call — the rest of a pre-existing clone's links are pruned, the clone is never touched |
 | `all` | everything (pre-packs behavior) |
 
 Every full `./setup` run persists the effective selection to

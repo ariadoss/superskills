@@ -22,10 +22,13 @@ setup() {
   skill_selected qa gstack
   skill_selected cso gstack
   skill_selected plan-eng-review gstack
-  [ "$count" -eq 32 ] || false
+  skill_selected ship gstack
+  skill_selected browse gstack
+  skill_selected setup-browser-cookies gstack
+  [ "$count" -eq 35 ] || false
   run skill_selected cache-strategy core
   [ "$status" -eq 1 ] || false
-  run skill_selected ship gstack
+  run skill_selected retro gstack
   [ "$status" -eq 1 ] || false
   run skill_selected tdd marketing
   [ "$status" -eq 1 ] || false
@@ -33,12 +36,12 @@ setup() {
 
 @test "non-roster gstack skills select only under the gstack pack" {
   SS_PACKS=coding
-  run skill_selected ship gstack
+  run skill_selected retro gstack
   [ "$status" -eq 1 ] || false
   SS_PACKS=coding,gstack
-  skill_selected ship gstack
+  skill_selected retro gstack
   SS_PACKS=all
-  skill_selected ship gstack
+  skill_selected retro gstack
 }
 
 @test "a repo-roster name is NOT claimable from gstack (upstream cannot shadow the repo)" {
@@ -261,14 +264,14 @@ setup() {
 
 @test "prune_deselected_skills with fixed_category gstack prunes non-roster links, keeps roster and the clone itself" {
   GS="$FIX/gstack-clone"; TGT="$FIX/tgt5"
-  mkdir -p "$GS/review" "$GS/ship" "$GS/verify"
+  mkdir -p "$GS/review" "$GS/retro" "$GS/verify"
   printf '%s\n' '---' 'name: review' '---' > "$GS/review/SKILL.md"
-  printf '%s\n' '---' 'name: ship' '---' > "$GS/ship/SKILL.md"
+  printf '%s\n' '---' 'name: retro' '---' > "$GS/retro/SKILL.md"
   printf '%s\n' '---' 'name: verify' '---' > "$GS/verify/SKILL.md"
   # Production links carry sibling symlinks (link_extras=1), incl. dirs.
-  mkdir -p "$GS/ship/sections" && printf 'x\n' > "$GS/ship/sections/one.md"
+  mkdir -p "$GS/retro/sections" && printf 'x\n' > "$GS/retro/sections/one.md"
   link_skill_into "$TGT" "$GS/review/SKILL.md" "review" >/dev/null
-  link_skill_into "$TGT" "$GS/ship/SKILL.md" "ship" >/dev/null
+  link_skill_into "$TGT" "$GS/retro/SKILL.md" "retro" >/dev/null
   # An upstream collision with a repo-roster name: linked by gstack's own
   # installer once, pruned by us under every selection.
   link_skill_into "$TGT" "$GS/verify/SKILL.md" "verify" >/dev/null
@@ -278,14 +281,14 @@ setup() {
   SS_PACKS=coding
   run prune_deselected_skills "$TGT" "$GS" gstack
   [ "$status" -eq 0 ] || false
-  [ ! -e "$TGT/ship" ] || false
+  [ ! -e "$TGT/retro" ] || false
   [ ! -e "$TGT/verify" ] || false
   [ -L "$TGT/review/SKILL.md" ] || false
   [ -f "$TGT/user-skill/SKILL.md" ] || false
   [ -f "$TGT/gstack/SKILL.md" ] || false
   SS_PACKS=coding,gstack
-  link_skill_into "$TGT" "$GS/ship/SKILL.md" "ship" >/dev/null
+  link_skill_into "$TGT" "$GS/retro/SKILL.md" "retro" >/dev/null
   run prune_deselected_skills "$TGT" "$GS" gstack
-  [ -L "$TGT/ship/SKILL.md" ] || false
+  [ -L "$TGT/retro/SKILL.md" ] || false
   [ ! -e "$TGT/verify" ] || false
 }
