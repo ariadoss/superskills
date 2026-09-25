@@ -111,9 +111,18 @@ Goal: surface likely bugs introduced in the window; propose minimal fixes.
      the report is due, write §2 as *"pending: /code-review still running"*
      and put the Step 3 fallback scan under it, labeled as the fallback.
    Fold `/code-review`'s correctness findings into report §2.
-3. **Fallback (only if `/code-review` is unavailable):** read the diff hunks
+3. **Fallback (only if `/code-review` is unavailable).** `/code-review` is a
+   Claude Code built-in, so Codex, Cursor and other hosts use this path.
+   Apply `/review`'s checklist to the window's diff, read-only: the first of
+   `~/.claude/skills/gstack/review/checklist.md`,
+   `~/.codex/skills/gstack/review/checklist.md`, or
+   `vendor/gstack/review/checklist.md` in the superskills install. Do not run
+   `/review` itself here: it applies fixes to the working tree and stops on the
+   base branch, and this sweep is report-only. Title §2 *"fallback: /review
+   checklist"* (or *"fallback: bug signatures"* if no checklist was found).
+   Whichever you use, read the diff hunks
    that touch logic (skip pure docs/config-only changes unless they touch
-   build/CI config) and look for concrete bug signatures only:
+   build/CI config) and look for concrete bug signatures:
    - off-by-one, inverted conditions, swapped args, dropped error handling,
      unhandled null/undefined, race-prone async, accidental `await` removal,
      resource leaks, missing cleanup, regex backtracking, SQL with missing

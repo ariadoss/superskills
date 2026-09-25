@@ -1,13 +1,13 @@
 {
   "name": "superskills",
-  "version": "2.25.1",
+  "version": "2.25.2",
   "owner": {
     "name": "Danilo Stern-Sapad"
   },
   "plugins": [
     {
       "name": "superskills",
-      "version": "2.25.1",
+      "version": "2.25.2",
       "description": "Curated AI coding skills with a Google/Meta-quality workflow (TDD, DRY, SOLID). Other packs (design, marketing, media, gstack) install via ./setup --packs.",
       "source": {
         "source": "url",

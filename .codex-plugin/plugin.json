@@ -1,6 +1,6 @@
 {
   "name": "superskills",
-  "version": "2.25.1",
+  "version": "2.25.2",
   "description": "Curated AI coding skills with a Google/Meta-quality workflow (TDD, DRY, SOLID). The Codex plugin install exposes the coding pack; other packs install via ./setup --packs into ~/.codex/skills.",
   "author": {
     "name": "Danilo Stern-Sapad",

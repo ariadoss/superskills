@@ -70,3 +70,33 @@ What the baseline did show is a `/code-review` problem:
 - The root-container miss (one run per arm) is `/iac-scan` detection variance,
   not a daily-qa instruction problem; not fixed here.
 - n = 3 per arm, one fixture.
+
+## Follow-up: non-Claude hosts (Codex), v2.25.2
+
+`/code-review` is a Claude Code built-in, so on Codex, Cursor and other hosts
+daily-qa's Step 3 engine does not exist. Running `/review` instead is not an
+option: it stops on the base branch (daily-qa usually runs on `main`) and
+applies fixes to the working tree (daily-qa is report-only). The new fallback
+applies `/review`'s `checklist.md` to the window's diff, read-only, and titles
+§2 *"fallback: /review checklist"*.
+
+Method: the same fixture, run through `codex exec -s workspace-write --json`
+on the user's Azure endpoint, prompt "Run the daily-qa skill on this repo."
+Codex loads skills from its plugin cache, so for the after-runs the edited
+SKILL.md was copied over the cached 2.25.1 copy (and restored afterwards).
+
+| | Baseline (Codex) | After (Codex) |
+|---|---|---|
+| §2 honest that `/code-review` is unavailable | 3/3 | 3/3 |
+| `/review` checklist read | 0/3 | **3/3** |
+| `/review` itself run (must not) | 0/3 | 0/3 |
+| All five planted problems in the report | 3/3 | 3/3 |
+| Commits or source edits | 0 | 0 |
+| Input tokens per run (about 90% cached) | 600k, 701k, 911k | 469k, 436k, 521k |
+| Output tokens per run | 15.8k, 15.4k, 16.9k | 13.5k, 13.1k, 13.0k |
+
+Reading: on Codex the old fallback was already honest and caught all five
+planted problems, so this fixture cannot show the checklist finding more. What
+the change does show: every run now reviews against gstack's `/review`
+criteria instead of an ad-hoc list, never runs `/review` itself, and edits
+nothing. Runs were also cheaper (about 35% fewer input tokens), n = 3.
