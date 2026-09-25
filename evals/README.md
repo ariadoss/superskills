@@ -40,6 +40,8 @@ carries a comment saying to edit all four together.
 
 **In-session evals (free under the plan).** Some reports run the case prompts
 through in-session subagents instead of `claude plugin eval` and grade the
-transcripts: `reports/2026-09-24-description-trim.md` and
-`reports/2026-09-24-qa-full-skill-invocation.md`. The /qa-full fixture repo is
-built by `_lib/qa-full-fixture.sh <dir>` (not a case: it has no `prompt.md`).
+transcripts: `reports/2026-09-24-description-trim.md`,
+`reports/2026-09-24-qa-full-skill-invocation.md` and
+`reports/2026-09-25-daily-qa-skill-invocation.md`. The /qa-full fixture repo is
+built by `_lib/qa-full-fixture.sh <dir>` and the /daily-qa one by
+`_lib/daily-qa-fixture.sh <dir>` (not cases: they have no `prompt.md`).

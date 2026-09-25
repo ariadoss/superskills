@@ -1,7 +1,7 @@
 {
   "name": "superskills-design",
   "displayName": "Superskills Design",
-  "version": "2.25.0",
+  "version": "2.25.1",
   "description": "The design skills from superskills (UX, interface design, typography, frontend engineering, SwiftUI, Vercel) as a separate plugin — install alongside superskills when you want the design pack without the ./setup packs flag.",
   "author": { "name": "Danilo Stern-Sapad", "email": "danilosapad@gmail.com", "url": "https://github.com/ariadoss" },
   "homepage": "https://github.com/ariadoss/superskills",

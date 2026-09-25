@@ -22,6 +22,7 @@ allowed-tools:
   - Grep
   - Glob
   - Task
+  - Skill
   - WebFetch
 ---
 
@@ -102,6 +103,13 @@ Goal: surface likely bugs introduced in the window; propose minimal fixes.
    - The **`ultra` tier is cloud-based, billed, and user-triggered** — never
      auto-run it. Recommend it (see §7f) only when a finding here is
      high-stakes and warrants a deep multi-agent cloud review.
+   - `/code-review` runs as a separate background task that starts in the
+     session's working directory, not necessarily the repo under review. Put
+     the repo's absolute path and the commit range in its arguments, for
+     example `high <oldest>..HEAD in /abs/path/to/repo (cd there first)`.
+   - Wait for its result before writing report §2. If it has not returned when
+     the report is due, write §2 as *"pending: /code-review still running"*
+     and put the Step 3 fallback scan under it, labeled as the fallback.
    Fold `/code-review`'s correctness findings into report §2.
 3. **Fallback (only if `/code-review` is unavailable):** read the diff hunks
    that touch logic (skip pure docs/config-only changes unless they touch

@@ -49,3 +49,14 @@ setup() {
   printf '%s\n' "$output" | grep -q '^Stop .*qa-full-ledger-hook.sh' || false
   printf '%s\n' "$output" | grep -q '^SubagentStop .*qa-full-ledger-hook.sh' || false
 }
+
+@test "daily-qa fixture: main holds both commits, only the planted one is inside a 24h window" {
+  bash "$REPO_ROOT/evals/_lib/daily-qa-fixture.sh" "$D"
+  [ "$(git -C "$D" branch --show-current)" = "main" ]
+  [ -z "$(git -C "$D" status --porcelain)" ]
+  [ "$(git -C "$D" rev-list --count HEAD)" = "2" ]
+  run git -C "$D" log --since="24 hours ago" --format=%s
+  [ "$output" = "feature: checkout (discounts, payments, orders, form, container)" ]
+  run git -C "$D" branch --list feature/checkout
+  [ -z "$output" ]
+}

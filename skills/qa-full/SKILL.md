@@ -321,8 +321,8 @@ debt ships with a note; bugs don't.
 `/code-review ultra` (deep multi-agent cloud review) is **billed** — when a
 `/review` finding is high-stakes (payments, auth, data loss, concurrency), ask
 the user whether to launch it. Do not launch it unasked. Claude Code's
-built-in `/code-review` and `/simplify` are not part of this step: they can't
-be invoked from inside a session, and an optional extra pass would have no
+built-in `/code-review` and `/simplify` are not part of this step: `/review`
+already covers correctness here, and an optional extra pass would have no
 ledger row.
 
 ## Step 4: Security pipeline — `/defense`, `/iac-scan`, `/pentest`, `/fuzz`

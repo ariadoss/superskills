@@ -38,7 +38,9 @@ test('sums price times quantity', () => {
 });
 J
 printf 'node_modules\n' > .gitignore
-git add -A; git commit -qm "base: cart total"
+# FIXTURE_BASE_AGE_DAYS backdates the base commit (daily-qa-fixture.sh uses it to keep it out of a 24h window).
+BASE_DATE="$(( $(date +%s) - ${FIXTURE_BASE_AGE_DAYS:-0} * 86400 )) +0000"
+git add -A; GIT_AUTHOR_DATE="$BASE_DATE" GIT_COMMITTER_DATE="$BASE_DATE" git commit -qm "base: cart total"
 git switch -qc feature/checkout
 mkdir -p models web
 cat > src/discount.js <<'J'

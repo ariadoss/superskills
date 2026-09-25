@@ -1,7 +1,7 @@
 {
   "name": "superskills",
   "displayName": "Superskills",
-  "version": "2.25.0",
+  "version": "2.25.1",
   "description": "Curated AI coding skills with a Google/Meta-quality workflow (TDD, DRY, SOLID). The plugin install exposes the coding pack; design, marketing, media and gstack ship as separate plugins or opt-in packs via ./setup --packs.",
   "author": {
     "name": "Danilo Stern-Sapad",
