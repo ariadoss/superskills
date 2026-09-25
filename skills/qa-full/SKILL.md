@@ -28,6 +28,7 @@ allowed-tools:
   - Grep
   - Glob
   - Task
+  - Skill
   - WebFetch
   - AskUserQuestion
 ---
@@ -60,6 +61,14 @@ changed) with three deliberate differences:
 This is not an audit skill. It is a full security pipeline, a full performance
 pipeline, a full correctness/test pipeline, and a full browser/design pipeline,
 selected per-diff and driven to green.
+
+## How sub-skills run
+
+Each `/name` in the steps below is a skill. Run it by invoking it with the
+Skill tool (for example `Skill(defense)`), then follow the instructions it
+loads. A check counts as run only when that call is in the session; doing the
+check's work by hand from memory is not running it. If a skill cannot be
+invoked here, the check is SKIPPED with the reason.
 
 ## Hard rules
 
@@ -118,7 +127,11 @@ selected per-diff and driven to green.
   **MANDATORY-FAIL** (a `CLAUDE.md`-mandatory check that was skipped). A check whose
   trigger fired but that neither ran nor was explicitly skipped-with-reason is an
   **unaccounted check ⇒ NOT READY**. "Recommend-only" is not an allowed resting
-  state for a *triggered* check. Projects may mark specific checks **MANDATORY**
+  state for a *triggered* check. A RAN-CLEAN, FIXED or UNFIXED row stands on
+  the Skill call that ran it; a row with no such call is unaccounted too. The
+  superskills ledger hook (`hooks/hooks.json` for plugin installs,
+  `scripts/install-qa-full-ledger-hook.sh` otherwise) checks this when the
+  session stops and sends you back to invoke any check it can't find. Projects may mark specific checks **MANDATORY**
   in `CLAUDE.md` (e.g. `/pentest` on a payments service), and for those, SKIPPED
   is itself a blocker.
 - **Money and authorization still need a human yes.** `/code-review ultra` is a
@@ -292,8 +305,9 @@ Record the probe command, model and result in the ledger either way.
 If `/review` cannot run at all (the gstack install is broken), apply its
 checklist
 (`~/.claude/skills/gstack/review/checklist.md`) to `origin/<base>..HEAD` via a
-fresh subagent, fix and re-verify the same way, and say so in the ledger — do
-not skip the correctness step.
+fresh subagent, fix and re-verify the same way, and record the row as
+`SKIPPED(/review unavailable: <reason>; checklist fallback ran)` with the
+fallback's results as evidence — do not skip the correctness step.
 
 **Quality — `/clean-code`.** After correctness is green and committed, run
 `/clean-code <diff-ref> [--scope <paths>]` with the diff ref and scope this

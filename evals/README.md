@@ -37,3 +37,9 @@ analysed runs live in `evals/reports/`.
 duplicated per case: the harness has no shared-grader mechanism, so each copy
 carries a comment saying to edit all four together.
 
+
+**In-session evals (free under the plan).** Some reports run the case prompts
+through in-session subagents instead of `claude plugin eval` and grade the
+transcripts: `reports/2026-09-24-description-trim.md` and
+`reports/2026-09-24-qa-full-skill-invocation.md`. The /qa-full fixture repo is
+built by `_lib/qa-full-fixture.sh <dir>` (not a case: it has no `prompt.md`).

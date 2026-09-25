@@ -1,7 +1,7 @@
 {
   "name": "superskills",
   "displayName": "Superskills",
-  "version": "2.24.0",
+  "version": "2.25.0",
   "description": "Curated AI coding skills with a Google/Meta-quality workflow (TDD, DRY, SOLID). Skills are discovered from ./skills; other packs install project-level via ./setup --packs --cursor.",
   "author": {
     "name": "Danilo Stern-Sapad",

@@ -1,4 +1,4 @@
-# Superskills `v2.24.0`
+# Superskills `v2.25.0`
 
 Curated AI skills pack for Claude Code, OpenCode, Codex CLI, Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Integrates [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team; an opt-in pack) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
@@ -294,6 +294,25 @@ The installer is **opt-in** and never run by `./setup` — it installs a backgro
 agent that force-kills processes, so it stays a deliberate choice. macOS only.
 Threshold and process list are seam-injectable (`GSTACK_QA_REAP_IDLE_MIN`,
 `GSTACK_QA_REAP_PS_FILE`) and covered by `tests/gstack-qa-browser-reaper.bats`.
+
+### /qa-full ledger hook
+
+`/qa-full`'s ledger can say a check ran when the agent actually did that check by
+hand instead of loading the sub-skill. In a 2026-09-24 eval, unchanged qa-full
+invoked 12 of 21 expected sub-skills and left 10 ledger rows unbacked (see
+`evals/reports/2026-09-24-qa-full-skill-invocation.md`).
+
+`scripts/qa-full-ledger-hook.sh` is a Claude Code `Stop`/`SubagentStop` hook. When
+the stopping session ran `/qa-full`, it checks each RAN-CLEAN, FIXED or UNFIXED
+ledger row for a matching Skill call and, if one is missing, sends the agent back
+to invoke it or mark the row SKIPPED(reason). Other sessions exit at once.
+
+- **Plugin installs** get it automatically from `hooks/hooks.json`.
+- **`./setup` installs** opt in: `scripts/install-qa-full-ledger-hook.sh` prints
+  the snippet for `~/.claude/settings.json` (it never edits the file).
+
+Needs `jq` and fails open without it. Logic lives in
+`scripts/lib/qa-full-ledger-lib.sh`, covered by `tests/qa-full-ledger-lib.bats`.
 
 ## Marketing Skills (174)
 
