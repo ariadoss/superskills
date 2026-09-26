@@ -51,8 +51,10 @@ missing="$(qfl_missing "$report" "${transcripts[@]}")"
 [ -z "$missing" ] && exit 0
 
 {
-  echo "The /qa-full ledger in $report marks these checks as run, but this session never invoked them with the Skill tool:"
-  printf '%s\n' "$missing" | sed 's#^#  - /#; s# # or /#g'
+  # The path is printed with control characters stripped; the report's own text
+  # never is (see qfl_format_missing).
+  echo "The /qa-full ledger in $(printf '%s' "$report" | LC_ALL=C tr -d '\000-\037\177') marks these checks as run, but this session never invoked them with the Skill tool:"
+  printf '%s\n' "$missing" | qfl_format_missing
   echo "Invoke each one with the Skill tool and fold its result into the ledger, or change the row to SKIPPED(reason) if it cannot run here."
 } >&2
 exit 2

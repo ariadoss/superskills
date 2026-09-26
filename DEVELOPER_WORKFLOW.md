@@ -1,23 +1,23 @@
 # 10x+ Engineering Output with Parallel AI Agents
 
-Run 10+ features simultaneously — each built, tested, reviewed, documented, and PR'd at the same time.
+Run 10+ features simultaneously. Each built, tested, reviewed, documented, and PR'd at the same time.
 
 **Traditional:** 1 engineer, 1 task at a time  
 **With AI agents:** 1 engineer, 10+ features built, tested, reviewed, documented, and PR'd simultaneously
 
-Engineers who master this don't just move faster — they operate at a different level entirely.
+Engineers who master this don't just move faster. They operate at a different level entirely.
 
-> **Deep dive:** [Parallel AI Agents Engineering Workflow](https://hyperion360.com/blog/parallel-ai-agents-engineering-workflow/) — full write-up with rationale, examples, and pitfalls.
+> **Full write-up:** [Parallel AI Agents Engineering Workflow](https://hyperion360.com/blog/parallel-ai-agents-engineering-workflow/), with rationale, examples, and pitfalls.
 
 ---
 
 ## The quality bar (enforced, not aspirational)
 
 Every stage below is in service of one standard: **code indistinguishable from
-what a strong Google/Meta engineer would land — correct, tested, simple, built
+what a strong Google/Meta engineer would land: correct, tested, simple, built
 to change.** That bar is defined once in
 **[`ENGINEERING_STANDARDS.md`](ENGINEERING_STANDARDS.md)** (TDD · DRY · SOLID ·
-YAGNI + the hard-gate list) and referenced — never restated — by the skills
+YAGNI + the hard-gate list) and referenced, never restated, by the skills
 that enforce it: `/write-plan` bakes it into plans, `/tdd` drives the loop,
 `/review` + `/clean-code` check and clean the diff, **`/qa-full` blocks the ship** on
 its hard gates, and `/verify` proves "done" with fresh evidence. Read that file
@@ -33,7 +33,7 @@ Each feature is scoped end-to-end on its own isolated branch. Nothing touches th
 |---------|------|
 | `/specify` | Turn a natural language description into a structured feature spec |
 | `/clarify` | Identify gaps and ambiguities in the spec before planning |
-| `/write-plan` | Generate a detailed implementation plan from the spec — TDD tasks, DRY/SOLID/YAGNI principles, a required Test Plan & Verification section + coverage target; auto-chains to `/plan-eng-review` to double-check and emit the Test Plan Artifact |
+| `/write-plan` | Generate a detailed implementation plan from the spec: TDD tasks, DRY/SOLID/YAGNI principles, a required Test Plan & Verification section + coverage target; auto-chains to `/plan-eng-review` to double-check and emit the Test Plan Artifact |
 | `/analyze` | Verify consistency across spec, plan, and tasks so nothing conflicts |
 | `/autoplan` | Run automated CEO, design, and eng review chain on the plan |
 | `/plan-eng-review` | Architecture, data flow, and test planning review |
@@ -53,7 +53,7 @@ Each agent works independently and spawns subagents. Exponentially faster than p
 | `/pair-agent` | Coordinate multiple AI agents sharing browser and context across workspaces |
 
 > **Delegation rule: delegate for reasoning, never for fetching.** Spawn a
-> subagent only when the task needs its specialist judgment — a review rubric,
+> subagent only when the task needs its specialist judgment, a review rubric,
 > a debugging hypothesis, a design call. Never delegate to retrieve data the
 > orchestrating session can read itself ("what's in this file?" → read it;
 > "is this design broken?" → dispatch an agent). Delegating fetches turns
@@ -63,25 +63,25 @@ Each agent works independently and spawns subagents. Exponentially faster than p
 > ([Anthropic's multi-agent research write-up](https://www.anthropic.com/engineering/built-multi-agent-research-system)
 > measured ~15× token cost vs. plain chat):
 >
-> 1. **Token blow-up** — delegate only the few items needing deep judgment; read shared state (ledger, reports, maps) for the rest
-> 2. **Latency** — run heavy delegations in the background; keep synchronous calls for quick, scoped questions
-> 3. **Debuggability** — every delegation leaves a durable record (ledger entry, report file), not just chat scrollback
-> 4. **Over-delegation** — enforce this rule in the orchestrator's own instructions, where the delegation decision is made
+> 1. **Token blow-up**: delegate only the few items needing deep judgment; read shared state (ledger, reports, maps) for the rest
+> 2. **Latency**: run heavy delegations in the background; keep synchronous calls for quick, scoped questions
+> 3. **Debuggability**: every delegation leaves a durable record (ledger entry, report file), not just chat scrollback
+> 4. **Over-delegation**: enforce this rule in the orchestrator's own instructions, where the delegation decision is made
 
 ### 3. Each agent runs the full quality pipeline simultaneously
 
 | Command | Role |
 |---------|------|
 | `/tdd` | Enforce Red-Green-Refactor so tests are written before code, not as an afterthought |
-| `/test-coverage` | After the feature lands, find complex business logic, edge/corner cases, and past regressions left untested — write and apply the missing unit/integration/e2e tests, enforcing Google's Testing on the Toilet best practices (see `skills/test-coverage/rules/` for the full checklist) |
+| `/test-coverage` | After the feature lands, find complex business logic, edge/corner cases, and past regressions left untested: write and apply the missing unit/integration/e2e tests, enforcing Google's Testing on the Toilet best practices (see `skills/test-coverage/rules/` for the full checklist) |
 | `/checklist` | Generate a custom quality checklist for the specific feature being built |
 | `/playwright` | Run end-to-end tests with Playwright, automate UI verification |
 | `/qa` | Browser-based testing and bug fixing using real Chromium |
 | `/browse` | Direct Chromium browser control for manual-style automated QA |
 | `/review` | Staff engineer-level code review focused on production readiness |
 | `/code-review` | Review the working diff for correctness bugs + reuse/simplification cleanups (local `low`→`max` tiers; `ultra` for a deep multi-agent cloud review). `--fix` applies findings; `--comment` posts inline PR comments |
-| `/simplify` | Apply reuse, simplification, efficiency, and altitude cleanups to the diff (quality only — no bug hunting; use `/code-review` for bugs) |
-| `/clean-code` | In-tree KISS/DRY/SOLID/YAGNI cleanup of the diff — audit → fix → verify under green tests; invocable from any session or tool (what `/qa-full` runs instead of `/simplify`) |
+| `/simplify` | Apply reuse, simplification, efficiency, and altitude cleanups to the diff (quality only, no bug hunting; use `/code-review` for bugs) |
+| `/clean-code` | In-tree KISS/DRY/SOLID/YAGNI cleanup of the diff, audit → fix → verify under green tests; invocable from any session or tool (what `/qa-full` runs instead of `/simplify`) |
 | `/investigate` | Root cause analysis with hypothesis testing when something breaks |
 | `/debug` | Systematic 4-phase debugging before proposing any fix |
 | `/verify` | Require passing verification commands before any agent can finish |
@@ -89,11 +89,11 @@ Each agent works independently and spawns subagents. Exponentially faster than p
 
 ### 4. Performance & database optimization
 
-> **Performance should be audited across every layer — DB and frontend — not just discovered in production under load.**
+> **Performance should be audited across every layer (DB and frontend), not just discovered in production under load.**
 >
 > - Run `/dbmap` first to map the schema; it will automatically flag missing indexes on foreign keys and common query patterns
-> - Run `/db-optimize` on any feature that adds or modifies DB queries — catches N+1s, join opportunities, and slow queries before they ship
-> - Run `/web-perf` on any feature that adds or changes frontend code — measures Core Web Vitals (LCP, INP, CLS), render-blocking resources, bundle impact, and layout shifts against a live dev server
+> - Run `/db-optimize` on any feature that adds or modifies DB queries: catches N+1s, join opportunities, and slow queries before they ship
+> - Run `/web-perf` on any feature that adds or changes frontend code: measures Core Web Vitals (LCP, INP, CLS), render-blocking resources, bundle impact, and layout shifts against a live dev server
 > - Run `/perf-profile` when response times degrade or before a launch to establish a baseline
 > - Implement `/cache-strategy` for any data that is read far more than it is written
 
@@ -101,20 +101,20 @@ Each agent works independently and spawns subagents. Exponentially faster than p
 |---------|------|
 | `/dbmap` | Map database schema and automatically flag missing indexes (FK columns, common query patterns) |
 | `/db-optimize` | N+1 detection, EXPLAIN analysis, slow query log review, join opportunities, per-endpoint DB call audit |
-| `/web-perf` | Core Web Vitals (LCP, INP, CLS) measurement, render-blocking resource detection, bundle size analysis, layout shift tracing — runs against a live dev URL via Chrome DevTools MCP |
+| `/web-perf` | Core Web Vitals (LCP, INP, CLS) measurement, render-blocking resource detection, bundle size analysis, layout shift tracing, runs against a live dev URL via Chrome DevTools MCP |
 | `/perf-profile` | Code execution time, DB call time, bottleneck identification across app and DB layers |
-| `/cache-strategy` | Permanent cache-first strategy — read from cache, write on first miss, invalidate only on data change (no TTL) |
+| `/cache-strategy` | Permanent cache-first strategy: read from cache, write on first miss, invalidate only on data change (no TTL) |
 
 ### 5. Security layer (runs alongside development and again after every merge)
 
-> **Security and QA should run at multiple points — not just once.**
+> **Security and QA should run at multiple points, not just once.**
 >
 > New code introduced after an initial review can reintroduce vulnerabilities or break functionality. The right model is:
 >
-> 1. **Before writing code** — `/cso` and `/defense` surface threat model concerns that shape the design
-> 2. **During development** — security checks catch issues while context is fresh and before bad patterns spread
-> 3. **In the PR pipeline** — `/review` re-runs on every diff, so new code is always checked
-> 4. **After each merge to main** — run `/pentest` and `/fuzz` again; merged code from other branches may create new attack surfaces when combined
+> 1. **Before writing code**: `/cso` and `/defense` surface threat model concerns that shape the design
+> 2. **During development**: security checks catch issues while context is fresh and before bad patterns spread
+> 3. **In the PR pipeline**: `/review` re-runs on every diff, so new code is always checked
+> 4. **After each merge to main**: run `/pentest` and `/fuzz` again; merged code from other branches may create new attack surfaces when combined
 >
 > Treating security as a one-time gate at the end is the mistake. Continuous checks are cheap; a post-ship breach is not.
 
@@ -129,7 +129,7 @@ Each agent works independently and spawns subagents. Exponentially faster than p
 
 > **Gate the feature before you ship it.** The commands in steps 3–5 are run
 > individually during development. `/qa-full` is the single orchestrator that
-> re-runs the relevant subset — scoped to the branch diff (`base..HEAD`) — and
+> re-runs the relevant subset, scoped to the branch diff (`base..HEAD`), and
 > emits one pass/fail ship-readiness verdict. Run it when the feature is done,
 > *before* `/finish-branch` and `/ship`:
 >
@@ -138,26 +138,25 @@ Each agent works independently and spawns subagents. Exponentially faster than p
 > ```
 >
 > It reuses `/daily-qa`'s trigger matrix but is branch-scoped, present-human
-> (so it actually runs the interactive checks `/daily-qa` only recommends —
-> `/qa`, `/web-perf`, `/design-review`, dynamic `/a11y`), and it is an
+> (so it actually runs the interactive checks `/daily-qa` only recommends: `/qa`, `/web-perf`, `/design-review`, dynamic `/a11y`), and it is an
 > **audit → fix → verify pipeline**, not a report: each triggered check runs,
 > the pipeline fixes what it found (one atomic commit per fix, never a push),
 > then re-runs the check and the test suite to prove the fix. CRITICAL/HIGH
 > findings that survive the fix rounds are blockers and stop the gate.
 >
 > **It also enforces that the work was actually done, not just recommended.**
-> Every triggered check — security, performance, browser QA, design, a11y,
-> coverage — must resolve in the pipeline's **accounting ledger** (exact
+> Every triggered check (security, performance, browser QA, design, a11y,
+> coverage) must resolve in the pipeline's **accounting ledger** (exact
 > vocabulary and MANDATORY rules: `skills/qa-full/SKILL.md`, Hard rules); a
 > triggered-but-unaccounted check is itself a blocker, and a project can mark a
 > check **MANDATORY** in `CLAUDE.md` so a skip no longer passes. Phase-5 caveat: the gate runs *before*
 > `/finish-branch`/`/ship`, so it enforces the pre-ship half (fresh test/build
-> evidence) and is the hard precondition for ship — it cannot verify steps that
+> evidence) and is the hard precondition for ship. It cannot verify steps that
 > happen after it.
 
 | Command | Role |
 |---------|------|
-| `/qa-full` | Per-feature QA pipeline — audit → fix → verify. Full fan-out (tests, `/review` + `/clean-code`, `/defense`, `/db-optimize`, `/web-perf`, `/qa`, `/design-review`, `/a11y`, `/test-coverage`) on the branch diff, fixes what it finds, re-verifies, → pass/fail ship-readiness verdict, with an **accounting ledger** that blocks if a triggered check wasn't run, was left unfixed, or wasn't explicitly skipped-with-reason. Run before `/finish-branch` and `/ship` |
+| `/qa-full` | Per-feature QA pipeline: audit → fix → verify. Full fan-out (tests, `/review` + `/clean-code`, `/defense`, `/db-optimize`, `/web-perf`, `/qa`, `/design-review`, `/a11y`, `/test-coverage`) on the branch diff, fixes what it finds, re-verifies, → pass/fail ship-readiness verdict, with an **accounting ledger** that blocks if a triggered check wasn't run, was left unfixed, or wasn't explicitly skipped-with-reason. Run before `/finish-branch` and `/ship` |
 | `/ship` | Sync tests, automate CI/CD, and submit the PR |
 | `/land-and-deploy` | Merge, deploy, and verify production |
 
@@ -165,9 +164,9 @@ Each agent works independently and spawns subagents. Exponentially faster than p
 
 ## Background cadence (runs independently of any feature branch)
 
-> The 6-step pipeline above is **per feature branch**. Some checks need to run continuously across the whole repo, regardless of which branch anyone is on — to catch drift, regressions, and new vulnerabilities introduced by *merged* code from other branches.
+> The 6-step pipeline above is **per feature branch**. Some checks need to run continuously across the whole repo, regardless of which branch anyone is on: to catch drift, regressions, and new vulnerabilities introduced by *merged* code from other branches.
 >
-> `/daily-qa` is that continuous layer. **Run it every morning** — manually (`/daily-qa` in your terminal) or on autopilot with `/loop 24h /daily-qa` to have it fire once per day without thinking about it. It does **not** replace the per-branch pipeline — it produces a dated report that surfaces *new work* (bugs, flakes, dep drift, perf regressions, frontend slowness, untested paths, OWASP issues), which then flows into normal fix branches that go through the full 6-step pipeline.
+> `/daily-qa` is that continuous layer. **Run it every morning**, manually (`/daily-qa` in your terminal) or on autopilot with `/loop 24h /daily-qa` to have it fire once per day without thinking about it. It does **not** replace the per-branch pipeline. It produces a dated report that surfaces *new work* (bugs, flakes, dep drift, perf regressions, frontend slowness, untested paths, OWASP issues), which then flows into normal fix branches that go through the full 6-step pipeline.
 
 ```
 Per-branch pipeline (6 steps above)        Background cadence (daily)
@@ -181,13 +180,13 @@ Per-branch pipeline (6 steps above)        Background cadence (daily)
                                                └─ writes daily-qa-reports/YYYY-MM-DD.md
 ```
 
-> **Frontend perf regressions are easy to miss.** A change to a React component, bundler config, or CSS file can silently inflate bundle size or tank LCP. `/daily-qa` detects frontend file changes and recommends `/web-perf` with the affected routes — run it against your local dev server before the slowness reaches production.
+> **Frontend perf regressions are easy to miss.** A change to a React component, bundler config, or CSS file can silently inflate bundle size or tank LCP. `/daily-qa` detects frontend file changes and recommends `/web-perf` with the affected routes. Run it against your local dev server before the slowness reaches production.
 
 | Command | Role |
 |---------|------|
-| `/daily-qa` | Daily evidence-grounded sweep — CI → commits → deps → perf → coverage. The commit bug scan is powered by `/code-review` (local tier, auto-run); also always auto-runs `/defense` (basic OWASP on changed files) and `/db-optimize` when DB/ORM/SQL changed; recommends `/web-perf` when frontend files changed. Recommends heavier follow-ups (`/code-review ultra`, `/pentest`, `/qa`, `/debug`, `/perf-profile`, `/verify`) with exact commands — never auto-runs them. Output: dated report under `daily-qa-reports/`. |
+| `/daily-qa` | Daily evidence-grounded sweep: CI → commits → deps → perf → coverage. The commit bug scan is powered by `/code-review` (local tier, auto-run); also always auto-runs `/defense` (basic OWASP on changed files) and `/db-optimize` when DB/ORM/SQL changed; recommends `/web-perf` when frontend files changed. Recommends heavier follow-ups (`/code-review ultra`, `/pentest`, `/qa`, `/debug`, `/perf-profile`, `/verify`) with exact commands, never auto-runs them. Output: dated report under `daily-qa-reports/`. |
 
-**Run it daily — two options:**
+**Run it daily. Two options:**
 
 ```bash
 # Manual: run once in your terminal each morning
@@ -198,17 +197,17 @@ Per-branch pipeline (6 steps above)        Background cadence (daily)
 ```
 
 **Why some commands are recommend-only:**
-- `/code-review ultra` runs a deep multi-agent review in the cloud — billed and user-triggered, so it can't auto-run. The local `/code-review` tiers (which power the daily commit bug scan) read the diff only and are safe to run unattended.
-- `/web-perf` requires Chrome DevTools MCP and a live dev URL — must be run interactively against a running app.
-- `/pentest` uses [clearwing](https://github.com/Lazarus-AI/clearwing) — external scanner that requires authorization confirmation per run.
-- `/qa` launches a browser interactively — wrong shape for unattended runs.
-- `/debug`, `/verify`, `/perf-profile` are per-issue deep-dives — auto-running them on every finding would be slow and noisy.
+- `/code-review ultra` runs a deep multi-agent review in the cloud: billed and user-triggered, so it can't auto-run. The local `/code-review` tiers (which power the daily commit bug scan) read the diff only and are safe to run unattended.
+- `/web-perf` requires Chrome DevTools MCP and a live dev URL. It must be run interactively against a running app.
+- `/pentest` uses [clearwing](https://github.com/Lazarus-AI/clearwing): external scanner that requires authorization confirmation per run.
+- `/qa` launches a browser interactively, wrong shape for unattended runs.
+- `/debug`, `/verify`, `/perf-profile` are per-issue deep-dives; auto-running them on every finding would be slow and noisy.
 
 ---
 
 ## What is a vertical slice?
 
-A vertical slice means one branch contains every layer a feature needs to work — UI, API, business logic, database, and tests — all together, all shippable as a unit.
+A vertical slice means one branch contains every layer a feature needs to work (UI, API, business logic, database, and tests) all together, all shippable as a unit.
 
 The contrast is **horizontal slicing**, where work is split by layer: one branch does all the backend, another does all the frontend, a third writes the tests. Agents block on each other. Nothing works end-to-end until everything is merged. Integration risk is deferred until the worst possible moment.
 
@@ -323,17 +322,17 @@ feature/user-invites
 
 ### The rule of thumb
 
-If an agent can build, run, and test the feature without touching any other branch, it's a valid vertical slice. If it needs to wait for another agent to finish a shared layer first, it's a horizontal slice — redesign the scope.
+If an agent can build, run, and test the feature without touching any other branch, it's a valid vertical slice. If it needs to wait for another agent to finish a shared layer first, it's a horizontal slice, redesign the scope.
 
 ---
 
-### Vertical slices are independently deployable — and safely reversible
+### Vertical slices are independently deployable: and safely reversible
 
 A true vertical slice has two properties beyond just "all layers together":
 
-**1. It owns its own data.** Each slice gets its own new DB tables or columns — it never restructures existing ones. This means the migration can be applied and rolled back cleanly. Other features keep working whether the slice is present or not.
+**1. It owns its own data.** Each slice gets its own new DB tables or columns; it never restructures existing ones. This means the migration can be applied and rolled back cleanly. Other features keep working whether the slice is present or not.
 
-**2. It can be toggled off without breaking production.** Because it has its own tables and its UI entry points are new (a new route, a new button, a new API endpoint), removing the slice doesn't break existing code. You can deploy it dark, test it, then expose it — or roll it back entirely by reverting the branch.
+**2. It can be toggled off without breaking production.** Because it has its own tables and its UI entry points are new (a new route, a new button, a new API endpoint), removing the slice doesn't break existing code. You can deploy it dark, test it, then expose it, or roll it back entirely by reverting the branch.
 
 ```
 WRONG — not a real vertical slice:
@@ -347,10 +346,10 @@ RIGHT — a real vertical slice:
   → the feature can be deployed dark and enabled later
 ```
 
-This is what makes parallel agents safe at scale. Ten agents can each add new tables and new endpoints simultaneously. None of them can break each other because they never modify shared state — they only add to it.
+This is what makes parallel agents safe at scale. Ten agents can each add new tables and new endpoints simultaneously. None of them can break each other because they never modify shared state. They only add to it.
 
 ## Why security alongside development, not after?
 
-Running security late is a known failure mode. Late-stage findings require expensive rearchitecting. Running it early means the threat model informs the design. Running it again after every merge catches the regression case — new code from other branches that wasn't in scope for the original review.
+Running security late is a known failure mode. Late-stage findings require expensive rearchitecting. Running it early means the threat model informs the design. Running it again after every merge catches the regression case: new code from other branches that wasn't in scope for the original review.
 
 The `/review` command is designed for this: it runs on every PR diff automatically, so security and correctness checks are always current.

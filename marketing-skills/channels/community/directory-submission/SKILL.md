@@ -361,7 +361,7 @@ Before submitting to any directory:
 
 ## Related Resources
 
-- **project-context** (`.cursor/project-context.md` or `.claude/project-context.md`): Read when present; use to generate submission content directly. Template: `templates/project-context.md` in this repo.
+- **project-context** (`.cursor/project-context.md` or `.claude/project-context.md`): Read when present; use to generate submission content directly. Template: [templates/project-context.md](../../../templates/project-context.md) in this pack.
 - **Alignify directory guide**: [alignify.co/zh/insights/directory-submission-sites](https://alignify.co/zh/insights/directory-submission-sites) --Cold-start strategy, preparation checklist, review platforms, vertical directories, bulk submission.
 
 ## Related Skills

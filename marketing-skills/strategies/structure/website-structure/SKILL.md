@@ -103,7 +103,7 @@ See **homepage-generator** for common modules (Headline, Subheadline, CTA, Benef
 ## References
 
 - [Website structure SEO guide](https://alignify.co/zh/seo/website-structure) — Alignify: structure importance, page priority, generic template, planning workflow, growth mapping, homepage modules
-- **skills-reference §2** (docs/skills-reference.md#2-page-taxonomy) — Full page types, website-type matrix, core vs extended; use for page selection
+- **[skills-reference §2](../../../docs/skills-reference.md#2-page-taxonomy)** — Full page types, website-type matrix, core vs extended; use for page selection
 
 ## Related Skills
 

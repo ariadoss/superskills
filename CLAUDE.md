@@ -2,7 +2,7 @@
 
 ## Engineering standards (applies to all code in this repo)
 
-All code here — `setup`, `scripts/`, skill helpers, anything executable — follows
+All code here (`setup`, `scripts/`, skill helpers, anything executable) follows
 [`ENGINEERING_STANDARDS.md`](ENGINEERING_STANDARDS.md): TDD, DRY, SOLID, YAGNI,
 to a Google/Meta-quality bar. Concretely:
 
@@ -17,9 +17,9 @@ to a Google/Meta-quality bar. Concretely:
 ## Versioning
 
 Always increment VERSION before committing and pushing any change:
-- Patch (2.x.X) — bug fixes, typo corrections, small clarifications to existing skills
-- Minor (2.X.0) — new skills, significant updates to existing skills, new tool support
-- Major (X.0.0) — breaking changes, major new capability bundles
+- Patch (2.x.X): bug fixes, typo corrections, small clarifications to existing skills
+- Minor (2.X.0): new skills, significant updates to existing skills, new tool support
+- Major (X.0.0): breaking changes, major new capability bundles
 
 Update the version badge in README.md to match (e.g. `v2.1.0` → `v2.2.0`).
 
@@ -27,7 +27,7 @@ After bumping VERSION, **run `./scripts/sync-version.sh`** to propagate it into 
 plugin manifests (`.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`,
 `.codex-plugin/plugin.json`, `.cursor-plugin/plugin.json`, `.cursor-plugin/marketplace.json`).
 These `version` fields are what trigger the native "plugins updated" alert in
-Claude Code and Codex — a bump that doesn't reach them means existing plugin
+Claude Code and Codex. A bump that doesn't reach them means existing plugin
 installs never see the update. VERSION is the single source of truth; the
 manifests are generated from it, never hand-edited.
 
@@ -44,7 +44,7 @@ collide on `article`). After adding, moving or renaming a marketing skill, run
 The shim tree is the repo's only committed symlinks: a Windows checkout without
 `core.symlinks` gets text files there and the marketing plugin will not load.
 
-Skill *behaviour* is evaluated with `claude plugin eval` — suite in `evals/`,
+Skill *behaviour* is evaluated with `claude plugin eval`: suite in `evals/`,
 method in `evals/RUBRIC.md`. Runs cost model calls, so they are a release step,
 not part of `./tests/run.sh`. `AGENTS.md` is the Codex-facing pointer to this
 file and to `ENGINEERING_STANDARDS.md`, which carries the skill-authoring
@@ -58,26 +58,26 @@ Skills are exposed to the tools as symlinks created by `./setup`. Edits to an
 but a **new** skill is invisible until `./setup` runs again to create its link.
 
 So:
-- **After every `git pull`** in this repo — run `./setup` (a `post-merge` git
+- **After every `git pull`** in this repo, run `./setup` (a `post-merge` git
   hook does this automatically once you've run setup once; if you cloned fresh,
   run it manually the first time).
-- **After adding a new skill locally, before you push** — run `./setup` so the
+- **After adding a new skill locally, before you push**, run `./setup` so the
   new skill is linked and testable in your own environment.
 
 End users get the same guarantee via `/superskills-upgrade`, which fetches,
 force-syncs to `origin/main` even across a rewritten history, and re-runs setup.
 Because of that force-sync, **never rewrite published `main`** (no force-push /
-history squash of released commits) unless unavoidable — keep releases
+history squash of released commits) unless unavoidable. Keep releases
 forward-only so existing installs always fast-forward cleanly.
 
 ## Always keep a local copy of imported skills
 
 Whenever you add a skill that originates from an external GitHub repo (or any other remote source), commit a local copy of its full contents into this repository. The remote could be deleted, renamed, or made private at any time, and the skill must keep working without it.
 
-Two patterns are valid — pick the one that matches the skill's runtime needs:
+Two patterns are valid. Pick the one that matches the skill's runtime needs:
 
-- **In-tree (preferred for self-contained skills)** — copy the upstream repo's contents directly into the appropriate skills folder (`marketing-skills/<category>/<skill>/`, `design-skills/<skill>/`, or `skills/<skill>/`). The skill ships with the repo, the setup script symlinks it into the target tools, and no separate clone is needed at install time. This is how all marketing-skills, design-skills, and `marketing-skills/content/video-editing/` work.
-- **Vendor + runtime clone (only when the upstream is updated frequently and managed by its own setup)** — clone the upstream into `~/.claude/skills/<name>` at install time, AND keep a snapshot at `vendor/<name>/` as a fallback if the remote disappears. This is how `vendor/gstack/` works.
+- **In-tree (preferred for self-contained skills)**: copy the upstream repo's contents directly into the appropriate skills folder (`marketing-skills/<category>/<skill>/`, `design-skills/<skill>/`, or `skills/<skill>/`). The skill ships with the repo, the setup script symlinks it into the target tools, and no separate clone is needed at install time. This is how all marketing-skills, design-skills, and `marketing-skills/content/video-editing/` work.
+- **Vendor + runtime clone (only when the upstream is updated frequently and managed by its own setup)**. Clone the upstream into `~/.claude/skills/<name>` at install time, AND keep a snapshot at `vendor/<name>/` as a fallback if the remote disappears. This is how `vendor/gstack/` works.
 
 Never reference an external repo as a live dependency without one of these two backups in place. Record the upstream URL in the skill's frontmatter (e.g. `metadata.upstream: https://...`) so the source is traceable.
 
@@ -89,7 +89,7 @@ The `dbmap`, `repomap`, `dbmap-auto-on`, `dbmap-auto-off`, `repomap-auto-on`, an
 ./scripts/sync-mirrors.sh
 ```
 
-This pulls the latest upstream and copies each `<name>.md` into `skills/<name>/SKILL.md`. The setup script does **not** auto-modify the source tree — syncing is an explicit maintainer step so end users never see surprise diffs after running `setup`. The script resolves the upstream from `$REPOMAP_HOME` or the standard locations (`~/claude-repomap-command`, `~/.claude-repomap-command`, `~/.local/share/claude-repomap-command`).
+This pulls the latest upstream and copies each `<name>.md` into `skills/<name>/SKILL.md`. The setup script does **not** auto-modify the source tree. Syncing is an explicit maintainer step so end users never see surprise diffs after running `setup`. The script resolves the upstream from `$REPOMAP_HOME` or the standard locations (`~/claude-repomap-command`, `~/.claude-repomap-command`, `~/.local/share/claude-repomap-command`).
 
 Likewise, `vendor/gstack/` is a markdown-only snapshot of the gstack install
 (`~/.claude/skills/gstack`). When the live install is ahead of
@@ -105,11 +105,28 @@ succeeds (tested by `tests/gstack-install-lib.bats`).
 
 It copies every skill's SKILL.md plus the sections/specialists/checklist
 markdown those bodies load, `docs/*.md`, VERSION, CLAUDE.md and gstack's own
-`setup` (so `./setup`'s clone-failed fallback can still link the skills) — never
-other code or build output — and removes anything no longer upstream. Tested by
+`setup` (so `./setup`'s clone-failed fallback can still link the skills), never
+other code or build output, and removes anything no longer upstream. Tested by
 `tests/sync-gstack.bats`.
+
+### `/humanize` is canonical here; its public repo is an export
+
+`skills/humanize/` is the single source of truth for the public
+[`ariadoss/humanize`](https://github.com/ariadoss/humanize) repo. After changing
+the skill or its toolkit, regenerate and publish the standalone tree:
+
+```bash
+./scripts/export-humanize.sh            # -> dist/humanize (git-ignored)
+```
+
+The export is a pure copy of git-tracked files only (`git add` a new toolkit
+file to publish it) and refuses to finish unless the exported tree passes its
+own tests under `bats`; `tests/export-humanize.bats` asserts byte-identity. Never edit the
+public repo directly. The next export would silently overwrite the change.
+Whole-text LLM rewriting humanizers are private and must never be added here;
+`/humanize` only makes surgical, span-level edits.
 
 <!-- superskills-workflow-rule -->
 ## Superskills Developer Workflow
 
-Read DEVELOPER_WORKFLOW.md to understand how to use superskills commands together effectively — parallel agents, vertical slices, quality pipeline, performance optimization, and shipping workflow.
+Read DEVELOPER_WORKFLOW.md to understand how to use superskills commands together: parallel agents, vertical slices, quality pipeline, performance optimization, and shipping workflow.

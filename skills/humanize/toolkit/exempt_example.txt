@@ -1,0 +1,7 @@
+# product names and terms of art, skipped from all slop checks. one per line.
+Acme
+Kubernetes
+leverage
+robust
+landscape
+navigate

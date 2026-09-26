@@ -22,11 +22,11 @@ claude plugin eval . --trust-plugin --no-publish --scaffold --allow-tools Bash \
 
 Flags, and why:
 
-- `--scaffold` — doctor cases build a fixture install tree; the script runs as you.
-- `--allow-tools Bash` — the doctor skill calls `scripts/doctor.sh`; Bash runs sandboxed.
-- `--judge-model sonnet` — judge accuracy is a measured quantity; do not downgrade it.
-- `--no-publish` — keep the HTML report local (the default publishes to claude.ai).
-- `--trust-plugin` — you wrote this suite; non-interactive runs cannot ask.
+- `--scaffold`: doctor cases build a fixture install tree; the script runs as you.
+- `--allow-tools Bash`: the doctor skill calls `scripts/doctor.sh`; Bash runs sandboxed.
+- `--judge-model sonnet`: judge accuracy is a measured quantity; do not downgrade it.
+- `--no-publish`: keep the HTML report local (the default publishes to claude.ai).
+- `--trust-plugin`: you wrote this suite; non-interactive runs cannot ask.
 
 Results land in `evals/results/<timestamp>/` (git-ignored). Reports from
 analysed runs live in `evals/reports/`.
@@ -45,3 +45,22 @@ transcripts: `reports/2026-09-24-description-trim.md`,
 `reports/2026-09-25-daily-qa-skill-invocation.md`. The /qa-full fixture repo is
 built by `_lib/qa-full-fixture.sh <dir>` and the /daily-qa one by
 `_lib/daily-qa-fixture.sh <dir>` (not cases: they have no `prompt.md`).
+
+**Do not use in-session subagents for routing evals.** Tested directly: two
+45-run arms differing only in one prompt clause fired a skill in 22% and 26% of
+runs (`reports/2026-09-25-no-preamble-rerun.md`), against 12/12 for comparable
+cases under `claude plugin eval`. The ~25% ceiling is the harness, not prompt
+wording, and a suite that fires that rarely cannot discriminate a `description`
+edit: true negatives are trivially near 1. Both arms also found **zero** false
+triggers across 228 neighbour-scoped negatives, so description wording is not
+where routing precision is lost. That question is closed, and reopening it costs
+~3.5M tokens per arm for no signal. Six skills (`debug`, `verify`,
+`test-coverage`, `db-optimize`, `web-perf`, `defense`) fired in 0 of 36 attempts
+in both arms; that is a skill-design question, not a measurement one.
+
+If you run this suite anyway, grade with `_lib/grade-routing.py` and heed its two
+hard-won rules: only a transcript carrying the launcher's marker sentence is a
+run (a fan-out skill's own subagents each get a transcript naming the same
+fixture), and completion is a `SubagentHandback` *tool_use*, never a `grep` for
+that string in raw transcript text. Fixtures: `_lib/qa-full-fixture.sh` plus
+`_lib/routing-fixture-extra.sh`.

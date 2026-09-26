@@ -1,13 +1,13 @@
 # Engineering Standards
 
 The single source of truth for the quality bar every superskills command must
-hold code to — both the code in this repo and the code the skills generate for
+hold code to. Both the code in this repo and the code the skills generate for
 users. Skills **reference** this file rather than restating it, so the bar is
 defined once and stays consistent (that is itself the DRY rule applied to
 governance).
 
 > **The bar:** code should be indistinguishable from what a strong engineer at
-> Google or Meta would land — correct, tested, simple, and built to be changed.
+> Google or Meta would land: correct, tested, simple, and built to be changed.
 > "It works" is the floor, not the bar.
 
 These standards are **enforced, not aspirational.** `/qa-full` fixes what it
@@ -17,13 +17,13 @@ anything is called done.
 
 ---
 
-## TDD — tests come first, always
+## TDD: tests come first, always
 
 - **Red → Green → Refactor.** Write a failing test, make it pass with the
   minimal change, then refactor under green. No production code is written
   without a failing test that demanded it. (`/tdd` enforces the loop.)
 - **Every new public function, branch, and error path has a test.** New public
-  surface with zero tests is a **hard gate** — it blocks the ship (`/qa-full`
+  surface with zero tests is a **hard gate**. It blocks the ship (`/qa-full`
   Step 9).
 - **Coverage target is concrete and stated**, not "good coverage." Default:
   ≥90% lines on new/changed modules, every error path exercised. Plans declare
@@ -36,7 +36,7 @@ anything is called done.
   failing `[[ ]]`, `!` or `a && b` mid-test does not fail the test at all;
   `tests/bats-assertions.bats` rejects a bare one.
 
-## DRY — one source of truth
+## DRY: one source of truth
 
 - Before adding code, **name the existing helper/module to reuse** (Grep for
   it). If you'd write the same logic twice, extract it once and call it twice.
@@ -47,22 +47,22 @@ anything is called done.
 - Applies to docs and governance too: define a rule once (this file) and link
   to it; don't paste it into every skill.
 
-## SOLID — built to change
+## SOLID: built to change
 
-- **S — Single Responsibility.** Each unit has one reason to change. Name that
+- **S: Single Responsibility.** Each unit has one reason to change. Name that
   responsibility for every new module/function in a plan.
-- **O — Open/Closed.** Extend via new code; don't edit stable cores to bolt on
+- **O: Open/Closed.** Extend via new code; don't edit stable cores to bolt on
   variants.
-- **L — Liskov.** Subtypes/implementations honor their interface's contract —
+- **L: Liskov.** Subtypes/implementations honor their interface's contract:
   no surprises when one is swapped for another.
-- **I — Interface Segregation.** Keep interfaces narrow; callers shouldn't
+- **I: Interface Segregation.** Keep interfaces narrow; callers shouldn't
   depend on methods they don't use.
-- **D — Dependency Inversion.** Depend on abstractions/seams, not concretions —
-  this is what makes units testable in isolation (see the `skills-lib.sh`
+- **D: Dependency Inversion.** Depend on abstractions/seams, not concretions.
+  This is what makes units testable in isolation (see the `skills-lib.sh`
   extraction: pure functions with no `$HOME`/network coupling, so `bats` can
   test them hermetically).
 
-## YAGNI — build only what's required
+## YAGNI: build only what's required
 
 - Implement what the spec needs and nothing more. No speculative extensibility,
   no "might need it later" hooks, no config nobody asked for.
@@ -81,10 +81,24 @@ the agent, so every skill fails safe the same way. Adapted from Spotify's
 - **State the trigger precisely, and its boundary.** The `description` says when
   to fire *and* names the neighbouring skill it must not be confused with
   (`doctor` diagnoses; `upgrade` changes things). Overlapping triggers are a
-  defect that `evals/` measures.
+  defect that `evals/` measures. Write the boundary clause when a skill has a
+  real neighbour, but write it to document intent: an in-session baseline (45
+  runs, at that instrument's ~22% invocation floor) found **no false triggers to
+  fix**, so there is no measured routing defect for the clause to repair here,
+  and any production precision claim for it is untested either way. See
+  `evals/reports/2026-09-25-waza-negative-scope.md`.
 - **Scripts over prose pipelines.** Multi-step shell logic lives in a tested
   script under `scripts/` that the skill calls with named flags; the skill never
   asks the agent to assemble the pipeline from a description.
+- **Decide skill vs script by whether judgement is needed.** Before adding a
+  capability, ask which half it belongs to. Needs to weigh context, adapt to the
+  project, or ask the user a question? That is a skill. Same input always gives
+  the same output, and the work is checking or enumerating? That is a script or a
+  hook, called *by* a skill. Do not ship a lint check as a skill, and do not try
+  to compress "how to investigate an unfamiliar system" into a script. Borrowed
+  from [tw93/Waza](https://github.com/tw93/Waza)'s latent-vs-deterministic
+  split; `/superskills-doctor` (judgement in the SKILL.md, checks in
+  `scripts/doctor.sh`) is the shape to copy.
 - **Read-only means read-only.** A diagnostic skill never installs, pulls,
   resets, logs in, or re-runs setup. It names the fix; a separate skill applies it.
 - **Run `--help` before relying on a flag** of any external CLI, and prefer
@@ -99,7 +113,7 @@ the agent, so every skill fails safe the same way. Adapted from Spotify's
 - **Ask before mutating on the user's behalf** when the action is hard to
   reverse (force-sync, reset, delete), and show exactly what will change first.
 
-## Hard gates (these block a ship — `/qa-full`)
+## Hard gates (these block a ship: `/qa-full`)
 
 A change is **NOT READY** if any of these is true:
 
@@ -113,9 +127,9 @@ A change is **NOT READY** if any of these is true:
 6. A CRITICAL/HIGH browser-QA bug in a user-facing flow.
 7. A hard perf-gate breach, when `CLAUDE.md` defines one.
 8. Tests/build not freshly run in the gate invocation (no stale "should pass").
-9. An `/a11y` CRITICAL finding — a control unusable by screen-reader or
+9. An `/a11y` CRITICAL finding: a control unusable by screen-reader or
    keyboard users.
-10. Any **triggered** check left unaccounted — neither run with evidence nor
+10. Any **triggered** check left unaccounted, neither run with evidence nor
     explicitly skipped with a stated reason. (Projects may mark a check
     MANDATORY in `CLAUDE.md`; then a skip is itself a blocker.)
 
@@ -125,7 +139,7 @@ gaps, style) is a **warning** that ships with a written follow-up note.
 ## Warnings (fix or consciously defer, with a note)
 
 - DRY/SOLID smells that aren't yet defects (a second near-duplicate, a unit
-  doing slightly too much) — fixed by `/clean-code` (or the built-in `/simplify`).
+  doing slightly too much), fixed by `/clean-code` (or the built-in `/simplify`).
 - Coverage below target on internal helpers.
 - Naming, dead code, and altitude/abstraction-level inconsistencies.
 

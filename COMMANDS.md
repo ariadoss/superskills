@@ -4,8 +4,8 @@
 
 | Command | Description |
 |---------|-------------|
-| `/superskills-upgrade` | Upgrade superskills to the latest version — pulls from GitHub, re-runs setup, reports version change |
-| `/superskills-doctor` | Read-only readiness check — install kind, linked skills, VERSION vs plugin manifests, gstack real-vs-vendor, bun/optional tools — as a status table with a verdict that is never "ready" while a required check is blocked. Diagnoses only; `/superskills-upgrade` fixes. |
+| `/superskills-upgrade` | Upgrade superskills to the latest version: pulls from GitHub, re-runs setup, reports version change |
+| `/superskills-doctor` | Read-only readiness check (install kind, linked skills, VERSION vs plugin manifests, gstack real-vs-vendor, bun/optional tools) as a status table with a verdict that is never "ready" while a required check is blocked. Diagnoses only; `/superskills-upgrade` fixes. |
 
 ---
 
@@ -15,28 +15,28 @@
 
 | Command | Description |
 |---------|-------------|
-| `/tdd` | Test-Driven Development — RED-GREEN-REFACTOR enforcement |
-| `/debug` | Systematic debugging — 4-phase root cause analysis before proposing fixes |
+| `/tdd` | Test-Driven Development: RED-GREEN-REFACTOR enforcement |
+| `/debug` | Systematic debugging: 4-phase root cause analysis before proposing fixes |
 | `/code-review` | Review the current diff for **correctness bugs** + reuse/simplification/efficiency cleanups. Tiers: `low`/`medium` (fewer, high-confidence), `high`→`max` (broader), `ultra` (deep multi-agent cloud review). `--fix` applies findings; `--comment` posts inline PR comments. The DRY/reuse axis catches duplicated logic. |
-| `/simplify` | Apply reuse, simplification, efficiency, and **altitude** (right abstraction level) cleanups to the changed code — and apply the fixes. **Quality only — does not hunt for bugs** (use `/code-review` for that). The reuse axis is DRY enforcement; altitude is the nearest proxy for SOLID-style abstraction. |
-| `/daily-qa` | Daily repo health check — scans recent commits, CI failures, dep/SDK drift, perf regressions, and untested paths. Commit bug scan is powered by `/code-review` (local tier); always auto-runs `/defense` (basic OWASP) on changed files; auto-runs `/db-optimize` when DB code changed; recommends `/code-review ultra`, `/pentest`, `/qa`, and `/web-perf` for heavier follow-up. Evidence-only (no speculation). |
-| `/clean-code` | Audit → fix → verify the branch diff against **KISS, DRY, SOLID, YAGNI** (per `ENGINEERING_STANDARDS.md`) — duplicated logic, mixed responsibilities, needless abstraction, dead code — applying the smallest safe refactor per finding under a green suite, one atomic commit each. Quality only, no bug hunting. In-tree counterpart to the built-in `/simplify`, invocable from any session or tool; `/qa-full` Step 3 runs it. |
-| `/qa-full` | Per-feature QA **pipeline** — audit → fix → verify. Runs the full multi-dimensional fan-out (tests, `/review` + `/clean-code`, `/defense`, `/iac-scan`, `/fuzz`, `/db-optimize`, `/web-perf`, `/qa`, `/design-review`, `/a11y`, `/test-coverage` + `/playwright`) scoped to the branch diff, **fixes what each check finds** (atomic commits, no push), re-runs each check to prove the fix, then emits a **pass/fail ship-readiness verdict** on the repaired branch. Same trigger matrix as `/daily-qa` but branch-scoped, present-human, and fixing instead of recommending. Run it when a feature is done, before `/finish-branch` and `/ship`. |
+| `/simplify` | Apply reuse, simplification, efficiency, and **altitude** (right abstraction level) cleanups to the changed code, and apply the fixes. **Quality only, does not hunt for bugs** (use `/code-review` for that). The reuse axis is DRY enforcement; altitude is the nearest proxy for SOLID-style abstraction. |
+| `/daily-qa` | Daily repo health check: scans recent commits, CI failures, dep/SDK drift, perf regressions, and untested paths. Commit bug scan is powered by `/code-review` (local tier); always auto-runs `/defense` (basic OWASP) on changed files; auto-runs `/db-optimize` when DB code changed; recommends `/code-review ultra`, `/pentest`, `/qa`, and `/web-perf` for heavier follow-up. Evidence-only (no speculation). |
+| `/clean-code` | Audit → fix → verify the branch diff against **KISS, DRY, SOLID, YAGNI** (per `ENGINEERING_STANDARDS.md`: duplicated logic, mixed responsibilities, needless abstraction, dead code), applying the smallest safe refactor per finding under a green suite, one atomic commit each. Quality only, no bug hunting. In-tree counterpart to the built-in `/simplify`, invocable from any session or tool; `/qa-full` Step 3 runs it. |
+| `/qa-full` | Per-feature QA **pipeline**: audit → fix → verify. Runs the full multi-dimensional fan-out (tests, `/review` + `/clean-code`, `/defense`, `/iac-scan`, `/fuzz`, `/db-optimize`, `/web-perf`, `/qa`, `/design-review`, `/a11y`, `/test-coverage` + `/playwright`) scoped to the branch diff, **fixes what each check finds** (atomic commits, no push), re-runs each check to prove the fix, then emits a **pass/fail ship-readiness verdict** on the repaired branch. Same trigger matrix as `/daily-qa` but branch-scoped, present-human, and fixing instead of recommending. Run it when a feature is done, before `/finish-branch` and `/ship`. |
 | `/worktrees` | Creates isolated git worktrees for parallel feature development |
 | `/finish-branch` | Guides branch cleanup and merge decisions when implementation is complete |
-| `/verify` | Pre-merge validation — requires running verification commands and confirming output before success claims |
-| `/write-plan` | Detailed implementation planning from a spec — embeds TDD tasks, DRY/SOLID/YAGNI principles, a required **Test Plan & Verification** section, and a concrete coverage target. Auto-chains to `/plan-eng-review` for an independent double-check (which emits the Test Plan Artifact `/qa-full` consumes) before execution. |
-| `/subagent-driven-development` | Executes a `/write-plan` plan in the current session — fresh implementer subagent per task, task-scoped review after each, broad whole-branch review at the end. The **recommended** execution mode when subagents are available. |
-| `/executing-plans` | Executes a `/write-plan` plan in a separate session with human-in-the-loop review checkpoints between tasks — the fallback when subagents aren't available. |
+| `/verify` | Pre-merge validation: requires running verification commands and confirming output before success claims |
+| `/write-plan` | Detailed implementation planning from a spec: embeds TDD tasks, DRY/SOLID/YAGNI principles, a required **Test Plan & Verification** section, and a concrete coverage target. Auto-chains to `/plan-eng-review` for an independent double-check (which emits the Test Plan Artifact `/qa-full` consumes) before execution. |
+| `/subagent-driven-development` | Executes a `/write-plan` plan in the current session: fresh implementer subagent per task, task-scoped review after each, broad whole-branch review at the end. The **recommended** execution mode when subagents are available. |
+| `/executing-plans` | Executes a `/write-plan` plan in a separate session with human-in-the-loop review checkpoints between tasks: the fallback when subagents aren't available. |
 
 ### Performance & Database
 
 | Command | Description |
 |---------|-------------|
-| `/db-optimize` | Database performance audit — N+1 detection, EXPLAIN analysis, slow query log, join opportunities, per-endpoint DB call counts, missing index flags |
-| `/perf-profile` | Application performance profiling — code execution time, DB call time, bottleneck identification across app and DB layers |
-| `/web-perf` | Frontend performance audit — Core Web Vitals (LCP, INP, CLS), render-blocking resources, bundle size, layout shifts, against a live dev URL via Chrome DevTools MCP |
-| `/cache-strategy` | Implement permanent cache-first strategy — check cache before DB, write on first read, invalidate only on data change (Play Framework model, no TTL) |
+| `/db-optimize` | Database performance audit: N+1 detection, EXPLAIN analysis, slow query log, join opportunities, per-endpoint DB call counts, missing index flags |
+| `/perf-profile` | Application performance profiling: code execution time, DB call time, bottleneck identification across app and DB layers |
+| `/web-perf` | Frontend performance audit: Core Web Vitals (LCP, INP, CLS), render-blocking resources, bundle size, layout shifts, against a live dev URL via Chrome DevTools MCP |
+| `/cache-strategy` | Implement permanent cache-first strategy: check cache before DB, write on first read, invalidate only on data change (Play Framework model, no TTL) |
 
 ### Security
 
@@ -44,8 +44,8 @@
 |---------|-------------|
 | `/pentest` | Security scanning via clearwing (source code + network) |
 | `/fuzz` | Web fuzzing via ffuf |
-| `/defense` | Defense-in-depth — OWASP Top 10, secrets, auth, encryption |
-| `/iac-scan` | Infrastructure-as-Code security scan — Dockerfiles, docker-compose, Terraform, Kubernetes/Helm, CI/CD workflows; flags root containers, open ingress, wildcard IAM, exposed secrets |
+| `/defense` | Defense-in-depth: OWASP Top 10, secrets, auth, encryption |
+| `/iac-scan` | Infrastructure-as-Code security scan: Dockerfiles, docker-compose, Terraform, Kubernetes/Helm, CI/CD workflows; flags root containers, open ingress, wildcard IAM, exposed secrets |
 
 ### Spec Workflow
 
@@ -78,9 +78,9 @@
 
 | Command | Description |
 |---------|-------------|
-| `/test-coverage` | Finds complex business logic, edge cases, corner cases, and past regressions that lack tests, then **writes and applies** the missing unit/integration/E2E tests — enforces Google's Testing on the Toilet best practices (see `skills/test-coverage/rules/` for the full checklist). `/qa-full` Step 9 runs it to close the coverage gaps it finds. |
+| `/test-coverage` | Finds complex business logic, edge cases, corner cases, and past regressions that lack tests, then **writes and applies** the missing unit/integration/E2E tests, enforces Google's Testing on the Toilet best practices (see `skills/test-coverage/rules/` for the full checklist). `/qa-full` Step 9 runs it to close the coverage gaps it finds. |
 | `/playwright` | E2E testing with Playwright |
-| `/a11y` | Accessibility audit — WCAG 2.2 AA, screen-reader compatibility, keyboard navigation, focus management, ARIA correctness, color contrast, reduced-motion; static diff-scoped pass plus optional dynamic axe pass |
+| `/a11y` | Accessibility audit: WCAG 2.2 AA, screen-reader compatibility, keyboard navigation, focus management, ARIA correctness, color contrast, reduced-motion; static diff-scoped pass plus optional dynamic axe pass |
 
 ### Codebase Context
 
@@ -92,26 +92,26 @@
 | `/repomap-auto-off` | Disable automatic repo map updates |
 | `/dbmap-auto-on` | Auto-regenerate DBMAP.md after migration commands run (Rails, Django, Alembic, Prisma, Knex, Sequelize, Goose, Dbmate, Flyway, Liquibase, TypeORM, Drizzle) |
 | `/dbmap-auto-off` | Disable automatic database schema map updates |
-| `/graphify` | Turn any folder into a queryable knowledge graph — HTML, JSON, audit report |
+| `/graphify` | Turn any folder into a queryable knowledge graph: HTML, JSON, audit report |
 
 ---
 
 ## gstack (by Garry Tan)
 
 > **Prerequisites:** `bun` v1.0+, Claude Code. Installed automatically by `./setup`.
-> **Commands install with short names** (e.g. `/review`, `/investigate`, `/qa`) — superskills runs gstack's setup with `--no-prefix`. A few names overlap with superskills' own skills (notably `/repomap` and `/dbmap`); where they collide, superskills' version is symlinked last and wins. To keep the `gstack-` prefix instead (avoiding all collisions), re-run `~/.claude/skills/gstack/setup --prefix`.
+> **Commands install with short names** (e.g. `/review`, `/investigate`, `/qa`); superskills runs gstack's setup with `--no-prefix`. A few names overlap with superskills' own skills (notably `/repomap` and `/dbmap`); where they collide, superskills' version is symlinked last and wins. To keep the `gstack-` prefix instead (avoiding all collisions), re-run `~/.claude/skills/gstack/setup --prefix`.
 > **Vendor copy:** `vendor/gstack/` in this repo backs up all skill definitions (SKILL.md plus the sections/specialists/checklist markdown they load) in case the upstream repo is removed. Refresh it with `./scripts/sync-gstack.sh` whenever the live install moves ahead. `./setup` only installs it as a stopgap when the real clone fails, marks it, and retries the real clone on every later run (`scripts/lib/gstack-install-lib.sh`).
 
 ### Planning & Strategy
 
 | Command | Description | Overlaps with |
 |---------|-------------|---------------|
-| `/office-hours` | YC-style startup validation — six forcing questions that expose assumptions before writing any code | `/validate-idea` (similar intent; gstack is more aggressive/Socratic, superskills is framework-based) |
-| `/plan-ceo-review` | Founder-mode plan review — rethinks the problem, finds the 10-star product | `/minimalist-review` (both challenge plans; gstack focuses on product scope, superskills on lean principles) |
-| `/plan-eng-review` | Engineering architecture review — locks in data flow, testing strategy, and execution plan | `/write-plan` (both produce implementation plans; gstack is interactive review of an existing plan, superskills generates from scratch) |
-| `/plan-design-review` | Designer's eye plan review — rates design dimensions 0–10 before implementation | `/design-audit` (design-skills) (audit vs. pre-implementation review) |
-| `/plan-devex-review` | Developer experience plan review — evaluates DX personas and integration surfaces | — |
-| `/autoplan` | Automated pipeline — runs CEO → design → eng → DX review chain with auto-decisions | `/analyze` (both check cross-artifact consistency; gstack runs full review chain, superskills checks spec/plan/tasks) |
+| `/office-hours` | YC-style startup validation: six forcing questions that expose assumptions before writing any code | `/validate-idea` (similar intent; gstack is more aggressive/Socratic, superskills is framework-based) |
+| `/plan-ceo-review` | Founder-mode plan review: rethinks the problem, finds the 10-star product | `/minimalist-review` (both challenge plans; gstack focuses on product scope, superskills on lean principles) |
+| `/plan-eng-review` | Engineering architecture review: locks in data flow, testing strategy, and execution plan | `/write-plan` (both produce implementation plans; gstack is interactive review of an existing plan, superskills generates from scratch) |
+| `/plan-design-review` | Designer's eye plan review: rates design dimensions 0–10 before implementation | `/design-audit` (design-skills) (audit vs. pre-implementation review) |
+| `/plan-devex-review` | Developer experience plan review: evaluates DX personas and integration surfaces | — |
+| `/autoplan` | Automated pipeline: runs CEO → design → eng → DX review chain with auto-decisions | `/analyze` (both check cross-artifact consistency; gstack runs full review chain, superskills checks spec/plan/tasks) |
 | `/plan-tune` | Self-tuning question sensitivity for gstack reviews based on developer psychographic | — |
 | `/spec` | Turn vague intent into a precise, executable spec in five phases | `/write-plan` (**upstream of it**: spec pins down *what*; write-plan produces the *how* with TDD tasks) |
 
@@ -119,26 +119,26 @@
 
 | Command | Description | Overlaps with |
 |---------|-------------|---------------|
-| `/review` | Pre-landing PR review — checks SQL safety, LLM trust boundaries, rate limiting, and production readiness | `/verify` (**different focus**: gstack reviews the diff for security/correctness, superskills enforces running verification commands before declaring done — use both) |
-| `/investigate` | Systematic root-cause debugging — four phases: investigate, hypothesize, test, confirm | `/debug` (**very similar**: both 4-phase systematic debugging. gstack uses browser for live investigation; superskills is code-only. **Prefer `/investigate` if browser access matters, `/debug` for pure code issues**) |
-| `/health` | Code quality dashboard — runs type checker, linter, test suite, and scores 0–10 with trends | — |
-| `/codex` | Cross-model code review — runs the same diff through Claude + OpenAI Codex independently | — |
+| `/review` | Pre-landing PR review: checks SQL safety, LLM trust boundaries, rate limiting, and production readiness | `/verify` (**different focus**: gstack reviews the diff for security/correctness, superskills enforces running verification commands before declaring done, use both) |
+| `/investigate` | Systematic root-cause debugging: four phases: investigate, hypothesize, test, confirm | `/debug` (**very similar**: both 4-phase systematic debugging. gstack uses browser for live investigation; superskills is code-only. **Prefer `/investigate` if browser access matters, `/debug` for pure code issues**) |
+| `/health` | Code quality dashboard: runs type checker, linter, test suite, and scores 0–10 with trends | — |
+| `/codex` | Cross-model code review: runs the same diff through Claude + OpenAI Codex independently | — |
 | `/document-generate` | Generate missing documentation from scratch for a feature, module, or entire project | — |
-| `/diagram` | Turn an English description or mermaid source into a diagram triplet — source, editable .excalidraw, rendered SVG + PNG | — |
+| `/diagram` | Turn an English description or mermaid source into a diagram triplet: source, editable .excalidraw, rendered SVG + PNG | — |
 
 ### QA & Testing
 
 | Command | Description | Overlaps with |
 |---------|-------------|---------------|
-| `/qa` | Browser-based QA — tests a web app with headless Chromium and auto-fixes bugs found | `/playwright` (**complementary**: playwright is test scripting; gstack-qa is exploratory QA with auto-fix) |
-| `/qa-only` | Same as `/qa` but report-only — no automatic fixes | `/verify` (both report before declaring done; gstack-qa-only is browser-based, verify is command-output-based) |
-| `/browse` | Fast headless Chromium control (~100ms/command) — navigate, click, screenshot, assert | — |
+| `/qa` | Browser-based QA: tests a web app with headless Chromium and auto-fixes bugs found | `/playwright` (**complementary**: playwright is test scripting; gstack-qa is exploratory QA with auto-fix) |
+| `/qa-only` | Same as `/qa` but report-only, no automatic fixes | `/verify` (both report before declaring done; gstack-qa-only is browser-based, verify is command-output-based) |
+| `/browse` | Fast headless Chromium control (~100ms/command): navigate, click, screenshot, assert | — |
 | `/open-gstack-browser` | Launch visible Chromium with the gstack sidebar extension for manual-style automated testing | — |
 | `/setup-browser-cookies` | Import real browser cookies into the headless session for authenticated testing | — |
-| `/benchmark` | Performance regression detection — establishes baselines and detects regressions | — |
-| `/benchmark-models` | Cross-model benchmark — runs the same prompt through Claude, OpenAI, and others | — |
+| `/benchmark` | Performance regression detection: establishes baselines and detects regressions | — |
+| `/benchmark-models` | Cross-model benchmark: runs the same prompt through Claude, OpenAI, and others | — |
 | `/ios-qa` | Live-device iOS QA for SwiftUI apps | `/qa` (web counterpart) |
-| `/ios-fix` | Autonomous iOS bug fixer — the fix loop behind `/ios-qa` | — |
+| `/ios-fix` | Autonomous iOS bug fixer: the fix loop behind `/ios-qa` | — |
 | `/ios-design-review` | Visual design audit for iOS apps on real hardware | `/design-review` (web counterpart) |
 | `/ios-sync` | Regenerate the iOS debug bridge against the latest upstream gstack templates | — |
 | `/ios-clean` | Remove the DebugBridge SPM package and all `#if DEBUG` wiring from an iOS app before shipping | — |
@@ -147,9 +147,9 @@
 
 | Command | Description | Overlaps with |
 |---------|-------------|---------------|
-| `/cso` | Chief Security Officer mode — OWASP Top 10, STRIDE threat modeling, secrets archaeology | `/defense` (**very similar**: both cover OWASP Top 10 and secrets/auth. gstack-cso adds STRIDE threat modeling and is more systematic; `/defense` is a lighter checklist pass. **Prefer `/cso` for a deep audit, `/defense` for a quick review**) |
-| `/careful` | Safety guardrails — warns before `rm -rf`, `DROP TABLE`, force-push, and other destructive commands | — |
-| `/freeze` | Lock edits to a specific directory for the session — blocks `Edit` and `Write` outside the boundary | — |
+| `/cso` | Chief Security Officer mode: OWASP Top 10, STRIDE threat modeling, secrets archaeology | `/defense` (**very similar**: both cover OWASP Top 10 and secrets/auth. gstack-cso adds STRIDE threat modeling and is more systematic; `/defense` is a lighter checklist pass. **Prefer `/cso` for a deep audit, `/defense` for a quick review**) |
+| `/careful` | Safety guardrails: warns before `rm -rf`, `DROP TABLE`, force-push, and other destructive commands | — |
+| `/freeze` | Lock edits to a specific directory for the session: blocks `Edit` and `Write` outside the boundary | — |
 | `/unfreeze` | Remove the freeze boundary set by `/freeze` | — |
 | `/guard` | Combined safety mode: destructive command warnings + directory-scoped edits | — |
 
@@ -157,9 +157,9 @@
 
 | Command | Description | Overlaps with |
 |---------|-------------|---------------|
-| `/ship` | Full ship workflow — sync base branch, run tests, review diff, bump VERSION, create PR | `/finish-branch` (**similar end goal**: gstack-ship is automated and opinionated (VERSION bump, CI); finish-branch is interactive and guides the decision. **Use `/ship` when you want automation, `/finish-branch` when you want to think it through**) |
+| `/ship` | Full ship workflow: sync base branch, run tests, review diff, bump VERSION, create PR | `/finish-branch` (**similar end goal**: gstack-ship is automated and opinionated (VERSION bump, CI); finish-branch is interactive and guides the decision. **Use `/ship` when you want automation, `/finish-branch` when you want to think it through**) |
 | `/land-and-deploy` | Merge PR, wait for CI, verify production | — |
-| `/canary` | Post-deploy canary monitoring — watches live app for console errors and regressions | — |
+| `/canary` | Post-deploy canary monitoring: watches live app for console errors and regressions | — |
 | `/setup-deploy` | Configure deployment settings for `/land-and-deploy` | — |
 | `/landing-report` | Read-only dashboard showing VERSION slots and ship queue status | — |
 | `/gstack-upgrade` | Upgrade gstack to the latest version from upstream | — |
@@ -168,10 +168,10 @@
 
 | Command | Description | Overlaps with |
 |---------|-------------|---------------|
-| `/context-save` | Save working context — captures git state, decisions made, remaining work | — |
+| `/context-save` | Save working context: captures git state, decisions made, remaining work | — |
 | `/context-restore` | Restore a saved context from `/context-save` | — |
-| `/setup-gbrain` | Set up gbrain — persistent knowledge base that survives session resets | — |
-| `/learn` | Manage project learnings — review, search, prune, and export what gstack has stored | — |
+| `/setup-gbrain` | Set up gbrain: persistent knowledge base that survives session resets | — |
+| `/learn` | Manage project learnings: review, search, prune, and export what gstack has stored | — |
 | `/sync-gbrain` | Keep gbrain current with this repo's code and refresh agent search guidance in CLAUDE.md | `/repomap` (**different layer**: repomap is a static structure map; gbrain is a searchable brain) |
 
 ### Codebase Context
@@ -185,16 +185,16 @@
 
 | Command | Description | Overlaps with |
 |---------|-------------|---------------|
-| `/pair-agent` | Coordinate a remote AI agent with shared browser access — generates a setup key | `/worktrees` (**different layer**: worktrees isolate code branches; pair-agent shares browser state between agents) |
+| `/pair-agent` | Coordinate a remote AI agent with shared browser access: generates a setup key | `/worktrees` (**different layer**: worktrees isolate code branches; pair-agent shares browser state between agents) |
 | `/autoplan` | Automated multi-phase review pipeline (CEO → design → eng → DX) with auto-decisions | See Planning section above |
 
 ### Utilities
 
 | Command | Description |
 |---------|-------------|
-| `/retro` | Weekly engineering retrospective — analyzes commit history and work patterns |
+| `/retro` | Weekly engineering retrospective: analyzes commit history and work patterns |
 | `/devex-review` | Live developer experience audit using the browse tool to actually test the DX |
-| `/document-release` | Post-ship doc update — reads all project docs and cross-references with the release |
+| `/document-release` | Post-ship doc update: reads all project docs and cross-references with the release |
 | `/make-pdf` | Turn any markdown file into a publication-quality PDF with 1in margins |
 | `/openclaw` | OpenClaw integration skills |
 
@@ -209,21 +209,21 @@
 | `/adaptive-communication` | Adjust communication style based on whether the user is in relational or transactional mode |
 | `/app-store-screenshots` | Generate App Store and Google Play marketing screenshots using Next.js |
 | `/bencium-code-conventions` | Apply Bence's code style, tech stack, and workflow conventions |
-| `/vercel-composition-patterns` | React composition patterns that scale — compound components, render props, context providers |
+| `/vercel-composition-patterns` | React composition patterns that scale: compound components, render props, context providers |
 | `/deploy-to-vercel` | Deploy applications and websites to Vercel |
 | `/design-audit` | Conduct systematic visual audits and produce phased, implementation-ready design plans |
-| `/design-drift` | Detect and fix design drift — consolidate one-off colors/spacing/type into tokens, collapse duplicate component variants |
+| `/design-drift` | Detect and fix design drift: consolidate one-off colors/spacing/type into tokens, collapse duplicate component variants |
 | `/design-sprint` | Run a structured 5-day GV design sprint to prototype, test, and validate product ideas |
 | `/design-taste-frontend` | Senior UI/UX engineering system enforcing metric-based design rules and CSS hardware acceleration |
 | `/emil-design-eng` | UI polish, animation decisions, and invisible details that make software feel great (Emil Kowalski's philosophy) |
 | `/full-output-enforcement` | Override LLM truncation behavior to enforce complete code generation |
-| `/high-end-visual-design` | Design like a high-end agency — premium fonts, spacing, shadows, animations — while avoiding AI-slop tells and using only open-licensed fonts |
+| `/high-end-visual-design` | Design like a high-end agency (premium fonts, spacing, shadows, animations) while avoiding AI-slop tells and using only open-licensed fonts |
 | `/hooked-ux` | Design habit-forming product loops using the Hook Model (Trigger, Action, Variable Reward, Investment) |
 | `/human-architect-mindset` | Systematic architectural thinking emphasizing irreplaceable human capabilities in system design |
 | `/interface-design` | Interface design for dashboards, admin panels, and SaaS apps focused on craft and consistency |
 | `/ios-dev` | iOS and Swift development covering SwiftUI, Human Interface Guidelines, accessibility, and app architecture |
 | `/minimalist-ui` | Create clean editorial-style interfaces with warm monochrome palette and typographic contrast |
-| `/negentropy-lens` | Evaluate systems through an entropy/negentropy lens — is this system decaying or growing? |
+| `/negentropy-lens` | Evaluate systems through an entropy/negentropy lens. Is this system decaying or growing? |
 | `/organic-first-campaign` | Design grassroots-first campaigns for organizations facing spending disadvantages |
 | `/vercel-react-best-practices` | React and Next.js performance optimization guidelines from Vercel Engineering |
 | `/vercel-react-native-skills` | React Native and Expo best practices for building performant mobile apps |
@@ -238,7 +238,7 @@
 | `/swiftui-webkit` | Embed and control web content in SwiftUI apps using WebView and WebPage (iOS/macOS 26+) |
 | `/typography` | Apply professional typographic rules to screen-based UI + non-generic, open-licensed font selection (escapes the AI font monoculture) |
 | `/ui-refactor` | Tactical UI design guide for fixing layouts, selecting colors and fonts |
-| `/ux-designer` | Expert UI/UX design collaboration — asks before making design decisions |
+| `/ux-designer` | Expert UI/UX design collaboration: asks before making design decisions |
 | `/ux-heuristics` | Evaluate and improve interface usability using heuristic analysis (Nielsen) |
 | `/vercel-cli-with-tokens` | Deploy and manage Vercel projects using token-based authentication |
 | `/web-design-guidelines` | Review UI code for Web Interface Guidelines compliance |
@@ -257,16 +257,16 @@
 | `/traffic` | Analyze website traffic sources, attribution, and dark traffic |
 | `/tracking` | Set up, audit, or optimize analytics tracking (GA4, events, conversions) |
 
-### Channels — Community & Distribution
+### Channels: Community & Distribution
 
 | Command | Description |
 |---------|-------------|
 | `/community-forum` | Promote via forums and communities (Hacker News, Reddit, Discord, Quora) |
 | `/directory-submission` | Submit a product to directories, curated lists, and launch platforms with ready-to-paste copy |
-| `/product-hunt-launch` | Launch on Product Hunt — submission, hunter, first comment, timing, upvotes |
+| `/product-hunt-launch` | Launch on Product Hunt: submission, hunter, first comment, timing, upvotes |
 | `/distribution-channels` | Plan product distribution via marketplaces, app stores, and third-party platforms |
 
-### Channels — Owned & Partnerships
+### Channels: Owned & Partnerships
 
 | Command | Description |
 |---------|-------------|
@@ -279,7 +279,7 @@
 | `/public-relations` | Plan PR, write press releases, and manage media relations |
 | `/referral-program` | Plan, implement, or optimize referral programs and viral loops |
 
-### Components — Branding
+### Components: Branding
 
 | Command | Description |
 |---------|-------------|
@@ -288,7 +288,7 @@
 | `/hero` | Design, optimize, or audit hero sections (above-the-fold main visual area) |
 | `/logo` | Optimize logo placement, linking, and branding on a website |
 
-### Components — Content
+### Components: Content
 
 | Command | Description |
 |---------|-------------|
@@ -296,7 +296,7 @@
 | `/howto-section` | Create, optimize, or audit HowTo sections with ordered steps and Schema.org JSON-LD |
 | `/tab-accordion` | Add or optimize tab and accordion components for content organization |
 
-### Components — Conversion
+### Components: Conversion
 
 | Command | Description |
 |---------|-------------|
@@ -306,7 +306,7 @@
 | `/testimonials` | Add, optimize, or design customer testimonial and review sections |
 | `/trust-badges` | Add or optimize trust badges, security seals, and social proof elements |
 
-### Components — Layout
+### Components: Layout
 
 | Command | Description |
 |---------|-------------|
@@ -316,7 +316,7 @@
 | `/list` | Design, optimize, or audit vertical list layouts |
 | `/masonry` | Design, optimize, or audit masonry (Pinterest-style) layouts |
 
-### Components — Navigation
+### Components: Navigation
 
 | Command | Description |
 |---------|-------------|
@@ -326,7 +326,7 @@
 | `/sidebar` | Design, optimize, or audit sidebars for blogs, docs, or content pages |
 | `/toc` | Add, optimize, or audit table of contents for long-form content |
 
-### Components — Utility
+### Components: Utility
 
 | Command | Description |
 |---------|-------------|
@@ -338,15 +338,15 @@
 
 | Command | Description |
 |---------|-------------|
-| `/article-content` | Write or generate article body content — blog posts, how-to guides, listicles |
-| `/copywriting` | Write or optimize short-form marketing copy — headlines, CTAs, ad copy |
+| `/article-content` | Write or generate article body content: blog posts, how-to guides, listicles |
+| `/copywriting` | Write or optimize short-form marketing copy: headlines, CTAs, ad copy |
 | `/podcast-marketing` | Plan, create, or market a podcast (strategy, SEO, show notes, distribution) |
 | `/translation` | Translate content, manage terminology, and optimize translation quality |
-| `/video-editing` | Edit raw video by conversation — cut filler/dead space, color grade, burn subtitles, generate overlay animations. Wraps [browser-use/video-use](https://github.com/browser-use/video-use). Requires ffmpeg + uv + a transcription backend (ElevenLabs Scribe key OR local mlx-whisper on Apple Silicon — auto-selected) |
+| `/video-editing` | Edit raw video by conversation: cut filler/dead space, color grade, burn subtitles, generate overlay animations. Wraps [browser-use/video-use](https://github.com/browser-use/video-use). Requires ffmpeg + uv + a transcription backend (ElevenLabs Scribe key OR local mlx-whisper on Apple Silicon, auto-selected) |
 | `/video-marketing` | Plan video marketing, create video scripts, and optimize short/long-form video |
 | `/visual-content` | Plan, create, or repurpose visual content across channels |
 
-### Pages — Brand
+### Pages: Brand
 
 | Command | Description |
 |---------|-------------|
@@ -354,7 +354,7 @@
 | `/contact-page-generator` | Create, optimize, or audit contact pages and forms |
 | `/homepage-generator` | Create, optimize, or audit the main site homepage |
 
-### Pages — Content
+### Pages: Content
 
 | Command | Description |
 |---------|-------------|
@@ -369,7 +369,7 @@
 | `/template-page-generator` | Design template aggregation or detail pages for galleries and marketplaces |
 | `/tools-page-generator` | Create, optimize, or audit free tools pages |
 
-### Pages — Legal
+### Pages: Legal
 
 | Command | Description |
 |---------|-------------|
@@ -380,7 +380,7 @@
 | `/shipping-page-generator` | Create or optimize a shipping and delivery information page |
 | `/terms-page-generator` | Create, optimize, or structure a Terms of Service page |
 
-### Pages — Marketing
+### Pages: Marketing
 
 | Command | Description |
 |---------|-------------|
@@ -403,7 +403,7 @@
 | `/startups-page-generator` | Create, optimize, or audit a startups or special program page |
 | `/use-cases-page-generator` | Create, optimize, or audit use case pages by persona or scenario |
 
-### Pages — Utility
+### Pages: Utility
 
 | Command | Description |
 |---------|-------------|
@@ -415,7 +415,7 @@
 | `/signup-login-page-generator` | Create, optimize, or audit signup and login pages |
 | `/status-page-generator` | Create, optimize, or structure a status and uptime page |
 
-### Paid Ads — Formats
+### Paid Ads: Formats
 
 | Command | Description |
 |---------|-------------|
@@ -425,7 +425,7 @@
 | `/display-ads` | Run display, banner, or programmatic ad network campaigns |
 | `/native-ads` | Run native ads on Taboola, Outbrain, or similar platforms |
 
-### Paid Ads — Platforms
+### Paid Ads: Platforms
 
 | Command | Description |
 |---------|-------------|
@@ -448,63 +448,63 @@
 | `/reddit-posts` | Create Reddit post copy, comments, or optimize for subreddits |
 | `/tiktok-captions` | Create TikTok video captions, scripts, or optimize for TikTok |
 | `/twitter-x-posts` | Create X (Twitter) post copy, threads, or optimize for the X platform |
-| `/youtube-seo` | Optimize YouTube videos for search — descriptions, tags, titles, thumbnails |
+| `/youtube-seo` | Optimize YouTube videos for search: descriptions, tags, titles, thumbnails |
 
-### SEO — Content SEO
+### SEO: Content SEO
 
 | Command | Description |
 |---------|-------------|
 | `/competitor-research` | Analyze competitors for SEO, content, backlinks, and positioning |
-| `/content-optimization` | Optimize content for SEO — word count, H2 keywords, density, multimedia, tables |
+| `/content-optimization` | Optimize content for SEO: word count, H2 keywords, density, multimedia, tables |
 | `/content-strategy` | Plan content for SEO, create content calendars, and build topic clusters |
-| `/eeat-signals` | Improve E-E-A-T — add trust signals, author bios, citations, and authority markers |
+| `/eeat-signals` | Improve E-E-A-T: add trust signals, author bios, citations, and authority markers |
 | `/keyword-research` | Research keywords, find target keywords, and analyze search intent |
 
-### SEO — Entity & Local
+### SEO: Entity & Local
 
 | Command | Description |
 |---------|-------------|
 | `/entity-seo` | Optimize for entity recognition, Knowledge Graph, and entity-based SEO |
 | `/local-seo` | Optimize for local search, Google Business Profile, and local citations |
 
-### SEO — Off-Page
+### SEO: Off-Page
 
 | Command | Description |
 |---------|-------------|
 | `/backlink-analysis` | Analyze backlinks, audit link profiles, and identify toxic links |
 | `/link-building` | Build backlinks via outreach, guest posting, and broken link building |
 
-### SEO — On-Page
+### SEO: On-Page
 
 | Command | Description |
 |---------|-------------|
 | `/meta-description` | Optimize the meta description for search snippets and CTR |
 | `/featured-snippet` | Optimize for Featured Snippets and Position Zero |
 | `/heading-structure` | Optimize heading hierarchy (H1–H6) and content structure |
-| `/image-optimization` | Optimize images for SEO — alt text, WebP, lazy loading, srcset |
+| `/image-optimization` | Optimize images for SEO: alt text, WebP, lazy loading, srcset |
 | `/internal-links` | Optimize internal linking, fix orphan pages, and improve link equity |
-| `/page-metadata` | Optimize meta tags — hreflang, meta robots, viewport, charset |
+| `/page-metadata` | Optimize meta tags: hreflang, meta robots, viewport, charset |
 | `/open-graph` | Add or optimize Open Graph metadata for social sharing previews |
 | `/schema-markup` | Add or optimize structured data (Schema.org, JSON-LD, rich results) |
 | `/serp-features` | Understand and optimize for SERP feature types (PAA, sitelinks, AI Overviews) |
-| `/title-tag` | Optimize title tags for search — length, keyword placement, CTR |
+| `/title-tag` | Optimize title tags for search: length, keyword placement, CTR |
 | `/twitter-cards` | Add or optimize Twitter Card metadata for X link previews |
 | `/url-structure` | Optimize URL structure, fix URL issues, and plan URL hierarchy |
-| `/video-optimization` | Optimize videos for Google Search — video sitemap, VideoObject schema |
+| `/video-optimization` | Optimize videos for Google Search: video sitemap, VideoObject schema |
 
-### SEO — Platform & Scale
+### SEO: Platform & Scale
 
 | Command | Description |
 |---------|-------------|
 | `/parasite-seo` | Choose and execute third-party platform SEO on high-authority sites |
 | `/programmatic-seo` | Create SEO pages at scale using templates and data |
 
-### SEO — Technical
+### SEO: Technical
 
 | Command | Description |
 |---------|-------------|
 | `/canonical-tag` | Configure canonical URLs, fix duplicate content, and consolidate URL signals |
-| `/core-web-vitals` | Optimize Core Web Vitals — LCP, INP, CLS |
+| `/core-web-vitals` | Optimize Core Web Vitals: LCP, INP, CLS |
 | `/site-crawlability` | Improve crawlability, fix orphan pages, and optimize site structure for bots |
 | `/indexing` | Fix indexing issues from Search Console, use noindex, or implement Google Indexing API |
 | `/indexnow` | Implement IndexNow to notify search engines of new/updated URLs instantly |
@@ -513,23 +513,23 @@
 | `/robots-txt` | Configure, audit, or optimize robots.txt and AI crawler rules |
 | `/xml-sitemap` | Create, audit, or optimize sitemap.xml |
 
-### Strategies — Brand
+### Strategies: Brand
 
 | Command | Description |
 |---------|-------------|
 | `/brand-monitoring` | Monitor brand mentions, detect trademark infringement, and set up brand watches |
 | `/brand-protection` | Respond to brand impersonation, fake websites, phishing, and trademark infringement |
-| `/branding` | Define, audit, or apply brand strategy — purpose, values, positioning, voice, narrative |
+| `/branding` | Define, audit, or apply brand strategy: purpose, values, positioning, voice, narrative |
 | `/content-marketing` | Plan content marketing across channels and create content repurposing strategies |
 | `/integrated-marketing` | Plan integrated marketing and coordinate channels (IMC, PESO model) |
-| `/rebranding-strategy` | Plan or execute a rebrand — domain change, 301 redirects, and brand announcement |
+| `/rebranding-strategy` | Plan or execute a rebrand: domain change, 301 redirects, and brand announcement |
 
-### Strategies — Commercial
+### Strategies: Commercial
 
 | Command | Description |
 |---------|-------------|
-| `/domain-architecture` | Decide domain structure for multiple products — subfolder vs subdomain vs independent |
-| `/domain-selection` | Choose an SEO-friendly domain — brand vs keyword domain, TLD selection |
+| `/domain-architecture` | Decide domain structure for multiple products: subfolder vs subdomain vs independent |
+| `/domain-selection` | Choose an SEO-friendly domain: brand vs keyword domain, TLD selection |
 | `/multi-domain-brand-seo` | Optimize brand search for companies with multiple domains |
 | `/generative-engine-optimization` | Optimize for AI search visibility (ChatGPT, Claude, Perplexity, AI Overviews) |
 | `/localization-strategy` | Plan localization strategy for multilingual and global growth |
@@ -538,7 +538,7 @@
 | `/discount-marketing-strategy` | Plan discount and promotional pricing strategy (promo codes, LTDs, BFCM) |
 | `/pricing-strategy` | Plan, design, or optimize pricing strategy and structure |
 
-### Strategies — Launch
+### Strategies: Launch
 
 | Command | Description |
 |---------|-------------|
@@ -546,13 +546,13 @@
 | `/conversion-optimization` | Improve conversion rates, run A/B tests, and optimize funnels |
 | `/growth-funnel` | Plan growth using the AARRR framework and diagnose growth bottlenecks |
 | `/gtm-strategy` | Plan go-to-market strategy, GTM framework, and market entry |
-| `/indie-hacker-strategy` | Indie hacker and bootstrapping founder strategy — Build in Public, solo founder tactics |
+| `/indie-hacker-strategy` | Indie hacker and bootstrapping founder strategy: Build in Public, solo founder tactics |
 | `/pmf-strategy` | Validate product-market fit, measure PMF, and plan before scaling |
-| `/product-launch` | Plan a product launch — channels, checklist, and announcement |
+| `/product-launch` | Plan a product launch: channels, checklist, and announcement |
 | `/research-sources` | Find information sources for content ideation and competitor monitoring |
 | `/retention-strategy` | Reduce churn, improve customer retention, and plan lifecycle marketing |
 
-### Strategies — Structure
+### Strategies: Structure
 
 | Command | Description |
 |---------|-------------|

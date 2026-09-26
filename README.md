@@ -1,11 +1,11 @@
-# Superskills `v2.25.2`
+# Superskills `v2.28.0`
 
 Curated AI skills pack for Claude Code, OpenCode, Codex CLI, Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Integrates [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team; an opt-in pack) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
-43 core skills + 53 gstack skills + 174 marketing skills + 36 design skills, selected by [packs](#packs--choose-what-gets-installed). gstack is vendored in this repo so its skills are available even if the upstream repo is removed.
+43 core skills + 53 gstack skills + 174 marketing skills + 36 design skills, selected by [packs](#packs-choose-what-gets-installed). gstack is vendored in this repo so its skills are available even if the upstream repo is removed.
 
-> **[Full command reference →](COMMANDS.md)** — all skills with descriptions and overlap notes
-> **[10x+ Engineering Workflow →](DEVELOPER_WORKFLOW.md)** — run 10+ parallel AI agents, each with a full quality pipeline ([deep dive](https://hyperion360.com/blog/parallel-ai-agents-engineering-workflow/))
+> **[Full command reference →](COMMANDS.md)**: all skills with descriptions and overlap notes
+> **[10x+ Engineering Workflow →](DEVELOPER_WORKFLOW.md)**: run 10+ parallel AI agents, each with a full quality pipeline ([full write-up](https://hyperion360.com/blog/parallel-ai-agents-engineering-workflow/))
 
 ## Install
 
@@ -22,17 +22,16 @@ Setup will:
 - Auto-detect and install into: **Claude Code**, **OpenCode**, **Codex CLI**, **Continue.dev**, **Augment Code**, **Windsurf**
 - Offer to add the developer workflow guide to `~/.claude/CLAUDE.md`
 
-### Packs — choose what gets installed
+### Packs: choose what gets installed
 
 Every skill belongs to a pack. `./setup` installs the **coding pack by
-default** (35 skills: 27 in-repo + 8 via gstack when a clone exists — the
+default** (35 skills: 27 in-repo + 8 via gstack when a clone exists, the
 spec → plan → TDD → QA → ship workflow plus every check `/qa-full` can
 trigger: security (`/defense`, `/iac-scan`, `/pentest`, `/fuzz`, `/cso`),
 performance (`/db-optimize`, `/web-perf`, `/perf-profile`), browser/design QA
 (`/playwright`, `/a11y`, `/design-review`) and the gstack review loop
 (`/review`, `/qa`)) so your harness's always-on context stays small.
-Skill *descriptions* load on every turn; only a triggered skill's body does —
-so every extra pack is a real per-token cost in every session. The coding
+Skill *descriptions* load on every turn; only a triggered skill's body does. So every extra pack is a real per-token cost in every session. The coding
 pack is always on: no pack list excludes it.
 
 | Pack | Contents |
@@ -42,12 +41,12 @@ pack is always on: no pack list excludes it.
 | `design` | the 36 design skills (UX, typography, SwiftUI, Vercel) |
 | `marketing` | the 174 marketing skills (SEO, content, pages, ads) |
 | `media` | the video-editing subtree |
-| `gstack` | installs/promotes gstack itself and links **every** gstack skill; without it only the eight coding-pack gstack skills stay linked — the /qa-full closure (`/review`, `/qa`, `/cso`, `/design-review`, `/ship`, `/plan-eng-review`) plus the browse toolchain those checks execute through (`/browse`, `/setup-browser-cookies`). The rest of a pre-existing clone's links are pruned, the clone is never touched. Note: a roster skill's end-of-flow suggestions may still name gstack-pack skills (e.g. `/plan-design-review`) — they resolve from the clone or are designed skips, but aren't one-keystroke available without this pack |
+| `gstack` | installs/promotes gstack itself and links **every** gstack skill; without it only the eight coding-pack gstack skills stay linked. The /qa-full closure (`/review`, `/qa`, `/cso`, `/design-review`, `/ship`, `/plan-eng-review`) plus the browse toolchain those checks execute through (`/browse`, `/setup-browser-cookies`). The rest of a pre-existing clone's links are pruned, the clone is never touched. Note: a roster skill's end-of-flow suggestions may still name gstack-pack skills (e.g. `/plan-design-review`). They resolve from the clone or are designed skips, but aren't one-keystroke available without this pack |
 | `all` | everything (pre-packs behavior) |
 
 Every full `./setup` run persists the effective selection to
 `~/.superskills/packs.conf` and prunes this checkout's now-deselected installs
-(never another tool's or your own entries — only links into the superskills
+(never another tool's or your own entries; only links into the superskills
 checkout are removed). Switching from `all` to a smaller set therefore
 actually shrinks your context; switching back re-links on the next run.
 
@@ -67,10 +66,10 @@ actually shrinks your context; switching back re-links on the next run.
 ### Install as a plugin (native update alerts)
 
 Claude Code and Codex can install superskills as a versioned **plugin**, which
-gives you a native "updated" notification when a new version ships — no manual
+gives you a native "updated" notification when a new version ships, no manual
 `git pull` needed.
 
-**Claude Code** — three plugins from one marketplace: `superskills` (the coding
+**Claude Code**: three plugins from one marketplace: `superskills` (the coding
 skills), `superskills-design` (the 36 design skills) and `superskills-marketing`
 (the 174 marketing skills under their usual names, e.g.
 `/superskills-marketing:meta-description`):
@@ -105,17 +104,17 @@ The plugin `version` is driven by the repo's `VERSION` file via
 watch. The `./setup` install above remains the way to get a chosen pack
 selection across every supported tool.
 
-## Skills (41)
+## Skills (44)
 
 ### Dev Methodology (from [superpowers](https://github.com/obra/superpowers))
 | Command | Description |
 |---------|-------------|
-| `/tdd` | Test-Driven Development — RED-GREEN-REFACTOR enforcement |
-| `/debug` | Systematic Debugging — 4-phase root cause analysis |
-| `/daily-qa` | Daily evidence-grounded sweep — recent commits, CI failures, dep drift, perf regressions, untested paths; auto-runs `/defense` (basic OWASP) + scoped `/db-optimize` |
-| `/clean-code` | KISS/DRY/SOLID/YAGNI cleanup of the branch diff — audits, applies the smallest safe refactor per finding under green tests, one commit each; quality only |
-| `/qa-full` | Per-feature QA pipeline — audit → fix → verify across the full fan-out (tests, correctness, security, DB, perf, browser QA, design, a11y, coverage) on the branch diff; fixes what it finds, re-verifies, then emits a pass/fail ship-readiness verdict |
-| `/worktrees` | Git Worktrees — isolated parallel development |
+| `/tdd` | Test-Driven Development: RED-GREEN-REFACTOR enforcement |
+| `/debug` | Systematic Debugging: 4-phase root cause analysis |
+| `/daily-qa` | Daily evidence-grounded sweep: recent commits, CI failures, dep drift, perf regressions, untested paths; auto-runs `/defense` (basic OWASP) + scoped `/db-optimize` |
+| `/clean-code` | KISS/DRY/SOLID/YAGNI cleanup of the branch diff: audits, applies the smallest safe refactor per finding under green tests, one commit each; quality only |
+| `/qa-full` | Per-feature QA pipeline: audit → fix → verify across the full fan-out (tests, correctness, security, DB, perf, browser QA, design, a11y, coverage) on the branch diff; fixes what it finds, re-verifies, then emits a pass/fail ship-readiness verdict |
+| `/worktrees` | Git Worktrees: isolated parallel development |
 | `/finish-branch` | Branch cleanup and merge decisions |
 | `/verify` | Pre-merge validation |
 | `/write-plan` | Detailed implementation planning |
@@ -125,18 +124,18 @@ selection across every supported tool.
 ### Performance & Database
 | Command | Description |
 |---------|-------------|
-| `/db-optimize` | Database performance audit — N+1 detection, EXPLAIN analysis, missing indexes, join opportunities |
-| `/perf-profile` | Application performance profiling — code execution time, DB call time, bottleneck identification |
-| `/web-perf` | Frontend performance audit — Core Web Vitals (LCP, INP, CLS), render-blocking resources, bundle size |
-| `/cache-strategy` | Permanent cache-first strategy — no TTL, invalidate only on data change |
+| `/db-optimize` | Database performance audit: N+1 detection, EXPLAIN analysis, missing indexes, join opportunities |
+| `/perf-profile` | Application performance profiling: code execution time, DB call time, bottleneck identification |
+| `/web-perf` | Frontend performance audit: Core Web Vitals (LCP, INP, CLS), render-blocking resources, bundle size |
+| `/cache-strategy` | Permanent cache-first strategy: no TTL, invalidate only on data change |
 
 ### Security
 | Command | Description |
 |---------|-------------|
 | `/pentest` | Security scanning via [clearwing](https://github.com/Lazarus-AI/clearwing) |
 | `/fuzz` | Web fuzzing via [ffuf](https://github.com/ffuf/ffuf) |
-| `/defense` | Defense-in-depth — OWASP Top 10, secrets, auth, encryption |
-| `/iac-scan` | Infrastructure-as-Code security scan — Dockerfiles, Terraform, Kubernetes/Helm, CI/CD workflows |
+| `/defense` | Defense-in-depth: OWASP Top 10, secrets, auth, encryption |
+| `/iac-scan` | Infrastructure-as-Code security scan: Dockerfiles, Terraform, Kubernetes/Helm, CI/CD workflows |
 
 ### Spec Workflow (from [BB-Skills](https://github.com/buildbetter-app/BB-Skills))
 | Command | Description |
@@ -161,13 +160,14 @@ selection across every supported tool.
 | `/article` | Extract clean text from web articles |
 | `/kb-advisor` | Search and synthesize from your knowledge bases |
 | `/content-writer` | Content creation backed by knowledge base research |
+| `/humanize` | Strip AI slop from prose, keep the voice. Deterministic scan + surgical edits the agent applies itself |
 
 ### Testing
 | Command | Description |
 |---------|-------------|
-| `/test-coverage` | Finds untested complex logic, edge/corner cases, and past regressions, then writes and applies the missing tests — enforces Google's Testing on the Toilet best practices |
+| `/test-coverage` | Finds untested complex logic, edge/corner cases, and past regressions, then writes and applies the missing tests, enforces Google's Testing on the Toilet best practices |
 | `/playwright` | E2E testing with Playwright |
-| `/a11y` | Accessibility audit — WCAG 2.2 AA, screen-reader, keyboard nav, ARIA, contrast |
+| `/a11y` | Accessibility audit: WCAG 2.2 AA, screen-reader, keyboard nav, ARIA, contrast |
 
 ### Codebase Context (from [ariadoss/repomap](https://github.com/ariadoss/repomap), [safishamsi/graphify](https://github.com/safishamsi/graphify))
 | Command | Description |
@@ -178,7 +178,13 @@ selection across every supported tool.
 | `/repomap-auto-off` | Disable automatic repo map updates |
 | `/dbmap-auto-on` | Auto-regenerate DBMAP.md after migration commands run |
 | `/dbmap-auto-off` | Disable automatic database schema map updates |
-| `/graphify` | Turn any folder into a queryable knowledge graph — HTML, JSON, audit report |
+| `/graphify` | Turn any folder into a queryable knowledge graph: HTML, JSON, audit report |
+
+### Superskills itself
+| Command | Description |
+|---------|-------------|
+| `/superskills-doctor` | Read-only health check of the install: linked skills, versions vs manifests, gstack, optional tools |
+| `/superskills-upgrade` | Pull the latest superskills, re-run setup, show the version change |
 
 ## Knowledge Bases
 
@@ -215,9 +221,9 @@ Your overlay repo can:
 
 ## Optional Dependencies
 
-- `uv tool install clearwing` — for `/pentest` (source code + network scanning)
-- `brew install ffuf` — for `/fuzz` (web fuzzing)
-- Playwright — for `/playwright` (`npm install -D @playwright/test`)
+- `uv tool install clearwing`: for `/pentest` (source code + network scanning)
+- `brew install ffuf`: for `/fuzz` (web fuzzing)
+- Playwright: for `/playwright` (`npm install -D @playwright/test`)
 
 ## Engineering standards & tests
 
@@ -228,7 +234,7 @@ All executable code in this repo holds to [`ENGINEERING_STANDARDS.md`](ENGINEERI
 ./tests/run.sh    # runs tests/*.bats (includes `claude plugin validate --strict`)
 ```
 
-Skill *behaviour* is tested with `claude plugin eval` — a suite under
+Skill *behaviour* is tested with `claude plugin eval`, a suite under
 [`evals/`](evals/) with a sampling plan, binary graders and a no-plugin baseline
 so each case reports what the plugin actually contributed (Δ). See
 [`evals/RUBRIC.md`](evals/RUBRIC.md). Every eval run is a real model call on your
@@ -240,7 +246,7 @@ account, so it is not part of `./tests/run.sh`.
 cd ~/.claude/skills/superskills && git pull && ./setup
 ```
 
-> **Always re-run `./setup` after pulling — `git pull` alone is not enough.**
+> **Always re-run `./setup` after pulling. `git pull` alone is not enough.**
 > Existing skills are live symlinks, so edits to them show up instantly. But a
 > **new** skill only becomes visible once `./setup` runs again to create its
 > symlink. `setup` installs a git `post-merge` hook that does this automatically
@@ -248,8 +254,8 @@ cd ~/.claude/skills/superskills && git pull && ./setup
 > `/superskills-upgrade` command also handles this for you.
 >
 > Not sure what state an install is in? `/superskills-doctor` prints a read-only
-> table — install kind, which skills are linked, VERSION vs manifests, gstack,
-> bun, optional tools — and a verdict that is never "ready" while a required check
+> table. Install kind, which skills are linked, VERSION vs manifests, gstack,
+> bun, optional tools. And a verdict that is never "ready" while a required check
 > is blocked. It changes nothing; the table names the fix.
 
 ## Maintenance utilities
@@ -259,7 +265,7 @@ cd ~/.claude/skills/superskills && git pull && ./setup
 gstack's `/qa`, `/browse`, and `/benchmark` skills launch a persistent per-project
 "Chrome for Testing" browser under `~/.gstack/chromium-profile-<name>`. The profile
 dir is meant to persist (it keeps logins/cookies between runs), but the browser
-*process* has no idle teardown — when a skill or Claude session ends via SIGTERM,
+*process* has no idle teardown: when a skill or Claude session ends via SIGTERM,
 Ctrl-C, or a crash, the browser is orphaned and can sit for hours pegging a CPU
 core. A few of these stacked up will push your load average past your core count
 and make the whole machine (Terminal, Claude, everything) feel sluggish.
@@ -267,12 +273,12 @@ and make the whole machine (Terminal, Claude, everything) feel sluggish.
 `scripts/gstack-qa-browser-reaper.sh` kills QA browsers that have been idle past a
 threshold. It is:
 
-- **Scoped** — touches only `~/.gstack/chromium-profile-<suffix>` QA profiles. Your
+- **Scoped**: touches only `~/.gstack/chromium-profile-<suffix>` QA profiles. Your
   real Chrome/Firefox and the bare `chromium-profile` browser are never matched.
-- **Idle-based** — uses the profile dir mtime (Chrome writes it on navigation /
+- **Idle-based**: uses the profile dir mtime (Chrome writes it on navigation /
   cookies; it goes stale when the browser sits idle), so it never kills a browser
   you're actively driving in another window.
-- **Graceful** — SIGTERM first (Chrome tears down its own children), SIGKILL only
+- **Graceful**: SIGTERM first (Chrome tears down its own children), SIGKILL only
   if it ignores the polite ask.
 
 Preview what it would reap without killing anything:
@@ -290,10 +296,64 @@ scripts/install-qa-browser-reaper.sh --idle-min 60 --interval 1800
 scripts/install-qa-browser-reaper.sh --uninstall
 ```
 
-The installer is **opt-in** and never run by `./setup` — it installs a background
+The installer is **opt-in** and never run by `./setup`. It installs a background
 agent that force-kills processes, so it stays a deliberate choice. macOS only.
 Threshold and process list are seam-injectable (`GSTACK_QA_REAP_IDLE_MIN`,
 `GSTACK_QA_REAP_PS_FILE`) and covered by `tests/gstack-qa-browser-reaper.bats`.
+
+### Statusline
+
+A fast statusline for Claude Code: model, directory, context %, and (for Pro/Max
+accounts) 5-hour, 7-day and spend-limit usage with time-to-reset, plus prompt
+cache warmth.
+
+```
+Opus  superskills  ctx 23%  5h 41% (2h10m)  7d 63% (3d2h)  spend 104% (11d13h)  cache 1h
+```
+
+Install by pointing `statusLine` at the script (no `curl | bash`):
+
+```jsonc
+// ~/.claude/settings.json
+{ "statusLine": { "type": "command", "command": "/absolute/path/to/superskills/scripts/statusline.sh" } }
+```
+
+Set `NO_COLOR=1` for plain output, `STATUSLINE_DEBUG=1` to surface stderr.
+
+It renders in **17ms** against 74ms for the [Waza](https://github.com/tw93/Waza)
+statusline it started from (100 renders each, same payload, steady state), because
+a statusline is on a hot path: Claude Code debounces updates at 300ms and cancels
+an in-flight script when a new update arrives. One `jq` call does all parsing, the
+cache merge, the clock arithmetic and the rendering. No `awk` (context % is a
+documented field), no `date` (jq has `now`), no `stat`, `tr`, `sleep`, or lock.
+
+`rate_limits` is absent until a session's first API response and Claude Code drops
+each window at its `resets_at`, so the last-seen windows are cached under
+`${XDG_CACHE_HOME:-~/.cache}/claude-statusline/` (mode 600) and re-shown until they
+expire. Staleness is decided by `resets_at` rather than a high-water mark: within a
+window usage only climbs, and a changed `resets_at` means a new window. Tested in
+`tests/statusline.bats` (14 cases, mostly absence and corruption paths).
+
+### Publishing the standalone `humanize` repo
+
+`/humanize` is maintained here and published as a separate repo
+([`ariadoss/humanize`](https://github.com/ariadoss/humanize)) by export:
+
+```bash
+./scripts/export-humanize.sh [OUTDIR]   # default: dist/humanize (git-ignored)
+```
+
+The export is a **pure copy**: no path rewriting anywhere. The standalone repo
+names the toolkit `toolkit/`, exactly as the skill does, and
+`tests/humanize-toolkit.bats` locates its layout at runtime, so the same test file
+ships unmodified in both. That is deliberate: a rewriting export is what drifts,
+and a half-applied rewrite yields a tree whose tests pass while its docs point at
+paths that no longer exist. `tests/export-humanize.bats` asserts byte-identity for
+every exported file, and the export refuses to finish unless the exported tree
+passes its own tests.
+
+It is idempotent and clears only the paths it owns, so re-exporting over a real
+checkout leaves `.git` and local notes alone.
 
 ### /qa-full ledger hook
 
@@ -316,7 +376,7 @@ Needs `jq` and fails open without it. Logic lives in
 
 ## Marketing Skills (174)
 
-From [kostja94/marketing-skills](https://github.com/kostja94/marketing-skills) — stored directly in this repo. SEO, content, paid ads, pages, channels, and strategies:
+From [kostja94/marketing-skills](https://github.com/kostja94/marketing-skills), stored directly in this repo. SEO, content, paid ads, pages, channels, and strategies:
 
 | Category | Examples |
 |----------|---------|
@@ -348,25 +408,33 @@ From [kostja94/marketing-skills](https://github.com/kostja94/marketing-skills) �
 
 ## Credits
 
+Written by [Danilo Stern-Sapad](https://danilosapad.com):
+- [`/repomap`, `/dbmap`](https://github.com/ariadoss/repomap) and their auto-on/off toggles (also a standalone repo)
+- [`/humanize`](https://github.com/ariadoss/humanize) (also a standalone repo)
+- `/qa-full`, `/daily-qa`, `/clean-code`, `/test-coverage`, `/a11y`, `/iac-scan`, `/db-optimize`, `/perf-profile`, `/cache-strategy`, `/superskills-doctor`, `/superskills-upgrade`
+- the statusline (`scripts/statusline.sh`), a faster rewrite of Waza's
+
 Skills curated from:
-- [garrytan/gstack](https://github.com/garrytan/gstack) — virtual engineering team (QA, review, ship, security, planning, browser automation)
-- [obra/superpowers](https://github.com/obra/superpowers) — TDD, debugging, worktrees, planning
-- [buildbetter-app/BB-Skills](https://github.com/buildbetter-app/BB-Skills) — spec workflow
-- [slavingia/skills](https://github.com/slavingia/skills) — startup methodology
-- [tapestry](https://github.com/michalparkola/tapestry-skills-for-claude-code) — content extraction
-- [clearwing](https://github.com/Lazarus-AI/clearwing) — security scanning
-- [ffuf](https://github.com/ffuf/ffuf) — web fuzzing
-- [kostja94/marketing-skills](https://github.com/kostja94/marketing-skills) — 172 marketing skills
-- [wondelai/skills](https://github.com/wondelai/skills) — UX heuristics, Hook Model, Design Sprint
-- [emilkowalski/skill](https://github.com/emilkowalski/skill) — design engineering philosophy
-- [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) — React, Next.js, Vercel deployment
-- [rshankras/claude-code-apple-skills](https://github.com/rshankras/claude-code-apple-skills) — Swift/iOS/SwiftUI
-- [bencium/bencium-marketplace](https://github.com/bencium/bencium-marketplace) — design audit, typography, architecture
-- [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) — premium UI design systems
-- [LovroPodobnik/refactoring-ui-skill](https://github.com/LovroPodobnik/refactoring-ui-skill) — UI refactoring
-- [Dammyjay93/interface-design](https://github.com/Dammyjay93/interface-design) — interface design craft
-- [ParthJadhav/app-store-screenshots](https://github.com/ParthJadhav/app-store-screenshots) — app store screenshot generator
-- [browser-use/video-use](https://github.com/browser-use/video-use) — conversation-driven video editor (cut, grade, subtitle, animate)
+- [garrytan/gstack](https://github.com/garrytan/gstack): virtual engineering team (QA, review, ship, security, planning, browser automation)
+- [obra/superpowers](https://github.com/obra/superpowers): TDD, debugging, worktrees, planning
+- [buildbetter-app/BB-Skills](https://github.com/buildbetter-app/BB-Skills): spec workflow
+- [slavingia/skills](https://github.com/slavingia/skills): startup methodology
+- [tapestry](https://github.com/michalparkola/tapestry-skills-for-claude-code): content extraction
+- [clearwing](https://github.com/Lazarus-AI/clearwing): security scanning
+- [ffuf](https://github.com/ffuf/ffuf): web fuzzing
+- [kostja94/marketing-skills](https://github.com/kostja94/marketing-skills): 172 marketing skills
+- [wondelai/skills](https://github.com/wondelai/skills): UX heuristics, Hook Model, Design Sprint
+- [emilkowalski/skill](https://github.com/emilkowalski/skill): design engineering philosophy
+- [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills): React, Next.js, Vercel deployment
+- [rshankras/claude-code-apple-skills](https://github.com/rshankras/claude-code-apple-skills): Swift/iOS/SwiftUI
+- [bencium/bencium-marketplace](https://github.com/bencium/bencium-marketplace): design audit, typography, architecture
+- [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill): premium UI design systems
+- [LovroPodobnik/refactoring-ui-skill](https://github.com/LovroPodobnik/refactoring-ui-skill): UI refactoring
+- [Dammyjay93/interface-design](https://github.com/Dammyjay93/interface-design): interface design craft
+- [ParthJadhav/app-store-screenshots](https://github.com/ParthJadhav/app-store-screenshots): app store screenshot generator
+- [browser-use/video-use](https://github.com/browser-use/video-use): conversation-driven video editor (cut, grade, subtitle, animate)
+- [safishamsi/graphify](https://github.com/safishamsi/graphify): knowledge graph from any codebase or corpus
+- [tw93/Waza](https://github.com/tw93/Waza): statusline design and the skill-vs-script rule
 
 ## License
 
