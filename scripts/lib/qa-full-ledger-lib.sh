@@ -165,10 +165,16 @@ qfl_latest_report() {
 }
 
 # qfl_written_report <transcript...> — the last qa-full report the session
-# wrote with Write or Edit, or nothing.
+# wrote with Write or Edit that still exists, or nothing. A report since deleted
+# (a subagent's eval fixture in a cleaned-up temp dir) must not hide a real one.
 qfl_written_report() {
-  _qfl_tool_uses "$@" | jq -r 'select(.name=="Write" or .name=="Edit") | .input.file_path // empty' \
-    | grep '/qa-full-reports/[^/]*\.md$' | tail -1
+  local f last=""
+  while IFS= read -r f; do
+    [ -f "$f" ] && last="$f"
+  done < <(_qfl_tool_uses "$@" | jq -r 'select(.name=="Write" or .name=="Edit") | .input.file_path // empty' \
+             | grep '/qa-full-reports/[^/]*\.md$')
+  [ -n "$last" ] && printf '%s\n' "$last"
+  return 0
 }
 
 # qfl_report_path <cwd> <transcript...> — the last report the session wrote

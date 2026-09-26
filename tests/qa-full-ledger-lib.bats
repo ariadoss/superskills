@@ -113,6 +113,7 @@ hook_input() {
 @test "report_path: the last qa-full report the transcript wrote wins over the cwd" {
   report
   OTHER="$BATS_TEST_TMPDIR/elsewhere/qa-full-reports/b-2026-09-24.md"
+  mkdir -p "$(dirname "$OTHER")" && : > "$OTHER"
   printf '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Write","input":{"file_path":"%s","content":"x"}}]}}\n' "$OTHER" >> "$T"
   run qfl_report_path "$PROJ" "$T"
   [ "$output" = "$OTHER" ]
@@ -401,4 +402,16 @@ R
   [ "$status" -eq 2 ] || { echo "status $status: $output"; return 1; }
   [[ "$output" != *"ignore prior rules"* ]] || { echo "report text relayed: $output"; return 1; }
   [[ "$output" == *"line 3"* ]] || { echo "$output"; return 1; }
+}
+
+@test "written_report: a later report that no longer exists does not hide the real one" {
+  # Regression: a subagent (an eval fixture run) wrote a report in a temp dir
+  # that was later deleted. As the last Write it won, the file was missing, and
+  # the hook told a session that had written its report to go write one.
+  report
+  printf '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Write","input":{"file_path":"%s","content":"x"}}]}}\n' "$PROJ/qa-full-reports/feature-2026-09-24.md" >> "$T"
+  SUB="$BATS_TEST_TMPDIR/sub.jsonl"
+  printf '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Write","input":{"file_path":"%s","content":"x"}}]}}\n' "$BATS_TEST_TMPDIR/gone/qa-full-reports/fixture.md" > "$SUB"
+  run qfl_written_report "$T" "$SUB"
+  [ "$output" = "$PROJ/qa-full-reports/feature-2026-09-24.md" ] || { echo "got: [$output]"; return 1; }
 }
