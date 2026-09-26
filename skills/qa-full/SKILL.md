@@ -302,12 +302,21 @@ unauthenticated while working fine. When the preflight says `not_authed` but
 
 Record the probe command, model and result in the ledger either way.
 
-If `/review` cannot run at all (the gstack install is broken), apply its
-checklist
-(`~/.claude/skills/gstack/review/checklist.md`) to `origin/<base>..HEAD` via a
-fresh subagent, fix and re-verify the same way, and record the row as
-`SKIPPED(/review unavailable: <reason>; checklist fallback ran)` with the
-fallback's results as evidence — do not skip the correctness step.
+**If `/review` is unavailable** (gstack is not installed, the Skill tool cannot
+load `review`, or its preamble fails), do not skip the correctness step. Run the
+in-tree fallback, `/basic-review <diff-ref>...HEAD`, instead:
+1. **Audit:** invoke `/basic-review` with the diff ref Step 1 resolved. It is
+   read-only and reports findings as `file:line` with severity.
+2. **Fix:** for each CRITICAL/HIGH (and cheap MEDIUM) finding, root-cause it
+   (`/debug`), write the failing test first (`/tdd`), apply the smallest fix,
+   and commit it atomically, naming `basic-review` and the finding.
+3. **Verify:** run `/basic-review` once more on the same range; a CRITICAL
+   still reported is an UNFIXED blocker.
+
+Name both in the ledger row's first cell, `/review (fallback: /basic-review)`,
+and put the reason `/review` was unavailable in its evidence. The row's status
+is the fallback's result (RAN-CLEAN, FIXED(n) or UNFIXED), never SKIPPED: the
+correctness check ran.
 
 **Quality — `/clean-code`.** After correctness is green and committed, run
 `/clean-code <diff-ref> [--scope <paths>]` with the diff ref and scope this
@@ -484,7 +493,8 @@ The fix rounds changed the branch, so verify the *whole* result once more:
 2. **Re-audit the fix commits:** run `/defense` scoped to the files the fix
    commits touched, and read the fix commits themselves
    (`git show original-HEAD..HEAD`) against `/review`'s checklist — `/review`
-   takes no commit range, and Step 3 already re-ran it twice. The fixes must not
+   takes no commit range, and Step 3 already re-ran it twice. When `/review`
+   was unavailable, run `/basic-review original-HEAD..HEAD` for this re-audit. The fixes must not
    introduce a CRITICAL/HIGH. If they did, one more fix + re-verify, then stop.
 3. **Diff sanity:** `git log --oneline <base>..HEAD` — every pipeline commit
    should name its check/finding; nothing outside the diff scope was touched.
@@ -622,6 +632,7 @@ and it **fixes and verifies** instead of recommending.
 Auto-run (diff-scoped; audit → fix → verify):
 - Tests & build — always; failures root-caused via `/debug`, proven via `/verify` (Step 2).
 - `/review` — staff-level correctness review; findings fixed by the pipeline (Step 3).
+- `/basic-review` — in-tree correctness review, run in `/review`'s place when gstack is unavailable (Step 3).
 - `/clean-code` — KISS/DRY/SOLID/YAGNI refactors on the diff, test-verified (Step 3).
 - `/defense` — OWASP/secrets/auth/crypto; findings fixed by the pipeline (Step 4).
 - `/iac-scan` — when infra/deploy config changed; misconfigs fixed (Step 4).

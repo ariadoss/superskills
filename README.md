@@ -25,7 +25,7 @@ Setup will:
 ### Packs: choose what gets installed
 
 Every skill belongs to a pack. `./setup` installs the **coding pack by
-default** (35 skills: 27 in-repo + 8 via gstack when a clone exists, the
+default** (36 skills: 28 in-repo + 8 via gstack when a clone exists, the
 spec → plan → TDD → QA → ship workflow plus every check `/qa-full` can
 trigger: security (`/defense`, `/iac-scan`, `/pentest`, `/fuzz`, `/cso`),
 performance (`/db-optimize`, `/web-perf`, `/perf-profile`), browser/design QA
@@ -104,7 +104,7 @@ The plugin `version` is driven by the repo's `VERSION` file via
 watch. The `./setup` install above remains the way to get a chosen pack
 selection across every supported tool.
 
-## Skills (44)
+## Skills (45)
 
 ### Dev Methodology (from [superpowers](https://github.com/obra/superpowers))
 | Command | Description |
@@ -113,6 +113,7 @@ selection across every supported tool.
 | `/debug` | Systematic Debugging: 4-phase root cause analysis |
 | `/daily-qa` | Daily evidence-grounded sweep: recent commits, CI failures, dep drift, perf regressions, untested paths; auto-runs `/defense` (basic OWASP) + scoped `/db-optimize` |
 | `/clean-code` | KISS/DRY/SOLID/YAGNI cleanup of the branch diff: audits, applies the smallest safe refactor per finding under green tests, one commit each; quality only |
+| `/basic-review` | Read-only correctness review (correctness, security, reliability, contract risk) with `file:line` findings; the fallback `/qa-full` and `/daily-qa` use when gstack's `/review` is unavailable |
 | `/qa-full` | Per-feature QA pipeline: audit → fix → verify across the full fan-out (tests, correctness, security, DB, perf, browser QA, design, a11y, coverage) on the branch diff; fixes what it finds, re-verifies, then emits a pass/fail ship-readiness verdict |
 | `/worktrees` | Git Worktrees: isolated parallel development |
 | `/finish-branch` | Branch cleanup and merge decisions |

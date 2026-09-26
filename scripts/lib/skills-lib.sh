@@ -20,7 +20,7 @@
 # The coding pack's roster, in two parts: the names this repo serves from
 # skills/, and the gstack-served names the coding pack claims (closure note
 # below).
-PACK_CODING_REPO="specify clarify write-plan analyze repomap dbmap worktrees tdd debug verify test-coverage qa-full finish-branch daily-qa superskills-doctor superskills-upgrade clean-code defense db-optimize web-perf a11y playwright checklist iac-scan pentest fuzz perf-profile"
+PACK_CODING_REPO="specify clarify write-plan analyze repomap dbmap worktrees tdd debug verify test-coverage qa-full finish-branch daily-qa superskills-doctor superskills-upgrade clean-code basic-review defense db-optimize web-perf a11y playwright checklist iac-scan pentest fuzz perf-profile"
 # The gstack slice is the /qa-full closure, not every gstack skill: its four
 # gstack checks (review, qa, cso, design-review), the /ship hand-off the gate
 # names as its successor, plan-eng-review (the /write-plan chain), and the

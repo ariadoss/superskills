@@ -119,7 +119,9 @@ Goal: surface likely bugs introduced in the window; propose minimal fixes.
    `vendor/gstack/review/checklist.md` in the superskills install. Do not run
    `/review` itself here: it applies fixes to the working tree and stops on the
    base branch, and this sweep is report-only. Title §2 *"fallback: /review
-   checklist"* (or *"fallback: bug signatures"* if no checklist was found).
+   checklist"*. If no checklist was found (gstack is not installed), invoke
+   `/basic-review` on the window's diff instead; it is read-only, so it fits
+   this sweep. Title §2 *"fallback: /basic-review"* and fold its findings in.
    Whichever you use, read the diff hunks
    that touch logic (skip pure docs/config-only changes unless they touch
    build/CI config) and look for concrete bug signatures:

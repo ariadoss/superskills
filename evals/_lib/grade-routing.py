@@ -73,11 +73,11 @@ def texts(msg):
 FANOUT = {
     # skills/qa-full/SKILL.md "Auto-run" + "Ask-first" (Related commands).
     # dbmap: /db-optimize asks for a schema map first.
-    "qa-full": {"clean-code", "defense", "iac-scan", "fuzz", "db-optimize",
+    "qa-full": {"clean-code", "basic-review", "defense", "iac-scan", "fuzz", "db-optimize",
                 "dbmap", "web-perf", "perf-profile", "a11y", "test-coverage",
                 "playwright", "pentest", "tdd", "debug", "verify"},
     # skills/daily-qa/SKILL.md §7a, §7b, §7i -- the only owned auto-runs.
-    "daily-qa": {"db-optimize", "defense", "iac-scan"},
+    "daily-qa": {"db-optimize", "defense", "iac-scan", "basic-review"},
 }
 
 
