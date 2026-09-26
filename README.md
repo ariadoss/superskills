@@ -25,7 +25,7 @@ Setup will:
 ### Packs: choose what gets installed
 
 Every skill belongs to a pack. `./setup` installs the **coding pack by
-default** (36 skills: 28 in-repo + 8 via gstack when a clone exists, the
+default** (37 skills: 29 in-repo + 8 via gstack when a clone exists, the
 spec → plan → TDD → QA → ship workflow plus every check `/qa-full` can
 trigger: security (`/defense`, `/iac-scan`, `/pentest`, `/fuzz`, `/cso`),
 performance (`/db-optimize`, `/web-perf`, `/perf-profile`), browser/design QA
