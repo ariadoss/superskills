@@ -4,10 +4,13 @@
 
 ```bash
 bun install          # install dependencies
-bun run test         # run free tests via the strict parallel runner (~90-100s full suite)
+bun run test:quick   # measured fast deterministic subset for edit feedback
+bun run test         # complete free suite via the strict parallel runner
+bun run test:pr      # changed fast live probes + selected judges (CI PR default)
 bun run test:evals   # run paid evals: LLM judge + E2E (diff-based, ~$4.35/run max)
 bun run test:evals:all  # run ALL paid evals regardless of diff
-bun run test:gate    # run gate-tier tests only (CI default, blocks merge)
+bun run test:gate    # broad gate-tier tests (legacy diff-based command)
+bun run test:release # fresh full gate + periodic censuses
 bun run test:periodic  # run periodic-tier tests only (weekly cron / manual)
 bun run test:gate:sharded    # gate tier via the sharded paid runner (one Bun process per test file)
 bun run test:periodic:sharded  # periodic tier via the sharded paid runner (implies EVALS_ALL=1)
@@ -49,9 +52,10 @@ variants to force all tests. Run `eval:select` to preview which tests would run.
 
 **Two-tier system:** Tests are classified as `gate` or `periodic` in `E2E_TIERS`
 (in `test/helpers/touchfiles.ts` — a facade over `touchfiles-data.ts` +
-`test-selection.ts`). CI runs gate tests per PR via evals.yml's sliced lane
+`test-selection.ts`). CI runs the changed fast PR profile and selected judges
+per PR via evals.yml's sliced lane
 (planner manifest → executors → fail-closed report; engine =
-scripts/test-paid-shards.ts, the same runner as local eval:bg:gate); the free
+scripts/test-paid-shards.ts, the same runner as local eval:bg:pr); the free
 suite runs on every PR via `.github/workflows/free-tests.yml` (a REQUIRED
 check, secretless — fork PRs get real signal); ALL periodic tests run weekly
 via evals-periodic.yml (EVALS_ALL, minus the reasoned exclusions in
@@ -71,9 +75,14 @@ in sync.
 ## Testing
 
 ```bash
-bun run test         # run before every commit — free, ~90-100s for the full ~8,700-test suite
-bun run test:evals   # run before shipping — paid, diff-based (~$4.35/run max)
+bun run test         # final full free acceptance after focused repairs and source freeze
+bun run eval:bg:pr   # required changed PR coverage, with explicit deferrals
 ```
+
+Follow [Validation discipline in AGENTS.md](AGENTS.md#validation-discipline):
+prove repairs with focused checks first, complete required selected evaluations,
+then run the full free suite once on the final integrated code. During repairs,
+focused checks replace a full-suite run before every commit.
 
 `bun run test` routes through `scripts/test-free-shards.ts` (N concurrent
 shard processes, serial within each, packed by recorded per-file durations
@@ -86,19 +95,41 @@ gone: `TREE_MUTATING` is empty (gen-skill-docs has a main() guard and
 docs/TESTING_INTERNALS.md). Never type bare `bun test` for the suite: it
 walks the whole repo, loading paid eval files and missing the strict
 classifier.
-It covers skill validation, gen-skill-docs quality checks, and browse
-integration tests. `bun run test:evals` runs LLM-judge quality evals and E2E
-tests via `claude -p`. Both must pass before creating a PR.
+It covers skill validation, gen-skill-docs quality checks, browse
+integration tests, the Aside contract pins, and the render-wrapper pins.
+`bun run test:pr` runs the selected short live behaviors and quality judges.
+It reports deferred broad coverage; unknown dependencies restore the full gate,
+and an unmapped prompt without registered coverage blocks planning. Full free
+acceptance and required PR checks must pass before publishing. CI can reuse the
+14 workflow-judge passes for 24 hours when their complete consumed inputs and
+runtime match; records preserve original provenance. The other 11 judge cases,
+dynamic agent tests, and local runs without scoped cache configuration stay fresh.
+Scheduled/manual full coverage and `test:release` always run fresh.
+See [testing policy](CONTRIBUTING.md#test-tiers) for commands and measured targets.
+Anything that needs Aside
+itself (`test/skill-e2e-aside.test.ts`, the Aside qa/design E2E cases, the
+live render in `test/aside-render.test.ts`) runs only on a Mac with the Aside
+app open and self-skips elsewhere (`asideAvailable()`). make-pdf's render
+gates and `test/skill-e2e-diagram.test.ts` run through whichever engine
+resolves (`browserAvailable()` — Aside, or the browse binary CI builds with
+`bun run build:gates`) and skip only when neither exists; the fallback
+engine's own tests run everywhere.
 
 ## Project structure
 
 Full annotated tree: [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md).
-Quick map: `browse/` headless-browser CLI, `design/` design binary,
-`hosts/` typed host configs, `scripts/` build+DX tooling (gen-skill-docs,
-resolvers), `test/` validation+evals, `lib/` shared libraries, `bin/` CLI
-utilities, `extension/` Chrome extension, one directory per skill
-(`ship/`, `review/`, `qa/`, ...), `.github/` CI, `contrib/` contributor
-tools, `docs/designs/` design documents.
+Quick map: `browse/` gstack's own headless-browser CLI (the fallback
+engine) plus the `/browse` skill, `design/` design binary, `make-pdf/` PDF
+binary, `hosts/` typed host configs, `scripts/` build+DX tooling
+(gen-skill-docs, resolvers — `resolvers/aside.ts` is the Aside contract),
+`test/` validation+evals, `lib/` shared libraries (`aside-render.ts` renders
+local HTML through Aside, falling back to the engine; `design-catalog.ts` is
+the typed design anti-pattern catalog every design skill renders from), `bin/`
+CLI utilities (`gstack-render.ts` is the render CLI skills call;
+`gstack-design-detect.ts` and `gstack-design-md.ts` are the design detector
+and open-DESIGN.md tools), `extension/` Chrome
+extension, one directory per skill (`ship/`, `review/`, `qa/`, ...),
+`.github/` CI, `contrib/` contributor tools, `docs/designs/` design documents.
 
 ## SKILL.md workflow
 
@@ -107,6 +138,13 @@ SKILL.md files are **generated** from `.tmpl` templates. To update docs:
 1. Edit the `.tmpl` file (e.g. `SKILL.md.tmpl` or `browse/SKILL.md.tmpl`)
 2. Run `bun run gen:skill-docs` (or `bun run build` which does it automatically)
 3. Commit both the `.tmpl` and generated `.md` files
+
+The same `gen:skill-docs` run writes two more generated files from `lib/`:
+`review/design-checklist.md` (from `lib/design-catalog.ts`, through
+`scripts/resolvers/design-checklist.ts`) and `lib/dom-dump.js` (from
+`lib/dom-dump-script.ts`). Edit the catalog or the script source, regenerate,
+and commit both; never edit the generated file
+(`test/design-checklist-sync.test.ts` fails on drift).
 
 Generation uses each host's `defaultModel` (`claude` for existing hosts, `gpt`
 for Codex) unless `--model` is explicit. Codex installs additionally read the
@@ -117,8 +155,14 @@ Codex config.toml pins a different model, rerun `./setup --host codex`
 afterwards to restore your profile (single-owner persistence is filed in
 TODOS.md).
 
-To add a new browse command: add it to `browse/src/commands.ts` and rebuild.
-To add a snapshot flag: add it to `SNAPSHOT_FLAGS` in `browse/src/snapshot.ts` and rebuild.
+Browser steps in skills are `aside repl` scripts per
+`scripts/resolvers/aside.ts`, each with its `$B` equivalent for the fallback
+engine. To add a new browse command: add it to `browse/src/commands.ts` and
+rebuild. To add a snapshot flag: add it to `SNAPSHOT_FLAGS` in
+`browse/src/snapshot.ts` and rebuild. Local-HTML rendering in a skill template
+is a `bun run ~/.claude/skills/gstack/bin/gstack-render.ts` call; new render
+options go into `lib/aside-render.ts` (which handles the fallback), never into
+a skill's own bash.
 
 **Token ceiling:** Generated SKILL.md files trip a warning above 160KB (~40K tokens).
 This is a "watch for feature bloat" guardrail, not a hard gate. Modern flagship
@@ -132,7 +176,7 @@ or as a reference doc, (3) only compress carefully-tuned prose as a last resort 
 cuts to the coverage audit, review army, or voice directive have real quality cost.
 
 A second, harder ceiling guards the DISCOVERY surface: `test/catalog-budget.test.ts`
-caps the aggregate frontmatter `name` + `description` across all skills at 1,150
+caps the aggregate frontmatter `name` + `description` across all skills at 1,171
 token-equivalents (260-byte per-skill sub-cap), counted through the shared census
 in `test/helpers/skill-census.ts`. This one is enforced, not a warning — every
 host loads the full catalog every session, so growth here taxes every
@@ -201,8 +245,23 @@ writing-style was extracted to V1.1 — see `docs/designs/PACING_UPDATES_V0.md`.
 
 ## Browser interaction
 
-When you need to interact with a browser (QA, dogfooding, cookie setup), use the
-`/browse` skill or run the browse binary directly via `$B <command>`. NEVER use
+gstack drives the Aside AI browser (macOS 15+) first and falls back to its own
+browser engine when Aside is absent. When you need to interact with a browser
+(QA, dogfooding, inspecting a page), use the `/browse` skill: it probes Aside
+and, on `READY`, drives it — the user's real browser with their real sessions —
+through `aside repl` scripts that follow the contract in
+`scripts/resolvers/aside.ts` (`{{ASIDE_SETUP}}`). Every browser skill (`/qa`,
+`/qa-only`, `/design-review`, `/canary`, `/benchmark`, `/scrape`) does the same,
+and web research in skills runs through Aside's agent (`{{ASIDE_RESEARCH}}`)
+before the WebSearch tool. When the probe says `NEEDS_ASIDE` or
+`ASIDE_NOT_RUNNING` (Linux, Windows, a closed Aside app), the skill resolves
+`$B` per `{{BROWSE_FALLBACK}}` and runs the browse binary instead — `$B <command>`
+is a legitimate tool in that context, and cookie import, GStack Browser headed
+mode, `/pair-agent`, and browser-skills/`/skillify` belong to it. Local HTML a
+skill generated itself (make-pdf, diagram, design previews) renders through
+`bin/gstack-render.ts` / `lib/aside-render.ts`, which serve the file on
+loopback and print or screenshot it in Aside, or in the engine when Aside is
+absent — never point the renderer at a site. NEVER use
 `mcp__claude-in-chrome__*` tools — they are slow, unreliable, and not what this
 project uses.
 
@@ -219,14 +278,18 @@ send off the machine MUST write a hash-chained receipt to
 `writeReceipt` from `lib/egress-receipt.ts`; shell scripts source
 `bin/gstack-egress-lib.sh` and use `_receipted_curl` / `_receipted_git`. Failure
 polarity is per-class: fail-closed for sensitive sinks (brain-sync, memory-ingest,
-gbrain-sync, telemetry, ngrok tunnels, mcp-verify, supabase-provision), fail-open
+gbrain-sync, telemetry, ngrok tunnels, mcp-verify, supabase-provision, and the
+Memorable bridge's per-prompt memorable-recall hand-off), fail-open
 + stderr warning for user-facing ones (design OpenAI calls, update-check,
 dashboards, git-class ops). The new-sink scanner in
 `test/egress-receipt-wiring.test.ts` fails CI on an unreceipted `curl` /
 `git push` / `fetch` to a non-loopback host unless the file carries a reasoned
 entry in its `SCANNER_EXEMPT` list (user-directed page fetches, reachability
 probes, instruction strings, skill prose) — if you add a new off-machine sink,
-wire it through the helpers and add it to the enumerated sink list. Inspect with
+wire it through the helpers and add it to the enumerated sink list. `aside exec`
+(a gstack-composed prompt sent to Aside's agent) is a fail-open user-facing
+sink: skills call it through the `_aside_exec` wrapper that
+`scripts/resolvers/aside.ts` renders, never bare. Inspect with
 `bin/gstack-egress` (`list` | `verify`, exit 3 on tamper | `grants`). Threat
 model: forensic observability of ATTEMPTED egress, not an exfiltration control.
 
@@ -255,18 +318,28 @@ Names are either short (`qa`) or namespaced (`gstack-qa`), controlled by
 skip the interactive prompt.
 
 **Ownership gate (#2119):** `setup` writes a `.gstack-owned` marker into every
-skill directory it creates, and `setup` (the linker, the alias installer, and
-both prefix-flip cleanups) and `bin/gstack-relink` only delete or link over an
-entry they can prove is gstack's. Strong proof (a symlink resolving into gstack,
-or the marker) allows deleting or refreshing the whole directory. Weak proof (a
+skill directory it creates, and `setup` (the linker, the alias installer, both
+prefix-flip cleanups, and the retired-skill prune) and `bin/gstack-relink` only
+delete or link over an entry they can prove is gstack's. Strong proof (a
+symlink resolving into gstack, or the marker) allows deleting or refreshing the
+whole directory. Weak proof (a
 real SKILL.md byte-identical to the source, or carrying gen-skill-docs' two-line
 banner) covers only that one file, and a weakly-proven file that differs is
 moved to `~/.gstack/backups/skills/<ts>/<skill>/SKILL.md` before gstack links
 over it. Anything else is a foreign skill: skipped, and named in setup's final
 summary. The rule lives in two copies (`setup` and `bin/gstack-relink`); keep
-them in sync until the shared helper filed in TODOS.md lands. Pinned by
-`test/setup-link-ownership.test.ts`, `test/setup-cleanup-orphans.test.ts`, and
-`test/relink.test.ts`.
+them in sync until the shared helper filed in TODOS.md lands. The retired-skill
+prune (`_prune_stale_generated`) applies the same strong/weak split to renders
+of skills that no longer exist, through its own gate
+(`_owned_for_windows_refresh`: a real host directory is a candidate only when
+its SKILL.md carries the generated banner; the marker and byte identity are not
+consulted): it scans the render tree and every host skills dir,
+deletes a real render directory, removes a host symlink only when it resolves
+into gstack, cleans a bannered real directory through `_cleanup_weak_dir`,
+never follows a symlink inside the render tree, and recognizes a skill renamed
+through its frontmatter `name:`. Pinned by `test/setup-link-ownership.test.ts`,
+`test/setup-cleanup-orphans.test.ts`, `test/setup-prune-stale-generated.test.ts`,
+and `test/relink.test.ts`.
 
 **Note:** Vendoring gstack into a project's repo is deprecated. Use global install
 + `./setup --team` instead. See README.md for team mode instructions.
@@ -368,7 +441,7 @@ Before fixing any finding, read [docs/SLOP_SCAN.md](docs/SLOP_SCAN.md):
 it separates genuine quality fixes (empty catches around file ops → 
 `safeUnlink()`, process kills → `safeKill()`) from linter gaming we
 reject (string-matching error messages, tightening best-effort cleanup).
-Utilities live in `browse/src/error-handling.ts`. Don't chase the score.
+Utilities live in `lib/error-handling.ts`. Don't chase the score.
 
 ## Community PR guardrails
 
@@ -441,30 +514,24 @@ package.json (npm rejects it). Rationale and translation rules live in the
 `lib/version-source.ts` header; `test/gstack-version-bump.test.ts` pins the
 contract.
 
-**Scale-aware bumps — use common sense.** When the diff is big, bump MINOR (or
-MAJOR), not PATCH. PATCH is for bug fixes and small additions; MINOR is for
-substantial new capability or substantial reduction; MAJOR is for breaking
-changes. Rough guideposts (don't treat as rules, treat as smell-checks):
+**Choose versions autonomously; default to PATCH.** Garry delegates release
+version decisions to the agent. Do not ask him to choose or approve a version,
+including when an already-approved version collides with another PR. This policy
+overrides generic version-approval prompts in `/ship` and `/document-release`.
 
-- **PATCH (X.Y.Z+1.0)**: bug fix, doc tweak, small additive change, single
-  test/file added. Net diff under ~500 lines, no new user-facing capability.
-- **MINOR (X.Y+1.0.0)**: new capability shipped (skill, harness, command, big
-  refactor), substantial code reduction (compression, migration), or coordinated
-  multi-file change. Net diff over ~2000 lines added/removed, OR a user-visible
-  feature you'd put in a tweet.
-- **MAJOR (X+1.0.0.0)**: breaking change to public surface (CLI flag rename,
-  skill removed, config format changed), OR a release big enough to be the
-  headline of a blog post.
+Prefer **PATCH (X.Y.Z+1.0)** for ordinary releases, including fixes, additions,
+refactors, test infrastructure and coordinated multi-file work. Diff size alone
+is not a reason to choose MINOR. Choose **MINOR (X.Y+1.0.0)** or **MAJOR
+(X+1.0.0.0)** only when calling the release a patch would be plainly misleading
+("ridiculous"), such as an incompatible public-interface change or a genuinely
+new product-scale release. Make that judgment without another approval question.
 
-If you find yourself debating "is 10K added + 24K removed really a PATCH?" — it
-isn't. Bump MINOR. Same for "this adds a whole new test harness with 6 new E2E
-tests + helper utilities" — MINOR. The bump level is communication to the user
-about what kind of release this is; don't undersell it.
-
-When merging origin/main brings a higher VERSION, re-evaluate the bump level
-against the SCALE of your branch's work, not just whether main moved forward.
-If main bumped MINOR and your branch is also a substantial change, you bump
-MINOR again on top (e.g., main at v1.14.0.0, your branch lands v1.15.0.0).
+Use `bin/gstack-next-version` to check the live release queue before publishing.
+If a slot is claimed, advance to the next available version at the chosen bump
+level and use `bin/gstack-version-bump` to synchronize release metadata. A higher
+base version does not itself require a MINOR bump. Keep the PR ready for Garry to
+merge; autonomous version decisions do not authorize merging, deploying or
+skipping required validation.
 
 **VERSION and CHANGELOG are branch-scoped.** Every feature branch that ships gets its
 own version bump and CHANGELOG entry. The entry describes what THIS branch adds —
@@ -658,7 +725,7 @@ the run can also die to idle-sleep. `gstack-detach` fixes both: a fresh session
   (stray `claude`/`codex` grandchildren included), a per-shard
   `GSTACK_EVAL_DIR=<evalDir>/shards/<slug>/` honored by the `EvalCollector`
   constructor, and an aggregate that separates failed vs timed-out vs
-  never-started shards — the detach timeouts (25200s gate / 37800s periodic;
+  never-started shards — the detach timeouts (28800s gate / 60600s periodic;
   floor enforced against the live shard census by
   test/eval-detach-timeout-floor.test.ts)
   are sized against worst-case shard wall clock. `EVALS_JOBS` sets the shard
@@ -726,6 +793,7 @@ restore them across all your projects' Claude sessions. It's idempotent.
 Or copy the binaries directly:
 - `cp browse/dist/browse ~/.claude/skills/gstack/browse/dist/browse`
 - `cp design/dist/design ~/.claude/skills/gstack/design/dist/design`
+- `cp make-pdf/dist/pdf ~/.claude/skills/gstack/make-pdf/dist/pdf`
 
 ## Skill routing
 

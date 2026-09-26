@@ -49,6 +49,108 @@ for _arg in "$@"; do
   esac
 done
 
+# Informational hosts do not install anything. Resolve them before tool,
+# platform, and installation-path probes (especially costly in Git Bash).
+# ─── Parse flags ──────────────────────────────────────────────
+HOST="claude"
+QUIET=0
+LOCAL_INSTALL=0
+SKILL_PREFIX=1
+SKILL_PREFIX_FLAG=0
+TEAM_MODE=0
+NO_TEAM_MODE=0
+PLAN_TUNE_HOOKS_MODE=""   # "" = resolve from env/config/prompt; "yes"/"no" = explicit
+TIMELINE_STOP_HOOK_MODE=""  # "" = resolve from env/config; "yes"/"no" = explicit (#2677)
+MODEL_OVERRIDE=""
+MODEL_OVERRIDE_SET=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --host) [ -z "$2" ] && echo "Missing value for --host (expected claude, codex, kiro, factory, opencode, cursor, slate, openclaw, hermes, gbrain, or auto)" >&2 && exit 1; HOST="$2"; shift 2 ;;
+    --host=*) HOST="${1#--host=}"; shift ;;
+    --model) [ -z "$2" ] && echo "Missing value for --model" >&2 && exit 1; MODEL_OVERRIDE="$2"; MODEL_OVERRIDE_SET=1; shift 2 ;;
+    --model=*) MODEL_OVERRIDE="${1#--model=}"; MODEL_OVERRIDE_SET=1; shift ;;
+    --local) LOCAL_INSTALL=1; shift ;;
+    --prefix)    SKILL_PREFIX=1; SKILL_PREFIX_FLAG=1; shift ;;
+    --no-prefix) SKILL_PREFIX=0; SKILL_PREFIX_FLAG=1; shift ;;
+    --team)    TEAM_MODE=1; shift ;;
+    --no-team) NO_TEAM_MODE=1; shift ;;
+    --plan-tune-hooks)    PLAN_TUNE_HOOKS_MODE="yes"; shift ;;
+    --no-plan-tune-hooks) PLAN_TUNE_HOOKS_MODE="no"; shift ;;
+    --plan-tune-hooks=*)  PLAN_TUNE_HOOKS_MODE="${1#--plan-tune-hooks=}"; shift ;;
+    --timeline-stop-hook)    TIMELINE_STOP_HOOK_MODE="yes"; shift ;;
+    --no-timeline-stop-hook) TIMELINE_STOP_HOOK_MODE="no"; shift ;;
+    --timeline-stop-hook=*)  TIMELINE_STOP_HOOK_MODE="${1#--timeline-stop-hook=}"; shift ;;
+    -q|--quiet) QUIET=1; shift ;;
+    *) shift ;;
+  esac
+done
+
+# Shared by the instruction-tier explainer arms (openclaw, hermes). The digest
+# path is anchored to the script's own directory — $(pwd) would print a
+# nonexistent path when setup is invoked from anywhere else.
+print_instruction_tier() {
+  local source_dir
+  source_dir="$(cd "$(dirname "$0")" && pwd -P)"
+  echo ""
+  echo "Instruction-only tier (no install): copy the 2KB rules digest into a"
+  echo "location your agent reads (e.g. append to your project's AGENTS.md)."
+  echo "It carries gstack's ethos, reuse ladder, and voice rules:"
+  echo ""
+  echo "  $source_dir/agents-digest/gstack-AGENTS.md"
+  echo ""
+  echo "Re-copy it after upgrading gstack — the digest's first line shows its version."
+  echo ""
+}
+
+case "$HOST" in
+  claude|codex|kiro|factory|opencode|cursor|auto) ;;
+  slate)
+    echo ""
+    echo "Slate is not yet a first-class install target (docs/designs/SLATE_HOST.md —"
+    echo "blocked on the host-config refactor). Slate discovers skills from"
+    echo ".claude/skills as a compatibility fallback, so a Slate user is served by"
+    echo "the Claude install today:"
+    echo ""
+    echo "  ./setup --host claude"
+    echo ""
+    exit 0 ;;
+  openclaw)
+    echo ""
+    echo "OpenClaw integration uses a different model — OpenClaw spawns Claude Code"
+    echo "sessions natively via ACP. gstack provides methodology artifacts, not a"
+    echo "full skill installation."
+    echo ""
+    echo "To integrate gstack with OpenClaw:"
+    echo "  1. Tell your OpenClaw agent: 'install gstack for openclaw'"
+    echo "  2. Or generate artifacts: bun run gen:skill-docs --host openclaw"
+    echo "  3. See docs/OPENCLAW.md for the full architecture"
+    print_instruction_tier
+    exit 0 ;;
+  hermes)
+    echo ""
+    echo "Hermes integration uses the same model as OpenClaw — Hermes spawns"
+    echo "Claude Code sessions, and gstack provides methodology artifacts."
+    echo ""
+    echo "To integrate gstack with Hermes:"
+    echo "  1. Tell your Hermes agent: 'install gstack for hermes'"
+    echo "  2. Or generate artifacts: bun run gen:skill-docs --host hermes"
+    print_instruction_tier
+    exit 0 ;;
+  gbrain)
+    echo ""
+    echo "GBrain is a mod for gstack — it makes coding skills brain-aware."
+    echo "GBrain generates brain-enhanced skill variants that search your brain"
+    echo "for context before starting and save results after finishing."
+    echo ""
+    echo "To generate brain-aware skills:"
+    echo "  bun run gen:skill-docs --host gbrain"
+    echo ""
+    echo "GBrain setup and brain skills ship from the GBrain repo."
+    echo ""
+    exit 0 ;;
+  *) echo "Unknown --host value: $HOST (expected claude, codex, kiro, factory, opencode, cursor, slate, openclaw, hermes, gbrain, or auto)" >&2; exit 1 ;;
+esac
+
 if ! command -v bun >/dev/null 2>&1; then
   echo "Error: bun is required but not installed." >&2
   echo "Install with checksum verification:" >&2
@@ -72,6 +174,7 @@ OPENCODE_SKILLS="$HOME/.config/opencode/skills"
 OPENCODE_GSTACK="$OPENCODE_SKILLS/gstack"
 CURSOR_SKILLS="$HOME/.cursor/skills"
 CURSOR_GSTACK="$CURSOR_SKILLS/gstack"
+KIRO_SKILLS="$HOME/.kiro/skills"
 
 IS_WINDOWS=0
 case "$(uname -s)" in
@@ -305,6 +408,73 @@ _owned_for_windows_refresh() {
   grep -q '<!-- AUTO-GENERATED from' "$dst/SKILL.md" 2>/dev/null
 }
 
+# ─── Helper: prune renders of skills whose source is gone ────────────────────
+# gen-skill-docs prunes its own render tree (.agents/.factory/.opencode/.cursor
+# skills) at the end of every run; this helper covers what the generator cannot
+# reach: the HOST skills dirs that link to or copy those renders, and a render
+# tree left behind by an older generator. Candidates are gstack-* entries in the
+# render tree AND in each host dir, so a host entry is cleaned even when the
+# generator already removed its render.
+# $1 = install root, $2 = render tree, $3.. = host skills dirs (optional).
+# Ownership (#2119): a real render dir goes; a host symlink goes only when it
+# RESOLVES into gstack; a bannered REAL host dir is cleaned through
+# _cleanup_weak_dir (our SKILL.md, marker and links only) rather than deleted
+# whole; anything else is a user's own entry and is left alone. Symlinks in the
+# render tree are skipped: `rm -rf` on a slash-terminated link empties its
+# TARGET. Pinned by test/setup-prune-stale-generated.test.ts.
+_skill_source_exists() {
+  # $1 = install root, $2 = rendered name (gstack-<x>). gen-skill-docs names a
+  # render from the template's frontmatter `name:` when that differs from the
+  # directory, so both the directory and every frontmatter name count.
+  local g="$1" n="$2" base="${2#gstack-}"
+  [ -f "$g/$base/SKILL.md.tmpl" ] && return 0
+  [ -f "$g/$n/SKILL.md.tmpl" ] && return 0
+  grep -qsE "^name:[[:space:]]*(gstack-)?${base}[[:space:]]*$" "$g"/*/SKILL.md.tmpl 2>/dev/null && return 0
+  return 1
+}
+_prune_stale_generated() {
+  local gstack_dir="$1" gen_dir="$2" d n names="" host dest gen_real
+  shift 2
+  for d in "$gen_dir"/gstack-*; do
+    [ -d "$d" ] && [ ! -L "$d" ] || continue
+    names="$names ${d##*/}"
+  done
+  for host in "$@"; do
+    [ -n "$host" ] && [ -d "$host" ] || continue
+    for d in "$host"/gstack-*; do
+      { [ -e "$d" ] || [ -L "$d" ]; } || continue
+      names="$names ${d##*/}"
+    done
+  done
+  [ -n "$names" ] || return 0
+  for n in $(printf '%s\n' $names | sort -u); do
+    # The rename helper owns replacement-before-retirement, including failures.
+    if [ "$n" = "gstack-claude" ] && [ "${GSTACK_DEFER_CLAUDE_RENAME_PRUNE:-0}" = "1" ]; then continue; fi
+    _skill_source_exists "$gstack_dir" "$n" && continue
+    if [ -d "$gen_dir/$n" ] && [ ! -L "$gen_dir/$n" ]; then rm -rf "$gen_dir/$n"; fi
+    for host in "$@"; do
+      [ -n "$host" ] && { [ -e "$host/$n" ] || [ -L "$host/$n" ]; } || continue
+      _owned_for_windows_refresh "$host/$n" || continue
+      if [ -L "$host/$n" ]; then
+        # Strong proof only when the link resolves into gstack: the render tree
+        # we were handed (a dangling link into it still names that path) or
+        # any gstack path per _gstack_target_is_ours.
+        dest="$(_gstack_link_target_abs "$host/$n")" || continue
+        gen_real="$(cd "$gen_dir" 2>/dev/null && pwd -P || printf '%s' "$gen_dir")"
+        case "$dest" in
+          "$gen_dir"/*|"$gen_real"/*) rm -f "$host/$n" ;;
+          *) _gstack_target_is_ours "$dest" "$gstack_dir" && rm -f "$host/$n" ;;
+        esac
+      elif [ ! -d "$host/$n" ]; then
+        rm -f "$host/$n"
+      else
+        _cleanup_weak_dir "$host/$n" "$gstack_dir"
+      fi
+    done
+    log "  pruned retired skill: $n"
+  done
+}
+
 # A sidecar/runtime ROOT (…/skills/gstack) is provably USER-owned when it is
 # a real dir whose SKILL.md exists but lacks the generated banner — a
 # hand-written skill squatting on the canonical name. The sidecar installers
@@ -343,105 +513,30 @@ _print_windows_copy_note_once() {
 }
 
 # ─── Quiet mode helper ────────────────────────────────────────
-QUIET=0
 log() { [ "$QUIET" -eq 0 ] && echo "$@" || true; }
 
-# ─── Parse flags ──────────────────────────────────────────────
-HOST="claude"
-LOCAL_INSTALL=0
-SKILL_PREFIX=1
-SKILL_PREFIX_FLAG=0
-TEAM_MODE=0
-NO_TEAM_MODE=0
-PLAN_TUNE_HOOKS_MODE=""   # "" = resolve from env/config/prompt; "yes"/"no" = explicit
-TIMELINE_STOP_HOOK_MODE=""  # "" = resolve from env/config; "yes"/"no" = explicit (#2677)
-MODEL_OVERRIDE=""
-MODEL_OVERRIDE_SET=0
-while [ $# -gt 0 ]; do
-  case "$1" in
-    --host) [ -z "$2" ] && echo "Missing value for --host (expected claude, codex, kiro, factory, opencode, cursor, slate, openclaw, hermes, gbrain, or auto)" >&2 && exit 1; HOST="$2"; shift 2 ;;
-    --host=*) HOST="${1#--host=}"; shift ;;
-    --model) [ -z "$2" ] && echo "Missing value for --model" >&2 && exit 1; MODEL_OVERRIDE="$2"; MODEL_OVERRIDE_SET=1; shift 2 ;;
-    --model=*) MODEL_OVERRIDE="${1#--model=}"; MODEL_OVERRIDE_SET=1; shift ;;
-    --local) LOCAL_INSTALL=1; shift ;;
-    --prefix)    SKILL_PREFIX=1; SKILL_PREFIX_FLAG=1; shift ;;
-    --no-prefix) SKILL_PREFIX=0; SKILL_PREFIX_FLAG=1; shift ;;
-    --team)    TEAM_MODE=1; shift ;;
-    --no-team) NO_TEAM_MODE=1; shift ;;
-    --plan-tune-hooks)    PLAN_TUNE_HOOKS_MODE="yes"; shift ;;
-    --no-plan-tune-hooks) PLAN_TUNE_HOOKS_MODE="no"; shift ;;
-    --plan-tune-hooks=*)  PLAN_TUNE_HOOKS_MODE="${1#--plan-tune-hooks=}"; shift ;;
-    --timeline-stop-hook)    TIMELINE_STOP_HOOK_MODE="yes"; shift ;;
-    --no-timeline-stop-hook) TIMELINE_STOP_HOOK_MODE="no"; shift ;;
-    --timeline-stop-hook=*)  TIMELINE_STOP_HOOK_MODE="${1#--timeline-stop-hook=}"; shift ;;
-    -q|--quiet) QUIET=1; shift ;;
-    *) shift ;;
-  esac
-done
-
-# Shared by the instruction-tier explainer arms (openclaw, hermes). The digest
-# path is anchored to the script's own directory — $(pwd) would print a
-# nonexistent path when setup is invoked from anywhere else.
-print_instruction_tier() {
-  echo ""
-  echo "Instruction-only tier (no install): copy the 2KB rules digest into a"
-  echo "location your agent reads (e.g. append to your project's AGENTS.md)."
-  echo "It carries gstack's ethos, reuse ladder, and voice rules:"
-  echo ""
-  echo "  $SOURCE_GSTACK_DIR/agents-digest/gstack-AGENTS.md"
-  echo ""
-  echo "Re-copy it after upgrading gstack — the digest's first line shows its version."
-  echo ""
+# Aside (aside.com, macOS 15+) is the primary browser; the compiled browse
+# binary is the fallback. Best-effort hint only — no probe of a running app.
+# Reads _PW_FAIL_REASON (the best-effort Chromium bootstrap in # 2 records why
+# the bundled browser is unusable) so the line never promises a fallback
+# browser that cannot launch. GSTACK_SKIP_ASIDE=1 (the library's and the
+# skills' opt-out) counts as Aside absent. Pinned by test/setup-browser-hint.test.ts.
+_browser_hint() {
+  if [ "${GSTACK_SKIP_ASIDE:-}" != "1" ] && command -v aside >/dev/null 2>&1; then
+    if [ -n "${_PW_FAIL_REASON:-}" ]; then
+      log "  browser: Aside (primary) — gstack browser fallback unavailable (Chromium bootstrap: ${_PW_FAIL_REASON})"
+    else
+      log "  browser: Aside (primary) — gstack browser is the fallback"
+    fi
+  elif [ "${_PW_FAIL_REASON:-}" = "skipped" ]; then
+    # An explicit opt-out (GSTACK_SKIP_PLAYWRIGHT=1) is a request, not a failure — same wording as the summary.
+    log "  browser: none available — Chromium install skipped by request (GSTACK_SKIP_PLAYWRIGHT=1); install Aside (aside.com, macOS 15+) or re-run ./setup without the flag"
+  elif [ -n "${_PW_FAIL_REASON:-}" ]; then
+    log "  browser: none available — Chromium bootstrap: ${_PW_FAIL_REASON}; install Aside (aside.com, macOS 15+) or fix the bootstrap and re-run ./setup"
+  else
+    log "  browser: gstack browser (fallback). Install Aside for the primary path: aside.com (macOS 15+)"
+  fi
 }
-
-case "$HOST" in
-  claude|codex|kiro|factory|opencode|cursor|auto) ;;
-  slate)
-    echo ""
-    echo "Slate is not yet a first-class install target (docs/designs/SLATE_HOST.md —"
-    echo "blocked on the host-config refactor). Slate discovers skills from"
-    echo ".claude/skills as a compatibility fallback, so a Slate user is served by"
-    echo "the Claude install today:"
-    echo ""
-    echo "  ./setup --host claude"
-    echo ""
-    exit 0 ;;
-  openclaw)
-    echo ""
-    echo "OpenClaw integration uses a different model — OpenClaw spawns Claude Code"
-    echo "sessions natively via ACP. gstack provides methodology artifacts, not a"
-    echo "full skill installation."
-    echo ""
-    echo "To integrate gstack with OpenClaw:"
-    echo "  1. Tell your OpenClaw agent: 'install gstack for openclaw'"
-    echo "  2. Or generate artifacts: bun run gen:skill-docs --host openclaw"
-    echo "  3. See docs/OPENCLAW.md for the full architecture"
-    print_instruction_tier
-    exit 0 ;;
-  hermes)
-    echo ""
-    echo "Hermes integration uses the same model as OpenClaw — Hermes spawns"
-    echo "Claude Code sessions, and gstack provides methodology artifacts."
-    echo ""
-    echo "To integrate gstack with Hermes:"
-    echo "  1. Tell your Hermes agent: 'install gstack for hermes'"
-    echo "  2. Or generate artifacts: bun run gen:skill-docs --host hermes"
-    print_instruction_tier
-    exit 0 ;;
-  gbrain)
-    echo ""
-    echo "GBrain is a mod for gstack — it makes coding skills brain-aware."
-    echo "GBrain generates brain-enhanced skill variants that search your brain"
-    echo "for context before starting and save results after finishing."
-    echo ""
-    echo "To generate brain-aware skills:"
-    echo "  bun run gen:skill-docs --host gbrain"
-    echo ""
-    echo "GBrain setup and brain skills ship from the GBrain repo."
-    echo ""
-    exit 0 ;;
-  *) echo "Unknown --host value: $HOST (expected claude, codex, kiro, factory, opencode, cursor, slate, openclaw, hermes, gbrain, or auto)" >&2; exit 1 ;;
-esac
 
 # ─── Resolve skill prefix preference ─────────────────────────
 # Priority: CLI flag > saved config > interactive prompt (or flat default for non-TTY)
@@ -584,9 +679,9 @@ fi
 # potentially leaving Playwright cache locks held. macOS ships no setsid
 # binary, so a portable group-kill isn't available; walk `pgrep -P` children
 # depth-first instead (pgrep exists on macOS and Linux). Falls back to a
-# plain kill of the root pid when pgrep is unavailable.
+# /proc walk where available, otherwise a plain kill of the root pid.
 _kill_tree() {
-  local pid="$1" child
+  local pid="$1" child stat_file stat_line proc_state proc_parent proc_rest
   if command -v pgrep >/dev/null 2>&1; then
     for child in $(pgrep -P "$pid" 2>/dev/null); do
       _kill_tree "$child"
@@ -595,8 +690,15 @@ _kill_tree() {
     # debian-slim and git-bash ship no pgrep: walk /proc for children. The
     # comm field "(name)" may contain spaces and parens, so strip through the
     # LAST closing paren (proc(5)) before reading the ppid (second field after it).
-    for child in $(awk -v p="$pid" '{ s=$0; sub(/^.*\) /, "", s); split(s, f, " "); if (f[2]==p) print $1 }' /proc/[0-9]*/stat 2>/dev/null); do
-      _kill_tree "$child"
+    # A process may exit after glob expansion. One awk over every stat file
+    # aborts at that missing entry and never visits the remaining live children.
+    for stat_file in /proc/[0-9]*/stat; do
+      IFS= read -r stat_line 2>/dev/null < "$stat_file" || continue
+      child="${stat_line%% *}"
+      IFS=' ' read -r proc_state proc_parent proc_rest <<< "${stat_line##*) }"
+      if [ "$proc_parent" = "$pid" ]; then
+        _kill_tree "$child"
+      fi
     done
   fi
   kill -9 "$pid" 2>/dev/null || true
@@ -770,6 +872,80 @@ cleanup_copied_bun() {
 prepare_bun_for_windows_compile
 trap cleanup_copied_bun EXIT
 
+_cso_unavailable() {
+  CSO_BUILD_AVAILABLE=0
+  CSO_FAIL_REASON="$1"
+}
+
+# CSO has a native startup boundary. Its extra toolchain is optional for setup:
+# when unavailable, install every other skill and leave /cso visibly fail-closed.
+# A successful probe is only a prerequisite check; any later source build failure
+# still aborts setup and therefore cannot be mistaken for a missing local tool.
+probe_cso_build_prerequisites() {
+  local _help _flag _platform _compiler _tmp _ps_script _repo_root _git_path
+  CSO_BUILD_AVAILABLE=1
+  CSO_FAIL_REASON=""
+
+  _help="$(bun_cmd build --help 2>&1 || true)"
+  for _flag in --no-compile-autoload-dotenv --no-compile-autoload-bunfig --no-compile-autoload-tsconfig --no-compile-autoload-package-json; do
+    case "$_help" in
+      *"$_flag"*) ;;
+      *) _cso_unavailable "bun-compile-flags"; return 0 ;;
+    esac
+  done
+
+  _platform="$(uname -s)"
+  if [ "$IS_WINDOWS" -eq 1 ]; then
+    if ! command -v powershell.exe >/dev/null 2>&1 || ! command -v cygpath >/dev/null 2>&1; then
+      _cso_unavailable "windows-shell-toolchain"
+      return 0
+    fi
+    _ps_script="$(cygpath -w "$SOURCE_GSTACK_DIR/scripts/build-cso-windows.ps1")"
+    _repo_root="$(cygpath -w "$SOURCE_GSTACK_DIR")"
+    _git_path="$(type -P git 2>/dev/null || true)"
+    if [ -z "$_git_path" ] || [ ! -f "$_git_path" ]; then
+      _cso_unavailable "windows-git"
+      return 0
+    fi
+    if ! powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass \
+      -File "$_ps_script" -RepoRoot "$_repo_root" -GitExePath "$(cygpath -aw "$_git_path")" -CheckOnly >/dev/null 2>&1; then
+      _cso_unavailable "windows-msvc-toolchain"
+    fi
+    return 0
+  fi
+
+  _compiler="${CSO_CC:-cc}"
+  if ! command -v "$_compiler" >/dev/null 2>&1; then
+    _cso_unavailable "c-compiler"
+    return 0
+  fi
+  _tmp="$(mktemp -d "${TMPDIR:-/tmp}/gstack-cso-probe.XXXXXX" 2>/dev/null || true)"
+  if [ -z "$_tmp" ]; then
+    _cso_unavailable "native-toolchain-probe"
+    return 0
+  fi
+  printf '%s\n' 'int main(void) { return 0; }' > "$_tmp/probe.c"
+  case "$_platform" in
+    Linux)
+      if ! "$_compiler" -std=c11 -static "$_tmp/probe.c" -o "$_tmp/probe" >/dev/null 2>&1; then
+        _cso_unavailable "static-c-toolchain"
+      fi
+      ;;
+    Darwin)
+      if ! command -v codesign >/dev/null 2>&1; then
+        _cso_unavailable "macos-codesign"
+      elif ! "$_compiler" -std=c11 "$_tmp/probe.c" -o "$_tmp/probe" >/dev/null 2>&1 || \
+        ! codesign --force --sign - --options runtime "$_tmp/probe" >/dev/null 2>&1 || \
+        ! codesign --verify --strict "$_tmp/probe" >/dev/null 2>&1 || \
+        ! codesign -d --verbose=4 "$_tmp/probe" 2>&1 | grep -q 'runtime'; then
+        _cso_unavailable "macos-native-toolchain"
+      fi
+      ;;
+    *) _cso_unavailable "unsupported-platform" ;;
+  esac
+  rm -rf "$_tmp"
+}
+
 # Resolve the model overlay used for generated Codex skills. Setup auto-detects
 # only Codex because it has one canonical TOML config surface; direct generator
 # calls remain deterministic and use the host default unless --model is explicit.
@@ -777,9 +953,9 @@ trap cleanup_copied_bun EXIT
 # .agents/ unconditionally, and existing ~/.codex/skills symlinks point into it —
 # a plain `./setup` on a Sol user's machine must not clobber their profile with
 # the hardcoded fallback. The resolver is a read-only TOML lookup that falls
-# back to gpt when no Codex config exists.
-CODEX_GENERATION_MODEL="gpt"
-CODEX_GENERATION_MODEL_SOURCE="default (gpt)"
+# back to the current frontier Codex profile when no Codex config exists.
+CODEX_GENERATION_MODEL="gpt-6-astra"
+CODEX_GENERATION_MODEL_SOURCE="default (gpt-6-astra)"
 _CODEX_MODEL_ARGS=(run scripts/resolve-codex-generation-model.ts)
 if [ "$MODEL_OVERRIDE_SET" -eq 1 ]; then
   _CODEX_MODEL_ARGS+=(--explicit "$MODEL_OVERRIDE")
@@ -790,21 +966,65 @@ if [ -z "$CODEX_GENERATION_MODEL" ]; then
   echo "gstack setup failed: Codex model resolver returned no model" >&2
   exit 1
 fi
-if [ "$INSTALL_CODEX" -eq 1 ] || [ "$CODEX_GENERATION_MODEL" != "gpt" ]; then
+if [ "$INSTALL_CODEX" -eq 1 ] || [ "$CODEX_GENERATION_MODEL" != "gpt-6-astra" ]; then
   log "Codex skill profile: $CODEX_GENERATION_MODEL"
   log "Source: $CODEX_GENERATION_MODEL_SOURCE"
 fi
 
-# 1. Build browse binary if needed (smart rebuild: stale sources, package.json, lock)
+# Migrate existing wrappers BEFORE build can regenerate/prune shared host trees.
+# This also repairs existing Codex/Kiro installs during a Claude-only setup.
+# A failed/foreign replacement retains its old render even when build runs
+# --host all later. On success, normal generation may prune orphan old renders.
+export GSTACK_DEFER_CLAUDE_RENAME_PRUNE=1
+export GSTACK_CODEX_GENERATION_MODEL="$CODEX_GENERATION_MODEL"
+if GSTACK_RENAME_COPY="$IS_WINDOWS" bun_cmd "$SOURCE_GSTACK_DIR/bin/gstack-migrate-claude-code" \
+  --install-dir "$SOURCE_GSTACK_DIR" --skills-dir "$INSTALL_SKILLS_DIR"; then
+  unset GSTACK_DEFER_CLAUDE_RENAME_PRUNE
+fi
+
+# 1. Build browse binary if needed (smart rebuild: stale sources, package.json, lock).
+probe_cso_build_prerequisites
+_EXE=""
+if [ "$IS_WINDOWS" -eq 1 ]; then _EXE=".exe"; fi
+# Never leave a trusted helper from an earlier toolchain/version available when
+# this setup run cannot reproduce it. The /cso skill then reports not assessed.
+if [ "$CSO_BUILD_AVAILABLE" -eq 0 ]; then
+  rm -f "$SOURCE_GSTACK_DIR/bin/gstack-cso-launcher" \
+    "$SOURCE_GSTACK_DIR/bin/gstack-cso-launcher.exe" \
+    "$SOURCE_GSTACK_DIR/bin/gstack-cso-core" \
+    "$SOURCE_GSTACK_DIR/bin/gstack-cso-core.exe" \
+    "$SOURCE_GSTACK_DIR/bin/gstack-cso-watchdog" \
+    "$SOURCE_GSTACK_DIR/bin/.gstack-cso-generation" \
+    "$SOURCE_GSTACK_DIR/bin/.gstack-cso-generation.lock"
+fi
+BUILD_STAMP="$SOURCE_GSTACK_DIR/browse/dist/.build-complete"
 NEEDS_BUILD=0
-if [ ! -x "$BROWSE_BIN" ]; then
+if [ ! -f "$BUILD_STAMP" ] || [ ! -x "$BROWSE_BIN" ] || [ ! -x "$SOURCE_GSTACK_DIR/design/dist/design$_EXE" ] || [ ! -x "$SOURCE_GSTACK_DIR/make-pdf/dist/pdf$_EXE" ]; then
   NEEDS_BUILD=1
-elif [ -n "$(find "$SOURCE_GSTACK_DIR/browse/src" -type f -newer "$BROWSE_BIN" -print -quit 2>/dev/null)" ]; then
-  NEEDS_BUILD=1
-elif [ "$SOURCE_GSTACK_DIR/package.json" -nt "$BROWSE_BIN" ]; then
-  NEEDS_BUILD=1
-elif [ -f "$SOURCE_GSTACK_DIR/bun.lock" ] && [ "$SOURCE_GSTACK_DIR/bun.lock" -nt "$BROWSE_BIN" ]; then
-  NEEDS_BUILD=1
+fi
+if [ "$CSO_BUILD_AVAILABLE" -eq 1 ]; then
+  if [ ! -x "$SOURCE_GSTACK_DIR/bin/gstack-cso-launcher$_EXE" ] || [ ! -x "$SOURCE_GSTACK_DIR/bin/gstack-cso-core$_EXE" ] || [ ! -f "$SOURCE_GSTACK_DIR/bin/.gstack-cso-generation" ]; then
+    NEEDS_BUILD=1
+  elif [ "$IS_WINDOWS" -eq 0 ] && [ ! -x "$SOURCE_GSTACK_DIR/bin/gstack-cso-watchdog" ]; then
+    NEEDS_BUILD=1
+  elif [ "$IS_WINDOWS" -eq 1 ] && [ ! -f "$SOURCE_GSTACK_DIR/bin/.gstack-cso-generation.lock" ];then
+    NEEDS_BUILD=1
+  fi
+fi
+# lib/ holds the canonical claude-bin, error-handling and aside-render sources
+# the binaries embed (browse/src re-exports them), so it is part of the set.
+if [ "$NEEDS_BUILD" -eq 0 ]; then
+  if [ -n "$(find "$SOURCE_GSTACK_DIR/browse/src" "$SOURCE_GSTACK_DIR/make-pdf/src" "$SOURCE_GSTACK_DIR/design/src" "$SOURCE_GSTACK_DIR/lib" -type f -newer "$BUILD_STAMP" -print -quit 2>/dev/null)" ]; then
+    NEEDS_BUILD=1
+  elif [ "$SOURCE_GSTACK_DIR/package.json" -nt "$BUILD_STAMP" ]; then
+    NEEDS_BUILD=1
+  elif [ -f "$SOURCE_GSTACK_DIR/bun.lock" ] && [ "$SOURCE_GSTACK_DIR/bun.lock" -nt "$BUILD_STAMP" ]; then
+    NEEDS_BUILD=1
+  elif [ "$SOURCE_GSTACK_DIR/scripts/build.sh" -nt "$BUILD_STAMP" ]; then
+    NEEDS_BUILD=1
+  elif [ "$CSO_BUILD_AVAILABLE" -eq 1 ] && { [ "$SOURCE_GSTACK_DIR/scripts/build-cso.sh" -nt "$BUILD_STAMP" ] || [ "$SOURCE_GSTACK_DIR/scripts/build-cso-windows.ps1" -nt "$BUILD_STAMP" ]; }; then
+    NEEDS_BUILD=1
+  fi
 fi
 
 if [ "$NEEDS_BUILD" -eq 1 ]; then
@@ -812,6 +1032,9 @@ if [ "$NEEDS_BUILD" -eq 1 ]; then
   (
     cd "$SOURCE_GSTACK_DIR"
     bun_cmd install --frozen-lockfile 2>/dev/null || bun_cmd install
+    if [ "$CSO_BUILD_AVAILABLE" -eq 0 ]; then
+      export GSTACK_SETUP_SKIP_CSO_BUILD=1
+    fi
     bun_cmd run build
   )
   # Safety net: write .version if build script didn't (e.g., git not available during build)
@@ -837,6 +1060,8 @@ if [ "$NEEDS_BUILD" -eq 1 ]; then
   # binary is genuinely SIGKILL'd on exec (exit 137).
   # See: https://github.com/garrytan/gstack/issues/997
   if [ "$(uname -s)" = "Darwin" ] && [ "$(uname -m)" = "arm64" ]; then
+    # CSO artifacts are signed and verified inside build-cso's staged generation;
+    # mutating them here would break its launcher-last publication guarantee.
     for _bin in browse/dist/browse browse/dist/find-browse design/dist/design make-pdf/dist/pdf bin/gstack-global-discover; do
       _bin_path="$SOURCE_GSTACK_DIR/$_bin"
       [ -f "$_bin_path" ] && [ -x "$_bin_path" ] || continue
@@ -886,6 +1111,26 @@ if [ "$NEEDS_BUILD" -eq 1 ]; then
   fi
 fi
 
+if [ "$CSO_BUILD_AVAILABLE" -eq 1 ]; then
+  if [ ! -x "$SOURCE_GSTACK_DIR/bin/gstack-cso-launcher$_EXE" ] || [ ! -x "$SOURCE_GSTACK_DIR/bin/gstack-cso-core$_EXE" ] || [ ! -f "$SOURCE_GSTACK_DIR/bin/.gstack-cso-generation" ] || { [ "$IS_WINDOWS" -eq 0 ] && [ ! -x "$SOURCE_GSTACK_DIR/bin/gstack-cso-watchdog" ]; } || { [ "$IS_WINDOWS" -eq 1 ] && [ ! -f "$SOURCE_GSTACK_DIR/bin/.gstack-cso-generation.lock" ]; }; then
+    echo "gstack setup failed: CSO build completed without its required native artifact set" >&2
+    exit 1
+  fi
+  # Runtime/scanner execution never pulls. Setup is the sole automatic
+  # acquisition path: the trusted launcher validates committed catalogs,
+  # rejects remote Docker contexts, and uses an empty Docker config for
+  # anonymous exact-digest pulls. Each image gets a bounded pull window and the
+  # whole catalog remains under a hard aggregate deadline; Docker or network
+  # gaps stay nonfatal so a later setup can continue from local exact digests.
+  _CSO_IMAGE_SUMMARY=""
+  _CSO_IMAGE_PULL_TIMEOUT_SECONDS="${GSTACK_CSO_IMAGE_PULL_TIMEOUT_SECONDS:-30}"
+  if _CSO_IMAGE_SUMMARY="$("$SOURCE_GSTACK_DIR/bin/gstack-cso-launcher$_EXE" provision-images --setup-summary --per-image-seconds "$_CSO_IMAGE_PULL_TIMEOUT_SECONDS" 2>/dev/null)"; then
+    [ -n "$_CSO_IMAGE_SUMMARY" ] && log "$_CSO_IMAGE_SUMMARY"
+  else
+    log "warning: qualified CSO images could not be checked or preloaded; static audits remain available. Re-run setup after local Docker and public registry access are available."
+  fi
+fi
+
 if [ ! -x "$BROWSE_BIN" ]; then
   echo "gstack setup failed: browse binary missing at $BROWSE_BIN" >&2
   exit 1
@@ -907,6 +1152,7 @@ if [ "$NEEDS_AGENTS_GEN" -eq 1 ]; then
     bun_cmd install --frozen-lockfile 2>/dev/null || bun_cmd install
     bun_cmd run gen:skill-docs --host codex --model "$CODEX_GENERATION_MODEL"
   )
+  _prune_stale_generated "$SOURCE_GSTACK_DIR" "$AGENTS_DIR" "$CODEX_SKILLS"
 fi
 
 # 1c. Generate .factory/ Factory Droid skill docs
@@ -2063,6 +2309,7 @@ if [ "$INSTALL_CLAUDE" -eq 1 ]; then
       log "gstack ready (claude)."
     fi
     log "  browse: $BROWSE_BIN"
+    _browser_hint
   else
     # Not inside a skills/ directory — would symlink the source into
     # ~/.claude/skills/gstack/ and register from there.
@@ -2098,6 +2345,7 @@ if [ "$INSTALL_CLAUDE" -eq 1 ]; then
       log ""
       log "gstack built (claude registration skipped)."
       log "  browse: $BROWSE_BIN"
+      _browser_hint
     else
       mkdir -p "$CLAUDE_SKILLS_DIR"
       _link_or_copy "$SOURCE_GSTACK_DIR" "$CLAUDE_GSTACK_LINK"
@@ -2131,6 +2379,7 @@ if [ "$INSTALL_CLAUDE" -eq 1 ]; then
       _install_alias_skill_md "$SOURCE_GSTACK_DIR/open-gstack-browser/SKILL.md" "$_OGB_LINK" "$_OGB_ALIAS_NAME"
       log "gstack ready (claude)."
       log "  browse: $BROWSE_BIN"
+      _browser_hint
     fi
   fi
 fi
@@ -2149,10 +2398,12 @@ if [ "$INSTALL_CODEX" -eq 1 ]; then
     create_codex_runtime_root "$SOURCE_GSTACK_DIR" "$CODEX_GSTACK"
   fi
   # Install generated Codex-format skills (not Claude source dirs)
+  _prune_stale_generated "$SOURCE_GSTACK_DIR" "$SOURCE_GSTACK_DIR/.agents/skills" "$CODEX_SKILLS"
   link_codex_skill_dirs "$SOURCE_GSTACK_DIR" "$CODEX_SKILLS"
 
   log "gstack ready (codex)."
   log "  browse: $BROWSE_BIN"
+  _browser_hint
   log "  codex skills: $CODEX_SKILLS"
   log "  model profile: $CODEX_GENERATION_MODEL ($CODEX_GENERATION_MODEL_SOURCE)"
   log "  model changes: rerun ./setup --host codex"
@@ -2162,103 +2413,93 @@ if [ "$INSTALL_CODEX" -eq 1 ]; then
   fi
 fi
 
-# 6. Install for Kiro CLI (copy from .agents/skills, rewrite paths)
+# 6. Install for Kiro CLI from its own host render
 if [ "$INSTALL_KIRO" -eq 1 ]; then
-  KIRO_SKILLS="$HOME/.kiro/skills"
-  AGENTS_DIR="$SOURCE_GSTACK_DIR/.agents/skills"
-  mkdir -p "$KIRO_SKILLS"
-
-  # Kiro builds from the codex-shaped render but fronts Claude-family models
-  # (hosts/kiro.ts defaultModel: 'claude'). Re-render with the claude overlay
-  # before copying so Kiro skills never ship the GPT/Sol behavioral patch;
-  # the resolved Codex profile is restored right after the copy loop.
-  if [ "$CODEX_GENERATION_MODEL" != "claude" ]; then
-    log "Rendering claude-profile skills for Kiro..."
-    ( cd "$SOURCE_GSTACK_DIR" && bun_cmd run gen:skill-docs --host codex --model claude )
-  fi
-
-  # Create gstack dir with symlinks for runtime assets, copy+sed for SKILL.md
+  KIRO_DIR="$SOURCE_GSTACK_DIR/.kiro/skills"
   KIRO_GSTACK="$KIRO_SKILLS/gstack"
-  # Remove old whole-dir symlink from previous installs
-  [ -L "$KIRO_GSTACK" ] && rm -f "$KIRO_GSTACK"
-  mkdir -p "$KIRO_GSTACK" "$KIRO_GSTACK/browse" "$KIRO_GSTACK/gstack-upgrade" "$KIRO_GSTACK/review"
-  _link_or_copy "$SOURCE_GSTACK_DIR/bin" "$KIRO_GSTACK/bin"
-  _link_or_copy "$SOURCE_GSTACK_DIR/lib" "$KIRO_GSTACK/lib"
-  _link_or_copy "$SOURCE_GSTACK_DIR/browse/dist" "$KIRO_GSTACK/browse/dist"
-  _link_or_copy "$SOURCE_GSTACK_DIR/browse/bin" "$KIRO_GSTACK/browse/bin"
-  # ETHOS.md — referenced by "Search Before Building" in all skill preambles
-  if [ -f "$SOURCE_GSTACK_DIR/ETHOS.md" ]; then
-    _link_or_copy "$SOURCE_GSTACK_DIR/ETHOS.md" "$KIRO_GSTACK/ETHOS.md"
-  fi
-  # supabase/config.sh — required by gstack-telemetry-sync to resolve GSTACK_SUPABASE_URL
-  if [ -f "$SOURCE_GSTACK_DIR/supabase/config.sh" ]; then
-    mkdir -p "$KIRO_GSTACK/supabase"
-    _link_or_copy "$SOURCE_GSTACK_DIR/supabase/config.sh" "$KIRO_GSTACK/supabase/config.sh"
-  fi
-  # gstack-upgrade skill — sed COPY, never a symlink: a symlink would track
-  # .agents after the Codex-profile restore below (wrong overlay AND a baked
-  # './setup --host codex' that reinstalls the wrong host on /gstack-upgrade).
-  if [ -f "$AGENTS_DIR/gstack-upgrade/SKILL.md" ]; then
-    sed -e 's|\$HOME/.codex/skills/gstack|$HOME/.kiro/skills/gstack|g' \
-        -e "s|~/.codex/skills/gstack|~/.kiro/skills/gstack|g" \
-        -e "s|~/.claude/skills/gstack|~/.kiro/skills/gstack|g" \
-        -e 's|\./setup --host codex|./setup --host kiro|g' \
-        "$AGENTS_DIR/gstack-upgrade/SKILL.md" > "$KIRO_GSTACK/gstack-upgrade/SKILL.md"
-  fi
-  # Review runtime assets (individual files, not whole dir)
-  for f in checklist.md design-checklist.md greptile-triage.md TODOS-format.md; do
-    if [ -f "$SOURCE_GSTACK_DIR/review/$f" ]; then
-      _link_or_copy "$SOURCE_GSTACK_DIR/review/$f" "$KIRO_GSTACK/review/$f"
-    fi
-  done
-
-  # Rewrite root SKILL.md paths for Kiro
-  sed -e "s|~/.claude/skills/gstack|~/.kiro/skills/gstack|g" \
-      -e "s|\.claude/skills/gstack|.kiro/skills/gstack|g" \
-      -e "s|\.claude/skills|.kiro/skills|g" \
-      "$SOURCE_GSTACK_DIR/SKILL.md" > "$KIRO_GSTACK/SKILL.md"
-
-  if [ ! -d "$AGENTS_DIR" ]; then
-    echo "  warning: no .agents/skills/ directory found — run 'bun run build' first" >&2
+  # Host identity controls outside-review routing as well as skill availability.
+  # Never borrow .agents or temporarily replace a live Codex model profile.
+  ( cd "$SOURCE_GSTACK_DIR" && bun_cmd run gen:skill-docs --host kiro )
+  mkdir -p "$KIRO_SKILLS"
+  if _sidecar_root_user_owned "$KIRO_GSTACK"; then
+    echo "  left in place (existing Kiro runtime root is not gstack-managed): $KIRO_GSTACK" >&2
   else
-    for skill_dir in "$AGENTS_DIR"/gstack*/; do
+    [ -L "$KIRO_GSTACK" ] && rm -f "$KIRO_GSTACK"
+    mkdir -p "$KIRO_GSTACK" "$KIRO_GSTACK/browse" "$KIRO_GSTACK/gstack-upgrade" "$KIRO_GSTACK/review"
+    _link_or_copy "$SOURCE_GSTACK_DIR/bin" "$KIRO_GSTACK/bin"
+    _link_or_copy "$SOURCE_GSTACK_DIR/lib" "$KIRO_GSTACK/lib"
+    _link_or_copy "$SOURCE_GSTACK_DIR/browse/dist" "$KIRO_GSTACK/browse/dist"
+    _link_or_copy "$SOURCE_GSTACK_DIR/browse/bin" "$KIRO_GSTACK/browse/bin"
+    if [ -f "$SOURCE_GSTACK_DIR/ETHOS.md" ]; then
+      _link_or_copy "$SOURCE_GSTACK_DIR/ETHOS.md" "$KIRO_GSTACK/ETHOS.md"
+    fi
+    if [ -f "$SOURCE_GSTACK_DIR/supabase/config.sh" ]; then
+      mkdir -p "$KIRO_GSTACK/supabase"
+      _link_or_copy "$SOURCE_GSTACK_DIR/supabase/config.sh" "$KIRO_GSTACK/supabase/config.sh"
+    fi
+    _link_or_copy "$KIRO_DIR/gstack-upgrade/SKILL.md" "$KIRO_GSTACK/gstack-upgrade/SKILL.md"
+    _link_or_copy "$KIRO_DIR/gstack/SKILL.md" "$KIRO_GSTACK/SKILL.md"
+    if [ -f "$KIRO_DIR/gstack-office-hours/SKILL.md" ]; then
+      mkdir -p "$KIRO_GSTACK/office-hours"
+      _link_or_copy "$KIRO_DIR/gstack-office-hours/SKILL.md" "$KIRO_GSTACK/office-hours/SKILL.md"
+    fi
+    for f in checklist.md design-checklist.md greptile-triage.md TODOS-format.md; do
+      if [ -f "$SOURCE_GSTACK_DIR/review/$f" ]; then
+        _link_or_copy "$SOURCE_GSTACK_DIR/review/$f" "$KIRO_GSTACK/review/$f"
+      fi
+    done
+    for skill_dir in "$KIRO_DIR"/gstack*/; do
       [ -f "$skill_dir/SKILL.md" ] || continue
       skill_name="$(basename "$skill_dir")"
+      [ "$skill_name" = "gstack" ] && continue
       target_dir="$KIRO_SKILLS/$skill_name"
+      if { [ -e "$target_dir" ] || [ -L "$target_dir" ]; } && ! _claude_entry_is_ours "$target_dir" "$skill_dir/SKILL.md" "$SOURCE_GSTACK_DIR"; then
+        echo "  skipped $skill_name: existing entry is not gstack-managed — left untouched" >&2
+        continue
+      fi
+      # Existing real copy installs retain unrelated files alongside SKILL.md.
+      if [ -L "$target_dir" ]; then rm -f "$target_dir"; fi
       mkdir -p "$target_dir"
-      # Generated Codex skills use $HOME/.codex (not ~/), plus $GSTACK_ROOT variables.
-      # Rewrite the default GSTACK_ROOT value, any remaining literal paths, and
-      # the SETUP_COMMAND host (the artifact was rendered for codex).
-      sed -e 's|\$HOME/.codex/skills/gstack|$HOME/.kiro/skills/gstack|g' \
-          -e "s|~/.codex/skills/gstack|~/.kiro/skills/gstack|g" \
-          -e "s|~/.claude/skills/gstack|~/.kiro/skills/gstack|g" \
-          -e 's|\./setup --host codex|./setup --host kiro|g' \
-          "$skill_dir/SKILL.md" > "$target_dir/SKILL.md"
-      # Carved skills (v2 plan T9): rewrite + copy each sections/*.md the same way,
-      # so a runtime "Read sections/<name>.md" resolves under ~/.kiro and doesn't
-      # leak a ~/.codex or ~/.claude path. Kiro builds from the codex output, so
-      # these section files only exist for skills that have been carved.
+      if [ -f "$target_dir/SKILL.md" ] && [ ! -L "$target_dir/SKILL.md" ] \
+         && ! _claude_entry_owned_strongly "$target_dir" "$SOURCE_GSTACK_DIR" \
+         && ! cmp -s "$target_dir/SKILL.md" "$skill_dir/SKILL.md"; then
+        if ! _backup_skill_md "$target_dir/SKILL.md" "$skill_name"; then
+          echo "  skipped $skill_name: could not back up its customized SKILL.md — left untouched" >&2
+          continue
+        fi
+      fi
+      _link_or_copy "$skill_dir/SKILL.md" "$target_dir/SKILL.md"
+      # Native sections already contain Kiro paths/provider markers. Refresh
+      # generated files individually so user assets next to them survive.
       if [ -d "$skill_dir/sections" ]; then
+        if [ -L "$target_dir/sections" ]; then
+          section_target="$(_gstack_link_target_abs "$target_dir/sections")"
+          if ! _gstack_target_is_ours "$section_target" "$SOURCE_GSTACK_DIR"; then
+            echo "  kept $skill_name/sections: directory link is not gstack-managed" >&2
+            continue
+          fi
+          rm -f "$target_dir/sections"
+        fi
         mkdir -p "$target_dir/sections"
         for section_file in "$skill_dir/sections"/*; do
           [ -f "$section_file" ] || continue
-          sed -e 's|\$HOME/.codex/skills/gstack|$HOME/.kiro/skills/gstack|g' \
-              -e "s|~/.codex/skills/gstack|~/.kiro/skills/gstack|g" \
-              -e "s|~/.claude/skills/gstack|~/.kiro/skills/gstack|g" \
-              -e 's|\./setup --host codex|./setup --host kiro|g' \
-              "$section_file" > "$target_dir/sections/$(basename "$section_file")"
+          section_dest="$target_dir/sections/$(basename "$section_file")"
+          if [ -L "$section_dest" ]; then
+            section_target="$(_gstack_link_target_abs "$section_dest")"
+            _gstack_target_is_ours "$section_target" "$SOURCE_GSTACK_DIR" || continue
+          elif [ -e "$section_dest" ] && ! _gstack_generated_header "$section_dest"; then
+            echo "  kept $skill_name/sections/$(basename "$section_file"): existing file is not gstack-managed" >&2
+            continue
+          fi
+          _link_or_copy "$section_file" "$section_dest"
         done
       fi
     done
+    _prune_stale_generated "$SOURCE_GSTACK_DIR" "$KIRO_DIR" "$KIRO_SKILLS"
     echo "gstack ready (kiro)."
     echo "  browse: $BROWSE_BIN"
+    _browser_hint
     echo "  kiro skills: $KIRO_SKILLS"
-  fi
-
-  # Restore the resolved Codex profile — ~/.codex/skills symlinks point into
-  # .agents/skills, so the tree must not stay on the Kiro claude render.
-  if [ "$CODEX_GENERATION_MODEL" != "claude" ]; then
-    ( cd "$SOURCE_GSTACK_DIR" && bun_cmd run gen:skill-docs --host codex --model "$CODEX_GENERATION_MODEL" )
   fi
 fi
 
@@ -2266,9 +2507,11 @@ fi
 if [ "$INSTALL_FACTORY" -eq 1 ]; then
   mkdir -p "$FACTORY_SKILLS"
   create_factory_runtime_root "$SOURCE_GSTACK_DIR" "$FACTORY_GSTACK"
+  _prune_stale_generated "$SOURCE_GSTACK_DIR" "$SOURCE_GSTACK_DIR/.factory/skills" "$FACTORY_SKILLS"
   link_factory_skill_dirs "$SOURCE_GSTACK_DIR" "$FACTORY_SKILLS"
   echo "gstack ready (factory)."
   echo "  browse: $BROWSE_BIN"
+  _browser_hint
   echo "  factory skills: $FACTORY_SKILLS"
 fi
 
@@ -2276,9 +2519,11 @@ fi
 if [ "$INSTALL_OPENCODE" -eq 1 ]; then
   mkdir -p "$OPENCODE_SKILLS"
   create_opencode_runtime_root "$SOURCE_GSTACK_DIR" "$OPENCODE_GSTACK"
+  _prune_stale_generated "$SOURCE_GSTACK_DIR" "$SOURCE_GSTACK_DIR/.opencode/skills" "$OPENCODE_SKILLS"
   link_opencode_skill_dirs "$SOURCE_GSTACK_DIR" "$OPENCODE_SKILLS"
   echo "gstack ready (opencode)."
   echo "  browse: $BROWSE_BIN"
+  _browser_hint
   echo "  opencode skills: $OPENCODE_SKILLS"
 fi
 
@@ -2288,10 +2533,12 @@ if [ "$INSTALL_CURSOR" -eq 1 ]; then
   create_cursor_runtime_root "$SOURCE_GSTACK_DIR" "$CURSOR_GSTACK"
   # Link before sidecar. Sidecar mkdir -p creates .cursor/skills/gstack, which
   # would make link_cursor_skill_dirs' "[ ! -d generated ]" gen fallback a no-op.
+  _prune_stale_generated "$SOURCE_GSTACK_DIR" "$SOURCE_GSTACK_DIR/.cursor/skills" "$CURSOR_SKILLS"
   link_cursor_skill_dirs "$SOURCE_GSTACK_DIR" "$CURSOR_SKILLS"
   create_cursor_sidecar "$SOURCE_GSTACK_DIR"
   echo "gstack ready (cursor)."
   echo "  browse: $BROWSE_BIN"
+  _browser_hint
   echo "  cursor skills: $CURSOR_SKILLS"
 fi
 
@@ -2899,10 +3146,10 @@ if [ "$NO_TEAM_MODE" -eq 1 ] && [ -x "$SETTINGS_HOOK" ]; then
   "$SETTINGS_HOOK" remove-source --source plan-tune-cathedral >/dev/null || true
   "$SETTINGS_HOOK" remove-source --source auq-error-fallback >/dev/null || true
   "$SETTINGS_HOOK" remove-source --source gstack-timeline-stop >/dev/null || true
-  # verify-gate is a user-registered opt-in unrelated to team mode -- turning
-  # team mode off must not delete it (uninstall still sweeps it, correctly,
-  # because there the binary itself is being removed).
-  GSTACK_SWEEP_EXCLUDE_SOURCES="verify-gate" "$SETTINGS_HOOK" prune-stale --all >/dev/null || true
+  # verify-gate and gstack-memorable are user-registered opt-ins unrelated to
+  # team mode -- turning team mode off must not delete them (uninstall still
+  # sweeps both, correctly, because there the binaries themselves are removed).
+  GSTACK_SWEEP_EXCLUDE_SOURCES="verify-gate,gstack-memorable" "$SETTINGS_HOOK" prune-stale --all >/dev/null || true
 fi
 
 # ─── Redact pre-push guard consent (#1946) ───────────────────────────────────
@@ -2950,9 +3197,32 @@ if ! grep -q '^redact_prepush_hook:' "$_GSTACK_CFG_FILE" 2>/dev/null; then
   fi
 fi
 
+# ─── CSO native-helper summary ────────────────────────────────────────────────
+if [ "$CSO_BUILD_AVAILABLE" -eq 0 ]; then
+  case "$CSO_FAIL_REASON" in
+    bun-compile-flags) _CSO_PREREQ="upgrade Bun to a release supporting all four --no-compile-autoload-* build flags" ;;
+    c-compiler) _CSO_PREREQ="install a C compiler (cc, Clang, or GCC)" ;;
+    static-c-toolchain) _CSO_PREREQ="install a C toolchain capable of static linking" ;;
+    macos-codesign|macos-native-toolchain) _CSO_PREREQ="install the macOS compiler and codesign command-line tools" ;;
+    windows-shell-toolchain) _CSO_PREREQ="run setup from Git Bash with Windows PowerShell available" ;;
+    windows-msvc-toolchain) _CSO_PREREQ="install Visual Studio 2022 Build Tools with Desktop development with C++" ;;
+    windows-git) _CSO_PREREQ="install Git for Windows and run setup from its Git Bash" ;;
+    unsupported-platform) _CSO_PREREQ="use a supported macOS, Linux, or Windows host" ;;
+    *) _CSO_PREREQ="install the native CSO build prerequisites" ;;
+  esac
+  log ""
+  log "CSO unavailable: its native helper was not built ($CSO_FAIL_REASON)."
+  log "  /cso will report not assessed and the install prerequisite; it will not use repository tooling."
+  log "  Everything else is installed and works. To enable /cso, $_CSO_PREREQ, then re-run ./setup."
+fi
+
 # ─── Chromium bootstrap summary (best-effort browser, see # 2) ───────────────
 # Printed LAST so it is the thing the user sees, after every skill registered.
-_PW_BROWSER_SKILLS="/qa, /qa-only, /design-review, /browse, make-pdf, /pair-agent, and any other skill that drives the browser"
+# The skills that drive Aside first and use the bundled browser only as fallback
+# (/pair-agent is not among them: it always runs on gstack's own browser). The
+# Aside-absent list is derived from it so the two never drift.
+_PW_ASIDE_SKILLS="/qa, /qa-only, /design-review, /browse, /scrape, /benchmark, /canary, make-pdf, /diagram"
+_PW_BROWSER_SKILLS="$_PW_ASIDE_SKILLS, /pair-agent, and any other skill that drives the browser"
 if [ "${_PW_FAIL_REASON:-}" = "skipped" ]; then
   # An explicit opt-out is not a failure: say what is unavailable and stop.
   log ""
@@ -2961,7 +3231,14 @@ if [ "${_PW_FAIL_REASON:-}" = "skipped" ]; then
 elif [ -n "${_PW_FAIL_REASON:-}" ]; then
   log ""
   log "Browser unavailable: Chromium bootstrap did not complete ($_PW_FAIL_REASON)."
-  log "  Skills that need it: $_PW_BROWSER_SKILLS."
+  if [ "${GSTACK_SKIP_ASIDE:-}" != "1" ] && command -v aside >/dev/null 2>&1; then
+    # Aside is the primary driver; the bundled browser is its fallback. Say so,
+    # instead of telling an Aside user their browser skills are gone.
+    log "  Aside is installed, so $_PW_ASIDE_SKILLS keep running there; only their bundled fallback is missing."
+    log "  /pair-agent needs the bundled browser itself."
+  else
+    log "  Skills that need it: $_PW_BROWSER_SKILLS."
+  fi
   log "  Everything else is installed and works. Fix the cause and re-run ./setup."
   case "$_PW_FAIL_REASON" in
     *chromium-install-timeout*) log "  Slow link? Raise the bound: GSTACK_PLAYWRIGHT_INSTALL_TIMEOUT=1800 ./setup" ;;
