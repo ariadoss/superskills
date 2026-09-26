@@ -312,14 +312,21 @@ cache warmth.
 Opus  superskills  ctx 23%  5h 41% (2h10m)  7d 63% (3d2h)  spend 104% (11d13h)  cache 1h
 ```
 
-Install by pointing `statusLine` at the script (no `curl | bash`):
+Install it from your superskills checkout (no `curl | bash`):
 
-```jsonc
-// ~/.claude/settings.json
-{ "statusLine": { "type": "command", "command": "/absolute/path/to/superskills/scripts/statusline.sh" } }
+```bash
+~/.claude/skills/superskills/setup --statusline
+# or directly: ~/.claude/skills/superskills/scripts/install-statusline.sh
 ```
 
-Set `NO_COLOR=1` for plain output, `STATUSLINE_DEBUG=1` to surface stderr.
+This sets `statusLine` in `~/.claude/settings.json` (or `$CLAUDE_CONFIG_DIR`) to
+the checkout's `scripts/statusline.sh`, keeping every other setting and backing
+the file up first. It is a no-op when already installed, and it will not replace a
+statusline you already have unless you pass `--force` to the installer. Because it
+points at the checkout, `/superskills-upgrade` updates the statusline too.
+
+Needs `bash` and `jq` 1.6 or newer (`brew install jq`, `apt install jq`); macOS
+and Linux. Set `NO_COLOR=1` for plain output, `STATUSLINE_DEBUG=1` to surface stderr.
 
 It renders in **17ms** against 74ms for the [Waza](https://github.com/tw93/Waza)
 statusline it started from (100 renders each, same payload, steady state), because
@@ -333,7 +340,8 @@ each window at its `resets_at`, so the last-seen windows are cached under
 `${XDG_CACHE_HOME:-~/.cache}/claude-statusline/` (mode 600) and re-shown until they
 expire. Staleness is decided by `resets_at` rather than a high-water mark: within a
 window usage only climbs, and a changed `resets_at` means a new window. Tested in
-`tests/statusline.bats` (14 cases, mostly absence and corruption paths).
+`tests/statusline.bats` (22 cases, mostly absence, corruption and hostile-input
+paths) and `tests/install-statusline.bats` (the installer).
 
 ### Publishing the standalone `humanize` repo
 

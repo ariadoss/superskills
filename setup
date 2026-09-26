@@ -8,6 +8,7 @@ NO_KNOWLEDGE=0
 EXTEND_FROM=""
 INSTALL_CURSOR=0
 INSTALL_CLINE=0
+INSTALL_STATUSLINE=0
 PACKS_ARG=""
 PACKS_GIVEN=0
 LIST_SKILLS=0
@@ -27,6 +28,8 @@ Usage: ./setup [options]
   --persist-only         save the --packs selection and exit (installs nothing)
   --cursor               also write project-level Cursor rules (.cursor/rules)
   --cline                also write project-level Cline/Roo rules (.clinerules)
+  --statusline           point Claude Code's statusLine at scripts/statusline.sh
+                         (backs up settings.json; never replaces another one)
   -h, --help             show this help and exit (installs nothing)
 USAGE
 }
@@ -46,6 +49,7 @@ while [ $# -gt 0 ]; do
     --persist-only)    PERSIST_ONLY=1; shift ;;
     --cursor)          INSTALL_CURSOR=1; shift ;;
     --cline)           INSTALL_CLINE=1; shift ;;
+    --statusline)      INSTALL_STATUSLINE=1; shift ;;
     -h|--help)         usage; exit 0 ;;
     *) echo "unknown option: $1" >&2; usage >&2; exit 2 ;;
   esac
@@ -531,6 +535,14 @@ if [ "$INSTALL_CURSOR" -eq 1 ]; then
   log ""
 fi
 
+# ── Statusline (opt-in — requires --statusline flag) ─────────────────────────
+# A different existing statusLine is reported, not replaced, and does not fail
+# the install; scripts/install-statusline.sh --force is the explicit override.
+if [ "$INSTALL_STATUSLINE" -eq 1 ]; then
+  bash "$SOURCE_DIR/scripts/install-statusline.sh" || \
+    log "  statusline not installed (see above); run scripts/install-statusline.sh --force to replace"
+fi
+
 # ── Cline / Roo Code (project-level — requires --cline flag) ─────────────────
 if [ "$INSTALL_CLINE" -eq 1 ]; then
   CLINE_FILE="$(pwd)/.clinerules"
@@ -614,6 +626,7 @@ log ""
 log "  Project-level installs (run from project root):"
 log "    ./setup --cursor   → .cursor/rules/*.mdc  (Cursor)"
 log "    ./setup --cline    → .clinerules           (Cline / Roo Code)"
+log "  Statusline for Claude Code: ./setup --statusline"
 log ""
 log "  To update: /superskills-upgrade"
 log "  To add knowledge bases: edit ~/.superskills/knowledge.conf"
