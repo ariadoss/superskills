@@ -126,6 +126,7 @@
 | `/codex` | Cross-model code review: runs the same diff through Claude + OpenAI Codex independently | — |
 | `/document-generate` | Generate missing documentation from scratch for a feature, module, or entire project | — |
 | `/diagram` | Turn an English description or mermaid source into a diagram triplet: source, editable .excalidraw, rendered SVG + PNG | — |
+| `/deslop-shared-libs` | Find worthwhile shared-code extractions in recent work | `/clean-code` (both extract duplicated logic; `/clean-code` is diff-scoped and refactors under a green test suite) |
 
 ### QA & Testing
 
@@ -134,7 +135,7 @@
 | `/qa` | Browser-based QA: tests a web app with headless Chromium and auto-fixes bugs found | `/playwright` (**complementary**: playwright is test scripting; gstack-qa is exploratory QA with auto-fix) |
 | `/qa-only` | Same as `/qa` but report-only, no automatic fixes | `/verify` (both report before declaring done; gstack-qa-only is browser-based, verify is command-output-based) |
 | `/browse` | Fast headless Chromium control (~100ms/command): navigate, click, screenshot, assert | — |
-| `/open-gstack-browser` | Launch visible Chromium with the gstack sidebar extension for manual-style automated testing | — |
+| `/open-gstack-browser` | Launch GStack Browser: a visible, AI-controlled Chromium with a live activity sidebar, sidebar chat and anti-bot stealth, so you watch every action. Also available as `/connect-chrome` (gstack's backwards-compatible alias) | `/browse` (same engine, headless) |
 | `/setup-browser-cookies` | Import real browser cookies into the headless session for authenticated testing | — |
 | `/benchmark` | Performance regression detection: establishes baselines and detects regressions | — |
 | `/benchmark-models` | Cross-model benchmark: runs the same prompt through Claude, OpenAI, and others | — |
@@ -143,6 +144,15 @@
 | `/ios-design-review` | Visual design audit for iOS apps on real hardware | `/design-review` (web counterpart) |
 | `/ios-sync` | Regenerate the iOS debug bridge against the latest upstream gstack templates | — |
 | `/ios-clean` | Remove the DebugBridge SPM package and all `#if DEBUG` wiring from an iOS app before shipping | — |
+
+### Design
+
+| Command | Description | Overlaps with |
+|---------|-------------|---------------|
+| `/design-review` | Designer's eye QA of the running app: finds visual inconsistency, spacing and hierarchy problems, AI slop patterns and slow interactions, then fixes them | `/design-audit` (design-skills; report-only) |
+| `/design-consultation` | Understands your product, researches the landscape, proposes a complete design system (type, color, layout, spacing, motion) with previews | `/ux-designer` (design-skills) |
+| `/design-shotgun` | Generate several AI design variants, open a comparison board, collect structured feedback, and iterate | — |
+| `/design-html` | Design finalization: production-quality HTML/CSS from an approved design | — |
 
 ### Security
 
