@@ -90,3 +90,12 @@ setup() {
   [ "$status" -ne 0 ]
   [[ "$output" == *"git checkout"* ]] || false
 }
+
+@test "refreshes /basic-review's vendored copy of the review checklist, with attribution" {
+  OUT="$BATS_TEST_TMPDIR/basic-review-checklist.md"
+  run "$SCRIPT" --upstream "$UP" --vendor "$VENDOR" --basic-review "$OUT"
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+  [ "$(sed '1,/^-->$/d' "$OUT" | sed '1{/^$/d;}')" = "checklist" ] || { echo "body: $(cat "$OUT")"; return 1; }
+  grep -q 'garrytan/gstack' "$OUT" || false
+  grep -q '1.80.0.0' "$OUT" || false
+}

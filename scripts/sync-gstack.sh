@@ -15,9 +15,12 @@
 # bumping VERSION. Syncing is an explicit maintainer step; setup never touches
 # the source tree.
 #
-# Usage: scripts/sync-gstack.sh [--upstream <path>] [--vendor <path>]
+# Usage: scripts/sync-gstack.sh [--upstream <path>] [--vendor <path>] [--basic-review <path>]
 #   --upstream  gstack git checkout (default: $GSTACK_HOME or ~/.claude/skills/gstack)
 #   --vendor    snapshot directory  (default: <repo>/vendor/gstack)
+#   --basic-review  where /basic-review's copy of review/checklist.md goes
+#               (default: skills/basic-review/checklist.md, only when --vendor is
+#               the default, so a test snapshot never overwrites the real copy)
 
 set -euo pipefail
 
@@ -26,11 +29,14 @@ REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 
 UPSTREAM="${GSTACK_HOME:-$HOME/.claude/skills/gstack}"
 VENDOR="$REPO_ROOT/vendor/gstack"
+DEFAULT_VENDOR="$VENDOR"
+BASIC_REVIEW=""
 
 while [ $# -gt 0 ]; do
     case "$1" in
         --upstream) UPSTREAM="$2"; shift 2 ;;
         --vendor)   VENDOR="$2";   shift 2 ;;
+        --basic-review) BASIC_REVIEW="$2"; shift 2 ;;
         *) echo "error: unknown argument: $1" >&2; exit 2 ;;
     esac
 done
@@ -73,5 +79,19 @@ mv "$tmp" "$VENDOR"
 trap - EXIT
 
 version="$(cat "$VENDOR/VERSION" 2>/dev/null || echo unknown)"
+
+# /basic-review ships its own copy of gstack's review checklist so it works
+# where gstack is not installed. It is regenerated here, never edited by hand;
+# tests/basic-review.bats fails if it drifts from the snapshot.
+[ -z "$BASIC_REVIEW" ] && [ "$VENDOR" = "$DEFAULT_VENDOR" ] && BASIC_REVIEW="$REPO_ROOT/skills/basic-review/checklist.md"
+if [ -n "$BASIC_REVIEW" ] && [ -f "$VENDOR/review/checklist.md" ]; then
+    {
+        echo "<!-- Vendored from garrytan/gstack review/checklist.md (MIT, Copyright (c) 2026 Garry Tan),"
+        echo "     gstack $version. Refreshed by scripts/sync-gstack.sh; do not edit here."
+        echo "-->"
+        echo
+        cat "$VENDOR/review/checklist.md"
+    } > "$BASIC_REVIEW.tmp" && mv "$BASIC_REVIEW.tmp" "$BASIC_REVIEW"
+fi
 count="$(printf '%s\n' "$skill_dirs" | grep -c .)"
 echo "vendor/gstack synced to gstack $version ($count skills, $(printf '%s\n' "$files" | grep -c .) files)"

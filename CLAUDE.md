@@ -107,7 +107,9 @@ It copies every skill's SKILL.md plus the sections/specialists/checklist
 markdown those bodies load, `docs/*.md`, VERSION, CLAUDE.md and gstack's own
 `setup` (so `./setup`'s clone-failed fallback can still link the skills), never
 other code or build output, and removes anything no longer upstream. Tested by
-`tests/sync-gstack.bats`.
+`tests/sync-gstack.bats`. It also regenerates `skills/basic-review/checklist.md`, the
+copy of gstack's review checklist that `/basic-review` ships so it works without
+gstack; `tests/basic-review.bats` fails if that copy drifts.
 
 ### `/humanize` is canonical here; its public repo is an export
 

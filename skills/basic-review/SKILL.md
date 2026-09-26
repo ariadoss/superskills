@@ -1,12 +1,13 @@
 ---
 name: basic-review
-version: 1.0.0
+version: 1.1.0
 description: |
   Read-only correctness review of pending changes, needing no external
   install: correctness, security, reliability/performance and contract risk,
   each finding cited as file:line with why it is wrong and a fix. The fallback
   when gstack's /review is unavailable (not installed, or its install is
-  broken); /qa-full and /daily-qa call it automatically then. Use when asked for
+  broken); /qa-full and /daily-qa call it automatically then. Applies a
+  vendored copy of gstack's pre-landing checklist. Use when asked for
   a "basic review", a "quick review without gstack", or a review in a tool where
   /review is missing. Not for quality cleanups (use /clean-code), and not the
   first choice when /review is installed: /review goes deeper and applies fixes.
@@ -55,6 +56,13 @@ block on before merge, in roughly this order:
    use, accidental O(N²), retries without backoff, silent failure paths.
 4. **Contract risk:** behavior changes callers rely on, silently changed
    defaults, broken backward compatibility, missing migrations.
+
+Then apply `checklist.md` in this skill's directory (gstack's pre-landing
+checklist): run its Pass 1 (CRITICAL) categories, then Pass 2, and honor its
+**Suppressions** list. This skill is read-only, so ignore the checklist's
+Fix-First / AUTO-FIXED instructions and its output format (use the Report format
+below), and skip the items it assigns to gstack's specialist subagents or to
+gstack-only markers.
 
 For each finding cite `file:line`, explain *why* it is wrong (not what the code
 does), and propose a concrete fix when one is obvious. Be calibrated: if a
