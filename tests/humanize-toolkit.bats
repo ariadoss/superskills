@@ -651,3 +651,22 @@ norm() { python3 "$TK/normalize.py" "$1" "$1.out" >/dev/null 2>&1 && cat "$1.out
   run python3 "$TK/mla_format.py" "$BATS_TEST_TMPDIR/up.md"
   [ "$output" = "Read (https://x.com/a)—it helps." ] || { echo "$output"; return 1; }
 }
+
+@test "every line of a multi-line indented code block stays code" {
+  printf 'Intro.\n\n    first --flag\n    second --flag\n\nAfter.\n' > "$BATS_TEST_TMPDIR/ib.md"
+  run norm "$BATS_TEST_TMPDIR/ib.md"
+  [[ "$output" == *$'    first --flag\n    second --flag'* ]] || { echo "$output"; return 1; }
+}
+
+@test "an escaped backslash before a backtick still opens inline code" {
+  # Two backslashes are one literal backslash, so the backtick after them is live.
+  printf 'Path \\\\`a -- b` end.\n' > "$BATS_TEST_TMPDIR/eb.md"
+  run norm "$BATS_TEST_TMPDIR/eb.md"
+  [[ "$output" == *'`a -- b`'* ]] || { echo "code span edited: $output"; return 1; }
+}
+
+@test "an indented line continuing a list item is prose, not code" {
+  printf -- '- item text\n    carries on -- here\n' > "$BATS_TEST_TMPDIR/lc.md"
+  run python3 "$TK/mla_format.py" "$BATS_TEST_TMPDIR/lc.md"
+  [[ "$output" == *"    carries on—here"* ]] || { echo "$output"; return 1; }
+}
