@@ -20,6 +20,18 @@ SKILL_DIR="$SRC_ROOT/skills/humanize"
 [ -d "$SKILL_DIR/toolkit" ] || { echo "no toolkit at $SKILL_DIR/toolkit" >&2; exit 1; }
 
 mkdir -p "$OUT"
+OUT="$(cd "$OUT" && pwd -P)"
+# The export deletes and rewrites toolkit/ and tests/ under OUT, so OUT must not
+# overlap the source: not the repo itself, not a directory that contains it, and
+# not anywhere inside it except under dist/.
+root="$(cd "$SRC_ROOT" && pwd -P)"
+case "$OUT/" in
+  "$root/dist/"?*) ;;
+  "$root/"*) echo "refusing to export into the source tree: $OUT (use a path under $root/dist/ or outside the repo)" >&2; exit 1 ;;
+esac
+case "$root/" in
+  "$OUT/"*) echo "refusing to export into $OUT: it contains the source tree" >&2; exit 1 ;;
+esac
 # Only our own outputs are cleared; a .git directory or local notes survive.
 rm -rf "$OUT/toolkit" "$OUT/tests"
 mkdir -p "$OUT/toolkit" "$OUT/tests"
@@ -32,6 +44,8 @@ cp "$SKILL_DIR/SKILL.md"                     "$OUT/SKILL.md"
 ( cd "$SKILL_DIR/toolkit" && git ls-files -z -- . ) \
   | while IFS= read -r -d '' f; do
       case "$f" in */*) continue ;; esac       # top level only, as the skill loads it
+      # A symlink would publish whatever it points at (or dangle in the public repo).
+      [ ! -L "$SKILL_DIR/toolkit/$f" ] || { echo "refusing to export symlinked toolkit file: $f" >&2; exit 1; }
       cp "$SKILL_DIR/toolkit/$f" "$OUT/toolkit/"
     done
 untracked="$(cd "$SKILL_DIR/toolkit" && git ls-files --others --exclude-standard -- . | grep -v / || true)"

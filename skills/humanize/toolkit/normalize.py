@@ -7,9 +7,7 @@ formats empty stdin). Here both stages run in-process, the result is written to 
 temporary file beside OUT and renamed into place only on success, so a failure
 leaves no OUT at all. SRC is never overwritten.
 """
-import os
 import sys
-import tempfile
 from pathlib import Path
 
 # Sibling imports resolve against this file's real directory, so they work when it
@@ -20,7 +18,7 @@ if str(Path(__file__).resolve().parent) not in sys.path:
     sys.path.insert(0, str(Path(__file__).resolve().parent))
 import emdash_fix
 from mla_format import mla_format
-from textio import read_prose
+from textio import read_prose, write_prose
 
 
 def main(argv: list[str]) -> int:
@@ -32,24 +30,7 @@ def main(argv: list[str]) -> int:
         print(f"refusing to overwrite the source: {src}", file=sys.stderr)
         return 1
     text = mla_format(emdash_fix.fix_text(read_prose(src)))
-    try:
-        fd, tmp = tempfile.mkstemp(dir=out.parent or ".", prefix=f".{out.name}.", suffix=".tmp")
-    except OSError as e:
-        print(f"normalize.py: cannot write {out}: {e.strerror or e}", file=sys.stderr)
-        return 2
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as fh:
-            fh.write(text)
-        os.replace(tmp, out)
-    except BaseException as e:
-        try:
-            os.unlink(tmp)
-        except OSError:
-            pass
-        if not isinstance(e, OSError):
-            raise
-        print(f"normalize.py: cannot write {out}: {e.strerror or e}", file=sys.stderr)
-        return 2
+    write_prose(out, text)
     emdash_fix.report_undecidable()
     return 0
 

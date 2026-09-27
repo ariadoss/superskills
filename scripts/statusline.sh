@@ -83,7 +83,8 @@ def until($ts):
 
 # A window is usable only while its reset is in the future. Claude Code drops a
 # live window at reset; a cached one has to be dropped by us.
-def live($w): ($w.used_percentage | type) == "number"
+def live($w): ($w | type) == "object"
+              and ($w.used_percentage | type) == "number"
               and ($w.resets_at | type) == "number"
               and $w.resets_at > $now;
 
@@ -106,9 +107,12 @@ def window($w; $label; $warn; $danger):
       + (if $r == "" then "" else " " + dim + "(" + $r + ")" + off end)
   end;
 
-($cachetext | fromjson? // null) as $cache
-| (.rate_limits // {}) as $rl
-| ($cache.rate_limits // {}) as $cl
+# Both sources are untrusted in shape: anything but an object of windows counts
+# as no windows, so a bad cache (say `[]`) is overwritten instead of aborting
+# the render forever.
+def windows: if type == "object" and (.rate_limits | type) == "object" then .rate_limits else {} end;
+($cachetext | fromjson? // null | windows) as $cl
+| windows as $rl
 | merge($rl.five_hour;  $cl.five_hour)  as $w5
 | merge($rl.seven_day;  $cl.seven_day)  as $w7
 | merge($rl.spend_limit; $cl.spend_limit) as $ws

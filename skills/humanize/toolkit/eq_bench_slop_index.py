@@ -15,7 +15,7 @@ Outputs JSON with:
     word_hits, bigram_hits, trigram_hits
     total_words
     legacy_slop_index    — only when --legacy is passed
-    flesch_kincaid_grade — capped at 14
+    flesch_kincaid_grade — raw grade (the complexity index uses it capped at 14)
     complexity_index     — 0-100 (FK + % polysyllabic average)
 
 Dependencies: stdlib only for slop scoring. NLTK and wordfreq only for the

@@ -17,7 +17,9 @@ FORCE=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --settings) SETTINGS="$2"; shift 2 ;;
+    --settings)
+      [ $# -ge 2 ] && [ -n "$2" ] || { echo "install-statusline: --settings needs a path" >&2; exit 2; }
+      SETTINGS="$2"; shift 2 ;;
     --force)    FORCE=1; shift ;;
     -h|--help)  sed -n '2,12p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "install-statusline: unknown argument: $1" >&2; exit 2 ;;
@@ -42,6 +44,15 @@ case "$script" in
 esac
 
 mkdir -p "$(dirname "$SETTINGS")"
+# Write through a symlinked settings.json (a dotfiles repo, say) to its target:
+# replacing the link with a regular file would silently detach it.
+hops=0
+while [ -L "$SETTINGS" ]; do
+  hops=$((hops + 1))
+  [ "$hops" -le 40 ] || { echo "install-statusline: symlink loop at $SETTINGS; not touching it." >&2; exit 1; }
+  link="$(readlink "$SETTINGS")"
+  case "$link" in /*) SETTINGS="$link" ;; *) SETTINGS="$(dirname "$SETTINGS")/$link" ;; esac
+done
 if [ -f "$SETTINGS" ]; then
   if ! jq -e 'type == "object"' "$SETTINGS" >/dev/null 2>&1; then
     echo "install-statusline: $SETTINGS is not a valid JSON object; not touching it." >&2
@@ -58,12 +69,22 @@ if [ -f "$SETTINGS" ]; then
     echo "Re-run with --force to replace it (the file is backed up first)." >&2
     exit 1
   fi
-  backup="$SETTINGS.bak-$(date +%Y%m%d-%H%M%S)"
+  before="$(cksum < "$SETTINGS")"
+  # mktemp creates each file exclusively, so a pre-planted path or link is never
+  # followed and two runs in the same second never share a backup.
+  backup="$(mktemp "$SETTINGS.bak-$(date +%Y%m%d-%H%M%S).XXXXXX")"
   cp -p "$SETTINGS" "$backup"
-  tmp="$SETTINGS.tmp.$$"
+  tmp="$(mktemp "$SETTINGS.tmp.XXXXXX")"
+  trap 'rm -f "$tmp"' EXIT
   cp -p "$SETTINGS" "$tmp"   # keeps the original's permissions on the new file
   jq --arg c "$command" '.statusLine = {type: "command", command: $c}' "$SETTINGS" > "$tmp"
+  # Claude Code may rewrite settings.json while it runs; never clobber that edit.
+  if [ "$(cksum < "$SETTINGS")" != "$before" ]; then
+    echo "install-statusline: $SETTINGS changed while installing; nothing written. Re-run." >&2
+    exit 1
+  fi
   mv "$tmp" "$SETTINGS"
+  trap - EXIT
   echo "statusline installed in $SETTINGS (previous version: $backup)"
 else
   jq -n --arg c "$command" '{statusLine: {type: "command", command: $c}}' > "$SETTINGS"

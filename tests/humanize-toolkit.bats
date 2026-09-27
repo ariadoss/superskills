@@ -108,10 +108,15 @@ setup() {
   # Exactly two optional third-party deps are allowed, and both must be
   # documented. spaCy decides clause role; NLTK improves tokenizing/syllables
   # and already falls back to regex + a heuristic when absent.
-  run bash -c "grep -hE '^[[:space:]]*(import|from) ' '$TK'/*.py | sed -E 's/^[[:space:]]+//' \
-    | grep -vE '^(import|from) (re|sys|json|statistics|subprocess|math|os|argparse|collections|pathlib|__future__|typing|unicodedata|itertools|functools|textwrap|string)([. ]|\$)' \
-    | grep -oE '(spacy|nltk)' | sort -u | tr '\n' ' '"
-  [ "$output" = "nltk spacy " ] || { echo "unexpected non-stdlib imports: $output"; return 1; }
+  # Everything left after removing stdlib and the toolkit's own sibling modules
+  # must be spaCy or NLTK: grep -o'ing for just those two used to drop any other
+  # third-party import on the floor instead of failing on it.
+  imports="$(grep -hE '^[[:space:]]*(import|from) ' "$TK"/*.py | sed -E 's/^[[:space:]]+//' \
+    | grep -vE '^(import|from) (re|sys|json|statistics|subprocess|math|os|argparse|collections|pathlib|__future__|typing|unicodedata|itertools|functools|textwrap|string|tempfile|shutil|mla_format|textio|emdash_fix|eq_bench_slop_index)([. ]|$)')"
+  run bash -c "printf '%s\n' \"\$1\" | grep -vE '^(import|from) (spacy|nltk)([. ]|$)' | grep -c ." _ "$imports"
+  [ "$output" = "0" ] || { echo "undocumented non-stdlib imports: $(printf '%s\n' "$imports" | grep -vE '(spacy|nltk)')"; return 1; }
+  run bash -c "printf '%s\n' \"\$1\" | grep -oE '(spacy|nltk)' | sort -u | tr '\n' ' '" _ "$imports"
+  [ "$output" = "nltk spacy " ] || { echo "expected optional deps missing: $output"; return 1; }
   for dep in spacy nltk; do
     run bash -c "grep -ci '$dep' '$SKILL_MD'"
     [ "$output" -ge 1 ] || { echo "optional dep not documented in SKILL.md: $dep"; return 1; }
@@ -126,7 +131,7 @@ We shipped the fix—the outage was already over.
 M
   run bash -c "cd '$TK' && python3 -c \"
 import sys
-sys.path=[p for p in sys.path if 'site-packages' not in p]
+sys.path=[p for p in sys.path if 'site-packages' not in p and 'dist-packages' not in p]
 sys.argv=['emdash_fix.py','$BATS_TEST_TMPDIR/ind.md']
 import runpy; runpy.run_path('emdash_fix.py', run_name='__main__')
 \" 2>&1"
@@ -243,7 +248,7 @@ skill_snippet() {
   printf 'The team paused the rollout—it was late—and resumed it Monday.\n' > "$BATS_TEST_TMPDIR/pi.md"
   run bash -c "cd '$TK' && python3 -c \"
 import sys
-sys.path=[p for p in sys.path if 'site-packages' not in p]
+sys.path=[p for p in sys.path if 'site-packages' not in p and 'dist-packages' not in p]
 sys.argv=['emdash_fix.py','$BATS_TEST_TMPDIR/pi.md']
 import runpy; runpy.run_path('emdash_fix.py', run_name='__main__')
 \" 2>/dev/null"
@@ -480,4 +485,91 @@ print(mla_format(fix_text(\"a — b\")) != \"\")'"
 ' > "$BATS_TEST_TMPDIR/wl.md"
   run python3 "$TK/emdash_fix.py" "$BATS_TEST_TMPDIR/wl.md"
   [[ "$output" == *$'\n- first\n1. second'* ]] || { echo "a list item was joined: $output"; return 1; }
+}
+
+@test "a line-end dash never joins code lines or pulls text into a heading" {
+  # Found by /review: the wrapped-dash join ran before the code check, so an
+  # indented code line ending in `--` swallowed the next line, and a heading
+  # ending in a dash absorbed the paragraph below it.
+  printf '# Title —\nBody text.\n\n    run --\n    next\n' > "$BATS_TEST_TMPDIR/wj.md"
+  run python3 "$TK/emdash_fix.py" "$BATS_TEST_TMPDIR/wj.md"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *$'\nBody text.'* ]] || { echo "heading absorbed the paragraph: $output"; return 1; }
+  [[ "$output" == *$'    run --\n    next'* ]] || { echo "code lines joined: $output"; return 1; }
+}
+
+@test "a broken sub-scorer is reported as unavailable, not silently dropped" {
+  broken="$BATS_TEST_TMPDIR/broken-tk"
+  cp -R "$TK" "$broken"
+  printf 'print("not json")\n' > "$broken/construction_scanner.py"
+  run python3 "$broken/slop_report.py" "$SAMPLE"
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+  [[ "$output" == *"construction_scanner unavailable"* ]] || { echo "no visible degradation notice: $output"; return 1; }
+  [[ "$output" == *"slop_index = "* ]] || { echo "the healthy scorer's section disappeared too"; return 1; }
+}
+
+# --- /review pass on the whole branch (Codex + Claude adversarial) ------------
+
+norm() { python3 "$TK/normalize.py" "$1" "$1.out" >/dev/null 2>&1 && cat "$1.out"; }
+
+@test "numeric dashes inside code blocks are left alone" {
+  printf 'Prose 3--64 here.\n\n    x = 3--1\n\n~~~\nSELECT 1--2\n~~~\n' > "$BATS_TEST_TMPDIR/nr.md"
+  run norm "$BATS_TEST_TMPDIR/nr.md"
+  [[ "$output" == *"Prose 3–64 here."* ]] || { echo "prose range not normalized: $output"; return 1; }
+  [[ "$output" == *"    x = 3--1"* ]] || { echo "indented code changed: $output"; return 1; }
+  [[ "$output" == *"SELECT 1--2"* ]] || { echo "tilde-fenced code changed: $output"; return 1; }
+}
+
+@test "bare URLs, reference links, emails and link destinations stay literal" {
+  printf "See https://example.com/c--d now.\nMail bar--baz@example.com today.\n[a](https://example.com/a(b)--c) and [t](https://x.test/p--q 'T--t').\n\n[ref]: https://example.com/a--b \"R--r\"\n" > "$BATS_TEST_TMPDIR/ln.md"
+  run norm "$BATS_TEST_TMPDIR/ln.md"
+  for s in 'https://example.com/c--d' 'bar--baz@example.com' '(https://example.com/a(b)--c)' "(https://x.test/p--q 'T--t')" '[ref]: https://example.com/a--b "R--r"'; do
+    [[ "$output" == *"$s"* ]] || { echo "altered: $s in: $output"; return 1; }
+  done
+}
+
+@test "setext heading underlines and hard breaks survive dash replacement" {
+  printf 'Heading\n--\n\nStop—  \nNew line.\nFirst line—with detail  \nSecond.\n' > "$BATS_TEST_TMPDIR/hb.md"
+  run norm "$BATS_TEST_TMPDIR/hb.md"
+  [[ "$output" == *$'Heading\n--'* ]] || { echo "setext underline destroyed: $output"; return 1; }
+  [[ "$output" == *$'  \nNew line.'* ]] || { echo "hard break after a dash lost or joined: $output"; return 1; }
+  [[ "$output" == *$'detail  \nSecond.'* ]] || { echo "hard break on a dash line lost: $output"; return 1; }
+}
+
+@test "a dash paragraph never swallows the code fence that follows it" {
+  printf 'Run this —\n```\ncode\n```\n' > "$BATS_TEST_TMPDIR/fj.md"
+  run norm "$BATS_TEST_TMPDIR/fj.md"
+  [[ "$output" == *$'\n```\ncode\n```'* ]] || { echo "fence joined into prose: $output"; return 1; }
+}
+
+@test "a fence containing literal backticks keeps its code intact" {
+  printf '```sh\nprintf "```"\ncmd --help  --verbose\n```\n' > "$BATS_TEST_TMPDIR/fb.md"
+  run norm "$BATS_TEST_TMPDIR/fb.md"
+  [[ "$output" == *"cmd --help  --verbose"* ]] || { echo "code altered: $output"; return 1; }
+}
+
+@test "a long run of backticks is processed in linear time" {
+  python3 -c "print('\`' * 20000 + 'x')" > "$BATS_TEST_TMPDIR/bt.md"
+  start=$(date +%s)
+  run perl -e 'alarm 10; exec @ARGV' python3 "$TK/normalize.py" "$BATS_TEST_TMPDIR/bt.md" "$BATS_TEST_TMPDIR/bt.out"
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+  [ $(( $(date +%s) - start )) -le 3 ] || { echo "took too long"; return 1; }
+}
+
+@test "private-use characters already in the text survive untouched" {
+  python3 -c "print('A 0 B  C \`x--y\` and 3--4.')" > "$BATS_TEST_TMPDIR/pu.md"
+  run python3 "$TK/normalize.py" "$BATS_TEST_TMPDIR/pu.md" "$BATS_TEST_TMPDIR/pu.out"
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+  run python3 -c "import sys; t=open(sys.argv[1]).read(); print(('0' in t, '' in t, '\`x--y\`' in t, '3–4' in t))" "$BATS_TEST_TMPDIR/pu.out"
+  [ "$output" = "(True, True, True, True)" ] || { echo "got $output"; return 1; }
+}
+
+@test "--in-place writes atomically and keeps the file's permissions" {
+  printf 'One — two.\n' > "$BATS_TEST_TMPDIR/ip2.md"; chmod 640 "$BATS_TEST_TMPDIR/ip2.md"
+  run python3 "$TK/emdash_fix.py" "$BATS_TEST_TMPDIR/ip2.md" --in-place
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+  run python3 "$TK/mla_format.py" "$BATS_TEST_TMPDIR/ip2.md" --in-place
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+  [ "$(python3 -c 'import os,stat,sys; print(oct(stat.S_IMODE(os.stat(sys.argv[1]).st_mode)))' "$BATS_TEST_TMPDIR/ip2.md")" = "0o640" ] || false
+  [ -z "$(find "$BATS_TEST_TMPDIR" -maxdepth 1 -name '.ip2.md.*')" ] || { echo "temp file left behind"; return 1; }
 }

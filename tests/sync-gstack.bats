@@ -99,3 +99,11 @@ setup() {
   grep -q 'garrytan/gstack' "$OUT" || false
   grep -q '1.80.0.0' "$OUT" || false
 }
+
+@test "a checklist that cannot be written fails the sync instead of reporting success" {
+  OUT="$BATS_TEST_TMPDIR/no-such-dir/checklist.md"
+  run "$SCRIPT" --upstream "$UP" --vendor "$VENDOR" --basic-review "$OUT"
+  [ "$status" -ne 0 ] || { echo "exited 0: $output"; return 1; }
+  [[ "$output" == *"could not write"*"checklist.md"* ]] || { echo "$output"; return 1; }
+  [[ "$output" != *"synced to gstack"* ]] || { echo "claimed success: $output"; return 1; }
+}

@@ -161,3 +161,27 @@ fake_repo() {
   [[ "$output" == *"publish): *"* ]] || { echo "$output"; return 1; }
   [[ "$output" != *"slop_report.py"* ]] || { echo "glob expanded: $output"; return 1; }
 }
+
+@test "refuses an output directory that overlaps the source tree" {
+  fake="$BATS_TEST_TMPDIR/overlaprepo"
+  fake_repo "$fake"
+  for out in "$fake" "$fake/skills" "$BATS_TEST_TMPDIR"; do
+    run bash "$fake/scripts/export-humanize.sh" "$out"
+    [ "$status" -eq 1 ] || { echo "exported into $out: $output"; return 1; }
+    [[ "$output" == *"refusing to export"* ]] || { echo "$output"; return 1; }
+  done
+  [ -f "$fake/tests/humanize-toolkit.bats" ] || { echo "the source tests/ was deleted"; return 1; }
+  [ -f "$fake/skills/humanize/toolkit/textio.py" ] || { echo "the source toolkit was deleted"; return 1; }
+}
+
+@test "a symlinked toolkit file is refused, not published as its target" {
+  fake="$BATS_TEST_TMPDIR/linkrepo"
+  fake_repo "$fake"
+  printf 'secret\n' > "$BATS_TEST_TMPDIR/outside.txt"
+  ln -s "$BATS_TEST_TMPDIR/outside.txt" "$fake/skills/humanize/toolkit/linked.txt"
+  git -C "$fake" add -A
+  run bash "$fake/scripts/export-humanize.sh" "$BATS_TEST_TMPDIR/linkout"
+  [ "$status" -ne 0 ] || { echo "exported a symlink: $output"; return 1; }
+  [[ "$output" == *"symlinked toolkit file: linked.txt"* ]] || { echo "$output"; return 1; }
+  [ ! -e "$BATS_TEST_TMPDIR/linkout/toolkit/linked.txt" ] || { echo "symlink target shipped"; return 1; }
+}

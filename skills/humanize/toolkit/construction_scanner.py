@@ -36,6 +36,7 @@ import argparse
 import json
 import re
 import sys
+from itertools import groupby
 from pathlib import Path
 
 # Sibling imports resolve against this file's real directory, so they work when it
@@ -300,19 +301,10 @@ def count_same_subject_runs(sentences: list[str], min_run: int = 3) -> tuple[int
     Only counts runs where the opener is a subject pronoun (see SUBJECT_PRONOUNS).
     """
     runs = []
-    i = 0
-    while i < len(sentences):
-        opener = get_sentence_opener(sentences[i])
-        if opener not in SUBJECT_PRONOUNS:
-            i += 1
-            continue
-        j = i + 1
-        while j < len(sentences) and get_sentence_opener(sentences[j]) == opener:
-            j += 1
-        run_len = j - i
-        if run_len >= min_run:
-            runs.append({"opener": opener, "length": run_len, "start_sentence": sentences[i][:80]})
-        i = j if run_len > 1 else i + 1
+    for opener, group in groupby(sentences, key=get_sentence_opener):
+        group = list(group)
+        if opener in SUBJECT_PRONOUNS and len(group) >= min_run:
+            runs.append({"opener": opener, "length": len(group), "start_sentence": group[0][:80]})
     max_run = max((r["length"] for r in runs), default=0)
     return len(runs), max_run, runs
 

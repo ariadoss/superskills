@@ -217,3 +217,32 @@ J"
   [[ "$output" == *"42%"* ]] || false
   [ ! -e /tmp/rate-limits.json ] || { rm -f /tmp/rate-limits.json; echo "wrote into a foreign directory"; return 1; }
 }
+
+@test "time-to-reset renders minutes, hours+minutes and days+hours" {
+  now=$(date +%s)
+  run bash -c "printf '%s' '{\"rate_limits\":{\"five_hour\":{\"used_percentage\":10,\"resets_at\":$((now+700))},\"seven_day\":{\"used_percentage\":20,\"resets_at\":$((now+100000))},\"spend_limit\":{\"used_percentage\":30,\"resets_at\":$((now+8000))}}}' | NO_COLOR=1 bash '$SL'"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"5h 10% (11m)"* ]] || { echo "got: $output"; return 1; }
+  [[ "$output" == *"7d 20% (1d3h)"* ]] || { echo "got: $output"; return 1; }
+  [[ "$output" == *"spend 30% (2h13m)"* ]] || { echo "got: $output"; return 1; }
+}
+
+@test "a well-formed cache of the wrong shape heals instead of freezing the line" {
+  # `[]` parses as JSON, so it used to reach `.rate_limits` and abort the whole
+  # jq program: the line stuck at `ctx --` and the bad cache was never replaced.
+  for bad in '[]' '"x"' '{"rate_limits":[]}' '{"rate_limits":{"five_hour":7}}'; do
+    mkdir -p "$(dirname "$CACHE")"
+    printf '%s' "$bad" > "$CACHE"
+    run bash -c "'$SL' < <(echo '$(payload)')"
+    [ "$status" -eq 0 ] || { echo "cache $bad: $output"; return 1; }
+    [[ "$output" == *"ctx 23%"* ]] || { echo "cache $bad rendered: $output"; return 1; }
+    [[ "$output" == *"5h 41%"* ]] || { echo "cache $bad dropped the live window: $output"; return 1; }
+    grep -q '"five_hour"' "$CACHE" || { echo "cache $bad not rewritten: $(cat "$CACHE")"; return 1; }
+  done
+}
+
+@test "a payload whose rate_limits has the wrong shape still renders" {
+  run bash -c "'$SL' <<< '{\"context_window\":{\"used_percentage\":5},\"rate_limits\":[1]}'"
+  [ "$status" -eq 0 ] || false
+  [[ "$output" == *"ctx 5%"* ]] || { echo "$output"; return 1; }
+}

@@ -62,9 +62,9 @@ PY
 
 @test "extra fixture: is idempotent on a rebuild" {
   build
-  local first; first="$(git -C "$D" rev-parse HEAD)"
+  local first; first="$(git -C "$D" rev-parse 'HEAD^{tree}')"
   build
-  [ "$(git -C "$D" rev-parse HEAD)" != "" ]
+  [ "$(git -C "$D" rev-parse 'HEAD^{tree}')" = "$first" ] || { echo "rebuild produced a different tree"; return 1; }
   [ -z "$(git -C "$D" status --porcelain)" ]
   # Rebuilt from scratch, so the tree matches even if the SHA differs.
   run git -C "$D" log --oneline
@@ -227,4 +227,22 @@ print(" ".join(bad))
 PY
   [ "$status" -eq 0 ] || { echo "$output"; return 1; }
   [ -z "$output" ] || { echo "FANOUT entries missing from SKILL.md: $output"; return 1; }
+}
+
+@test "grader: a case id outside the suite is excluded, not a crash" {
+  fake_skills debug test-coverage verify tdd
+  transcript run1 A1-r1 handback debug
+  transcript run2 A9-r1 handback debug
+  run grade
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+  [[ "$output" == *"A9-r1"* && "$output" == *"unknown case"* ]] || { echo "$output"; return 1; }
+  printf '%s\n' "$output" | grep -qE 'TP \(intended fired\) +1 / 1'
+}
+
+@test "grader: a single owned skill (no negative cells) reports n/a, not a crash" {
+  fake_skills debug
+  transcript run1 A1-r1 handback debug
+  run grade
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+  printf '%s\n' "$output" | grep -qE 'TNR \(pooled over skills\) +n/a' || { echo "$output"; return 1; }
 }

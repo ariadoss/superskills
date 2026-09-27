@@ -415,3 +415,15 @@ R
   run qfl_written_report "$T" "$SUB"
   [ "$output" = "$PROJ/qa-full-reports/feature-2026-09-24.md" ] || { echo "got: [$output]"; return 1; }
 }
+
+@test "hook: the report path is printed without bidi overrides or C1 control bytes" {
+  # tr -d on C0 controls left UTF-8 alone, so a filename carrying U+202E (right-to-left
+  # override) or a raw C1 CSI byte reached the agent's hook message intact.
+  report
+  mv "$PROJ/qa-full-reports/feature-2026-09-24.md" "$PROJ/qa-full-reports/x$(printf '\342\200\256')dm.$(printf '\302\233')2J.md"
+  skill_call "qa-full"
+  run bash -c "$(printf '%q' "$HOOK") <<< '$(hook_input)' 2>&1"
+  [ "$status" -eq 2 ] || { echo "status $status: $output"; return 1; }
+  [[ "$output" == *"/defense"* ]] || { echo "$output"; return 1; }
+  ! printf '%s' "$output" | LC_ALL=C grep -q '[^[:print:][:space:]]' || { echo "non-printable bytes reached the message"; return 1; }
+}

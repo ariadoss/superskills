@@ -163,6 +163,12 @@ def main():
     runs = [r for r in runs if r["complete"]]
     if incomplete:
         print(f"EXCLUDED (still running, no handback): {', '.join(sorted(incomplete))}\n")
+    # A fixture path the suite does not define (a typo, an old run left in the
+    # tasks dir) is reported and skipped rather than raising KeyError mid-report.
+    unknown = [r["case"] for r in runs if r["case"].split("-")[0] not in INTENDED]
+    runs = [r for r in runs if r["case"].split("-")[0] in INTENDED]
+    if unknown:
+        print(f"EXCLUDED (unknown case, not in this suite): {', '.join(sorted(unknown))}\n")
 
     if not runs:
         print(f"no {arm} runs found in {tasks_dir}")
@@ -233,12 +239,14 @@ def main():
     print(f"TPR (recall)                {tp/pos:.3f}" if pos else "")
     neg_cells = sum(c["tn"] + c["fp"] for c in per_skill.values())
     tn_cells = sum(c["tn"] for c in per_skill.values())
-    print(f"TNR (pooled over skills)    {tn_cells/neg_cells:.4f}  (TN={tn_cells} FP={sum(c['fp'] for c in per_skill.values())})")
+    tnr = f"{tn_cells/neg_cells:.4f}" if neg_cells else "n/a"
+    print(f"TNR (pooled over skills)    {tnr}  (TN={tn_cells} FP={sum(c['fp'] for c in per_skill.values())})")
     prec_den = tp + fp
     print(f"Precision (case-level)      {tp/prec_den:.3f}" if prec_den else "Precision                   n/a")
     print(f"Accuracy (intended fired)   {tp/n:.3f}")
     print()
-    print(f"TNR (neighbour-scoped)      {peer_tn/(peer_tn+peer_fp):.3f}  (TN={peer_tn} FP={peer_fp})")
+    peer_tnr = f"{peer_tn/(peer_tn+peer_fp):.3f}" if peer_tn + peer_fp else "n/a"
+    print(f"TNR (neighbour-scoped)      {peer_tnr}  (TN={peer_tn} FP={peer_fp})")
     # pos is 0 when every graded run's intended target is not an owned skill
     # (e.g. only B2 has finished), so the percentages must be guarded.
     pct = lambda k: f"{100 * k // pos}%" if pos else "n/a"
