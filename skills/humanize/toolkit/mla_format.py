@@ -33,6 +33,14 @@ _CLOSE_FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})[ \t]*$")
 _EDGES = re.compile(r"^([ \t]*)(.*?)([ \t]*)$", re.S)
 
 
+def split_edges(line: str) -> tuple[str, str, str]:
+    """(indent, body, hard_break) of one line. Rules only ever edit the body, so the
+    indentation survives, and a trailing run of two-plus spaces (a Markdown hard
+    break) comes back as exactly two; shorter trailing whitespace is noise."""
+    lead, body, trail = _EDGES.match(line).groups()
+    return lead, body, ("  " if len(trail) >= 2 and body else "")
+
+
 def code_lines(lines: list[str]) -> list[bool]:
     """Per line, True when it is Markdown code: a fence, inside a fence, or an
     indented (four-plus spaces / a tab) line that does not continue a paragraph.
@@ -180,14 +188,13 @@ def mla_format(text: str) -> str:
     src = text.split("\n")
     lines = []
     for line, is_code in zip(src, code_lines(src)):
-        lead, body, trail = _EDGES.match(line).groups()
+        lead, body, hard = split_edges(line)
         if is_code or body.startswith(("#", "*", ">", "|", "-")):   # code / markdown structure
             lines.append(line)
             continue
         body = _CLOSE.sub("—", body)          # close em-dashes (leaves hyphenated words / en-dashes)
         body = _MULTISPACE.sub(" ", body)     # single space after periods; no double spaces
-        # Two or more trailing spaces are a Markdown hard break; anything less is noise.
-        lines.append(lead + body + ("  " if len(trail) >= 2 and body else ""))
+        lines.append(lead + body + hard)
     return unmask_literals("\n".join(lines), spans)
 
 

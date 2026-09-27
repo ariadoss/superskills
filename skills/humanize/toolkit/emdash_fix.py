@@ -24,7 +24,7 @@ from pathlib import Path
 sys.dont_write_bytecode = True
 if str(Path(__file__).resolve().parent) not in sys.path:
     sys.path.insert(0, str(Path(__file__).resolve().parent))
-from mla_format import _CLOSE, code_lines, mask_literals, unmask_literals
+from mla_format import _CLOSE, code_lines, mask_literals, split_edges, unmask_literals
 from textio import read_prose, write_prose
 
 EM = re.compile(r"\s*[—–]\s*|\s*(?<!-)--(?!-)\s*")  # em, en, or double-hyphen, with surrounding space
@@ -195,15 +195,6 @@ def _prose_lines(text: str):
                          or line.lstrip().startswith(("#", "*", ">", "|")))
 
 
-def _split_edges(line: str) -> tuple[str, str, str]:
-    """(indent, body, hard_break): the sentence rules only ever see the body, so a
-    line's indentation and a trailing two-space hard break survive them."""
-    lead = line[: len(line) - len(line.lstrip())]
-    body = line.strip()
-    trail = line[len(line.rstrip()):]
-    return lead, body, ("  " if len(trail) >= 2 and body else "")
-
-
 def fix_text(text: str) -> str:
     text, spans = mask_literals(text)
     text = _join_wrapped_dashes(text)
@@ -212,7 +203,7 @@ def fix_text(text: str) -> str:
         if not editable or not EM.search(line):
             lines.append(line)
             continue
-        lead, body, hard = _split_edges(line)
+        lead, body, hard = split_edges(line)
         body = _protect_ranges(body)        # prose only: code keeps its `3--1`
         gloss = _list_gloss(lead + body)
         if gloss is None:
@@ -234,7 +225,7 @@ def tighten_text(text: str) -> str:
         if not editable or ("—" not in line and "--" not in line):
             lines.append(line)
             continue
-        lead, body, hard = _split_edges(line)
+        lead, body, hard = split_edges(line)
         lines.append(lead + _restore_ranges(_CLOSE.sub("—", _protect_ranges(body))) + hard)
     return unmask_literals("\n".join(lines), spans)
 
