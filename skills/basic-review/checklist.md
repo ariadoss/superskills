@@ -1,5 +1,5 @@
 <!-- Vendored from garrytan/gstack review/checklist.md (MIT, Copyright (c) 2026 Garry Tan),
-     gstack 1.91.1.0. Refreshed by scripts/sync-gstack.sh; do not edit here.
+     gstack 1.91.2.0. Refreshed by scripts/sync-gstack.sh; do not edit here.
 -->
 
 # Pre-Landing Review Checklist
