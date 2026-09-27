@@ -87,14 +87,20 @@ version="$(cat "$VENDOR/VERSION" 2>/dev/null || echo unknown)"
 if [ -n "$BASIC_REVIEW" ] && [ -f "$VENDOR/review/checklist.md" ]; then
     # An `a && b` list is exempt from `set -e`, so a failed write must be caught
     # explicitly or the run reports success over a stale checklist.
+    # mktemp, like the installer: an exclusive new file, never a fixed name that a
+    # leftover or planted path could occupy. A missing target dir fails right here.
+    tmp="$(mktemp "$BASIC_REVIEW.XXXXXX" 2>/dev/null)" || {
+        echo "sync-gstack: could not write $BASIC_REVIEW" >&2
+        exit 1
+    }
     if ! {
         echo "<!-- Vendored from garrytan/gstack review/checklist.md (MIT, Copyright (c) 2026 Garry Tan),"
         echo "     gstack $version. Refreshed by scripts/sync-gstack.sh; do not edit here."
         echo "-->"
         echo
         cat "$VENDOR/review/checklist.md"
-    } 2>/dev/null > "$BASIC_REVIEW.tmp" || ! mv "$BASIC_REVIEW.tmp" "$BASIC_REVIEW"; then
-        rm -f "$BASIC_REVIEW.tmp" 2>/dev/null
+    } 2>/dev/null > "$tmp" || ! chmod 644 "$tmp" || ! mv "$tmp" "$BASIC_REVIEW"; then
+        rm -f "$tmp" 2>/dev/null
         echo "sync-gstack: could not write $BASIC_REVIEW" >&2
         exit 1
     fi
