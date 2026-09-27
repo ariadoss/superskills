@@ -25,11 +25,9 @@ from __future__ import annotations
 
 import functools
 import json
-import os
 import re
 import sys
 from pathlib import Path
-from typing import Iterable
 
 # Sibling imports resolve against this file's real directory, so they work when it
 # runs as a script, via runpy, as part of a package, or through a symlink; and they
