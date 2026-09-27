@@ -69,7 +69,6 @@ if [ -f "$SETTINGS" ]; then
     echo "Re-run with --force to replace it (the file is backed up first)." >&2
     exit 1
   fi
-  before="$(cksum < "$SETTINGS")"
   # mktemp creates each file exclusively, so a pre-planted path or link is never
   # followed and two runs in the same second never share a backup.
   backup="$(mktemp "$SETTINGS.bak-$(date +%Y%m%d-%H%M%S).XXXXXX")"
@@ -79,7 +78,10 @@ if [ -f "$SETTINGS" ]; then
   cp -p "$SETTINGS" "$tmp"   # keeps the original's permissions on the new file
   jq --arg c "$command" '.statusLine = {type: "command", command: $c}' "$SETTINGS" > "$tmp"
   # Claude Code may rewrite settings.json while it runs; never clobber that edit.
-  if [ "$(cksum < "$SETTINGS")" != "$before" ]; then
+  # Compared byte for byte with the backup (a checksum can collide). A write that
+  # lands between this check and the rename is still possible: there is no lock
+  # to take, so this narrows the window rather than closing it.
+  if ! cmp -s "$backup" "$SETTINGS"; then
     echo "install-statusline: $SETTINGS changed while installing; nothing written. Re-run." >&2
     exit 1
   fi

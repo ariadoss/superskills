@@ -61,26 +61,25 @@ VERB_PHRASES = [  # A26 (H11)
     r"filled the (?:space|room|air)", r"hung in the air", r"cut through",
     r"sent a (?:chill|shiver)"]
 VAGUE_GESTURES = [r"something about", r"there was something", r"for a long moment", r"it occurred to me"]  # A27-A29
-def _load_json(name: str, default):
-    """A bundled data file, parsed; `default` when it is missing, unreadable or not
-    the expected shape (the type of `default`)."""
+def _load_json(name: str, build, default):
+    """build(parsed data file), or `default` when the file is missing, unreadable or
+    malformed anywhere (a null or a dict where build expects a list of words)."""
     try:
-        data = json.loads((HERE / name).read_text())
-    except (OSError, ValueError):
+        return build(json.loads((HERE / name).read_text()))
+    except Exception:
         return default
-    return data if isinstance(data, type(default)) else default
 
 
 def _load_ai_slop_lists():
     """Full Layer-5 marketing/workslop (139) + Layer-7 corporate (19) lists, extracted from
     ai-slop.md into ai_slop_wordlist.json. Strip '(verb sense)'-style parentheticals so the
     words match. Falls back to a small subset if the file is absent."""
-    d = _load_json("ai_slop_wordlist.json", {})
-    if not d:
-        return (["leverage", "delve", "tapestry", "unlock", "harness", "elevate", "resonate"],
-                ["continuous improvement", "deliver value", "best-in-class", "deep dive"])
     clean = lambda xs: sorted({re.sub(r"\s*\(.*?\)", "", w).strip() for w in xs if w.strip()})
-    return clean(d.get("marketing_workslop", [])), clean(d.get("corporate", []))
+    return _load_json(
+        "ai_slop_wordlist.json",
+        lambda d: (clean(d.get("marketing_workslop", [])), clean(d.get("corporate", []))),
+        (["leverage", "delve", "tapestry", "unlock", "harness", "elevate", "resonate"],
+         ["continuous improvement", "deliver value", "best-in-class", "deep dive"]))
 
 
 MARKETING, CORPORATE = _load_ai_slop_lists()  # A19 (ai-slop L5) / A20 (ai-slop L7)
@@ -89,8 +88,9 @@ MARKETING, CORPORATE = _load_ai_slop_lists()  # A19 (ai-slop L5) / A20 (ai-slop 
 def _load_research_overused():
     """Academic AI-'excess vocabulary' words (Kobak/Liang/Reinhart/Juzek). QUALITY signal for
     manual review; over-flags some common words, so pair with --exempt + judgment."""
-    d = _load_json("ai_overused_research.json", {})
-    return set(d.get("words", [])), set(d.get("high_confidence_core", []))
+    return _load_json("ai_overused_research.json",
+                      lambda d: (set(d.get("words", [])), set(d.get("high_confidence_core", []))),
+                      (set(), set()))
 
 
 RESEARCH_OVERUSED, RESEARCH_CORE = _load_research_overused()
@@ -100,8 +100,9 @@ def _load_llm_slop():
     """Words and literal phrase clichés over-represented in LLM output (Sam Paech
     slop-forensics/antislop, Reinhart, Novelcrafter). Words = density/overuse signal; phrases =
     high-precision line-numbered clichés."""
-    d = _load_json("llm_slop.json", {})
-    return set(d.get("words", [])), d.get("phrases", [])
+    return _load_json("llm_slop.json",
+                      lambda d: (set(d.get("words", [])), list(d.get("phrases", []))),
+                      (set(), []))
 
 
 LLM_SLOP_WORDS, LLM_SLOP_PHRASES = _load_llm_slop()
@@ -358,7 +359,7 @@ def main():
         print(f"    (construction_scanner unavailable: {e})")
 
     # ---- poor-diction: distinctive-word overuse + close echoes (ai-slop Layer 1) ----
-    top2000 = set(_load_json("top2000_en.json", []))
+    top2000 = _load_json("top2000_en.json", set, set())
     # token stream with line numbers; a word is "distinctive" if uncommon (>4 chars, not top-2000,
     # not exempt) — repeating one is a diction weakness / word echo.
     stream = []  # (idx, word_lower, lineno)

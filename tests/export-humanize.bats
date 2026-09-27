@@ -165,7 +165,8 @@ fake_repo() {
 @test "refuses an output directory that overlaps the source tree" {
   fake="$BATS_TEST_TMPDIR/overlaprepo"
   fake_repo "$fake"
-  for out in "$fake" "$fake/skills" "$BATS_TEST_TMPDIR"; do
+  # `/` needs its own case: "$OUT/" is then "//", which prefixes nothing.
+  for out in "$fake" "$fake/skills" "$BATS_TEST_TMPDIR" /; do
     run bash "$fake/scripts/export-humanize.sh" "$out"
     [ "$status" -eq 1 ] || { echo "exported into $out: $output"; return 1; }
     [[ "$output" == *"refusing to export"* ]] || { echo "$output"; return 1; }
@@ -184,4 +185,12 @@ fake_repo() {
   [ "$status" -ne 0 ] || { echo "exported a symlink: $output"; return 1; }
   [[ "$output" == *"symlinked toolkit file: linked.txt"* ]] || { echo "$output"; return 1; }
   [ ! -e "$BATS_TEST_TMPDIR/linkout/toolkit/linked.txt" ] || { echo "symlink target shipped"; return 1; }
+}
+
+@test "dist/ itself is an accepted output directory, as the refusal message suggests" {
+  fake="$BATS_TEST_TMPDIR/distrepo"
+  fake_repo "$fake"
+  run bash "$fake/scripts/export-humanize.sh" "$fake/dist"
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+  [ -f "$fake/dist/toolkit/textio.py" ] || false
 }

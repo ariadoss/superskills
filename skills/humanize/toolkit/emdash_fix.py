@@ -159,7 +159,9 @@ def _list_gloss(line: str):
 # across code (a CLI flag or SQL comment ends in `--`), and never out of a
 # heading, table row or quote, which do not wrap onto a plain line.
 _LINE_END_DASH = re.compile(r"(\S)[ \t]*(—|–|(?<!-)--(?!-))[ \t]*$")
-_CONTINUATION = re.compile(r"[ \t]*(?![-*+][ \t]|\d+[.)][ \t])[^\s#>|`]")
+# \ue010 opens a masked literal: a line that starts with a comment, URL or link
+# definition is not a sentence continuation.
+_CONTINUATION = re.compile(r"[ \t]*(?![-*+][ \t]|\d+[.)][ \t])[^\s#>|`\ue010]")
 
 
 def _join_wrapped_dashes(text: str) -> str:
@@ -232,7 +234,8 @@ def tighten_text(text: str) -> str:
         if not editable or ("—" not in line and "--" not in line):
             lines.append(line)
             continue
-        lines.append(_restore_ranges(_CLOSE.sub("—", _protect_ranges(line))))
+        lead, body, hard = _split_edges(line)
+        lines.append(lead + _restore_ranges(_CLOSE.sub("—", _protect_ranges(body))) + hard)
     return unmask_literals("\n".join(lines), spans)
 
 

@@ -145,3 +145,20 @@ SHIM
   [ "$(jq -r '.model' "$SETTINGS")" = "sonnet" ] || { cat "$SETTINGS"; return 1; }
   [ -z "$(ls "$SETTINGS".tmp.* 2>/dev/null)" ] || { echo "temp file left behind"; return 1; }
 }
+
+@test "a concurrent edit with the same checksum is still detected" {
+  # These two documents share a CRC-32 (cksum) value, so a checksum comparison
+  # waved the concurrent edit through and the install overwrote it.
+  printf '{"model":"auto","nonce":"0753f42daf1a6c28"}\n' > "$SETTINGS"
+  real_jq="$(command -v jq)"
+  mkdir -p "$BATS_TEST_TMPDIR/bin"
+  cat > "$BATS_TEST_TMPDIR/bin/jq" <<SHIM
+#!/bin/sh
+case "\$*" in *".statusLine = "*) printf '{"model":"opus","nonce":"a8ffadfdea208104"}\n' > "$SETTINGS" ;; esac
+exec "$real_jq" "\$@"
+SHIM
+  chmod +x "$BATS_TEST_TMPDIR/bin/jq"
+  PATH="$BATS_TEST_TMPDIR/bin:$PATH" run bash "$INSTALL" --settings "$SETTINGS"
+  [ "$status" -eq 1 ] || { echo "status $status: $output"; return 1; }
+  [ "$(jq -r '.model' "$SETTINGS")" = "opus" ] || { cat "$SETTINGS"; return 1; }
+}

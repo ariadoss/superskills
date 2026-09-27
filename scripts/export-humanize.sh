@@ -26,11 +26,11 @@ OUT="$(cd "$OUT" && pwd -P)"
 # not anywhere inside it except under dist/.
 root="$(cd "$SRC_ROOT" && pwd -P)"
 case "$OUT/" in
-  "$root/dist/"?*) ;;
+  "$root/dist/"*) ;;
   "$root/"*) echo "refusing to export into the source tree: $OUT (use a path under $root/dist/ or outside the repo)" >&2; exit 1 ;;
 esac
 case "$root/" in
-  "$OUT/"*) echo "refusing to export into $OUT: it contains the source tree" >&2; exit 1 ;;
+  "${OUT%/}/"*) echo "refusing to export into $OUT: it contains the source tree" >&2; exit 1 ;;
 esac
 # Only our own outputs are cleared; a .git directory or local notes survive.
 rm -rf "$OUT/toolkit" "$OUT/tests"

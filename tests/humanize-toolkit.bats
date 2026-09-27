@@ -112,7 +112,7 @@ setup() {
   # must be spaCy or NLTK: grep -o'ing for just those two used to drop any other
   # third-party import on the floor instead of failing on it.
   imports="$(grep -hE '^[[:space:]]*(import|from) ' "$TK"/*.py | sed -E 's/^[[:space:]]+//' \
-    | grep -vE '^(import|from) (re|sys|json|statistics|subprocess|math|os|argparse|collections|pathlib|__future__|typing|unicodedata|itertools|functools|textwrap|string|tempfile|shutil|mla_format|textio|emdash_fix|eq_bench_slop_index)([. ]|$)')"
+    | grep -vE '^(import|from) (re|sys|json|statistics|subprocess|math|os|argparse|collections|pathlib|__future__|typing|unicodedata|itertools|functools|textwrap|string|tempfile|shutil|bisect|mla_format|textio|emdash_fix|eq_bench_slop_index)([. ]|$)')"
   run bash -c "printf '%s\n' \"\$1\" | grep -vE '^(import|from) (spacy|nltk)([. ]|$)' | grep -c ." _ "$imports"
   [ "$output" = "0" ] || { echo "undocumented non-stdlib imports: $(printf '%s\n' "$imports" | grep -vE '(spacy|nltk)')"; return 1; }
   run bash -c "printf '%s\n' \"\$1\" | grep -oE '(spacy|nltk)' | sort -u | tr '\n' ' '" _ "$imports"
@@ -536,6 +536,12 @@ norm() { python3 "$TK/normalize.py" "$1" "$1.out" >/dev/null 2>&1 && cat "$1.out
   [[ "$output" == *$'detail  \nSecond.'* ]] || { echo "hard break on a dash line lost: $output"; return 1; }
 }
 
+@test "--tighten keeps a hard break that follows a line-end dash" {
+  printf 'Ends on a dash —  \nNext line.\n' > "$BATS_TEST_TMPDIR/tb.md"
+  run python3 "$TK/emdash_fix.py" "$BATS_TEST_TMPDIR/tb.md" --tighten
+  [[ "$output" == *$'dash—  \nNext line.'* ]] || { echo "hard break lost: $(printf '%s' "$output" | od -c | head -3)"; return 1; }
+}
+
 @test "a dash paragraph never swallows the code fence that follows it" {
   printf 'Run this —\n```\ncode\n```\n' > "$BATS_TEST_TMPDIR/fj.md"
   run norm "$BATS_TEST_TMPDIR/fj.md"
@@ -572,4 +578,76 @@ norm() { python3 "$TK/normalize.py" "$1" "$1.out" >/dev/null 2>&1 && cat "$1.out
   [ "$status" -eq 0 ] || { echo "$output"; return 1; }
   [ "$(python3 -c 'import os,stat,sys; print(oct(stat.S_IMODE(os.stat(sys.argv[1]).st_mode)))' "$BATS_TEST_TMPDIR/ip2.md")" = "0o640" ] || false
   [ -z "$(find "$BATS_TEST_TMPDIR" -maxdepth 1 -name '.ip2.md.*')" ] || { echo "temp file left behind"; return 1; }
+}
+
+@test "literals that contain inline code, escapes or nesting stay literal" {
+  # Inline code used to be masked before comments and link titles, so its backticks
+  # split them; an escaped backtick opened a span; a fence closed on a line with
+  # trailing text; an indented line inside a paragraph was taken for code.
+  printf '%s\n' \
+    '<!-- `x` -- comment -->' \
+    '' \
+    '[x](a--b "use `x` -- here")' \
+    '' \
+    'a `first' \
+    '    middle' \
+    'last -- code`' \
+    '' \
+    '\` outside `inside -- unchanged`' \
+    '' \
+    '~~~' \
+    '~~~not-a-close' \
+    'run --help  now' \
+    '~~~' \
+    '' \
+    '[y](a(b(c))--d)' \
+    '' \
+    '[z]:' \
+    '  /a--b "title"' > "$BATS_TEST_TMPDIR/lit.md"
+  run norm "$BATS_TEST_TMPDIR/lit.md"
+  [ "$output" = "$(cat "$BATS_TEST_TMPDIR/lit.md")" ] || { diff <(printf '%s\n' "$output") "$BATS_TEST_TMPDIR/lit.md"; return 1; }
+}
+
+@test "a placeholder character inside a literal round-trips" {
+  printf 'Code `\356\200\200` and <!-- \356\200\220 --> end.\n' > "$BATS_TEST_TMPDIR/ph.md"
+  run norm "$BATS_TEST_TMPDIR/ph.md"
+  [ "$output" = "$(cat "$BATS_TEST_TMPDIR/ph.md")" ] || { echo "got: $output"; return 1; }
+}
+
+@test "a long run of word characters is masked in linear time" {
+  python3 -c 'print("a" * 64000)' > "$BATS_TEST_TMPDIR/aa.md"
+  run perl -e 'alarm 10; exec @ARGV' python3 "$TK/normalize.py" "$BATS_TEST_TMPDIR/aa.md" "$BATS_TEST_TMPDIR/aa.out"
+  [ "$status" -eq 0 ] || { echo "timed out or failed: $status"; return 1; }
+}
+
+@test "malformed bundled word lists fall back instead of crashing the scan" {
+  cp -R "$TK" "$BATS_TEST_TMPDIR/tk"
+  printf '{"marketing_workslop": null}' > "$BATS_TEST_TMPDIR/tk/ai_slop_wordlist.json"
+  printf '{"words": [{}]}' > "$BATS_TEST_TMPDIR/tk/ai_overused_research.json"
+  printf 'We leverage synergy to delve into it.\n' > "$BATS_TEST_TMPDIR/m.md"
+  run python3 "$BATS_TEST_TMPDIR/tk/slop_report.py" "$BATS_TEST_TMPDIR/m.md"
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+  [[ "$output" == *"leverage"* ]] || { echo "fallback list not used: $output"; return 1; }
+}
+
+@test "a line-end dash never pulls a comment, URL or link definition onto its line" {
+  for lit in '<!-- note -->' 'https://example.com/path' '[ref]: http://example.com "t"'; do
+    printf 'clause wraps —\n%s\nmore text\n' "$lit" > "$BATS_TEST_TMPDIR/jl.md"
+    run norm "$BATS_TEST_TMPDIR/jl.md"
+    [[ "$output" == *$'\n'"$lit"$'\nmore text'* ]] || { echo "joined into $lit: $output"; return 1; }
+  done
+}
+
+@test "an HTML comment left open keeps its text literal to the end" {
+  printf 'before — text\n<!-- never closed — with dash\nmore — here\n' > "$BATS_TEST_TMPDIR/oc.md"
+  run norm "$BATS_TEST_TMPDIR/oc.md"
+  [[ "$output" == *$'\n<!-- never closed — with dash\nmore — here'* ]] || { echo "$output"; return 1; }
+}
+
+@test "a bare URL ends before trailing punctuation, so the prose after it is still fixed" {
+  # The URL pattern ran on through `)--it`, so the glued double hyphen was held
+  # as part of the URL and never became a dash.
+  printf 'Read (https://x.com/a)--it helps.\n' > "$BATS_TEST_TMPDIR/up.md"
+  run python3 "$TK/mla_format.py" "$BATS_TEST_TMPDIR/up.md"
+  [ "$output" = "Read (https://x.com/a)—it helps." ] || { echo "$output"; return 1; }
 }

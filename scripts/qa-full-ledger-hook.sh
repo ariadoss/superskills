@@ -53,7 +53,9 @@ missing="$(qfl_missing "$report" "${transcripts[@]}")"
 {
   # The path is printed as printable ASCII only, which also drops UTF-8 bidi
   # overrides and C1 controls; the report's own text never is (see qfl_format_missing).
-  echo "The /qa-full ledger in $(printf '%s' "$report" | LC_ALL=C tr -cd '[:print:]') marks these checks as run, but this session never invoked them with the Skill tool:"
+  # printf, not echo: under xpg_echo, echo would turn a printable `\033` back into ESC.
+  printf 'The /qa-full ledger in %s marks these checks as run, but this session never invoked them with the Skill tool:\n' \
+    "$(printf '%s' "$report" | LC_ALL=C tr -cd '[:print:]')"
   printf '%s\n' "$missing" | qfl_format_missing
   echo "Invoke each one with the Skill tool and fold its result into the ledger, or change the row to SKIPPED(reason) if it cannot run here."
 } >&2

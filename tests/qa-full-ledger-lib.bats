@@ -427,3 +427,14 @@ R
   [[ "$output" == *"/defense"* ]] || { echo "$output"; return 1; }
   ! printf '%s' "$output" | LC_ALL=C grep -q '[^[:print:][:space:]]' || { echo "non-printable bytes reached the message"; return 1; }
 }
+
+@test "hook: a backslash escape in the report name is printed, never interpreted" {
+  # Under xpg_echo (or BASHOPTS=xpg_echo), echo turns a literal \033 into ESC.
+  report
+  mv "$PROJ/qa-full-reports/feature-2026-09-24.md" "$PROJ/qa-full-reports/x\\033[2J.md"
+  skill_call "qa-full"
+  run bash -c "bash -O xpg_echo $(printf '%q' "$HOOK") <<< '$(hook_input)' 2>&1"
+  [ "$status" -eq 2 ] || { echo "status $status: $output"; return 1; }
+  [[ "$output" != *$'\033'* ]] || { echo "escape interpreted"; return 1; }
+  [[ "$output" == *'x\033[2J.md'* ]] || { echo "$output"; return 1; }
+}
