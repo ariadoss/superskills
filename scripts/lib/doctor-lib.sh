@@ -39,6 +39,18 @@ DOCTOR_REQUIRED_CHECKS="Repo Install Links gstack"
 
 _doctor_row() { printf '%s\t%s\t%s\n' "$1" "$2" "$3"; }
 
+# _doctor_stale_sweep <skills_dir> <seen> — space-separated names of dangling
+# SKILL.md links under <skills_dir> whose skill is not in <seen> (a
+# space-padded " name name " list, the convention both link checks build).
+_doctor_stale_sweep() {
+  local skills="$1" seen="$2" entry name
+  for entry in "$skills"/*/SKILL.md; do
+    [ -L "$entry" ] && [ ! -e "$entry" ] || continue
+    name="$(basename "$(dirname "$entry")")"
+    case "$seen" in *" $name "*) ;; *) printf ' %s' "$name" ;; esac
+  done
+}
+
 _doctor_realpath() {
   readlink -f "$1" 2>/dev/null || perl -MCwd=realpath -e 'print realpath($ARGV[0])' "$1" 2>/dev/null
 }
@@ -202,11 +214,7 @@ doctor_check_links() {
   done < <(printf '%s\n' "$expected" | skill_names_from_files | awk -F'\t' '
     { if (!($2 in first)) { first[$2] = NR; order[++n] = $2 }; win[$2] = $1; cnt[$2]++ }
     END { for (i = 1; i <= n; i++) print order[i] "\t" win[order[i]] "\t" cnt[order[i]] }')
-  for entry in "$skills"/*/SKILL.md; do
-    [ -L "$entry" ] && [ ! -e "$entry" ] || continue
-    name="$(basename "$(dirname "$entry")")"
-    case "$seen" in *" $name "*) ;; *) stale="$stale $name" ;; esac
-  done
+  stale="$(_doctor_stale_sweep "$skills" "$seen")"
   if [ -n "$missing$broken$corrupt$wrong" ]; then status="blocked"
   elif [ -n "$elsewhere$stale" ]; then status="warning"
   else status="ready"; fi
@@ -282,11 +290,7 @@ doctor_check_zcode() {
       esac
     fi
   done <<< "$expected"
-  for link in "$zskills"/*/SKILL.md; do
-    [ -L "$link" ] && [ ! -e "$link" ] || continue
-    name="$(basename "$(dirname "$link")")"
-    case "$seen" in *" $name "*) ;; *) stale="$stale $name" ;; esac
-  done
+  stale="$(_doctor_stale_sweep "$zskills" "$seen")"
   if [ -n "$missing$broken$elsewhere$stale" ]; then status="warning"; else status="ready"; fi
   msg="$ok/$total skills linked into $zskills."
   [ "$total" -eq 0 ] && msg="$msg (no skills selected for this target)."
