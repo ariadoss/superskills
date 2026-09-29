@@ -1,4 +1,4 @@
-# Superskills `v2.29.1`
+# Superskills `v2.30.0`
 
 Curated AI skills pack for Claude Code, OpenCode, Codex CLI, Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Integrates [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team; an opt-in pack) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
@@ -116,6 +116,7 @@ selection across every supported tool.
 | `/basic-review` | Read-only correctness review (correctness, security, reliability, contract risk) with `file:line` findings; the fallback `/qa-full` and `/daily-qa` use when gstack's `/review` is unavailable |
 | `/qa-full` | Per-feature QA pipeline: audit → fix → verify across the full fan-out (tests, correctness, security, DB, perf, browser QA, design, a11y, coverage) on the branch diff; fixes what it finds, re-verifies, then emits a pass/fail ship-readiness verdict |
 | `/worktrees` | Git Worktrees: isolated parallel development |
+| `/quota-resilience` | Usage-limit hard stops, handled: commit complete work, clean tree, committed `QUOTA-RESUME.md`, exact-state report, one bounded auto-restart where the host can schedule one; resume sessions pick up from the note |
 | `/finish-branch` | Branch cleanup and merge decisions |
 | `/verify` | Pre-merge validation |
 | `/write-plan` | Detailed implementation planning |

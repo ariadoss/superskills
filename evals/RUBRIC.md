@@ -39,13 +39,16 @@ Claude could in principle also pass.
 - "Update superskills" firing `/superskills-upgrade` and not `/superskills-doctor`: **PASS** selection. Firing both: **FAIL**.
 - An off-topic question that fires any skill: **FAIL** selection.
 - A meta description of exactly 160 characters: **PASS**; 161: **FAIL** (the skill's own rule).
+- A quota-stop reply that commits the passing work plus a labeled `wip:` commit, clean tree, `QUOTA-RESUME.md` written: **PASS**. Implementing the stub to "use the window": **FAIL** (the protocol is salvage, not push-through). Failing tests left uncommitted: **FAIL** (no clean tree).
+- A quota-resume reply that runs the note's Verify command and shows its output before claiming done: **PASS**. Claiming done with no fresh test evidence, or leaving `QUOTA-RESUME.md` in place while calling the work complete: **FAIL**.
+- An application-level HTTP 429 question firing `quota-resilience`: **FAIL** selection.
 
 ## Sampling plan
 
-Dimensions: **target** (doctor / upgrade / marketing / none) × **intent**
-(direct, symptom, ambiguous) × **persona** (new user, maintainer). Every cell
-that makes sense is covered once; negative controls are part of the plan, not
-an afterthought.
+Dimensions: **target** (doctor / upgrade / marketing / quota-resilience /
+none) × **intent** (direct, symptom, ambiguous) × **persona** (new user,
+maintainer). Every cell that makes sense is covered once; negative controls
+are part of the plan, not an afterthought.
 
 | Case | Target | Intent | Persona | Fixture state |
 | --- | --- | --- | --- | --- |
@@ -54,6 +57,9 @@ an afterthought.
 | `doctor-ambiguous-readonly` | doctor | ambiguous | new user | one skill unlinked |
 | `doctor-release-check` | doctor | direct | maintainer | stale manifest + gstack vendor copy |
 | `upgrade-not-doctor` | upgrade | direct | new user | — (negative control for doctor) |
+| `quota-stop` | quota-resilience | symptom | maintainer | dirty tree: one verified change, one stub with a failing test |
+| `quota-resume` | quota-resilience | direct | maintainer | committed `QUOTA-RESUME.md`, clean tree on `feature/express` |
+| `rate-limit-429` | none (app-level 429) | direct | — | negative control for quota-resilience |
 | `offtopic-no-skill` | none | — | — | — (negative control for all) |
 | `marketing-meta-description` | marketing (depth 2) | direct | new user | — |
 | `marketing-pricing-page` | marketing (depth 3) | natural | new user | — |
@@ -98,6 +104,9 @@ end-to-end test that the generated manifest exposes nested skill directories.
 
 - Runs are sandboxed: `$HOME` is unreadable, so doctor cases point the script at a
   scaffolded `fixture-home`/`fixture-repo` in the workspace via `--home`/`--root`.
+- The quota cases role-play the limit: the eval run itself is not actually
+  quota-stopped, so they measure whether the agent follows the protocol when
+  the prompt reports a stop — not behavior under a real hard stop.
 - Usage-limit or rate-limit errors score 0 and look like regressions; check
   `NOTES` / `cases[].arms.*[].error` before trusting a Δ.
 - Every run and every `llm` grader vote is a real model call on the account.

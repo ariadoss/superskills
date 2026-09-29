@@ -205,6 +205,84 @@ Per-branch pipeline (6 steps above)        Background cadence (daily)
 
 ---
 
+## Quota resilience (usage-limit hard stops)
+
+> A usage-limit hard stop is a shutdown, not an obstacle. Thrashing against
+> the limit burns the remaining window and doubles the next session's cost;
+> salvaging cleanly makes the resume cheap.
+
+Any agent in this workflow that hits its own usage limit runs
+`/quota-resilience` (`skills/quota-resilience/SKILL.md`): commit the
+complete work, `wip:`-commit or revert the rest so `git status` ends clean,
+write a committed `QUOTA-RESUME.md` (goal / done / in flight / next steps /
+verify), report exact state — and offer at most one bounded restart where
+the host can schedule one. A scheduled run is a spending decision: propose
+it and get an explicit yes first (ZCode's off-peak queue is the zero-cost
+path). A session resuming after a stop reads the note before anything else
+and deletes it once the goal verifies. Subagents hand back the same way:
+state plus note, never a silent partial.
+
+---
+
+## Evaluate AI-behavior changes like code changes
+
+> A prompt edit, a skill rewording, a RAG pipeline tweak, an agent-loop
+> change — these are **behavior changes**. "It looks better" is not
+> evidence. Without an evaluation the change is untested code; measure
+> before changing anything, or you cannot tell help from harm.
+
+This is the same discipline `/tdd` demands for code, applied to AI
+behavior. The working implementation for this repo's skills is
+[`evals/RUBRIC.md`](evals/RUBRIC.md) (suite run with `claude plugin eval`;
+runs cost model calls, so it is a release step, not part of
+`./tests/run.sh`). The method, in order:
+
+1. **Define "good" measurably** — one binary definition per dimension
+   (selection, safety, correctness, honesty, outcome). Binary pass/fail
+   before any graded scale.
+2. **Build the dataset on a grid, not at random** — intent × persona ×
+   complexity; synthetic queries mixed with real ones; and the *response*
+   side generated too (complete / partial / workaround / escalation /
+   wrong), so the judge is tested on each. Edge cases (ambiguity,
+   misspellings, multi-turn, adversarial) go in on purpose. Keep eval data
+   unseen — never reused as few-shot in the thing being graded.
+3. **LLM-as-judge, written like code** — a rubric with precise label
+   definitions and boundary cases decided *in advance*, few-shot examples
+   with reasoning, temperature ≤ 0.2. The rubric is a prompt: writable,
+   testable, improvable.
+4. **Calibrate against human labels** — hand-label a subset, then report
+   TPR, TNR, accuracy and precision *together*, naming which class is
+   positive. Accuracy alone hides the error direction; a wide TPR–TNR gap
+   means a directional judge bias (too harsh or too lenient) — fix the
+   rubric and re-measure before trusting the judge at scale.
+5. **Error analysis before categories** — read traces with no labels
+   (open coding), re-code consistently, then cluster into named failure
+   modes; report failure rate per category. One observed failure is a
+   class: generate more cases like it instead of hard-coding a fix for
+   the one you saw.
+6. **Gate with thresholds set before the test** — an offline suite (fixed
+   prompts, known expectations, run like CI) plus online signal (real
+   traffic, thumbs, a curated bad-cases list feeding regression runs);
+   A/B or canary with success/cost/latency thresholds declared up front
+   and a rollback path kept.
+7. **Agents: judge outcome + process sanity, not step sequences** —
+   different valid paths reach the same answer. Grade decision quality and
+   final-output correctness, with budgets (max steps, cost, timeout) and
+   tool-error counts in the report; prefer unambiguous checks (the
+   project's real tests) over judgment wherever possible.
+8. **RAG: retrieval metrics are leading indicators** — Recall@k,
+   Precision@k, MRR before touching generation; then citation accuracy /
+   faithfulness on the answer side. Fix retrieval first.
+9. **Fix on the ladder** — prompt/rubric wording first, then structure,
+   fine-tuning last. Never hard-code a fix for a single case.
+
+Review-time smells worth naming: accuracy-only reporting, an uncalibrated
+judge trusted at scale, failures categorized before traces were read,
+thresholds chosen after seeing the A/B result, and public benchmarks
+presented as production validation.
+
+---
+
 ## What is a vertical slice?
 
 A vertical slice means one branch contains every layer a feature needs to work (UI, API, business logic, database, and tests) all together, all shippable as a unit.

@@ -36,7 +36,7 @@ setup() {
     skill_selected "$name" gstack || false
   done
   skill_selected design-review design
-  [ "$count" -eq 37 ] || false
+  [ "$count" -eq 38 ] || false
   run skill_selected cache-strategy core
   [ "$status" -eq 1 ] || false
   run skill_selected retro gstack
