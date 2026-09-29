@@ -1,6 +1,6 @@
 ---
 name: quota-resilience
-version: 1.0.0
+version: 1.1.0
 description: |
   Salvage and resume when the session hits its own usage limit / quota hard
   stop: commit complete work, leave a clean tree, write a committed resume
@@ -63,20 +63,43 @@ Hard rules, in order:
    unknowable from inside the session, so schedule conservatively and treat
    the scheduled run itself as the probe: if it executes, the limit is gone;
    if it cannot, nothing happens.
-   - Host with a scheduler: create **one one-shot** automation (never
-     recurring; it may chain at most one follow-up if that run hits the
-     limit again — two hops total). Its prompt: read `QUOTA-RESUME.md` in
-     this repo, run the Verify step, continue the Next steps in order, and
-     follow this skill if the limit hits again.
-   - ZCode: prefer the off-peak queue (no plan-quota cost) when the work
-     can wait; otherwise a one-shot scheduled automation a conservative
-     delay out.
-   - Host without a scheduler (Claude Code, Codex, Cursor): print the exact
-     resume command for the user (e.g. `claude --resume`, or "resume per
-     QUOTA-RESUME.md in <repo>").
-   - **Consent:** scheduling unattended model work is a spending decision.
-     Propose it — what will run, when, what it costs — and create it only
-     after an explicit yes. The zero-cost off-peak path is the exception.
+   - **Host-native scheduler first.** ZCode: prefer the off-peak queue (no
+     plan-quota cost) when the work can wait; otherwise one one-shot
+     scheduled automation.
+   - **Otherwise, the OS scheduler driving the CLI's headless mode.** The
+     coding CLIs can continue a session non-interactively, so a local
+     one-shot cron/launchd/systemd entry works. Verified resume commands
+     (re-check `<cli> --help` before relying on a flag; they move between
+     versions):
+     - Claude Code: `claude -c -p "<prompt>"` (most recent session in this
+       directory) or `claude --resume <session-id> -p "<prompt>"`. Pass an
+       unattended permission set — `--permission-mode acceptEdits` plus a
+       narrow `--allowedTools` — never a blanket permission skip.
+     - Codex: `codex exec resume --last "<prompt>"`.
+     - OpenCode: `opencode run -c "<prompt>"`.
+     - Cursor / Augment / Continue: no verified headless-resume path —
+       print exact resume instructions for the user instead of guessing.
+     Wrap the command in a small script kept **outside the repo** (e.g.
+     `"${TMPDIR:-/tmp}/quota-resume-<repo>.sh"`, so the tree stays clean)
+     that `cd`s into the repo and appends output to a log next to itself.
+     Register exactly **one** shot:
+     - Linux: `systemd-run --user --on-active=<delay> --unit=quota-resume
+       <script>` — a transient timer, nothing to clean up.
+     - macOS: a LaunchAgent plist under `~/Library/LaunchAgents` with
+       `StartCalendarInterval` set `<delay>` ahead; the resumed run
+       unloads and deletes it (`launchctl unload` + `rm`) during note
+       cleanup. Do not rely on `at` — it is disabled by default on macOS.
+     - Last resort: a crontab line tagged `# superskills-quota-resume`
+       that the resumed run strips from the crontab.
+   - **Consent:** a scheduled run is unattended model work — a spending
+     decision. Propose what will run, when, and roughly what it costs;
+     create it only after an explicit yes. The zero-cost off-peak path is
+     the exception.
+   - **Bounded:** one shot, never recurring. The scheduled prompt must
+     say: follow `/quota-resilience` — read `QUOTA-RESUME.md`, run the
+     Verify step, continue the Next steps in order, and if the limit hits
+     again, schedule at most one more hop. Two hops total, then it waits
+     for the user.
 
 ## Phase 2 — resuming after the stop
 
@@ -85,8 +108,10 @@ Hard rules, in order:
 2. Re-verify the cheapest way: run the note's Verify command before
    building on the claimed state.
 3. Work the Next steps in order. On goal met + verification passing:
-   **delete the note** (its existence means "interrupted") and commit the
-   deletion.
+   **delete the note** (its existence means "interrupted"), commit the
+   deletion, and remove any resume-scheduler artifacts you or the previous
+   session created (LaunchAgent plist, systemd unit, crontab line, wrapper
+   script and log).
 4. A new limit hit mid-resume → Phase 1 again, updating the existing note
    rather than adding a second.
 

@@ -215,12 +215,14 @@ Any agent in this workflow that hits its own usage limit runs
 `/quota-resilience` (`skills/quota-resilience/SKILL.md`): commit the
 complete work, `wip:`-commit or revert the rest so `git status` ends clean,
 write a committed `QUOTA-RESUME.md` (goal / done / in flight / next steps /
-verify), report exact state — and offer at most one bounded restart where
-the host can schedule one. A scheduled run is a spending decision: propose
-it and get an explicit yes first (ZCode's off-peak queue is the zero-cost
-path). A session resuming after a stop reads the note before anything else
-and deletes it once the goal verifies. Subagents hand back the same way:
-state plus note, never a silent partial.
+verify), report exact state — and offer at most one bounded restart, via the
+host's scheduler (ZCode) or a one-shot OS entry (launchd / systemd-run /
+cron) driving the CLI's headless resume (`claude -c -p`,
+`codex exec resume --last`, `opencode run -c`). A scheduled run is a
+spending decision: propose it and get an explicit yes first (ZCode's
+off-peak queue is the zero-cost path). A session resuming after a stop
+reads the note before anything else and deletes it once the goal verifies.
+Subagents hand back the same way: state plus note, never a silent partial.
 
 ---
 

@@ -39,6 +39,20 @@ setup() {
   [ "$output" -eq 0 ] || false
 }
 
+@test "setup manages ~/.zcode/skills as a link target with the full contract" {
+  # ZCode is a first-class target: dir-gated like Codex, core + gstack
+  # closure linked, and its dangling links pruned with logging (never
+  # silently) for both the source tree and the gstack install.
+  run grep -c 'ZCODE_SKILLS_DIR="\$HOME/\.zcode/skills"' "$REPO_ROOT/setup"
+  [ "$output" -eq 1 ] || false
+  run grep -c 'if \[ -d "\$HOME/\.zcode" \]' "$REPO_ROOT/setup"
+  [ "$output" -eq 1 ] || false
+  run grep -c 'prune_dangling_links "\$ZCODE_SKILLS_DIR" "\$SOURCE_DIR"' "$REPO_ROOT/setup"
+  [ "$output" -eq 1 ] || false
+  run grep -c 'prune_dangling_links "\$ZCODE_SKILLS_DIR" "\$GSTACK_DIR"' "$REPO_ROOT/setup"
+  [ "$output" -eq 1 ] || false
+}
+
 @test "--packs with an invalid pack exits 2 before any mutation, conf untouched" {
   run bash "$REPO_ROOT/setup" --packs coding,bogus --list-skills
   [ "$status" -eq 2 ] || false
@@ -128,12 +142,12 @@ setup() {
   [[ "$output" != *"unbound variable"* ]] || false
 }
 
-@test "the deselected prune runs for every tool dir (Claude, OpenCode, Codex) plus gstack" {
+@test "the deselected prune runs for every tool dir (Claude, OpenCode, Codex, ZCode) plus gstack" {
   run grep -c "prune_deselected_skills" "$REPO_ROOT/setup"
-  [ "$output" -eq 4 ] || false
+  [ "$output" -eq 6 ] || false
   # Gated on a persisted selection: a pre-packs install is never mass-pruned.
   run grep -c 'CONFIG_DIR/packs.conf' "$REPO_ROOT/setup"
-  [ "$output" -eq 4 ] || false
+  [ "$output" -eq 6 ] || false
   # Dangling gstack links are pruned ungated (must clean up after clone removal).
   run grep -cF 'prune_dangling_links "$CLAUDE_SKILLS_DIR" "$GSTACK_DIR"' "$REPO_ROOT/setup"
   [ "$output" -eq 1 ] || false

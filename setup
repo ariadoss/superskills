@@ -113,6 +113,7 @@ SS_VERSION="$(tr -d '[:space:]' < "$SOURCE_DIR/VERSION" 2>/dev/null || echo "unk
 CLAUDE_SKILLS_DIR="$HOME/.claude/skills"
 OPENCODE_SKILLS_DIR="$HOME/.config/opencode/skills"
 CODEX_SKILLS_DIR="$HOME/.codex/skills"
+ZCODE_SKILLS_DIR="$HOME/.zcode/skills"
 CONTINUE_PROMPTS_DIR="$HOME/.continue/prompts"
 WINDSURF_MEM_DIR="$HOME/.codeium/windsurf/memories"
 AUGMENT_COMMANDS_DIR="$HOME/.augment/commands/superskills"
@@ -343,6 +344,64 @@ if [ -f "$CONFIG_DIR/packs.conf" ] && [ -d "$GSTACK_DIR" ]; then
   while IFS= read -r pruned; do log "  [prune] $pruned (deselected gstack)"; done < <(prune_deselected_skills "$CLAUDE_SKILLS_DIR" "$GSTACK_DIR" gstack)
 fi
 log ""
+
+# ── Link skills into ZCode ────────────────────────────────────────────────────
+# ~/.zcode/skills has no upstream installer, so superskills owns this target
+# the same way it owns the Claude Code one: the coding roster plus its gstack
+# closure, one dir per skill with SKILL.md (and sibling files) symlinked.
+# Gated on ~/.zcode so machines without ZCode see nothing.
+if [ -d "$HOME/.zcode" ]; then
+  log "  Linking skills (ZCode)..."
+  mkdir -p "$ZCODE_SKILLS_DIR"
+  ZCODE_LINKED=0
+
+  link_skill_zcode() {
+    # `if` (not `&&`): a skipped skill must not abort setup under `set -e`.
+    if link_skill_into "$ZCODE_SKILLS_DIR" "$1" "$2" 1 >/dev/null; then
+      ZCODE_LINKED=$((ZCODE_LINKED + 1))
+    fi
+  }
+
+  link_zcode_filtered() {
+    local skill_md="$1" dir_name="$2" category="$3" name
+    name="$(skill_name_from "$skill_md" "$dir_name")"
+    ss_selected "$name" "$category" "$skill_md" || return 0
+    link_skill_zcode "$skill_md" "$dir_name"
+  }
+
+  for skill_md in "$SKILLS_SRC_DIR"/*/SKILL.md; do
+    [ -f "$skill_md" ] || continue
+    dir_name="$(basename "$(dirname "$skill_md")")"
+    [ "$dir_name" = "node_modules" ] && continue
+    link_zcode_filtered "$skill_md" "$dir_name" core
+  done
+
+  # gstack skills ride the same selection — but only from a valid install
+  # (dir symlinks inside the clone, e.g. the connect-chrome alias, are
+  # skipped: the real skill links once).
+  case "$(gstack_install_state "$GSTACK_DIR")" in
+    real|vendor)
+      for skill_md in "$GSTACK_DIR"/*/SKILL.md; do
+        [ -f "$skill_md" ] || continue
+        [ -L "$(dirname "$skill_md")" ] && continue
+        dir_name="$(basename "$(dirname "$skill_md")")"
+        [ "$dir_name" = "node_modules" ] && continue
+        link_zcode_filtered "$skill_md" "$dir_name" gstack
+      done
+      ;;
+  esac
+
+  while IFS= read -r pruned; do log "  [prune] $pruned"; done < <(prune_dangling_links "$ZCODE_SKILLS_DIR" "$SOURCE_DIR")
+  while IFS= read -r pruned; do log "  [prune] $pruned"; done < <(prune_dangling_links "$ZCODE_SKILLS_DIR" "$GSTACK_DIR")
+  if [ -f "$CONFIG_DIR/packs.conf" ]; then
+    while IFS= read -r pruned; do log "  [prune] $pruned (deselected)"; done < <(prune_deselected_skills "$ZCODE_SKILLS_DIR" "$SOURCE_DIR")
+  fi
+  if [ -f "$CONFIG_DIR/packs.conf" ] && [ -d "$GSTACK_DIR" ]; then
+    while IFS= read -r pruned; do log "  [prune] $pruned (deselected gstack)"; done < <(prune_deselected_skills "$ZCODE_SKILLS_DIR" "$GSTACK_DIR" gstack)
+  fi
+  log "  linked: $ZCODE_LINKED skills"
+  log ""
+fi
 
 # ── Link skills into OpenCode ─────────────────────────────────────────────────
 log "  Linking skills (OpenCode)..."
