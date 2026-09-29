@@ -7,7 +7,7 @@ rubric, sampling plan and analysis protocol are in [`RUBRIC.md`](RUBRIC.md).
 
 **Cost:** every run and every `llm` grader vote is a real model call on your
 account. The default is 3 runs per case per arm and two arms (with/without the
-plugin), so 8 cases ≈ 48 agent runs plus judge calls. Use `--max-cost-usd` and
+plugin), so 11 cases ≈ 66 agent runs plus judge calls. Use `--max-cost-usd` and
 start with one case.
 
 ```bash

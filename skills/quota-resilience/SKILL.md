@@ -74,14 +74,20 @@ Hard rules, in order:
      - Claude Code: `claude -c -p "<prompt>"` (most recent session in this
        directory) or `claude --resume <session-id> -p "<prompt>"`. Pass an
        unattended permission set — `--permission-mode acceptEdits` plus a
-       narrow `--allowedTools` — never a blanket permission skip.
+       narrow `--allowedTools` — never a blanket permission skip, and never a
+       blanket `Bash` allow: scope Bash to the specific command prefixes the
+       resume needs (`Bash(git:*):*`, `Bash(python3 tests/*):*`).
      - Codex: `codex exec resume --last "<prompt>"`.
      - OpenCode: `opencode run -c "<prompt>"`.
      - Cursor / Augment / Continue: no verified headless-resume path —
        print exact resume instructions for the user instead of guessing.
-     Wrap the command in a small script kept **outside the repo** (e.g.
-     `"${TMPDIR:-/tmp}/quota-resume-<repo>.sh"`, so the tree stays clean)
-     that `cd`s into the repo and appends output to a log next to itself.
+     Wrap the command in a small script kept **outside the repo** in a
+     per-user directory (e.g.
+     `"${TMPDIR:-$HOME/.cache}/superskills-quota/resume-<repo>.sh"`, created
+     with `mkdir -p`; the `${TMPDIR:-/tmp}` fallback never lands in the
+     shared world-writable `/tmp`, so the tree stays clean and the file is
+     not swappable by another local account) that `cd`s into the repo and
+     appends output to a log next to itself.
      Register exactly **one** shot:
      - Linux: `systemd-run --user --on-active=<delay> --unit=quota-resume
        <script>` — a transient timer, nothing to clean up.
@@ -89,8 +95,10 @@ Hard rules, in order:
        `StartCalendarInterval` set `<delay>` ahead; the resumed run
        unloads and deletes it (`launchctl unload` + `rm`) during note
        cleanup. Do not rely on `at` — it is disabled by default on macOS.
-     - Last resort: a crontab line tagged `# superskills-quota-resume`
-       that the resumed run strips from the crontab.
+     - Last resort: a crontab line tagged `# superskills-quota-resume`;
+       the resumed run strips exactly that line, preserving every other
+       entry — `crontab -l | grep -v '# superskills-quota-resume' | crontab -`
+       — never rewriting the crontab wholesale.
    - **Consent:** a scheduled run is unattended model work — a spending
      decision. Propose what will run, when, and roughly what it costs;
      create it only after an explicit yes. The zero-cost off-peak path is

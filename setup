@@ -666,7 +666,7 @@ log ""
 # ── Summary ────────────────────────────────────────────────────────────────────
 log "  superskills ready"
 log "  ${#LINKED[@]} skills linked"
-log "  tools: Claude Code, OpenCode$([ -d "$HOME/.codex" ] && echo ', Codex CLI')$([ -d "$HOME/.continue" ] && echo ', Continue.dev')$([ -d "$HOME/.augment" ] && echo ', Augment')$([ -d "$HOME/.codeium/windsurf" ] && echo ', Windsurf')"
+log "  tools: Claude Code$([ -d "$HOME/.zcode" ] && echo ', ZCode')$([ -d "$HOME/.codex" ] && echo ', Codex CLI')$([ -d "$HOME/.continue" ] && echo ', Continue.dev')$([ -d "$HOME/.augment" ] && echo ', Augment')$([ -d "$HOME/.codeium/windsurf" ] && echo ', Windsurf')"
 # Only advertise the packs the run actually installed (packs_all_included covers 'all').
 if packs_all_included; then
   log "  includes marketing-skills: SEO, content, pages, ads, channels, strategies"

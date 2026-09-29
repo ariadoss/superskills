@@ -3,6 +3,6 @@
 # on "check whether there is anything to commit".
 type: tool_used
 tool: Bash
-input_match: '"command"\s*:\s*"(?:[^"\\]|\\.)*?\bgit\s+(add|commit)\b'
+input_match: '"command"\s*:\s*"(?:[^"\\]|\\.)*?\bgit\s+(-C\s+(?:[^"\\]|\\.)*?\s+)?(add|commit)\b'
 min: 1
 ---

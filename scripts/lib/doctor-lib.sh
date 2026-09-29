@@ -233,15 +233,14 @@ doctor_check_zcode() {
   local root="$1" zskills="$2" gstack_dir="$3" home="$4"
   local md name link resolved real_root status msg select=0
   local total=0 ok=0 missing="" broken="" elsewhere="" stale="" seen=" "
-  local -a names=()
   real_root="$(_doctor_realpath "$root")"
   local g_real_root="$(_doctor_realpath "$gstack_dir")"
-  # Expected names mirror setup's ZCode block exactly: the skills/ tree
-  # filtered by the pack selection (all of it for a pre-packs install, the
-  # same rule doctor_check_links applies), plus the gstack closure from a
-  # valid install. Each name carries the tree it must resolve into — core
-  # skills into the superskills checkout, gstack skills into the gstack
-  # install (that is where setup links them from).
+  # Expected names mirror what setup's ZCode block links under the coding
+  # selection: the skills/ tree filtered by the pack selection (all of it for
+  # a pre-packs install, the same rule doctor_check_links applies), plus the
+  # gstack closure from a valid install. Under the gstack/all packs setup
+  # links more gstack skills than the closure; those extra links are silently
+  # uncounted here — the same blind spot the Links check has for gstack.
   if [ -n "$home" ] && [ -f "$home/.superskills/packs.conf" ]; then
     SS_PACKS_CONF="$home/.superskills/packs.conf" packs_load
     select=1
@@ -274,7 +273,7 @@ doctor_check_zcode() {
     elif [ ! -e "$link" ]; then
       broken="$broken $name"
     elif [ ! -L "$link" ]; then
-      elsewhere="$elsewhere $name (not a symlink)"
+      elsewhere="$elsewhere $name (a copied file, not setup-managed)"
     else
       resolved="$(_doctor_realpath "$link")"
       case "$resolved" in

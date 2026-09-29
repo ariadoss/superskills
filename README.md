@@ -2,7 +2,7 @@
 
 Curated AI skills pack for Claude Code, ZCode, OpenCode, Codex CLI, Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Integrates [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team; an opt-in pack) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
-45 core skills + 54 gstack skills + 174 marketing skills + 36 design skills, selected by [packs](#packs-choose-what-gets-installed). gstack is vendored in this repo so its skills are available even if the upstream repo is removed.
+46 core skills + 54 gstack skills + 174 marketing skills + 36 design skills, selected by [packs](#packs-choose-what-gets-installed). gstack is vendored in this repo so its skills are available even if the upstream repo is removed.
 
 > **[Full command reference →](COMMANDS.md)**: all skills with descriptions and overlap notes
 > **[10x+ Engineering Workflow →](DEVELOPER_WORKFLOW.md)**: run 10+ parallel AI agents, each with a full quality pipeline ([full write-up](https://hyperion360.com/blog/parallel-ai-agents-engineering-workflow/))
@@ -19,13 +19,13 @@ Setup will:
 - Install `bun` if needed (only when gstack is being installed; required by gstack's browser tool)
 - Prompt you to connect knowledge base repos (optional)
 - Check for optional dependencies (clearwing, ffuf)
-- Auto-detect and install into: **Claude Code**, **OpenCode**, **Codex CLI**, **Continue.dev**, **Augment Code**, **Windsurf**
+- Auto-detect and install into: **Claude Code**, **ZCode**, **OpenCode**, **Codex CLI**, **Continue.dev**, **Augment Code**, **Windsurf**
 - Offer to add the developer workflow guide to `~/.claude/CLAUDE.md`
 
 ### Packs: choose what gets installed
 
 Every skill belongs to a pack. `./setup` installs the **coding pack by
-default** (37 skills: 29 in-repo + 8 via gstack when a clone exists, the
+default** (38 skills: 30 in-repo + 8 via gstack when a clone exists, the
 spec → plan → TDD → QA → ship workflow plus every check `/qa-full` can
 trigger: security (`/defense`, `/iac-scan`, `/pentest`, `/fuzz`, `/cso`),
 performance (`/db-optimize`, `/web-perf`, `/perf-profile`), browser/design QA
