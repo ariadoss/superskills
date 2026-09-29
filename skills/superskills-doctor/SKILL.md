@@ -1,6 +1,6 @@
 ---
 name: superskills-doctor
-version: 1.0.0
+version: 1.1.0
 description: |
   Diagnose a superskills install WITHOUT changing anything: install kind, which
   skills are linked, VERSION vs the plugin manifests, gstack (real clone or
@@ -53,7 +53,8 @@ done
 if [ -z "$ROOT" ]; then
   for probe in "$HOME/.claude/skills/superskills-doctor/SKILL.md" \
                "$HOME/.codex/skills/superskills-doctor/SKILL.md" \
-               "$HOME/.config/opencode/skills/superskills-doctor/SKILL.md"; do
+               "$HOME/.config/opencode/skills/superskills-doctor/SKILL.md" \
+               "$HOME/.zcode/skills/superskills-doctor/SKILL.md"; do
     # Only a link that resolves to a real file counts; never fall back to the cwd.
     [ -L "$probe" ] || continue
     real="$(readlink -f "$probe" 2>/dev/null || perl -MCwd=realpath -e 'print realpath($ARGV[0])' "$probe")"

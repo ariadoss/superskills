@@ -5,7 +5,7 @@
 | Command | Description |
 |---------|-------------|
 | `/superskills-upgrade` | Upgrade superskills to the latest version: pulls from GitHub, re-runs setup, reports version change |
-| `/superskills-doctor` | Read-only readiness check (install kind, linked skills, VERSION vs plugin manifests, gstack real-vs-vendor, bun/optional tools) as a status table with a verdict that is never "ready" while a required check is blocked. Diagnoses only; `/superskills-upgrade` fixes. |
+| `/superskills-doctor` | Read-only readiness check (install kind, linked skills, VERSION vs plugin manifests, gstack real-vs-vendor, the ZCode target, bun/optional tools) as a status table with a verdict that is never "ready" while a required check is blocked. Diagnoses only; `/superskills-upgrade` fixes. |
 
 ---
 
@@ -24,6 +24,7 @@
 | `/basic-review` | Read-only correctness review of pending changes: correctness, security, reliability/performance and contract risk, each finding cited as `file:line` with why it is wrong and a fix. Needs no external install; `/qa-full` and `/daily-qa` run it when gstack's `/review` is unavailable. |
 | `/qa-full` | Per-feature QA **pipeline**: audit → fix → verify. Runs the full multi-dimensional fan-out (tests, `/review` + `/clean-code`, `/defense`, `/iac-scan`, `/fuzz`, `/db-optimize`, `/web-perf`, `/qa`, `/design-review`, `/a11y`, `/test-coverage` + `/playwright`) scoped to the branch diff, **fixes what each check finds** (atomic commits, no push), re-runs each check to prove the fix, then emits a **pass/fail ship-readiness verdict** on the repaired branch. Same trigger matrix as `/daily-qa` but branch-scoped, present-human, and fixing instead of recommending. Run it when a feature is done, before `/finish-branch` and `/ship`. |
 | `/worktrees` | Creates isolated git worktrees for parallel feature development |
+| `/quota-resilience` | Usage-limit hard stops, handled: commit complete work, clean tree, committed `QUOTA-RESUME.md`, exact-state report, one bounded auto-restart (host scheduler, or a one-shot launchd/systemd/cron entry driving the CLI's headless resume — `claude -c -p`, `codex exec resume --last`, `opencode run -c`); resuming sessions pick up from the note |
 | `/finish-branch` | Guides branch cleanup and merge decisions when implementation is complete |
 | `/verify` | Pre-merge validation: requires running verification commands and confirming output before success claims |
 | `/write-plan` | Detailed implementation planning from a spec: embeds TDD tasks, DRY/SOLID/YAGNI principles, a required **Test Plan & Verification** section, and a concrete coverage target. Auto-chains to `/plan-eng-review` for an independent double-check (which emits the Test Plan Artifact `/qa-full` consumes) before execution. |

@@ -57,6 +57,87 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
   [[ "$(evidence_of "$output")" != *"cd there"* ]] || false
 }
 
+# ── zcode target ──
+
+@test "check_zcode: ready when the ZCode target carries every expected skill" {
+  Z="$HOME_DIR/.zcode/skills"
+  mkdir -p "$Z/alpha" "$Z/beta"
+  ln -s "$ROOT/skills/alpha/SKILL.md" "$Z/alpha/SKILL.md"
+  ln -s "$ROOT/skills/beta/SKILL.md" "$Z/beta/SKILL.md"
+  run doctor_check_zcode "$ROOT" "$Z" "$SKILLS/gstack" "$HOME_DIR"
+  [ "$status" -eq 0 ]
+  [ "$(status_of "$output")" = "ready" ]
+  [[ "$(evidence_of "$output")" == *"2/2 skills linked into $Z"* ]] || false
+}
+
+@test "check_zcode: warning naming ./setup when the target is behind" {
+  Z="$HOME_DIR/.zcode/skills"; mkdir -p "$Z/alpha"
+  ln -s "$ROOT/skills/alpha/SKILL.md" "$Z/alpha/SKILL.md"
+  run doctor_check_zcode "$ROOT" "$Z" "$SKILLS/gstack" "$HOME_DIR"
+  [ "$(status_of "$output")" = "warning" ]
+  [[ "$(evidence_of "$output")" == *"Not linked: beta"* ]] || false
+  [[ "$(evidence_of "$output")" == *"Run ./setup"* ]] || false
+}
+
+@test "check_zcode: a link into another checkout warns" {
+  OTHER="$BATS_TEST_TMPDIR/other"; mkdir -p "$OTHER/skills/alpha"
+  printf -- '---\nname: alpha\ndescription: a\n---\n' > "$OTHER/skills/alpha/SKILL.md"
+  Z="$HOME_DIR/.zcode/skills"; mkdir -p "$Z/alpha" "$Z/beta"
+  ln -s "$OTHER/skills/alpha/SKILL.md" "$Z/alpha/SKILL.md"
+  ln -s "$ROOT/skills/beta/SKILL.md" "$Z/beta/SKILL.md"
+  run doctor_check_zcode "$ROOT" "$Z" "$SKILLS/gstack" "$HOME_DIR"
+  [ "$(status_of "$output")" = "warning" ]
+  [[ "$(evidence_of "$output")" == *"another checkout: alpha"* ]] || false
+}
+
+@test "check_zcode: stale dangling links no skill owns are listed, never removed" {
+  Z="$HOME_DIR/.zcode/skills"; mkdir -p "$Z/alpha" "$Z/beta" "$Z/gone"
+  ln -s "$ROOT/skills/alpha/SKILL.md" "$Z/alpha/SKILL.md"
+  ln -s "$ROOT/skills/beta/SKILL.md" "$Z/beta/SKILL.md"
+  ln -s "$BATS_TEST_TMPDIR/nothing/SKILL.md" "$Z/gone/SKILL.md"
+  run doctor_check_zcode "$ROOT" "$Z" "$SKILLS/gstack" "$HOME_DIR"
+  [ "$(status_of "$output")" = "warning" ]
+  [[ "$(evidence_of "$output")" == *"Stale links no skill owns: gone"* ]] || false
+}
+
+@test "check_zcode: the gstack closure joins the expected set only from a valid install" {
+  G="$SKILLS/gstack"; mkdir -p "$G/review" "$G/retro"
+  printf '1.80.0.0\n' > "$G/VERSION"
+  printf -- '---\nname: review\ndescription: r\n---\n' > "$G/review/SKILL.md"
+  printf -- '---\nname: retro\ndescription: x\n---\n' > "$G/retro/SKILL.md"
+  Z="$HOME_DIR/.zcode/skills"; mkdir -p "$Z/alpha" "$Z/beta" "$Z/review"
+  ln -s "$ROOT/skills/alpha/SKILL.md" "$Z/alpha/SKILL.md"
+  ln -s "$ROOT/skills/beta/SKILL.md" "$Z/beta/SKILL.md"
+  # setup links gstack skills from the gstack install, not the repo: a link
+  # resolving there is the healthy case (caught by the first live run).
+  ln -s "$G/review/SKILL.md" "$Z/review/SKILL.md"
+  run doctor_check_zcode "$ROOT" "$Z" "$G" "$HOME_DIR"
+  [ "$status" -eq 0 ]
+  [ "$(status_of "$output")" = "ready" ]
+  [[ "$(evidence_of "$output")" == *"3/3 skills linked into $Z"* ]] || false
+  [[ "$(evidence_of "$output")" != *"retro"* ]] || false
+}
+
+@test "check_zcode: pack selection narrows the expected set (unselected skills are not 'missing')" {
+  mkdir -p "$HOME_DIR/.superskills"
+  printf 'packs=design\n' > "$HOME_DIR/.superskills/packs.conf"
+  Z="$HOME_DIR/.zcode/skills"; mkdir -p "$Z"
+  run doctor_check_zcode "$ROOT" "$Z" "$SKILLS/gstack" "$HOME_DIR"
+  [ "$(status_of "$output")" = "ready" ]
+  [[ "$(evidence_of "$output")" != *"Not linked"* ]] || false
+}
+
+@test "report: the ZCode row appears only when ~/.zcode exists" {
+  FAKE="$BATS_TEST_TMPDIR/claude"; fake_plugin_list "$FAKE"
+  run doctor_report "$ROOT" "$HOME_DIR" "$FAKE"
+  [ "$status" -eq 0 ] || false
+  [[ "$output" != *"ZCode"* ]] || false
+  Z="$HOME_DIR/.zcode/skills"; mkdir -p "$Z/alpha"
+  ln -s "$ROOT/skills/alpha/SKILL.md" "$Z/alpha/SKILL.md"
+  run doctor_report "$ROOT" "$HOME_DIR" "$FAKE"
+  [[ "$output" == *"| ZCode | warning |"* ]] || false
+}
+
 # ── install kind ──
 
 @test "install_kind: canonical when the repo is the managed clone" {

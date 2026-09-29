@@ -222,6 +222,83 @@ doctor_check_links() {
   _doctor_row "Links" "$status" "$msg"
 }
 
+# doctor_check_zcode <root> <zcode_skills_dir> <gstack_dir> <home>
+# ~/.zcode/skills is a setup-managed target (setup gates it on ~/.zcode
+# existing), holding the coding roster plus its gstack closure — the Claude
+# target's expected set minus marketing/design. doctor_report emits the row
+# only when ~/.zcode exists, so machines without ZCode see nothing; anything
+# off here is a warning, never a blocker: the Claude Code links remain the
+# required path.
+doctor_check_zcode() {
+  local root="$1" zskills="$2" gstack_dir="$3" home="$4"
+  local md name link resolved real_root status msg select=0
+  local total=0 ok=0 missing="" broken="" elsewhere="" stale="" seen=" "
+  local -a names=()
+  real_root="$(_doctor_realpath "$root")"
+  local g_real_root="$(_doctor_realpath "$gstack_dir")"
+  # Expected names mirror setup's ZCode block exactly: the skills/ tree
+  # filtered by the pack selection (all of it for a pre-packs install, the
+  # same rule doctor_check_links applies), plus the gstack closure from a
+  # valid install. Each name carries the tree it must resolve into — core
+  # skills into the superskills checkout, gstack skills into the gstack
+  # install (that is where setup links them from).
+  if [ -n "$home" ] && [ -f "$home/.superskills/packs.conf" ]; then
+    SS_PACKS_CONF="$home/.superskills/packs.conf" packs_load
+    select=1
+  fi
+  local expected=""
+  for md in "$root"/skills/*/SKILL.md; do
+    [ -f "$md" ] || continue
+    name="$(skill_name_from "$md" "$(basename "$(dirname "$md")")")"
+    [ -n "$name" ] || continue
+    if [ "$select" -eq 1 ]; then skill_selected "$name" core >/dev/null 2>&1 || continue; fi
+    expected="${expected}${name}	${real_root}
+"
+  done
+  case "$(gstack_install_state "$gstack_dir")" in
+    real|vendor)
+      for name in $PACK_CODING_GSTACK; do
+        [ -f "$gstack_dir/$name/SKILL.md" ] || continue
+        expected="${expected}${name}	${g_real_root}
+"
+      done ;;
+  esac
+  local want_root
+  while IFS=$'\t' read -r name want_root; do
+    [ -n "$name" ] || continue
+    seen="$seen$name "
+    total=$((total + 1))
+    link="$zskills/$name/SKILL.md"
+    if [ ! -L "$link" ] && [ ! -e "$link" ]; then
+      missing="$missing $name"
+    elif [ ! -e "$link" ]; then
+      broken="$broken $name"
+    elif [ ! -L "$link" ]; then
+      elsewhere="$elsewhere $name (not a symlink)"
+    else
+      resolved="$(_doctor_realpath "$link")"
+      case "$resolved" in
+        "$want_root"/*) ok=$((ok + 1)) ;;
+        *) elsewhere="$elsewhere $name" ;;
+      esac
+    fi
+  done <<< "$expected"
+  for link in "$zskills"/*/SKILL.md; do
+    [ -L "$link" ] && [ ! -e "$link" ] || continue
+    name="$(basename "$(dirname "$link")")"
+    case "$seen" in *" $name "*) ;; *) stale="$stale $name" ;; esac
+  done
+  if [ -n "$missing$broken$elsewhere$stale" ]; then status="warning"; else status="ready"; fi
+  msg="$ok/$total skills linked into $zskills."
+  [ "$total" -eq 0 ] && msg="$msg (no skills selected for this target)."
+  [ -n "$missing" ] && msg="$msg Not linked:${missing} (a new skill stays invisible in ZCode until ./setup runs)."
+  [ -n "$broken" ] && msg="$msg Dangling:${broken} (re-run ./setup)."
+  [ -n "$elsewhere" ] && msg="$msg Linked to another checkout:${elsewhere} (run ./setup from the checkout you want loaded)."
+  [ -n "$stale" ] && msg="$msg Stale links no skill owns:${stale} (safe to delete those dirs)."
+  [ "$status" = "warning" ] && msg="$msg Run ./setup"
+  _doctor_row "ZCode" "$status" "$msg"
+}
+
 # doctor_check_manifests <root>
 # Each manifest must exist, carry the VERSION at least once and no other
 # version, and parse as JSON (checked when jq is present). Absent, empty or
@@ -547,6 +624,7 @@ doctor_report() {
     doctor_check_repo "$root"
     doctor_check_install "$root" "$skills" "$plugin_version" "$kind"
     doctor_check_links "$root" "$skills" "$kind" "$plugin_install_path" "$home"
+    [ -d "$home/.zcode" ] && doctor_check_zcode "$root" "$home/.zcode/skills" "$skills/gstack" "$home"
     doctor_check_manifests "$root"
     doctor_check_shims "$root"
     doctor_check_gstack "$skills/gstack" "$kind"
