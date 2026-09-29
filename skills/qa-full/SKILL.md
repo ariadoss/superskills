@@ -1,6 +1,6 @@
 ---
 name: qa-full
-version: 2.0.0
+version: 2.0.1
 description: |
   Full per-feature QA pipeline: audit → fix → verify. Runs the complete
   multi-dimensional fan-out (tests, correctness, security, DB, frontend perf,
@@ -68,7 +68,11 @@ Each `/name` in the steps below is a skill. Run it by invoking it with the
 Skill tool (for example `Skill(defense)`), then follow the instructions it
 loads. A check counts as run only when that call is in the session; doing the
 check's work by hand from memory is not running it. If a skill cannot be
-invoked here, the check is SKIPPED with the reason.
+invoked here, the check is SKIPPED with the reason. For a triggered `/qa` that
+cannot be loaded, inspect the installed gstack/superskills setup, run its
+available setup step, and retry the Skill call. Ask the user for any setup
+detail only they can provide. If `/qa` remains unavailable, record SKIPPED
+with that evidence and NOT READY.
 
 ## Hard rules
 
@@ -118,6 +122,11 @@ invoked here, the check is SKIPPED with the reason.
 - **Never claim SHIP-READY without receipts.** The verdict must cite the exact
   checks that ran, what they found, what was fixed (with commits), what was
   re-verified, and what was skipped (and why).
+- **An unknown dev URL is a question, not a reason to refuse browser QA.**
+  When `/qa` is triggered, invoke it even if no URL is known. Follow the
+  target-resolution flow below, including local setup or a question to the
+  user, and resume the same run when the target is available. A triggered
+  `/qa` check that cannot run is NOT READY, never SHIP-READY.
 - **No silent skips — mandatory accounting.** Every check must resolve to
   exactly one of: **RAN-CLEAN** (ran, nothing to fix), **FIXED(n)** (ran, n
   findings fixed and re-verified — list commits), **UNFIXED** (ran, at least one
@@ -173,6 +182,37 @@ Recognized settings (all optional; absence = the defaults in the steps below):
 
 If there is no `## qa-full` section, run with the built-in defaults — nothing here
 is required.
+
+## Resolve a dev target for browser checks
+
+Use this flow when a triggered `/fuzz`, `/web-perf`, `/qa`, `/design-review`, or
+dynamic `/a11y` check needs a running app. Resolve the target once and reuse it;
+keep any server you start alive through the final browser check.
+
+1. Read the project's `CLAUDE.md` `Dev URL`, `AGENTS.md`, `README.md`, and
+   development/setup docs. Check the project's declared `dev`/`start` script or
+   equivalent and probe documented local ports. A responding localhost port is
+   usable only after you verify it serves this project, not another app.
+2. If the app is not running, follow the project's setup instructions. Install
+   its declared dependencies when needed, start its documented dev command,
+   and wait for a reachable URL. Record the command, URL, and startup result in
+   the ledger. Do not invent a port, command, credential, or external service.
+3. If the URL or startup command is still unknown, or startup needs user-owned
+   configuration, **ask the user** for the dev/preview URL or the missing setup
+   detail. Tell them what you already checked. Let the user configure secrets
+   locally; never request credentials in chat. Pause the affected check and
+   resume it after their answer. An unanswered question is pending context,
+   not a SKIPPED check or a final refusal.
+4. If a documented start fails, inspect its error and attempt a bounded fix to
+   the local setup. If it still cannot run, ask for the missing information or
+   user action. Only record SKIPPED after documenting discovery and startup
+   attempts and the user confirms there is no runnable target or declines the
+   needed setup. For a triggered `/qa`, that SKIPPED result is a NOT READY
+   blocker: the feature has not been browser-tested.
+
+`/qa` has its own diff-aware target discovery and browser setup. Invoke it
+without a URL when this flow has not resolved one; follow its question or
+setup path rather than replacing browser testing with unit tests or `curl`.
 
 ## Step 1: Establish the diff scope and a clean tree
 
@@ -363,9 +403,9 @@ marks `/pentest` MANDATORY, SKIPPED is a blocker.
 
 **`/fuzz` (triggered when the diff adds or changes endpoints, input parsing,
 file-upload handling, or deserialization).** Needs a running target: find the dev
-URL (`CLAUDE.md`, or start the `dev` script). Run `/fuzz` against the new
-surface; **fix** crashes, injections, and auth bypasses it surfaces (with a
-regression test); re-fuzz to verify. No reachable target and none startable ⇒
+URL with the target-resolution flow, then run `/fuzz` against the new surface;
+**fix** crashes, injections, and auth bypasses it surfaces (with a regression
+test); re-fuzz to verify. If no target is possible after that flow ⇒
 SKIPPED(reason). If `CLAUDE.md` marks `/fuzz` MANDATORY, SKIPPED is a blocker.
 
 **`/cso` backstop.** If the diff crosses a *new* trust boundary (new auth
@@ -400,10 +440,9 @@ Trigger when the diff includes frontend code (`**/*.tsx`, `**/*.jsx`,
 `**/*.css`, `**/*.scss`), new images/fonts/assets, or bundler config
 (`next.config.*`, `vite.config.*`, `webpack.config.*`).
 
-1. Find the dev URL (`CLAUDE.md`, or the `dev` script in `package.json`). A
-   human is present, so **start the dev server** if it isn't running. Only if
-   no app is running and none can be started ⇒ SKIPPED("no reachable dev
-   server, start failed: <error>").
+1. Resolve the dev URL with the target-resolution flow above; start the dev
+   server if needed. If the flow establishes that no target is possible ⇒
+   SKIPPED with the startup error and the user's answer in the ledger.
 2. **Audit:** run `/web-perf` against the affected routes. Record Core Web
    Vitals (LCP, INP, CLS) vs. any known budget.
 3. **Fix:** address the measured regressions attributable to the diff —
@@ -431,17 +470,22 @@ UI/frontend code, pages/routes, forms, route handlers serving HTML, API
 endpoints the UI consumes, auth/session flows, or config that changes
 user-facing behavior.
 
-1. Start the dev server if needed (same URL as Step 6).
-2. Run `/qa` scoped to the affected surface at the project's **QA tier**
-   (`CLAUDE.md`, default `standard`: critical + high + medium). `/qa` itself does
-   the audit → fix → re-verify loop with atomic commits and before/after health
-   scores — let it run to completion; don't cut it off at the report.
-3. Fold its before/after health score, fixed-bug list (with commits), and any
+1. **Invoke `/qa` whenever this trigger fires, even if no dev URL is known.**
+   Give it the resolved URL if Step 4 or 6 found one; otherwise invoke it
+   without a URL so its diff-aware mode can discover the app or ask. Scope it
+   to the affected surface at the project's **QA tier** (`CLAUDE.md`, default
+   `standard`: critical + high + medium). If it needs a server, follow the
+   target-resolution flow above and resume `/qa` after setup or the user's
+   answer. A missing URL alone never justifies SKIPPED, stopping the pipeline,
+   or declaring browser QA complete. Let `/qa` finish its audit → fix →
+   re-verify loop with atomic commits and before/after health scores.
+2. Fold its before/after health score, fixed-bug list (with commits), and any
    bugs it could not fix into the ledger.
 
 - User-facing CRITICAL/HIGH bugs that `/qa` could not fix ⇒ UNFIXED blocker.
-- No reachable app and none startable ⇒ SKIPPED(reason) — and note that this
-  means the feature has not been browser-tested at all.
+- If the target-resolution flow ends without a runnable app, record
+  SKIPPED(reason) and a NOT READY blocker. Say what setup was attempted and
+  what the user needs to provide before browser QA can run.
 
 ## Step 8: Design + accessibility pipeline — `/design-review`, `/a11y`
 
@@ -535,6 +579,9 @@ in sync by the maintainer). Each is evaluated **after** the fix rounds:
 - `/iac-scan` CRITICAL/HIGH infra misconfig still present (Step 4)
 - N+1 / missing index on a hot path still present (Step 5)
 - CRITICAL/HIGH browser-QA bug in a user-facing flow `/qa` could not fix (Step 7)
+- triggered `/qa` SKIPPED because its skill could not be loaded or no runnable
+  app was available after target resolution (Step 7); browser QA remains
+  unverified
 - `/a11y` CRITICAL — a control unusable by screen-reader/keyboard — still present (Step 8)
 - new public surface with zero tests after `/test-coverage` (Step 9)
 - a hard perf gate breach after the fix round, only if `CLAUDE.md` defines one (Step 6)
