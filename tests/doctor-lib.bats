@@ -138,6 +138,36 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
   [[ "$output" == *"| ZCode | warning |"* ]] || false
 }
 
+@test "check_zcode: a dangling link for an expected skill reports Dangling, not Stale" {
+  Z="$HOME_DIR/.zcode/skills"; mkdir -p "$Z/alpha" "$Z/beta"
+  ln -s "$ROOT/skills/alpha/SKILL.md" "$Z/alpha/SKILL.md"
+  ln -s "$BATS_TEST_TMPDIR/gone/SKILL.md" "$Z/beta/SKILL.md"
+  run doctor_check_zcode "$ROOT" "$Z" "$SKILLS/gstack" "$HOME_DIR"
+  [ "$(status_of "$output")" = "warning" ]
+  [[ "$(evidence_of "$output")" == *"Dangling: beta (re-run ./setup)"* ]] || false
+  [[ "$(evidence_of "$output")" != *"Stale links no skill owns: beta"* ]] || false
+}
+
+@test "check_zcode: a plain copied SKILL.md is reported as not setup-managed" {
+  Z="$HOME_DIR/.zcode/skills"; mkdir -p "$Z/alpha" "$Z/beta"
+  ln -s "$ROOT/skills/alpha/SKILL.md" "$Z/alpha/SKILL.md"
+  cp "$ROOT/skills/beta/SKILL.md" "$Z/beta/SKILL.md"
+  run doctor_check_zcode "$ROOT" "$Z" "$SKILLS/gstack" "$HOME_DIR"
+  [ "$(status_of "$output")" = "warning" ]
+  [[ "$(evidence_of "$output")" == *"beta (a copied file, not setup-managed)"* ]] || false
+}
+
+@test "check_zcode: a partial gstack dir (no VERSION) adds nothing to the expected set" {
+  G="$SKILLS/gstack"; mkdir -p "$G/review"
+  printf -- '---\nname: review\ndescription: r\n---\n' > "$G/review/SKILL.md"
+  Z="$HOME_DIR/.zcode/skills"; mkdir -p "$Z/alpha" "$Z/beta"
+  ln -s "$ROOT/skills/alpha/SKILL.md" "$Z/alpha/SKILL.md"
+  ln -s "$ROOT/skills/beta/SKILL.md" "$Z/beta/SKILL.md"
+  run doctor_check_zcode "$ROOT" "$Z" "$G" "$HOME_DIR"
+  [ "$(status_of "$output")" = "ready" ]
+  [[ "$(evidence_of "$output")" == *"2/2 skills linked into $Z"* ]] || false
+}
+
 # ── install kind ──
 
 @test "install_kind: canonical when the repo is the managed clone" {

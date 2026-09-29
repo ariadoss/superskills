@@ -51,6 +51,10 @@ setup() {
   [ "$output" -eq 1 ] || false
   run grep -c 'prune_dangling_links "\$ZCODE_SKILLS_DIR" "\$GSTACK_DIR"' "$REPO_ROOT/setup"
   [ "$output" -eq 1 ] || false
+  # The gstack-closure walk is what distinguishes this target from the Codex
+  # block: without it setup silently stops linking /qa's toolchain into ZCode.
+  run grep -c 'link_zcode_filtered "\$skill_md" "\$dir_name" gstack' "$REPO_ROOT/setup"
+  [ "$output" -eq 1 ] || false
 }
 
 @test "--packs with an invalid pack exits 2 before any mutation, conf untouched" {
