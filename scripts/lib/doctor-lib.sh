@@ -93,6 +93,48 @@ doctor_install_kind() {
   echo unlinked
 }
 
+# doctor_owning_checkout <root> <skills_dir>
+# When the links under <skills_dir> are majority-owned by one OTHER valid
+# superskills checkout, echo that owning checkout's path. This is the case of
+# a doctor launched from a plugin or marketplace cache copy (Codex's
+# superskills:superskills-doctor does this) while the real install is a
+# dev-repo elsewhere: without the re-anchor every link reads "another
+# checkout" and the report blocks with advice to run ./setup from the cache —
+# wrong on both counts. Majority-owned, not unanimously-owned, because a real
+# skills dir can carry the user's own stray skill from another checkout.
+# Empty when any link points at <root> itself (the normal dev-repo/canonical
+# shapes), when no valid checkout owns a strict majority, or on a tie.
+doctor_owning_checkout() {
+  local root="$1" skills="$2" real_root link target candidate owners=""
+  local best count total bowner
+  real_root="$(_doctor_realpath "$root")"
+  # A nonexistent inspected path canonicalises to nothing; fall back to the
+  # raw path so the "under the inspected root" pattern stays literal (an
+  # empty pattern would match every absolute target).
+  [ -n "$real_root" ] || real_root="$root"
+  for link in "$skills"/*/SKILL.md; do
+    [ -L "$link" ] || continue
+    target="$(_doctor_realpath "$link")"
+    [ -n "$target" ] && [ -f "$target" ] || continue
+    case "$target" in "$real_root"/*) return 0 ;; esac
+    candidate="$(dirname "$(dirname "$target")")"
+    case "$candidate" in */skills) candidate="${candidate%/skills}" ;; *) continue ;; esac
+    [ -f "$candidate/VERSION" ] && [ -f "$candidate/setup" ] && [ -d "$candidate/skills" ] || continue
+    owners="${owners}${candidate}
+"
+  done
+  [ -n "$owners" ] || return 0
+  # uniq -c pads its count with spaces; read the first field as the count and
+  # everything after it as the owner (paths may contain spaces).
+  read -r count bowner <<LINE
+$(printf '%s' "$owners" | sort | uniq -c | sort -rn | sed -n '1p' | sed 's/^ *//')
+LINE
+  total="$(printf '%s' "$owners" | grep -c .)"
+  [ "$count" -gt $((total / 2)) ] || return 0
+  printf '%s' "$bowner"
+  return 0
+}
+
 # doctor_check_install <root> <claude_skills_dir> [plugin_version] [kind]
 # [kind] is doctor_install_kind's answer when the caller already has it (the
 # scan walks every link under the skills dir, so doctor_report does it once).
@@ -243,12 +285,14 @@ doctor_check_zcode() {
   local total=0 ok=0 missing="" broken="" elsewhere="" stale="" seen=" "
   real_root="$(_doctor_realpath "$root")"
   local g_real_root="$(_doctor_realpath "$gstack_dir")"
-  # Expected names mirror what setup's ZCode block links under the coding
-  # selection: the skills/ tree filtered by the pack selection (all of it for
-  # a pre-packs install, the same rule doctor_check_links applies), plus the
-  # gstack closure from a valid install. Under the gstack/all packs setup
-  # links more gstack skills than the closure; those extra links are silently
-  # uncounted here — the same blind spot the Links check has for gstack.
+  # Expected names mirror what setup's ZCode block links: the skills/ tree
+  # filtered by the pack selection (all of it for a pre-packs install, the
+  # same rule doctor_check_links applies), plus gstack skills from a valid
+  # install — the coding closure for a pre-packs install, the pack-filtered
+  # walk once a selection is recorded (packs=gstack/all link more than the
+  # closure). Each name carries the tree it must resolve into — core skills
+  # into the superskills checkout, gstack skills into the gstack install
+  # (that is where setup links them from).
   if [ -n "$home" ] && [ -f "$home/.superskills/packs.conf" ]; then
     SS_PACKS_CONF="$home/.superskills/packs.conf" packs_load
     select=1
@@ -264,11 +308,23 @@ doctor_check_zcode() {
   done
   case "$(gstack_install_state "$gstack_dir")" in
     real|vendor)
-      for name in $PACK_CODING_GSTACK; do
-        [ -f "$gstack_dir/$name/SKILL.md" ] || continue
-        expected="${expected}${name}	${g_real_root}
+      if [ "$select" -eq 1 ]; then
+        for md in "$gstack_dir"/*/SKILL.md; do
+          [ -f "$md" ] || continue
+          [ -L "$(dirname "$md")" ] && continue
+          name="$(skill_name_from "$md" "$(basename "$(dirname "$md")")")"
+          [ -n "$name" ] || continue
+          skill_selected "$name" gstack >/dev/null 2>&1 || continue
+          expected="${expected}${name}	${g_real_root}
 "
-      done ;;
+        done
+      else
+        for name in $PACK_CODING_GSTACK; do
+          [ -f "$gstack_dir/$name/SKILL.md" ] || continue
+          expected="${expected}${name}	${g_real_root}
+"
+        done
+      fi ;;
   esac
   local want_root
   while IFS=$'\t' read -r name want_root; do
@@ -607,6 +663,16 @@ doctor_verdict() {
 doctor_report() {
   local root="$1" home="$2" bin="${3:-claude}"
   local skills="$home/.claude/skills" rows verdict line name status evidence plugin_version kind
+  local anchor_note=""
+  # Re-anchor when launched from a cache copy while the linked install is a
+  # different checkout (see doctor_owning_checkout). Every check then judges
+  # the checkout the user's links actually load from.
+  local owning
+  owning="$(doctor_owning_checkout "$root" "$skills")"
+  if [ -n "$owning" ]; then
+    anchor_note="doctor ran from $root — re-anchored to the linked checkout $owning"
+    root="$owning"
+  fi
   # The install kind decides how Links and gstack are judged, and a plugin
   # install is only recognisable through the CLI (or the cache path), so probe
   # the plugin once here and pass the answer down.
@@ -624,6 +690,7 @@ doctor_report() {
   fi
   kind="$(doctor_install_kind "$root" "$skills" "$plugin_version" "$cli_state")"
   rows="$(
+    if [ -n "$anchor_note" ]; then _doctor_row "Anchor" "ready" "$anchor_note"; fi
     doctor_check_repo "$root"
     doctor_check_install "$root" "$skills" "$plugin_version" "$kind"
     doctor_check_links "$root" "$skills" "$kind" "$plugin_install_path" "$home"

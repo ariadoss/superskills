@@ -968,3 +968,63 @@ SH
     [ "$status" -ne 0 ] || { echo "grandchild $gcpid still alive after the bounded run returned"; kill -9 "$gcpid" 2>/dev/null; return 1; }
   fi
 }
+
+# ── owning-checkout re-anchor ──
+
+@test "owning_checkout: echoes the other valid checkout the links resolve into" {
+  run doctor_owning_checkout "$BATS_TEST_TMPDIR/cache-copy" "$SKILLS"
+  [ "$output" = "$(_doctor_realpath "$ROOT")" ]
+}
+
+@test "owning_checkout: empty when the links point at the inspected root" {
+  run doctor_owning_checkout "$ROOT" "$SKILLS"
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+}
+
+@test "owning_checkout: empty when two different checkouts own the links (ambiguous)" {
+  OTHER="$BATS_TEST_TMPDIR/second-repo"; mkdir -p "$OTHER/skills/alpha" "$OTHER/skills/beta"
+  printf '2.24.0\n' > "$OTHER/VERSION"; printf '#!/bin/sh\n' > "$OTHER/setup"; chmod +x "$OTHER/setup"
+  printf -- '---\nname: alpha\ndescription: a\n---\n' > "$OTHER/skills/alpha/SKILL.md"
+  printf -- '---\nname: beta\ndescription: b\n---\n' > "$OTHER/skills/beta/SKILL.md"
+  rm "$SKILLS/beta/SKILL.md"; ln -s "$OTHER/skills/beta/SKILL.md" "$SKILLS/beta/SKILL.md"
+  run doctor_owning_checkout "$BATS_TEST_TMPDIR/cache-copy" "$SKILLS"
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+}
+
+@test "report: a doctor launched from a cache copy re-anchors to the owning checkout instead of blocking" {
+  CACHE="$BATS_TEST_TMPDIR/cache-copy"; cp -R "$ROOT" "$CACHE"
+  # A real-clone gstack fixture keeps the gstack row ready; the hook row may
+  # still warn (the fixture repo is not a git checkout), so the contract is
+  # "not blocked with the right anchor", not a fully green table.
+  G="$SKILLS/gstack"; mkdir -p "$G/.git"; printf '1.80.0.0\n' > "$G/VERSION"
+  FAKE="$BATS_TEST_TMPDIR/claude"; fake_plugin_list "$FAKE"
+  run doctor_report "$CACHE" "$HOME_DIR" "$FAKE"
+  [ "$status" -eq 0 ] || false
+  [[ "$output" == *"re-anchored to the linked checkout"* ]] || false
+  [[ "$output" == *"| Install | ready | dev-repo install"* ]] || false
+  [[ "$output" != *"Verdict: blocked"* ]] || false
+  [[ "$output" != *"run ./setup from the repo"* ]] || false
+}
+
+@test "check_zcode: the gstack expectation is pack-filtered (packs=gstack links beyond the closure)" {
+  G="$SKILLS/gstack"; mkdir -p "$G/review" "$G/retro"
+  printf '1.80.0.0\n' > "$G/VERSION"
+  printf -- '---\nname: review\ndescription: r\n---\n' > "$G/review/SKILL.md"
+  printf -- '---\nname: retro\ndescription: x\n---\n' > "$G/retro/SKILL.md"
+  mkdir -p "$HOME_DIR/.superskills"
+  printf 'packs=coding,gstack\n' > "$HOME_DIR/.superskills/packs.conf"
+  Z="$HOME_DIR/.zcode/skills"; mkdir -p "$Z/alpha" "$Z/beta" "$Z/review" "$Z/retro"
+  ln -s "$ROOT/skills/alpha/SKILL.md" "$Z/alpha/SKILL.md"
+  ln -s "$ROOT/skills/beta/SKILL.md" "$Z/beta/SKILL.md"
+  ln -s "$G/review/SKILL.md" "$Z/review/SKILL.md"
+  ln -s "$G/retro/SKILL.md" "$Z/retro/SKILL.md"
+  run doctor_check_zcode "$ROOT" "$Z" "$G" "$HOME_DIR"
+  [ "$status" -eq 0 ]
+  # packs.conf recorded: the non-roster fixture skills (alpha/beta) are not
+  # selected, so the expected set is exactly the pack-filtered gstack walk.
+  [ "$(status_of "$output")" = "ready" ]
+  [[ "$(evidence_of "$output")" == *"2/2 skills linked into $Z"* ]] || false
+  [[ "$(evidence_of "$output")" != *"Not linked"* ]] || false
+}

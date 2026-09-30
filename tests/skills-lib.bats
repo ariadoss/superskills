@@ -173,13 +173,16 @@ EOF
 
 @test "each prune_dangling_links call in setup targets its own tool's skills dir" {
   # Claude's dir is pruned twice by design — once per source (this checkout,
-  # then the gstack clone); OpenCode and Codex only ever see this checkout's.
+  # then the gstack clone); so are Codex and ZCode since they started walking
+  # gstack. OpenCode only ever sees this checkout's.
   run grep -c 'prune_dangling_links "$CLAUDE_SKILLS_DIR"' "$REPO_ROOT/setup"
   [ "$output" -eq 2 ] || { echo "CLAUDE_SKILLS_DIR: $output occurrences (want exactly 2)"; return 1; }
-  for var in OPENCODE_SKILLS_DIR CODEX_SKILLS_DIR; do
+  for var in CODEX_SKILLS_DIR ZCODE_SKILLS_DIR; do
     run grep -c "prune_dangling_links \"\$$var\"" "$REPO_ROOT/setup"
-    [ "$output" -eq 1 ] || { echo "$var: $output occurrences (want exactly 1)"; return 1; }
+    [ "$output" -eq 2 ] || { echo "$var: $output occurrences (want exactly 2)"; return 1; }
   done
+  run grep -c 'prune_dangling_links "$OPENCODE_SKILLS_DIR"' "$REPO_ROOT/setup"
+  [ "$output" -eq 1 ] || { echo "OPENCODE_SKILLS_DIR: $output occurrences (want exactly 1)"; return 1; }
 }
 
 @test "prune_dangling_links never descends into a symlinked directory (another tool's or the user's own tree)" {

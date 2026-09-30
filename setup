@@ -456,6 +456,10 @@ log ""
 # skill_desc_from / skill_body_from (sourced above) — single source of truth.
 
 # ── OpenAI Codex CLI ──────────────────────────────────────────────────────────
+# ~/.codex/skills is Codex's user-level skills dir. The superskills plugin
+# serves the coding pack namespaced (superskills:*); this channel delivers
+# the FULL pack selection un-namespaced — gstack, design and marketing
+# included — exactly what .codex-plugin/plugin.json's description promises.
 if [ -d "$HOME/.codex" ]; then
   log "  Linking skills (OpenAI Codex CLI)..."
   mkdir -p "$CODEX_SKILLS_DIR"
@@ -474,21 +478,59 @@ if [ -d "$HOME/.codex" ]; then
   }
 
   link_codex_filtered() {
-    local skill_md="$1" dir_name="$2" name
-    name="$(skill_name_from "$skill_md" "$dir_name")"
-    ss_selected "$name" core "$skill_md" || return 0
-    link_skill_codex "$skill_md" "$dir_name"
+    local skill_md="$1" fallback_name="$2" category="$3" name
+    name="$(skill_name_from "$skill_md" "$fallback_name")"
+    ss_selected "$name" "$category" "$skill_md" || return 0
+    link_skill_codex "$skill_md" "$fallback_name"
   }
+
+  if [ -d "$MARKETING_SRC_DIR" ]; then
+    while IFS= read -r skill_md; do
+      skill_dir="$(dirname "$skill_md")"
+      rel_path="${skill_dir#$MARKETING_SRC_DIR/}"
+      fallback_name=$(echo "$rel_path" | tr '/' '-')
+      link_codex_filtered "$skill_md" "$fallback_name" marketing
+    done < <(marketing_skill_files "$MARKETING_SRC_DIR")
+  fi
+
+  if [ -d "$DESIGN_SRC_DIR" ]; then
+    for skill_md in "$DESIGN_SRC_DIR"/*/SKILL.md; do
+      [ -f "$skill_md" ] || continue
+      dir_name="$(basename "$(dirname "$skill_md")")"
+      [ "$dir_name" = "node_modules" ] && continue
+      link_codex_filtered "$skill_md" "$dir_name" design
+    done
+  fi
 
   for skill_md in "$SKILLS_SRC_DIR"/*/SKILL.md; do
     [ -f "$skill_md" ] || continue
     dir_name="$(basename "$(dirname "$skill_md")")"
     [ "$dir_name" = "node_modules" ] && continue
-    link_codex_filtered "$skill_md" "$dir_name"
+    link_codex_filtered "$skill_md" "$dir_name" core
   done
+
+  # gstack skills ride the same selection — but only from a valid install
+  # (dir symlinks inside the clone, e.g. the connect-chrome alias, are
+  # skipped: the real skill links once).
+  case "$(gstack_install_state "$GSTACK_DIR")" in
+    real|vendor)
+      for skill_md in "$GSTACK_DIR"/*/SKILL.md; do
+        [ -f "$skill_md" ] || continue
+        [ -L "$(dirname "$skill_md")" ] && continue
+        dir_name="$(basename "$(dirname "$skill_md")")"
+        [ "$dir_name" = "node_modules" ] && continue
+        link_codex_filtered "$skill_md" "$dir_name" gstack
+      done
+      ;;
+  esac
+
   while IFS= read -r pruned; do log "  [prune] $pruned"; done < <(prune_dangling_links "$CODEX_SKILLS_DIR" "$SOURCE_DIR")
+  while IFS= read -r pruned; do log "  [prune] $pruned"; done < <(prune_dangling_links "$CODEX_SKILLS_DIR" "$GSTACK_DIR")
   if [ -f "$CONFIG_DIR/packs.conf" ]; then
     while IFS= read -r pruned; do log "  [prune] $pruned (deselected)"; done < <(prune_deselected_skills "$CODEX_SKILLS_DIR" "$SOURCE_DIR")
+  fi
+  if [ -f "$CONFIG_DIR/packs.conf" ] && [ -d "$GSTACK_DIR" ]; then
+    while IFS= read -r pruned; do log "  [prune] $pruned (deselected gstack)"; done < <(prune_deselected_skills "$CODEX_SKILLS_DIR" "$GSTACK_DIR" gstack)
   fi
   log "  linked: $CODEX_LINKED skills"
   log ""
