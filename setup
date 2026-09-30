@@ -114,6 +114,7 @@ CLAUDE_SKILLS_DIR="$HOME/.claude/skills"
 OPENCODE_SKILLS_DIR="$HOME/.config/opencode/skills"
 CODEX_SKILLS_DIR="$HOME/.codex/skills"
 ZCODE_SKILLS_DIR="$HOME/.zcode/skills"
+DSH_SKILLS_DIR="$HOME/.dsh/skills"
 CONTINUE_PROMPTS_DIR="$HOME/.continue/prompts"
 WINDSURF_MEM_DIR="$HOME/.codeium/windsurf/memories"
 AUGMENT_COMMANDS_DIR="$HOME/.augment/commands/superskills"
@@ -405,6 +406,85 @@ if [ -d "$HOME/.zcode" ]; then
     while IFS= read -r pruned; do log "  [prune] $pruned (deselected gstack)"; done < <(prune_deselected_skills "$ZCODE_SKILLS_DIR" "$GSTACK_DIR" gstack)
   fi
   log "  linked: $ZCODE_LINKED skills"
+  log ""
+fi
+
+# ── DeepSeek Harness (dsh) ────────────────────────────────────────────────────
+# ~/.dsh/skills is DSH's user-level skills root: its local provider scans
+# rank user-dsh at <dshHome>/skills and reads directory bundles
+# (<name>/SKILL.md), the same shape Claude Code uses. Whole-folder symlinks
+# (the Codex shape) so sibling files ride along and SKILL.md resolves through
+# the link. Gated on ~/.dsh so machines without DSH see nothing.
+if [ -d "$HOME/.dsh" ]; then
+  log "  Linking skills (DSH)..."
+  mkdir -p "$DSH_SKILLS_DIR"
+  DSH_LINKED=0
+
+  link_skill_dsh() {
+    # `if` (not `&&`): a skipped skill must not abort setup under `set -e`.
+    if link_skill_dir_into "$DSH_SKILLS_DIR" "$1" "$2" >/dev/null; then
+      DSH_LINKED=$((DSH_LINKED + 1))
+    fi
+  }
+
+  link_dsh_filtered() {
+    local skill_md="$1" fallback_name="$2" category="$3" name
+    name="$(skill_name_from "$skill_md" "$fallback_name")"
+    ss_selected "$name" "$category" "$skill_md" || return 0
+    link_skill_dsh "$skill_md" "$fallback_name"
+  }
+
+  if [ -d "$MARKETING_SRC_DIR" ]; then
+    while IFS= read -r skill_md; do
+      skill_dir="$(dirname "$skill_md")"
+      rel_path="${skill_dir#$MARKETING_SRC_DIR/}"
+      fallback_name=$(echo "$rel_path" | tr '/' '-')
+      link_dsh_filtered "$skill_md" "$fallback_name" marketing
+    done < <(marketing_skill_files "$MARKETING_SRC_DIR")
+  fi
+
+  if [ -d "$DESIGN_SRC_DIR" ]; then
+    for skill_md in "$DESIGN_SRC_DIR"/*/SKILL.md; do
+      [ -f "$skill_md" ] || continue
+      skill_dir="$(dirname "$skill_md")"
+      dir_name="$(basename "$skill_dir")"
+      [ "$dir_name" = "node_modules" ] && continue
+      link_dsh_filtered "$skill_md" "$dir_name" design
+    done
+  fi
+
+  for skill_md in "$SKILLS_SRC_DIR"/*/SKILL.md; do
+    [ -f "$skill_md" ] || continue
+    skill_dir="$(dirname "$skill_md")"
+    dir_name="$(basename "$skill_dir")"
+    [ "$dir_name" = "node_modules" ] && continue
+    link_dsh_filtered "$skill_md" "$dir_name" core
+  done
+
+  # gstack skills ride the same selection — but only from a valid install
+  # (dir symlinks inside the clone, e.g. the connect-chrome alias, are
+  # skipped: the real skill links once).
+  case "$(gstack_install_state "$GSTACK_DIR")" in
+    real|vendor)
+      for skill_md in "$GSTACK_DIR"/*/SKILL.md; do
+        [ -f "$skill_md" ] || continue
+        [ -L "$(dirname "$skill_md")" ] && continue
+        dir_name="$(basename "$(dirname "$skill_md")")"
+        [ "$dir_name" = "node_modules" ] && continue
+        link_dsh_filtered "$skill_md" "$dir_name" gstack
+      done
+      ;;
+  esac
+
+  while IFS= read -r pruned; do log "  [prune] $pruned"; done < <(prune_dangling_links "$DSH_SKILLS_DIR" "$SOURCE_DIR")
+  while IFS= read -r pruned; do log "  [prune] $pruned"; done < <(prune_dangling_links "$DSH_SKILLS_DIR" "$GSTACK_DIR")
+  if [ -f "$CONFIG_DIR/packs.conf" ]; then
+    while IFS= read -r pruned; do log "  [prune] $pruned (deselected)"; done < <(prune_deselected_skills "$DSH_SKILLS_DIR" "$SOURCE_DIR")
+  fi
+  if [ -f "$CONFIG_DIR/packs.conf" ] && [ -d "$GSTACK_DIR" ]; then
+    while IFS= read -r pruned; do log "  [prune] $pruned (deselected gstack)"; done < <(prune_deselected_skills "$DSH_SKILLS_DIR" "$GSTACK_DIR" gstack)
+  fi
+  log "  linked: $DSH_LINKED skills"
   log ""
 fi
 
@@ -718,7 +798,7 @@ log ""
 # ── Summary ────────────────────────────────────────────────────────────────────
 log "  superskills ready"
 log "  ${#LINKED[@]} skills linked"
-log "  tools: Claude Code$([ -d "$HOME/.zcode" ] && echo ', ZCode'), OpenCode$([ -d "$HOME/.codex" ] && echo ', Codex CLI')$([ -d "$HOME/.continue" ] && echo ', Continue.dev')$([ -d "$HOME/.augment" ] && echo ', Augment')$([ -d "$HOME/.codeium/windsurf" ] && echo ', Windsurf')"
+log "  tools: Claude Code$([ -d "$HOME/.zcode" ] && echo ', ZCode'), OpenCode$([ -d "$HOME/.codex" ] && echo ', Codex CLI')$([ -d "$HOME/.dsh" ] && echo ', DSH')$([ -d "$HOME/.continue" ] && echo ', Continue.dev')$([ -d "$HOME/.augment" ] && echo ', Augment')$([ -d "$HOME/.codeium/windsurf" ] && echo ', Windsurf')"
 # Only advertise the packs the run actually installed (packs_all_included covers 'all').
 if packs_all_included; then
   log "  includes marketing-skills: SEO, content, pages, ads, channels, strategies"

@@ -146,12 +146,12 @@ setup() {
   [[ "$output" != *"unbound variable"* ]] || false
 }
 
-@test "the deselected prune runs for every tool dir (Claude, OpenCode, Codex, ZCode) plus gstack" {
+@test "the deselected prune runs for every tool dir (Claude, OpenCode, Codex, ZCode, DSH) plus gstack" {
   run grep -c "prune_deselected_skills" "$REPO_ROOT/setup"
-  [ "$output" -eq 7 ] || false
+  [ "$output" -eq 9 ] || false
   # Gated on a persisted selection: a pre-packs install is never mass-pruned.
   run grep -c 'CONFIG_DIR/packs.conf' "$REPO_ROOT/setup"
-  [ "$output" -eq 7 ] || false
+  [ "$output" -eq 9 ] || false
   # Dangling gstack links are pruned ungated (must clean up after clone removal).
   run grep -cF 'prune_dangling_links "$CLAUDE_SKILLS_DIR" "$GSTACK_DIR"' "$REPO_ROOT/setup"
   [ "$output" -eq 1 ] || false
@@ -186,4 +186,46 @@ setup() {
   [ "$status" -eq 0 ] || { echo "missing spend-gate wording: ask-first"; return 1; }
   run grep -qF 'bundled' "$REPO_ROOT/setup"
   [ "$status" -eq 0 ] || { echo "missing bridge wording: bundled"; return 1; }
+}
+
+@test "setup manages ~/.dsh/skills as a link target with the full contract" {
+  # DSH (DeepSeek Harness) is a first-class target like ZCode/Codex: dir-gated,
+  # the full pack selection linked as whole folders (its local provider reads
+  # <name>/SKILL.md directory bundles), and dangling links pruned with logging
+  # for both the source tree and the gstack install.
+  run grep -c 'DSH_SKILLS_DIR="\$HOME/\.dsh/skills"' "$REPO_ROOT/setup"
+  [ "$output" -eq 1 ] || false
+  run grep -c 'if \[ -d "\$HOME/\.dsh" \]' "$REPO_ROOT/setup"
+  [ "$output" -eq 1 ] || false
+  run grep -c 'link_skill_dir_into "\$DSH_SKILLS_DIR"' "$REPO_ROOT/setup"
+  [ "$output" -eq 1 ] || false
+  run grep -c 'link_skill_into "\$DSH_SKILLS_DIR"' "$REPO_ROOT/setup"
+  [ "$output" -eq 0 ] || false
+  run grep -c 'prune_dangling_links "\$DSH_SKILLS_DIR" "\$SOURCE_DIR"' "$REPO_ROOT/setup"
+  [ "$output" -eq 1 ] || false
+  run grep -c 'prune_dangling_links "\$DSH_SKILLS_DIR" "\$GSTACK_DIR"' "$REPO_ROOT/setup"
+  [ "$output" -eq 1 ] || false
+  # The gstack-closure walk is what keeps /qa's toolchain linked into DSH.
+  run grep -c 'link_dsh_filtered "\$skill_md" "\$dir_name" gstack' "$REPO_ROOT/setup"
+  [ "$output" -eq 1 ] || false
+}
+
+@test "a real install links the coding pack into ~/.dsh/skills as dir symlinks" {
+  # Behavioral pin: with ~/.dsh present, setup links skill folders whose
+  # SKILL.md resolves into the repo tree — the shape DSH's local provider
+  # discovers at its user-dsh root.
+  mkdir -p "$HOME/.dsh"
+  run bash "$REPO_ROOT/setup" -q --no-knowledge < /dev/null
+  [ "$status" -eq 0 ] || false
+  [ -L "$HOME/.dsh/skills/tdd" ] || false
+  [ -f "$HOME/.dsh/skills/tdd/SKILL.md" ] || false
+  [[ "$(readlink "$HOME/.dsh/skills/tdd")" == *"/skills/tdd" ]] || false
+  [ -f "$HOME/.dsh/skills/qa-full/SKILL.md" ] || false
+  [ ! -e "$HOME/.dsh/skills/node_modules" ] || false
+}
+
+@test "setup without ~/.dsh never creates the DSH skills dir" {
+  run bash "$REPO_ROOT/setup" -q --no-knowledge < /dev/null
+  [ "$status" -eq 0 ] || false
+  [ ! -e "$HOME/.dsh" ] || false
 }

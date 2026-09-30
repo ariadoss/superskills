@@ -1,6 +1,6 @@
 # Superskills `v2.33.1`
 
-Curated AI skills pack for Claude Code, ZCode, OpenCode, Codex CLI, Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Integrates [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team; an opt-in pack) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
+Curated AI skills pack for Claude Code, ZCode, OpenCode, Codex CLI, DSH (DeepSeek Harness), Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Integrates [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team; an opt-in pack) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
 46 core skills + 54 gstack skills + 174 marketing skills + 36 design skills, selected by [packs](#packs-choose-what-gets-installed). gstack is vendored in this repo so its skills are available even if the upstream repo is removed.
 
@@ -19,7 +19,7 @@ Setup will:
 - Install `bun` if needed (only when gstack is being installed; required by gstack's browser tool)
 - Prompt you to connect knowledge base repos (optional)
 - Check for optional dependencies (clearwing, ffuf)
-- Auto-detect and install into: **Claude Code**, **ZCode**, **OpenCode**, **Codex CLI**, **Continue.dev**, **Augment Code**, **Windsurf**
+- Auto-detect and install into: **Claude Code**, **ZCode**, **OpenCode**, **Codex CLI**, **DSH (DeepSeek Harness)**, **Continue.dev**, **Augment Code**, **Windsurf**
 - Offer to add the developer workflow guide to `~/.claude/CLAUDE.md`
 
 ### Packs: choose what gets installed
