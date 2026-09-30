@@ -136,6 +136,6 @@ Scanners run: hadolint ✓ / tfsec ✗ (signature mode) / actionlint ✓ …
 ## Related commands
 
 - `/defense` — app-code OWASP/secrets sweep; `/iac-scan` is its infra counterpart.
-- `/pentest` — deeper security hunt (in-harness source audit by default; its clearwing modes probe live environments — billed, ask-first); recommend after `/iac-scan` finds HIGH/CRITICAL
+- `/pentest` — deeper security hunt (in-harness source audit by default; its clearwing network mode probes live environments and its hunt/SARIF mode runs locally — both bill their provider, ask-first); recommend after `/iac-scan` finds HIGH/CRITICAL
   or when a live environment needs probing.
 - `/cso` — threat-model the deployment topology at design time (`/write-plan`).

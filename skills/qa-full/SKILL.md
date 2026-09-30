@@ -402,10 +402,10 @@ hunts in this harness — the session's own model reads the code and reports
 findings with evidence levels; no external scanner, no spend beyond the
 session. **Confirm authorization with the user first** (the skill's own
 questions), then run it; the in-harness hunt is the check, not a stand-in.
-Fix CRITICAL/HIGH it surfaces, re-run to verify. clearwing appears only when
-the user asks for a network probe or SARIF/CI output; it configures its own
-LLM provider and bills it per run, so it stays behind its ask-first spend
-gate — declining clearwing means run the in-harness mode, not skip the check.
+Fix CRITICAL/HIGH it surfaces, re-run to verify. clearwing appears only
+behind its ask-first spend gate: the user names it, asks for a network probe,
+or wants SARIF/CI output. It configures its own LLM provider and bills it per
+run — declining clearwing means run the in-harness mode, not skip the check.
 If the user declines the check itself (no authorization) ⇒ SKIPPED(reason). If
 `CLAUDE.md` marks `/pentest` MANDATORY, SKIPPED is a blocker.
 

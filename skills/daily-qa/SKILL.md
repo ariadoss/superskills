@@ -274,7 +274,7 @@ that is the wrong shape for unattended daily runs.
   config) — a commonly-forgotten attack surface (exposed ports, broad IAM,
   baked-in secrets). `/iac-scan` (§7i) auto-runs the static misconfig scan and
   `/defense` (§4b) sweeps for secrets; recommend `/pentest` only as the deeper
-  **live** probe when those surface HIGH/CRITICAL.
+  hunt when those surface HIGH/CRITICAL.
 
 Output the exact command (`/pentest`) plus the scoped path list. User
 confirms authorization and runs it themselves.
@@ -382,7 +382,7 @@ read-only (uses tfsec/checkov/hadolint/actionlint if installed, signature checks
 otherwise), so it's safe to auto-run like `/defense`. Fold findings into the report
 under §4c "Infra misconfig (auto-run /iac-scan)" with severity and file:line. Only
 CRITICAL/HIGH go in the executive summary. If no infra files changed, skip silently.
-For a deeper live probe after HIGH/CRITICAL, recommend `/pentest` (§7c).
+For a deeper hunt after HIGH/CRITICAL, recommend `/pentest` (§7c).
 
 ### 7j. Other related commands — recommend only
 

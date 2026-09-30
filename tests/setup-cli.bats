@@ -173,8 +173,11 @@ setup() {
 @test "setup's missing-clearwing banner stays optional-scoped (never 'needed for /pentest')" {
   # Same regression pin as the doctor one: clearwing is optional (gated,
   # billed provider); the old banner claimed it was needed for /pentest.
-  run grep -A5 'clearwing not found' "$REPO_ROOT/setup"
-  [ "$status" -eq 0 ]
-  [[ "$output" != *'needed for /pentest'* ]] || false
-  [[ "$output" == *'uv tool install clearwing'* ]] || false
+  # Whole-file greps — the banner's line wrapping must not affect the pin.
+  run grep -c 'needed for /pentest' "$REPO_ROOT/setup"
+  [ "$output" -eq 0 ] || false
+  run grep -qF 'uv tool install clearwing' "$REPO_ROOT/setup"
+  [ "$status" -eq 0 ] || false
+  run grep -qF 'clearwing not found' "$REPO_ROOT/setup"
+  [ "$status" -eq 0 ] || false
 }

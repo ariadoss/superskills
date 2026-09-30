@@ -1070,5 +1070,6 @@ SH
   run grep -F 'doctor_check_command clearwing' "$REPO_ROOT/scripts/lib/doctor-lib.sh"
   [ "$status" -eq 0 ]
   [[ "$output" != *'needed for /pentest'* ]] || false
+  [[ "$output" == *optional* ]] || false
   [[ "$output" == *'uv tool install clearwing'* ]] || false
 }
