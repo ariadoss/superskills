@@ -76,8 +76,8 @@ agent-skills repo; it is not a stacking tool.)
 conflicts is the slice contract: every slice owns net-new tables, routes, and
 endpoints and never restructures shared ones (see "Vertical slices are
 independently deployable" below). Ten agents cannot conflict when no two
-branches modify the same thing. Multi-human teams can add a CODEOWNERS map
-assigning slice ownership to agents and reviewers; solo-agent repos get the
+branches modify the same thing. Multi-human teams can add a CODEOWNERS map that
+routes each slice's review to its owner; solo-agent repos get the
 same guarantee from scoping alone.
 
 ## The Workflow

@@ -134,7 +134,7 @@ selection across every supported tool.
 ### Security
 | Command | Description |
 |---------|-------------|
-| `/pentest` | Authorized security testing — in-harness pipeline by default (tiered hunt → adversarial verification → variant loop → patch oracle, on the session's model); with clearwing installed, its full pipeline can run agent-driven on the session via the bundled bridge (no provider, no spend) or its MCP network machinery; provider-driven runs bill its LLM provider, ask-first |
+| `/pentest` | Authorized security testing — in-harness pipeline by default (tiered hunt → adversarial verification → variant loop → patch oracle, on the session's model); with clearwing installed, its full pipeline can run agent-driven on the session via the bundled bridge (no provider spend — session tokens only) or its MCP network machinery; provider-driven runs bill its LLM provider, ask-first |
 | `/fuzz` | Web fuzzing via [ffuf](https://github.com/ffuf/ffuf) |
 | `/defense` | Defense-in-depth: OWASP Top 10, secrets, auth, encryption |
 | `/iac-scan` | Infrastructure-as-Code security scan: Dockerfiles, Terraform, Kubernetes/Helm, CI/CD workflows |

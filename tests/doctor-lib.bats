@@ -1072,4 +1072,8 @@ SH
   [[ "$output" != *'needed for /pentest'* ]] || false
   [[ "$output" == *optional* ]] || false
   [[ "$output" == *'uv tool install clearwing'* ]] || false
+  # The spend-safety claim of the bridge reframe: agent-driven = no provider,
+  # provider-driven = billed and ask-first.
+  [[ "$output" == *'ask-first'* ]] || false
+  [[ "$output" == *'bundled bridge'* ]] || false
 }

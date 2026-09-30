@@ -44,7 +44,7 @@
 
 | Command | Description |
 |---------|-------------|
-| `/pentest` | Authorized security testing — in-harness pipeline by default; clearwing optional: agent-driven on the session via the bundled bridge (free), MCP network machinery, or provider-driven runs (billed, ask-first) |
+| `/pentest` | Authorized security testing — in-harness pipeline by default; clearwing optional: agent-driven on the session via the bundled bridge (no provider spend; session tokens only), MCP network machinery, or provider-driven runs (billed, ask-first) |
 | `/fuzz` | Web fuzzing via ffuf |
 | `/defense` | Defense-in-depth: OWASP Top 10, secrets, auth, encryption |
 | `/iac-scan` | Infrastructure-as-Code security scan: Dockerfiles, docker-compose, Terraform, Kubernetes/Helm, CI/CD workflows; flags root containers, open ingress, wildcard IAM, exposed secrets |

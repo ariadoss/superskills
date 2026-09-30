@@ -180,4 +180,10 @@ setup() {
   [ "$status" -eq 0 ] || false
   run grep -qF 'clearwing not found' "$REPO_ROOT/setup"
   [ "$status" -eq 0 ] || false
+  # The spend-safety claim of the bridge reframe: only provider-driven runs
+  # bill, and they are ask-first.
+  run grep -qF 'ask-first' "$REPO_ROOT/setup"
+  [ "$status" -eq 0 ] || { echo "missing spend-gate wording: ask-first"; return 1; }
+  run grep -qF 'bundled' "$REPO_ROOT/setup"
+  [ "$status" -eq 0 ] || { echo "missing bridge wording: bundled"; return 1; }
 }
