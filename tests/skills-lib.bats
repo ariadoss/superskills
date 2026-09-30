@@ -307,3 +307,57 @@ root"
   [ "$actual" = "$expected" ] || false
   [ "$actual" = "real-name" ] || false
 }
+
+# ── link_skill_dir_into (codex shape: a symlinked skill FOLDER) ──
+
+@test "link_skill_dir_into creates a directory symlink to the skill dir" {
+  run link_skill_dir_into "$TARGET" "$FIX/alpha/SKILL.md" "fallback"
+  [ "$status" -eq 0 ]
+  [ "$(cat "$TARGET/alpha-cmd/SKILL.md")" = "$(cat "$FIX/alpha/SKILL.md")" ] || false
+  [ -L "$TARGET/alpha-cmd" ] || false
+  [ "$(readlink "$TARGET/alpha-cmd")" = "$FIX/alpha" ] || false
+}
+
+@test "link_skill_dir_into replaces an old file-link shape it owns (migration)" {
+  mkdir -p "$TARGET/alpha-cmd"
+  ln -s "$FIX/alpha/SKILL.md" "$TARGET/alpha-cmd/SKILL.md"
+  ln -s "$FIX/alpha/reference.md" "$TARGET/alpha-cmd/reference.md"
+  run link_skill_dir_into "$TARGET" "$FIX/alpha/SKILL.md" "fallback"
+  [ "$status" -eq 0 ]
+  [ -L "$TARGET/alpha-cmd" ] || false
+  [ "$(readlink "$TARGET/alpha-cmd")" = "$FIX/alpha" ] || false
+}
+
+@test "link_skill_dir_into never touches a foreign real dir at the target name" {
+  mkdir -p "$TARGET/alpha-cmd"
+  printf 'user content\n' > "$TARGET/alpha-cmd/SKILL.md"
+  run link_skill_dir_into "$TARGET" "$FIX/alpha/SKILL.md" "fallback"
+  [ "$status" -eq 1 ]
+  [ "$(cat "$TARGET/alpha-cmd/SKILL.md")" = "user content" ] || false
+  [ ! -L "$TARGET/alpha-cmd" ] || false
+}
+
+@test "prune_dangling_links removes a dangling dir symlink owned by src, keeps a foreign one" {
+  ln -s "$FIX/gone-skill" "$TARGET/old-owned"
+  ln -s "$BATS_TEST_TMPDIR/elsewhere" "$TARGET/foreign-dir"
+  run prune_dangling_links "$TARGET" "$FIX"
+  [ "$status" -eq 0 ]
+  [ ! -e "$TARGET/old-owned" ] && [ ! -L "$TARGET/old-owned" ] || false
+  [ -L "$TARGET/foreign-dir" ] || false
+}
+
+@test "prune_deselected_skills prunes owned dir symlinks under a narrowed pack selection" {
+  SS_PACKS=coding
+  ln -s "$FIX/alpha" "$TARGET/alpha-cmd"
+  ln -s "$FIX/beta" "$TARGET/beta"
+  ln -s "$BATS_TEST_TMPDIR/elsewhere" "$TARGET/foreign-dir"
+  run prune_deselected_skills "$TARGET" "$FIX"
+  [ "$status" -eq 0 ]
+  [ ! -e "$TARGET/alpha-cmd" ] && [ ! -L "$TARGET/alpha-cmd" ] || false
+  [ ! -e "$TARGET/beta" ] && [ ! -L "$TARGET/beta" ] || false
+  [ -L "$TARGET/foreign-dir" ] || false
+  SS_PACKS=all
+  ln -s "$FIX/alpha" "$TARGET/alpha-cmd"
+  prune_deselected_skills "$TARGET" "$FIX" >/dev/null
+  [ -L "$TARGET/alpha-cmd" ] || false
+}

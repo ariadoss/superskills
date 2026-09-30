@@ -216,7 +216,7 @@ pack_category_for_path() {
 # that category, exactly as the linking walk judged it, so a link the walk
 # would not create is a link this removes.
 prune_deselected_skills() {
-  local base="$1" src="${2%/}" fixed_category="${3:-}" src_canon dir target resolved name category
+  local base="$1" src="${2%/}" fixed_category="${3:-}" src_canon dir target resolved name category dir_link
   [ -d "$base" ] || return 0
   [ -n "$src" ] || return 0
   # readlink -f canonicalises (macOS /tmp → /private/tmp): the resolved target
@@ -226,17 +226,37 @@ prune_deselected_skills() {
   src_canon="$(readlink -f "$src" 2>/dev/null)" || src_canon=""
   for dir in "$base"/*/; do
     dir="${dir%/}"
-    [ -L "$dir" ] && continue
-    target="$dir/SKILL.md"
-    [ -L "$target" ] && [ -e "$target" ] || continue
-    resolved="$(readlink -f "$target" 2>/dev/null)" || resolved=""
+    dir_link=0
+    if [ -L "$dir" ]; then
+      # A symlinked skill FOLDER (the Codex shape): ours only when its target
+      # is literally under the source; a dangling one goes like any dead link.
+      target="$(readlink "$dir")"
+      case "$target" in
+        */./*|*/../*|*/.|*/..) continue ;;
+        "$src"/*) : ;;
+        *) continue ;;
+      esac
+      if [ ! -e "$dir" ]; then
+        rm -f "$dir"; printf '%s\n' "$dir"; continue
+      fi
+      resolved="$(readlink -f "$dir" 2>/dev/null)" || resolved=""
+      dir_link=1
+    else
+      target="$dir/SKILL.md"
+      [ -L "$target" ] && [ -e "$target" ] || continue
+      resolved="$(readlink -f "$target" 2>/dev/null)" || resolved=""
+    fi
     [ -n "$resolved" ] || continue
     case "$resolved" in
       "$src"/*) : ;;
       "$src_canon"/*) [ -n "$src_canon" ] || continue ;;
       *) continue ;;
     esac
-    name="$(skill_name_from "$resolved" "")"
+    if [ "$dir_link" -eq 1 ]; then
+      name="$(skill_name_from "$resolved/SKILL.md" "")"
+    else
+      name="$(skill_name_from "$resolved" "")"
+    fi
     [ -n "$name" ] || name="$(basename "$dir")"
     if [ -n "$fixed_category" ]; then
       category="$fixed_category"
@@ -246,7 +266,11 @@ prune_deselected_skills() {
       category="$(pack_category_for_path "$resolved" "${src_canon:-$src}/marketing-skills")"
     fi
     skill_selected "$name" "$category" && continue
-    SS_OWNED_SRC="$src" remove_owned_skill "$dir"
+    if [ "$dir_link" -eq 1 ]; then
+      rm -f "$dir"; printf '%s\n' "$dir"
+    else
+      SS_OWNED_SRC="$src" remove_owned_skill "$dir"
+    fi
   done
   return 0
 }
@@ -347,6 +371,30 @@ link_skill_into() {
   printf '%s' "$name"
 }
 
+# link_skill_dir_into <base_dir> <skill_md> [fallback] [name_prefix]
+# Symlink the skill's whole FOLDER to <base_dir>/<name_prefix><name> — the
+# shape Codex discovers (it follows symlinked skill folders, but never a
+# symlinked SKILL.md inside a real directory). An older install's file-link
+# shape at the same name is migrated when every entry inside is a symlink
+# owned by this skill's own source dir; a foreign real directory is never
+# touched (return 1, no output). Echoes the resolved name on success.
+link_skill_dir_into() {
+  local base_dir="$1" skill_md="$2" fallback="${3:-}" name_prefix="${4:-}"
+  local skill_dir name target
+  skill_dir="$(dirname "$skill_md")"
+  name="$(skill_name_from "$skill_md" "$fallback")"
+  [ -z "$name" ] && return 1
+  case "$name" in "$name_prefix"*) target="$base_dir/$name" ;; *) target="$base_dir/${name_prefix}${name}" ;; esac
+  if [ -d "$target" ] && [ ! -L "$target" ]; then
+    SS_OWNED_SRC="$skill_dir" remove_owned_skill "$target" >/dev/null
+    # Still there means its contents were not ours: never clobber.
+    [ ! -d "$target" ] || return 1
+  fi
+  [ -L "$target" ] && rm "$target"
+  ln -snf "$skill_dir" "$target"
+  printf '%s' "$name"
+}
+
 # marketing_skill_files <marketing_root>
 # Every marketing SKILL.md, nested at any depth, sorted — the one tree walk
 # shared by ./setup, the doctor and the marketing plugin generator. Skips the
@@ -373,6 +421,20 @@ prune_dangling_links() {
   local base="$1" src="${2%/}" dir entry target pruned
   [ -n "$src" ] || return 1
   [ -d "$base" ] || return 0
+  # Top-level symlinked skill FOLDERS (the Codex shape): a dangling one never
+  # matches the trailing-slash glob below (stat fails through a dead link), so
+  # they are swept here. Removed only when ours — target literally under the
+  # source, no . or .. traversal; every other symlinked tree (gstack, another
+  # tool, the user) is someone else's: never descended, never removed.
+  for dir in "$base"/*; do
+    [ -L "$dir" ] || continue
+    [ -e "$dir" ] && continue
+    target="$(readlink "$dir")"
+    case "$target" in
+      */./*|*/../*|*/.|*/..) ;;
+      "$src"/*) rm -f "$dir"; printf '%s\n' "$dir" ;;
+    esac
+  done
   for dir in "$base"/*/; do
     dir="${dir%/}"
     # A trailing-slash glob also matches symlinks to directories; those trees

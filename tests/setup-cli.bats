@@ -159,3 +159,13 @@ setup() {
   run grep -cF 'real|vendor) walk_flat_claude "$GSTACK_DIR" gstack' "$REPO_ROOT/setup"
   [ "$output" -eq 1 ] || false
 }
+
+@test "the Codex target links whole skill folders (the only shape codex discovers)" {
+  # Codex follows symlinked skill folders but never a symlinked SKILL.md
+  # inside a real directory (verified on codex 0.157.1). A regression to
+  # link_skill_into would link skills codex never loads — silently.
+  run grep -c 'link_skill_dir_into "\$CODEX_SKILLS_DIR"' "$REPO_ROOT/setup"
+  [ "$output" -eq 1 ] || false
+  run grep -c 'link_skill_into "\$CODEX_SKILLS_DIR"' "$REPO_ROOT/setup"
+  [ "$output" -eq 0 ] || false
+}

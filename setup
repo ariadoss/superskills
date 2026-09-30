@@ -462,8 +462,13 @@ if [ -d "$HOME/.codex" ]; then
   CODEX_LINKED=0
 
   link_skill_codex() {
+    # Whole-folder symlinks: Codex follows a symlinked skill folder but never
+    # a symlinked SKILL.md inside a real directory (verified on codex 0.157.1
+    # — the old file-link shape was linked but never loaded). An older
+    # install's file-link shape is migrated by link_skill_dir_into; a foreign
+    # real directory at the same name is never touched.
     # `if` (not `&&`) so a skipped skill returns 0 — can't abort setup under set -e.
-    if link_skill_into "$CODEX_SKILLS_DIR" "$1" "$2" 1 >/dev/null; then
+    if link_skill_dir_into "$CODEX_SKILLS_DIR" "$1" "$2" >/dev/null; then
       CODEX_LINKED=$((CODEX_LINKED + 1))
     fi
   }
