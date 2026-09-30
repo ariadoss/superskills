@@ -56,6 +56,8 @@ Hard rules, in order:
      (exact commands, paths).
    - **Verify** — the command(s) that prove the goal is met.
    - **Context** — decisions already made; pointers to plan/spec/task list.
+   - **Hops** — restart counter, `n`/2. Incremented every time a restart is
+     scheduled; a stop phase that reads `2/2` must not schedule again.
 4. **Report exact state.** The final message states what is committed
    (hashes), what is NOT done, where the note is, and how to resume. Never
    a formulation that reads as completion.
@@ -71,12 +73,16 @@ Hard rules, in order:
      one-shot cron/launchd/systemd entry works. Verified resume commands
      (re-check `<cli> --help` before relying on a flag; they move between
      versions):
-     - Claude Code: `claude -c -p "<prompt>"` (most recent session in this
-       directory) or `claude --resume <session-id> -p "<prompt>"`. Pass an
-       unattended permission set — `--permission-mode acceptEdits` plus a
-       narrow `--allowedTools` — never a blanket permission skip, and never a
-       blanket `Bash` allow: scope Bash to the specific command prefixes the
-       resume needs (`Bash(git:*):*`, `Bash(python3 tests/*):*`).
+     - Claude Code: `claude --resume <session-id> -p "<prompt>"` (primary —
+       resumes exactly the interrupted session), falling back to
+       `claude -c -p "<prompt>"` (most recent session in this directory —
+       only safe when nothing else has run there since). Pass an unattended
+       permission set — `--permission-mode acceptEdits` plus a narrow
+       `--allowedTools` — never a blanket permission skip, and never a
+       blanket `Bash` allow: scope Bash to the command prefixes the resume
+       needs (`Bash(git:*)`, `Bash(python3 tests/:*)`) plus the narrow
+       cleanup commands for this skill's own artifacts (`rm` of the wrapper/
+       plist/log, `launchctl unload`, `crontab`).
      - Codex: `codex exec resume --last "<prompt>"`.
      - OpenCode: `opencode run -c "<prompt>"`.
      - Cursor / Augment / Continue: no verified headless-resume path —
@@ -86,15 +92,21 @@ Hard rules, in order:
      `"${TMPDIR:-$HOME/.cache}/superskills-quota/resume-<repo>.sh"`, created
      with `mkdir -p`; the `${TMPDIR:-/tmp}` fallback never lands in the
      shared world-writable `/tmp`, so the tree stays clean and the file is
-     not swappable by another local account) that `cd`s into the repo and
-     appends output to a log next to itself.
+     not swappable by another local account). The wrapper's **first action
+     is to remove its own scheduler entry** (unload + delete the plist,
+     strip the crontab line) — before it ever invokes the CLI — so the
+     one-shot guarantee never depends on the model run succeeding. It then
+     `cd`s into the repo and appends output to a log next to itself.
      Register exactly **one** shot:
-     - Linux: `systemd-run --user --on-active=<delay> --unit=quota-resume
-       <script>` — a transient timer, nothing to clean up.
-     - macOS: a LaunchAgent plist under `~/Library/LaunchAgents` with
-       `StartCalendarInterval` set `<delay>` ahead; the resumed run
-       unloads and deletes it (`launchctl unload` + `rm`) during note
-       cleanup. Do not rely on `at` — it is disabled by default on macOS.
+     - Linux (and WSL): `systemd-run --user --on-active=<delay>
+       --unit=quota-resume <script>` — a transient timer, nothing to clean
+       up. Prefer this wherever it is available.
+     - macOS: a LaunchAgent plist under `~/Library/LaunchAgents` with a
+       `StartCalendarInterval` **pinning Month, Day, Hour and Minute** to a
+       concrete time `<delay>` ahead — an interval naming only hour and
+       minute recurs *daily*, which is recurring spend, exactly what this
+       skill forbids. Do not rely on `at` — it is disabled by default on
+       macOS.
      - Last resort: a crontab line tagged `# superskills-quota-resume`;
        the resumed run strips exactly that line, preserving every other
        entry — `crontab -l | grep -v '# superskills-quota-resume' | crontab -`
@@ -106,8 +118,8 @@ Hard rules, in order:
    - **Bounded:** one shot, never recurring. The scheduled prompt must
      say: follow `/quota-resilience` — read `QUOTA-RESUME.md`, run the
      Verify step, continue the Next steps in order, and if the limit hits
-     again, schedule at most one more hop. Two hops total, then it waits
-     for the user.
+     again, increment the note's **Hops** counter and schedule at most one
+     more hop; at `2/2` it waits for the user instead.
 
 ## Phase 2 — resuming after the stop
 

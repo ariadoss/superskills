@@ -20,7 +20,9 @@ quota_fixture() {
     git config user.name "Fixture Agent"
     printf 'FLAT_RATE = 4.99\n\ndef flat_shipping(items: int) -> float:\n    return 0.0 if items == 0 else FLAT_RATE\n' > src/shipping.py
     printf 'import sys, os\nsys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))\nfrom src.shipping import flat_shipping\n\nassert flat_shipping(0) == 0.0\nassert flat_shipping(3) == 4.99\nprint("flat ok")\n' > tests/test_shipping.py
-    python3 tests/test_shipping.py >/dev/null
+    # -B: no __pycache__ — the flat-rate commit must not track build artifacts
+    # (both eval agents burned a fix cycle on a tracked .pyc before this).
+    PYTHONDONTWRITEBYTECODE=1 python3 -B tests/test_shipping.py >/dev/null
     git add -A && git commit -qm "shipping: flat rate"
     [ "$mode" = resume ] && git checkout -qb feature/express
     printf '\ndef express_shipping(items: int) -> float:\n    # TODO: flat + 8.00 surcharge per order; more than 10 items ships free\n    raise NotImplementedError\n' >> src/shipping.py
