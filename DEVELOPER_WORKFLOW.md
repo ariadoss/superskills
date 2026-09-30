@@ -23,6 +23,63 @@ that enforce it: `/write-plan` bakes it into plans, `/tdd` drives the loop,
 its hard gates, and `/verify` proves "done" with fresh evidence. Read that file
 first; the workflow below is how it gets enforced per branch.
 
+## The git model: trunk-based, one branch per agent
+
+Everything below runs on one branching model, **trunk-based development with
+GitHub Flow's PR gate**: a single always-deployable `main`, short-lived
+vertical-slice branches, one git worktree per agent, and the quality pipeline
+as the merge gate. It is deliberately **not GitFlow**: no `develop`, no
+`release/*`, no `hotfix/*`.
+
+Branching models exist to coordinate humans. GitFlow serializes work around
+a release calendar.
+[Atlassian's workflow comparison](https://www.atlassian.com/git/tutorials/comparing-workflows)
+judges workflows by coordination overhead, merge-conflict risk, and
+reversibility, and recommends lighter, short-lived-branch workflows for
+continuous delivery; [trunkbaseddevelopment.com](https://trunkbaseddevelopment.com/)
+calls long-lived shared branches "merge hell." Agents are the opposite case:
+they scale when they are independent, so the right model is the one with the
+least coordination overhead. Each agent builds one slice on one branch in one
+worktree and merges it to trunk independently.
+
+**Rules:**
+
+1. **`main` is the only long-lived branch.** Always deployable, protected, CI
+   required, no direct commits. No `develop` to keep current, no `release/*`
+   to harden. Every slice branches from `main` and merges back to it.
+2. **Branches are short-lived vertical slices** (see "What is a vertical
+   slice?" below): `feature/user-onboarding`, not `backend-agent`. A branch
+   living longer than a few days is a scoping failure. Re-scope it, don't
+   nurse it.
+3. **One agent, one branch, one worktree** (`/worktrees`, step 2). The agent
+   that opens the PR is the agent that built the slice: isolated filesystem,
+   isolated branch, isolated context window, isolated test run.
+4. **Every merge passes the gate**: `implement → /qa-full → /finish-branch →
+   /ship` (step 6). Agents act as reviewers: the pipeline's review checks run
+   on every diff, and a human approves the merge.
+5. **Incomplete work ships dark, never parked.** A slice that isn't ready to
+   expose merges with its entry points hidden (route unlinked, endpoint
+   unexposed, flag off). Enable it later. The vertical-slice contract
+   (below) is what makes that safe; there is no long-lived branch to park it on.
+
+**Stacked branches are the exception, not the default.** When a slice feels
+too big for one branch, the first fix is re-scoping it into independent
+slices. That's the rule of thumb below. Stack
+(`feature/auth-model` → `feature/auth-api` → `feature/auth-ui`) only when the
+work is genuinely sequential: each PR stays small, but lower PRs must merge
+first, which reintroduces exactly the serialization trunk-based development
+removes. If you do stack, a tool like Graphite (`gt`) manages the chain and
+the rebasing. (Note: `gstack`, vendored here as the quality pipeline, is an
+agent-skills repo; it is not a stacking tool.)
+
+**Conflict prevention is scoping, not process.** The rule that prevents merge
+conflicts is the slice contract: every slice owns net-new tables, routes, and
+endpoints and never restructures shared ones (see "Vertical slices are
+independently deployable" below). Ten agents cannot conflict when no two
+branches modify the same thing. Multi-human teams can add a CODEOWNERS map
+assigning slice ownership to agents and reviewers; solo-agent repos get the
+same guarantee from scoping alone.
+
 ## The Workflow
 
 ### 1. Spec and plan work as vertical slices
@@ -199,7 +256,7 @@ Per-branch pipeline (6 steps above)        Background cadence (daily)
 **Why some commands are recommend-only:**
 - `/code-review ultra` runs a deep multi-agent review in the cloud: billed and user-triggered, so it can't auto-run. The local `/code-review` tiers (which power the daily commit bug scan) read the diff only and are safe to run unattended.
 - `/web-perf` requires Chrome DevTools MCP and a live dev URL. It must be run interactively against a running app.
-- `/pentest` hunts source code in-harness by default (the session's own model) but requires authorization confirmation per run; its [clearwing](https://github.com/Lazarus-AI/clearwing) modes (network scans, SARIF, user-requested hunts) are an external scanner that bills its own LLM provider — ask-first.
+- `/pentest` runs its source-hunt pipeline in-harness by default (the session's own model) and requires authorization confirmation per run; with clearwing installed, its full pipeline can run agent-driven on the session via the bundled bridge (no provider) and network probing drives its MCP machinery. Only provider-driven runs bill its LLM provider, all ask-first.
 - `/qa` launches a browser interactively, wrong shape for unattended runs.
 - `/debug`, `/verify`, `/perf-profile` are per-issue deep-dives; auto-running them on every finding would be slow and noisy.
 
@@ -215,7 +272,7 @@ Any agent in this workflow that hits its own usage limit runs
 `/quota-resilience` (`skills/quota-resilience/SKILL.md`): commit the
 complete work, `wip:`-commit or revert the rest so `git status` ends clean,
 write a committed `QUOTA-RESUME.md` (goal / done / in flight / next steps /
-verify), report exact state — and offer at most one bounded restart, via the
+verify), report exact state, and offer at most one bounded restart, via the
 host's scheduler (ZCode) or a one-shot OS entry (launchd / systemd-run /
 cron) driving the CLI's headless resume (`claude -c -p`,
 `codex exec resume --last`, `opencode run -c`). A scheduled run is a
@@ -229,7 +286,7 @@ Subagents hand back the same way: state plus note, never a silent partial.
 ## Evaluate AI-behavior changes like code changes
 
 > A prompt edit, a skill rewording, a RAG pipeline tweak, an agent-loop
-> change — these are **behavior changes**. "It looks better" is not
+> change: these are **behavior changes**. "It looks better" is not
 > evidence. Without an evaluation the change is untested code; measure
 > before changing anything, or you cannot tell help from harm.
 
@@ -239,43 +296,42 @@ behavior. The working implementation for this repo's skills is
 runs cost model calls, so it is a release step, not part of
 `./tests/run.sh`). The method, in order:
 
-1. **Define "good" measurably** — one binary definition per dimension
+1. **Define "good" measurably**: one binary definition per dimension
    (selection, safety, correctness, honesty, outcome). Binary pass/fail
    before any graded scale.
-2. **Build the dataset on a grid, not at random** — intent × persona ×
+2. **Build the dataset on a grid, not at random**: intent × persona ×
    complexity; synthetic queries mixed with real ones; and the *response*
    side generated too (complete / partial / workaround / escalation /
    wrong), so the judge is tested on each. Edge cases (ambiguity,
    misspellings, multi-turn, adversarial) go in on purpose. Keep eval data
-   unseen — never reused as few-shot in the thing being graded.
-3. **LLM-as-judge, written like code** — a rubric with precise label
+   unseen, never reused as few-shot in the thing being graded.
+3. **LLM-as-judge, written like code**: a rubric with precise label
    definitions and boundary cases decided *in advance*, few-shot examples
    with reasoning, temperature ≤ 0.2. The rubric is a prompt: writable,
    testable, improvable.
-4. **Calibrate against human labels** — hand-label a subset, then report
+4. **Calibrate against human labels**: hand-label a subset, then report
    TPR, TNR, accuracy and precision *together*, naming which class is
    positive. Accuracy alone hides the error direction; a wide TPR–TNR gap
-   means a directional judge bias (too harsh or too lenient) — fix the
+   means a directional judge bias (too harsh or too lenient). Fix the
    rubric and re-measure before trusting the judge at scale.
-5. **Error analysis before categories** — read traces with no labels
+5. **Error analysis before categories**: read traces with no labels
    (open coding), re-code consistently, then cluster into named failure
    modes; report failure rate per category. One observed failure is a
    class: generate more cases like it instead of hard-coding a fix for
    the one you saw.
-6. **Gate with thresholds set before the test** — an offline suite (fixed
+6. **Gate with thresholds set before the test**: an offline suite (fixed
    prompts, known expectations, run like CI) plus online signal (real
    traffic, thumbs, a curated bad-cases list feeding regression runs);
    A/B or canary with success/cost/latency thresholds declared up front
    and a rollback path kept.
-7. **Agents: judge outcome + process sanity, not step sequences** —
-   different valid paths reach the same answer. Grade decision quality and
+7. **Agents: judge outcome + process sanity, not step sequences**. Different valid paths reach the same answer. Grade decision quality and
    final-output correctness, with budgets (max steps, cost, timeout) and
    tool-error counts in the report; prefer unambiguous checks (the
    project's real tests) over judgment wherever possible.
-8. **RAG: retrieval metrics are leading indicators** — Recall@k,
+8. **RAG: retrieval metrics are leading indicators**. Recall@k,
    Precision@k, MRR before touching generation; then citation accuracy /
    faithfulness on the answer side. Fix retrieval first.
-9. **Fix on the ladder** — prompt/rubric wording first, then structure,
+9. **Fix on the ladder**: prompt/rubric wording first, then structure,
    fine-tuning last. Never hard-code a fix for a single case.
 
 Review-time smells worth naming: accuracy-only reporting, an uncalibrated

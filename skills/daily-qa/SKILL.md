@@ -491,7 +491,7 @@ Recommend-only (never auto-run):
 - `/code-review ultra` — deep multi-agent cloud review; billed + user-triggered. Recommend when Step 3 surfaces a high-stakes correctness concern.
 - `/review` — staff-level production-readiness review; recommend for architecturally significant / critical-path changes (heavier than the Step 3 `/code-review`).
 - `/cso` — OWASP+STRIDE threat modeling; design-time (home is `/write-plan`). Backstop-recommend when a trust-boundary change shipped without a threat model.
-- `/pentest` — authorization-gated security hunt (in-harness source audit by default; clearwing's network/fuzzing modes bill their own provider); recommend when `/defense` or `/iac-scan` finds HIGH/CRITICAL, or sensitive code paths changed (a bare infra change is handled statically by auto-run `/iac-scan` §7i — pentest is only the deeper hunt on HIGH/CRITICAL).
+- `/pentest` — authorization-gated security hunt (in-harness pipeline by default; its clearwing integration can run agent-driven on the session via the bundled bridge, with only provider-driven runs billing their own provider); recommend when `/defense` or `/iac-scan` finds HIGH/CRITICAL, or sensitive code paths changed (a bare infra change is handled statically by auto-run `/iac-scan` §7i — pentest is only the deeper hunt on HIGH/CRITICAL).
 - `/qa` — interactive browser QA; recommend when UI changed.
 - `/web-perf` — Core Web Vitals + render trace against a live app (Chrome DevTools MCP); recommend when frontend files, assets, or bundler config changed.
 - `/design-audit` — read-only visual/a11y audit → design plan; recommend alongside `/qa` when UI changed.

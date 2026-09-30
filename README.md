@@ -134,7 +134,7 @@ selection across every supported tool.
 ### Security
 | Command | Description |
 |---------|-------------|
-| `/pentest` | Authorized security testing — in-harness source-code hunt by default; [clearwing](https://github.com/Lazarus-AI/clearwing) (own LLM provider, billed, ask-first) for its gated modes: network scans, SARIF, user-requested hunts |
+| `/pentest` | Authorized security testing — in-harness pipeline by default (tiered hunt → adversarial verification → variant loop → patch oracle, on the session's model); with clearwing installed, its full pipeline can run agent-driven on the session via the bundled bridge (no provider, no spend) or its MCP network machinery; provider-driven runs bill its LLM provider, ask-first |
 | `/fuzz` | Web fuzzing via [ffuf](https://github.com/ffuf/ffuf) |
 | `/defense` | Defense-in-depth: OWASP Top 10, secrets, auth, encryption |
 | `/iac-scan` | Infrastructure-as-Code security scan: Dockerfiles, Terraform, Kubernetes/Helm, CI/CD workflows |
@@ -223,7 +223,7 @@ Your overlay repo can:
 
 ## Optional Dependencies
 
-- `uv tool install clearwing`: for `/pentest`'s gated modes — network scans, SARIF/CI output, user-requested hunts (its default source-code hunt runs in-session; clearwing configures and bills its own LLM provider; `clearwing setup` is the ask-first enablement step)
+- `uv tool install clearwing`: for `/pentest`'s clearwing integration — its pipeline runs agent-driven on the session via the bundled bridge (provider-free), its network machinery via MCP, and only provider-driven runs need `clearwing setup` (bills its LLM provider; ask-first)
 - `brew install ffuf`: for `/fuzz` (web fuzzing)
 - Playwright: for `/playwright` (`npm install -D @playwright/test`)
 

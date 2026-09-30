@@ -234,12 +234,13 @@ log ""
 if command -v clearwing >/dev/null 2>&1; then
   log "  [ok] clearwing found"
 else
-  log "  [optional] clearwing not found — /pentest uses it only in its gated"
-  log "             modes (network scans, SARIF/CI output, a hunt the user asked"
-  log "             clearwing to run); it bills its own LLM provider, and /pentest's"
-  log "             default source hunt runs in-session. Install:"
-  log "             uv tool install clearwing (plus clearwing setup when you"
-  log "             enable its provider — ask-first)"
+  log "  [optional] clearwing not found — /pentest can drive it three ways:"
+  log "             its pipeline agent-driven on the session via the bundled"
+  log "             bridge (no provider), its network machinery via MCP, or"
+  log "             provider-driven runs that bill its LLM provider. /pentest's"
+  log "             default source hunt always runs in-session. Install:"
+  log "             uv tool install clearwing (plus clearwing setup only for"
+  log "             provider-driven runs — ask-first)"
 fi
 
 if command -v ffuf >/dev/null 2>&1; then
