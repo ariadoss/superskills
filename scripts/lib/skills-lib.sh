@@ -349,12 +349,24 @@ skill_body_from() {
 # Returns 1 (no output) when the skill has no resolvable name.
 #   link_extras : 1 (default) also links sibling files; 0 links only SKILL.md
 #   name_prefix : optional prefix on the target dir name (e.g. "superskills-")
+# _valid_skill_name <name> — exit 0 only for a name usable as ONE path
+# segment: no slashes, no .. traversal, no leading dash (an unsanitized
+# frontmatter name must never steer ln -snf outside the target dir, and the
+# gstack upstream clone extends the trust boundary beyond this repo).
+_valid_skill_name() {
+  case "$1" in
+    ""|/*|*/*|*..*|-*|"."|"..") return 1 ;;
+    *) return 0 ;;
+  esac
+}
+
 link_skill_into() {
   local base_dir="$1" skill_md="$2" fallback="${3:-}" link_extras="${4:-1}" name_prefix="${5:-}"
   local skill_dir name target extra extra_name
   skill_dir="$(dirname "$skill_md")"
   name="$(skill_name_from "$skill_md" "$fallback")"
   [ -z "$name" ] && return 1
+  _valid_skill_name "$name" || return 1
   # A skill already named with the prefix (superskills-doctor) is not doubled.
   case "$name" in "$name_prefix"*) target="$base_dir/$name" ;; *) target="$base_dir/${name_prefix}${name}" ;; esac
   mkdir -p "$target"
@@ -384,6 +396,7 @@ link_skill_dir_into() {
   skill_dir="$(dirname "$skill_md")"
   name="$(skill_name_from "$skill_md" "$fallback")"
   [ -z "$name" ] && return 1
+  _valid_skill_name "$name" || return 1
   case "$name" in "$name_prefix"*) target="$base_dir/$name" ;; *) target="$base_dir/${name_prefix}${name}" ;; esac
   if [ -d "$target" ] && [ ! -L "$target" ]; then
     SS_OWNED_SRC="$skill_dir" remove_owned_skill "$target" >/dev/null

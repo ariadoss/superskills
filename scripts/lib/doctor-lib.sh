@@ -106,7 +106,7 @@ doctor_install_kind() {
 # shapes), when no valid checkout owns a strict majority, or on a tie.
 doctor_owning_checkout() {
   local root="$1" skills="$2" real_root link target candidate owners=""
-  local best count total bowner
+  local count total bowner
   real_root="$(_doctor_realpath "$root")"
   # A nonexistent inspected path canonicalises to nothing; fall back to the
   # raw path so the "under the inspected root" pattern stays literal (an
@@ -118,8 +118,15 @@ doctor_owning_checkout() {
     [ -n "$target" ] && [ -f "$target" ] || continue
     case "$target" in "$real_root"/*) return 0 ;; esac
     candidate="$(dirname "$(dirname "$target")")"
-    case "$candidate" in */skills) candidate="${candidate%/skills}" ;; *) continue ;; esac
-    [ -f "$candidate/VERSION" ] && [ -f "$candidate/setup" ] && [ -d "$candidate/skills" ] || continue
+    # Accept owners through any of the three pack trees, so the denominator
+    # is every supersskills link, not just core ones.
+    case "$candidate" in
+      */skills|*/design-skills|*/marketing-skills) candidate="${candidate%/*}" ;;
+      *) continue ;;
+    esac
+    # A checkout is verified by shape AND being a git clone; a planted
+    # directory at a user-writable path must not redirect the report.
+    [ -f "$candidate/VERSION" ] && [ -f "$candidate/setup" ] && [ -d "$candidate/skills" ] && [ -d "$candidate/.git" ] || continue
     owners="${owners}${candidate}
 "
   done
@@ -130,6 +137,9 @@ doctor_owning_checkout() {
 $(printf '%s' "$owners" | sort | uniq -c | sort -rn | sed -n '1p' | sed 's/^ *//')
 LINE
   total="$(printf '%s' "$owners" | grep -c .)"
+  # Strict majority of the qualifying links, and at least two of them: one
+  # stray link must never trigger a re-anchor on its own.
+  [ "$count" -ge 2 ] || return 0
   [ "$count" -gt $((total / 2)) ] || return 0
   printf '%s' "$bowner"
   return 0
@@ -312,7 +322,9 @@ doctor_check_zcode() {
         for md in "$gstack_dir"/*/SKILL.md; do
           [ -f "$md" ] || continue
           [ -L "$(dirname "$md")" ] && continue
-          name="$(skill_name_from "$md" "$(basename "$(dirname "$md")")")"
+          name="$(basename "$(dirname "$md")")"
+          [ "$name" = "node_modules" ] && continue
+          name="$(skill_name_from "$md" "$name")"
           [ -n "$name" ] || continue
           skill_selected "$name" gstack >/dev/null 2>&1 || continue
           expected="${expected}${name}	${g_real_root}

@@ -34,7 +34,8 @@ setup() {
 
 @test "quota 429 fixture: clean tree with a retry-less payments client matching the premise" {
   W="$BATS_TEST_TMPDIR/fourtwonine"; mkdir -p "$W"
-  ( cd "$W" && . "$REPO_ROOT/evals/_lib/quota-fixture.sh" && quota_fixture 429 )
+  ( cd "$W" && . "$REPO_ROOT/evals/_lib/quota-fixture.sh" && quota_fixture 429 && echo ok ) > "$W/out" 2>&1
+  grep -q '^ok$' "$W/out" || false
   [ -z "$(git -C "$W/fixture-repo" status --porcelain)" ] || false
   [ "$(git -C "$W/fixture-repo" log --oneline | wc -l | tr -d ' ')" = "2" ] || false
   grep -q "urllib.request" "$W/fixture-repo/src/payments_client.py" || false

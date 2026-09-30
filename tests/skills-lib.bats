@@ -364,3 +364,29 @@ root"
   prune_deselected_skills "$TARGET" "$FIX" >/dev/null
   [ -L "$TARGET/alpha-cmd" ] || false
 }
+
+@test "link_skill_into rejects a name that is not one safe path segment" {
+  mkdir -p "$FIX/evil"
+  printf -- '---\nname: ../../evil\ndescription: x\n---\n' > "$FIX/evil/SKILL.md"
+  run link_skill_into "$TARGET" "$FIX/evil/SKILL.md" "fallback"
+  [ "$status" -eq 1 ]
+  [ -z "$(ls -A "$TARGET" 2>/dev/null)" ] || false
+}
+
+@test "link_skill_dir_into rejects a name that is not one safe path segment" {
+  mkdir -p "$FIX/evil2"
+  printf -- '---\nname: sub/dir\ndescription: x\n---\n' > "$FIX/evil2/SKILL.md"
+  run link_skill_dir_into "$TARGET" "$FIX/evil2/SKILL.md" "fallback"
+  [ "$status" -eq 1 ]
+  [ -z "$(ls -A "$TARGET" 2>/dev/null)" ] || false
+}
+
+@test "link_skill_dir_into replaces an existing symlink at the same name (later walks win)" {
+  mkdir -p "$FIX/marketing-x" "$FIX/core-x"
+  printf -- '---\nname: same-name\ndescription: m\n---\n' > "$FIX/marketing-x/SKILL.md"
+  printf -- '---\nname: same-name\ndescription: c\n---\n' > "$FIX/core-x/SKILL.md"
+  link_skill_dir_into "$TARGET" "$FIX/marketing-x/SKILL.md" "m-fallback" >/dev/null
+  [ "$(readlink "$TARGET/same-name")" = "$FIX/marketing-x" ] || false
+  link_skill_dir_into "$TARGET" "$FIX/core-x/SKILL.md" "c-fallback" >/dev/null
+  [ "$(readlink "$TARGET/same-name")" = "$FIX/core-x" ] || false
+}

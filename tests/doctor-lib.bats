@@ -215,6 +215,7 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
   [[ "$output" == *"| Install | ready | plugin install"* ]] || false
   [[ "$output" == *"| Links | ready |"* ]] || false
   [[ "$output" == *"| gstack | warning |"* ]] || false
+  [[ "$output" != *"Anchor"* ]] || false
   [[ "$output" == *"| Plugin | ready | plugin superskills@superskills v2.24.0 matches VERSION"* ]] || false
   [[ "$output" == *"Verdict: ready with warnings"* ]] || false
 }
@@ -972,6 +973,7 @@ SH
 # ── owning-checkout re-anchor ──
 
 @test "owning_checkout: echoes the other valid checkout the links resolve into" {
+  mkdir -p "$ROOT/.git"
   run doctor_owning_checkout "$BATS_TEST_TMPDIR/cache-copy" "$SKILLS"
   [ "$output" = "$(_doctor_realpath "$ROOT")" ]
 }
@@ -983,7 +985,7 @@ SH
 }
 
 @test "owning_checkout: empty when two different checkouts own the links (ambiguous)" {
-  OTHER="$BATS_TEST_TMPDIR/second-repo"; mkdir -p "$OTHER/skills/alpha" "$OTHER/skills/beta"
+  OTHER="$BATS_TEST_TMPDIR/second-repo"; mkdir -p "$OTHER/skills/alpha" "$OTHER/skills/beta" "$OTHER/.git"
   printf '2.24.0\n' > "$OTHER/VERSION"; printf '#!/bin/sh\n' > "$OTHER/setup"; chmod +x "$OTHER/setup"
   printf -- '---\nname: alpha\ndescription: a\n---\n' > "$OTHER/skills/alpha/SKILL.md"
   printf -- '---\nname: beta\ndescription: b\n---\n' > "$OTHER/skills/beta/SKILL.md"
@@ -993,7 +995,39 @@ SH
   [ -z "$output" ]
 }
 
+@test "owning_checkout: re-anchors on a strict majority despite a valid stray checkout; 50% does not" {
+  mkdir -p "$ROOT/.git"
+  OTHER="$BATS_TEST_TMPDIR/stray-repo"; mkdir -p "$OTHER/skills" "$OTHER/.git"
+  printf '2.24.0\n' > "$OTHER/VERSION"; printf '#!/bin/sh\n' > "$OTHER/setup"; chmod +x "$OTHER/setup"
+  for n in extra1 extra2; do
+    mkdir -p "$OTHER/skills/$n" "$SKILLS/$n"
+    printf -- '---\nname: %s\ndescription: x\n---\n' "$n" > "$OTHER/skills/$n/SKILL.md"
+    ln -s "$OTHER/skills/$n/SKILL.md" "$SKILLS/$n/SKILL.md"
+  done
+  # alpha+beta+extra0 into ROOT, extra1+extra2 into OTHER (3 of 5): majority → ROOT.
+  mkdir -p "$ROOT/skills/extra0" "$SKILLS/extra0"
+  printf -- '---\nname: extra0\ndescription: x\n---\n' > "$ROOT/skills/extra0/SKILL.md"
+  ln -s "$ROOT/skills/extra0/SKILL.md" "$SKILLS/extra0/SKILL.md"
+  run doctor_owning_checkout "$BATS_TEST_TMPDIR/cache-copy" "$SKILLS"
+  [ "$output" = "$(_doctor_realpath "$ROOT")" ]
+  # Add a third stray (3-of-6, exactly 50%): no anchor.
+  n2=extra3; mkdir -p "$OTHER/skills/$n2" "$SKILLS/$n2"
+  printf -- '---\nname: %s\ndescription: x\n---\n' "$n2" > "$OTHER/skills/$n2/SKILL.md"
+  ln -s "$OTHER/skills/$n2/SKILL.md" "$SKILLS/$n2/SKILL.md"
+  run doctor_owning_checkout "$BATS_TEST_TMPDIR/cache-copy" "$SKILLS"
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+}
+
+@test "owning_checkout: a shape-valid owner without .git never anchors" {
+  rm -rf "$ROOT/.git"
+  run doctor_owning_checkout "$BATS_TEST_TMPDIR/cache-copy" "$SKILLS"
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+}
+
 @test "report: a doctor launched from a cache copy re-anchors to the owning checkout instead of blocking" {
+  mkdir -p "$ROOT/.git"
   CACHE="$BATS_TEST_TMPDIR/cache-copy"; cp -R "$ROOT" "$CACHE"
   # A real-clone gstack fixture keeps the gstack row ready; the hook row may
   # still warn (the fixture repo is not a git checkout), so the contract is
