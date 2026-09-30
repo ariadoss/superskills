@@ -199,7 +199,7 @@ Per-branch pipeline (6 steps above)        Background cadence (daily)
 **Why some commands are recommend-only:**
 - `/code-review ultra` runs a deep multi-agent review in the cloud: billed and user-triggered, so it can't auto-run. The local `/code-review` tiers (which power the daily commit bug scan) read the diff only and are safe to run unattended.
 - `/web-perf` requires Chrome DevTools MCP and a live dev URL. It must be run interactively against a running app.
-- `/pentest` uses [clearwing](https://github.com/Lazarus-AI/clearwing): external scanner that requires authorization confirmation per run.
+- `/pentest` hunts source code in-harness by default (the session's own model) but requires authorization confirmation per run; its [clearwing](https://github.com/Lazarus-AI/clearwing) modes (network scans, SARIF) are an external scanner that bills its own LLM provider — ask-first.
 - `/qa` launches a browser interactively, wrong shape for unattended runs.
 - `/debug`, `/verify`, `/perf-profile` are per-issue deep-dives; auto-running them on every finding would be slow and noisy.
 

@@ -134,7 +134,7 @@ selection across every supported tool.
 ### Security
 | Command | Description |
 |---------|-------------|
-| `/pentest` | Security scanning via [clearwing](https://github.com/Lazarus-AI/clearwing) |
+| `/pentest` | Authorized security testing — in-harness source-code hunt by default; [clearwing](https://github.com/Lazarus-AI/clearwing) (own LLM provider, billed) only for network scans / SARIF |
 | `/fuzz` | Web fuzzing via [ffuf](https://github.com/ffuf/ffuf) |
 | `/defense` | Defense-in-depth: OWASP Top 10, secrets, auth, encryption |
 | `/iac-scan` | Infrastructure-as-Code security scan: Dockerfiles, Terraform, Kubernetes/Helm, CI/CD workflows |
@@ -223,7 +223,7 @@ Your overlay repo can:
 
 ## Optional Dependencies
 
-- `uv tool install clearwing`: for `/pentest` (source code + network scanning)
+- `uv tool install clearwing`: for `/pentest`'s optional network-scan / SARIF modes (its default source-code hunt runs in-session; clearwing configures and bills its own LLM provider)
 - `brew install ffuf`: for `/fuzz` (web fuzzing)
 - Playwright: for `/playwright` (`npm install -D @playwright/test`)
 

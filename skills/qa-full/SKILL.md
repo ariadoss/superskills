@@ -145,9 +145,11 @@ with that evidence and NOT READY.
   is itself a blocker.
 - **Money and authorization still need a human yes.** `/code-review ultra` is a
   billed cloud run, and `/review`'s Codex passes spend OpenAI tokens — ask
-  before launching either, never assume. `/pentest` requires
-  the user to confirm authorization before it scans — ask, then run. "Ask, then
-  run" is still running; it is not report-only.
+  before launching either, never assume. `/pentest`'s in-harness default costs
+  nothing beyond this session, but the skill still requires the user to
+  confirm authorization before it scans — ask, then run. Its clearwing modes
+  bill a separate LLM provider and stay ask-first. "Ask, then run" is still
+  running; it is not report-only.
 
 ## Project configuration (`CLAUDE.md`)
 
@@ -395,11 +397,17 @@ scoped CIDR, wildcard IAM → least privilege, privileged pod → dropped, untru
 CI trigger → pinned/guarded, baked-in secret → injected), re-scan to verify.
 
 **`/pentest` (triggered when `/defense` found CRITICAL/HIGH, or the diff touches
-auth/crypto/session/token/deserialization/file-upload paths).** It is an external
-scanner: **confirm authorization with the user first** (the skill's own
-questions), then run it. Fix CRITICAL/HIGH it surfaces, re-scan to verify. If the
-user declines or the scanner is unavailable ⇒ SKIPPED(reason). If `CLAUDE.md`
-marks `/pentest` MANDATORY, SKIPPED is a blocker.
+auth/crypto/session/token/deserialization/file-upload paths).** Its default mode
+hunts in this harness — the session's own model reads the code and reports
+findings with evidence levels; no external scanner, no spend beyond the
+session. **Confirm authorization with the user first** (the skill's own
+questions), then run it; the in-harness hunt is the check, not a stand-in.
+Fix CRITICAL/HIGH it surfaces, re-run to verify. clearwing appears only when
+the user asks for a network probe or SARIF/CI output; it configures its own
+LLM provider and bills it per run, so it stays behind its ask-first spend
+gate — declining clearwing means run the in-harness mode, not skip the check.
+If the user declines the check itself (no authorization) ⇒ SKIPPED(reason). If
+`CLAUDE.md` marks `/pentest` MANDATORY, SKIPPED is a blocker.
 
 **`/fuzz` (triggered when the diff adds or changes endpoints, input parsing,
 file-upload handling, or deserialization).** Needs a running target: find the dev
@@ -662,8 +670,9 @@ summary to the chat.
   duplicated helper, a symptom patch over an unknown root cause.
 - Looping without bound. Two fix rounds per check, one final pass, then report
   what's left honestly.
-- Launching a billed run (`/code-review ultra`) or an external scanner
-  (`/pentest`) without the user's explicit yes.
+- Launching a billed run (`/code-review ultra`, `/review`'s Codex passes,
+  `/pentest`'s clearwing modes) or any scan without authorization, without
+  the user's explicit yes.
 - Declaring SHIP-READY while a check was skipped without saying which and why,
   or while any UNFIXED blocker remains.
 - Running any sub-check against the whole repo instead of the diff.
@@ -697,7 +706,8 @@ Auto-run (diff-scoped; audit → fix → verify):
 Ask-first (need the user's explicit yes):
 - `/code-review ultra` — billed multi-agent cloud review.
 - `/review`'s Codex passes — OpenAI tokens; per-run yes required (Step 3).
-- `/pentest` — external scanner; authorization confirmation, then it runs.
+- `/pentest` — authorization confirmation, then it runs; in-harness by
+  default, clearwing modes are the billed ask-first option (Step 4).
 
 Follow-up (outside the pipeline):
 - `/code-review` / `/simplify` — Claude Code built-ins overlapping Step 3; use

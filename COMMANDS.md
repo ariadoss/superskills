@@ -44,7 +44,7 @@
 
 | Command | Description |
 |---------|-------------|
-| `/pentest` | Security scanning via clearwing (source code + network) |
+| `/pentest` | Authorized security testing — in-harness source hunt by default; clearwing (own provider, billed) for network scans / SARIF |
 | `/fuzz` | Web fuzzing via ffuf |
 | `/defense` | Defense-in-depth: OWASP Top 10, secrets, auth, encryption |
 | `/iac-scan` | Infrastructure-as-Code security scan: Dockerfiles, docker-compose, Terraform, Kubernetes/Helm, CI/CD workflows; flags root containers, open ingress, wildcard IAM, exposed secrets |

@@ -234,8 +234,10 @@ log ""
 if command -v clearwing >/dev/null 2>&1; then
   log "  [ok] clearwing found"
 else
-  log "  [optional] clearwing not found — needed for /pentest"
-  log "             Install: uv tool install clearwing && clearwing setup"
+  log "  [optional] clearwing not found — only /pentest's network-scan and"
+  log "             SARIF modes use it (it bills its own LLM provider; /pentest's"
+  log "             default source-code hunt runs in-session and needs nothing)"
+  log "             Install: uv tool install clearwing"
 fi
 
 if command -v ffuf >/dev/null 2>&1; then
