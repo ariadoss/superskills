@@ -715,7 +715,7 @@ doctor_report() {
     doctor_check_knowledge "$home/.superskills/knowledge.conf" "$home"
     doctor_check_command bun "gstack's browser tool (/qa, /browse) needs it — curl -fsSL https://bun.sh/install | bash"
     doctor_check_command bats "runs ./tests/run.sh — brew install bats-core"
-    doctor_check_command clearwing "optional: only /pentest's network-scan and SARIF modes use it (it bills its own LLM provider; /pentest's default source hunt runs in-session) — uv tool install clearwing"
+    doctor_check_command clearwing "optional: /pentest uses it only in its gated modes (network scans, SARIF/CI output, or a hunt the user asked clearwing to run) and it bills its own LLM provider; /pentest's default source hunt runs in-session — uv tool install clearwing (plus clearwing setup when enabling its provider; ask-first)"
     doctor_check_command ffuf "needed for /fuzz — brew install ffuf"
   )"
   verdict="$(doctor_verdict "$rows")"

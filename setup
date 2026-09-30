@@ -234,10 +234,12 @@ log ""
 if command -v clearwing >/dev/null 2>&1; then
   log "  [ok] clearwing found"
 else
-  log "  [optional] clearwing not found — only /pentest's network-scan and"
-  log "             SARIF modes use it (it bills its own LLM provider; /pentest's"
-  log "             default source-code hunt runs in-session and needs nothing)"
-  log "             Install: uv tool install clearwing"
+  log "  [optional] clearwing not found — /pentest uses it only in its gated"
+  log "             modes (network scans, SARIF/CI output, a hunt the user asked"
+  log "             clearwing to run); it bills its own LLM provider, and /pentest's"
+  log "             default source hunt runs in-session. Install:"
+  log "             uv tool install clearwing (plus clearwing setup when you"
+  log "             enable its provider — ask-first)"
 fi
 
 if command -v ffuf >/dev/null 2>&1; then

@@ -1062,3 +1062,13 @@ SH
   [[ "$(evidence_of "$output")" == *"2/2 skills linked into $Z"* ]] || false
   [[ "$(evidence_of "$output")" != *"Not linked"* ]] || false
 }
+
+@test "doctor's clearwing advice stays optional-scoped (never 'needed for /pentest')" {
+  # /pentest defaults to the in-harness hunt; clearwing is a gated, billed
+  # provider tool. The old 'needed for /pentest' advice pushed it as required —
+  # a revert would pass the suite silently without this source pin.
+  run grep -F 'doctor_check_command clearwing' "$REPO_ROOT/scripts/lib/doctor-lib.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" != *'needed for /pentest'* ]] || false
+  [[ "$output" == *'uv tool install clearwing'* ]] || false
+}

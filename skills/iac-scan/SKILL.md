@@ -35,8 +35,10 @@ exposed secrets. **Static and read-only** — analyzes the files directly.
 **Auto-run safety envelope:** the auto-run path uses only **local static linters**
 that need no network and no auth — `hadolint`, `tfsec`, `checkov` (offline/local
 policy only), `kube-score`, `actionlint`, `zizmor`. That's why it's safe to
-auto-run, unlike `/pentest` (an authenticated, networked scanner that probes live
-targets). Anything that reaches the network — e.g. `trivy` pulling vulnerability
+auto-run, unlike `/pentest` (an interactive check gated on an authorization
+confirmation, whose opt-in clearwing modes are networked scanners that bill
+their own LLM provider — its default in-harness source hunt touches no network
+but still waits for authorization). Anything that reaches the network — e.g. `trivy` pulling vulnerability
 DBs, or `checkov` fetching remote policies — is **opt-in / recommend-only**, never
 part of the auto-run. If only networked tools are available, run the signature
 checks instead and recommend the networked scan separately.
@@ -134,6 +136,6 @@ Scanners run: hadolint ✓ / tfsec ✗ (signature mode) / actionlint ✓ …
 ## Related commands
 
 - `/defense` — app-code OWASP/secrets sweep; `/iac-scan` is its infra counterpart.
-- `/pentest` — deeper external scanner; recommend after `/iac-scan` finds HIGH/CRITICAL
+- `/pentest` — deeper security hunt (in-harness source audit by default; its clearwing modes probe live environments — billed, ask-first); recommend after `/iac-scan` finds HIGH/CRITICAL
   or when a live environment needs probing.
 - `/cso` — threat-model the deployment topology at design time (`/write-plan`).
