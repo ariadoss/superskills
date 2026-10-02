@@ -30,7 +30,8 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --tag) TAG="${2:?}"; shift 2 ;;
     --repo-url) REPO_URL="${2:?}"; shift 2 ;;
-    *) die "unknown flag: $1 (usage: sync-shannon.sh --tag <tag> [--repo-url <url>])" ;;
+    --force) FORCE=1; shift ;;
+    *) die "unknown flag: $1 (usage: sync-shannon.sh --tag <tag> [--repo-url <url>] [--force])" ;;
   esac
 done
 
@@ -46,15 +47,33 @@ TMP="$(mktemp -d "${TMPDIR:-/tmp}/shannon-sync.XXXXXX")"
 trap 'rm -rf "$TMP"' EXIT
 
 echo "==> cloning $REPO_URL at $TAG"
-git clone --quiet --depth 1 --branch "$TAG" "$REPO_URL" "$TMP/shannon" \
+# '--' keeps a dash-prefixed --repo-url value a positional URL, never a git
+# option (the same guard setup's knowledge-base clone carries).
+git clone --quiet --depth 1 --branch "$TAG" -- "$REPO_URL" "$TMP/shannon" \
   || die "clone failed (does tag $TAG exist upstream?)"
 REV="$(git -C "$TMP/shannon" rev-parse HEAD)"
+# Tags are mutable upstream: the same tag resolving to a different commit
+# than the vendored pin means the label moved — a deliberate refresh must
+# say so (--force) or pin the new commit explicitly.
+if [ -z "${FORCE:-}" ] && [ -f "$VENDOR/UPSTREAM" ]; then
+  PRIOR_TAG="$(sed -n 's/^Tag:[[:space:]]*//p' "$VENDOR/UPSTREAM" | head -1)"
+  PRIOR_REV="$(sed -n 's/^Commit:[[:space:]]*//p' "$VENDOR/UPSTREAM" | head -1 | cut -d' ' -f1)"
+  if [ "$TAG" = "$PRIOR_TAG" ] && [ -n "$PRIOR_REV" ] && [ "$REV" != "$PRIOR_REV" ]; then
+    die "tag $TAG moved: vendored pin is $PRIOR_REV, upstream now resolves to $REV — pass --force to accept, or pin the new commit deliberately"
+  fi
+fi
 DATE="$(git -C "$TMP/shannon" log -1 --format=%ad --date=short)"
 
 # Strip what never belongs in the snapshot: git metadata and README media.
 rm -rf "$TMP/shannon/.git" \
        "$TMP/shannon/assets/Shannon3GIF.gif" \
        "$TMP/shannon/assets/shannon-action.gif"
+# rm -rf succeeds silently when the path is absent: an upstream rename would
+# quietly no-op the ~49MB trim while UPSTREAM keeps claiming the GIFs were
+# removed. Surface the drift at sync time instead.
+for gone in "$TMP/shannon/assets/Shannon3GIF.gif" "$TMP/shannon/assets/shannon-action.gif"; do
+  [ ! -e "$gone" ] || echo "warn: $gone still present after strip — trim list may be stale" >&2
+done
 
 echo "==> swapping vendor tree"
 rm -rf "$VENDOR"

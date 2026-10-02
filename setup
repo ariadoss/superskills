@@ -171,6 +171,14 @@ if [ "$NO_KNOWLEDGE" -eq 0 ]; then
           continue
           ;;
       esac
+      # git's ext::/fd:: "transport helpers" EXECUTE commands; '--' blocks
+      # option parsing, not transports. A pasted helper URL is a footgun.
+      case "$kb_url" in
+        ext::*|fd::*)
+          log "  [skip] '$kb_name' — git transport-helper URLs (ext::, fd::) are not allowed"
+          continue
+          ;;
+      esac
 
       echo "$kb_name|~/.superskills/knowledge/$kb_name|$kb_desc|$kb_url" >> "$KB_CONF"
       log "  [added] $kb_name"

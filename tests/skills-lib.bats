@@ -436,3 +436,14 @@ root"
   [ -f "$TARGET/alpha-cmd.md" ] || false
   head -1 "$TARGET/alpha-cmd.md" | grep -q '^# /alpha-cmd$' || false
 }
+
+@test "the writer adapters return 1 and write nothing when no name is resolvable" {
+  ss_selected() { return 0; }
+  mkdir -p "$FIX/noname"
+  printf -- '---\ndescription: x\n---\n' > "$FIX/noname/SKILL.md"
+  for fn in link_skill_continue link_skill_augment link_skill_cursor; do
+    rc=0; "$fn" "$TARGET" "$FIX/noname/SKILL.md" "" || rc=$?
+    [ "$rc" -eq 1 ] || { echo "$fn returned $rc, expected 1"; return 1; }
+  done
+  [ -z "$(ls -A "$TARGET" 2>/dev/null)" ] || false
+}

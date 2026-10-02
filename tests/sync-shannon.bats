@@ -27,3 +27,21 @@ setup() {
   grep -qF 'shannon-agent-driven.sh prepare' "$SYNC" || false
   grep -qF 'uncommitted changes' "$SYNC" || false
 }
+
+@test "a refresh refuses to discard uncommitted vendor edits, before any clone" {
+  # The dirty-tree refusal is the only guard between a maintainer's local
+  # vendor edits and the script's rm -rf; it runs before any network access,
+  # so it is behaviorally testable in a fixture git repo.
+  FIX="$BATS_TEST_TMPDIR/repo"
+  git init -q "$FIX"
+  git -C "$FIX" config user.email t@t; git -C "$FIX" config user.name t
+  mkdir -p "$FIX/scripts" "$FIX/vendor/shannon"
+  cp "$SYNC" "$FIX/scripts/sync-shannon.sh"
+  echo x > "$FIX/vendor/shannon/f"
+  git -C "$FIX" add -A; git -C "$FIX" commit -qm init
+  echo dirty > "$FIX/vendor/shannon/f"
+  run "$FIX/scripts/sync-shannon.sh" --tag v9.9.9
+  [ "$status" -ne 0 ] || { echo "sync must refuse a dirty vendor tree"; return 1; }
+  grep -q 'uncommitted changes' <<<"$output" || false
+  grep -q dirty "$FIX/vendor/shannon/f" || false   # the edit survived
+}

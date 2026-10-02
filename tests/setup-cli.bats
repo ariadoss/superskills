@@ -73,10 +73,14 @@ setup() {
   # kb_name becomes a pipe-delimited field and a path under
   # ~/.superskills/knowledge; whitespace, '|', '/', a leading '.' (path
   # steering) or a leading '#' (comment in every conf consumer) corrupt it.
-  # desc and url are pipe-delimited fields too — '|' reshuffles the record.
+  # desc and url are pipe-delimited fields too — '|' reshuffles the record —
+  # and git's ext::/fd:: transport helpers EXECUTE commands, so a pasted
+  # helper URL is refused outright.
   run grep -cF "KB names may not contain spaces, '|' or '/', or start with '.' or '#'" "$REPO_ROOT/setup"
   [ "$output" -eq 1 ] || false
   run grep -cF "the description and URL may not contain '|'" "$REPO_ROOT/setup"
+  [ "$output" -eq 1 ] || false
+  run grep -cF 'transport-helper URLs (ext::, fd::) are not allowed' "$REPO_ROOT/setup"
   [ "$output" -eq 1 ] || false
   # A pasted URL must never parse as a git option (--upload-pack=...).
   run grep -cF 'git clone --quiet -- "$url"' "$REPO_ROOT/setup"
