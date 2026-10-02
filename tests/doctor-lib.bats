@@ -359,6 +359,20 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
   [[ "$(evidence_of "$output")" == *"sync-version.sh"* ]] || false
 }
 
+@test "check_manifests: ready when a marketplace has several plugin entries all at VERSION" {
+  printf '{ "name": "superskills", "plugins": [{ "version": "2.24.0" }, { "version": "2.24.0" }] }\n' > "$ROOT/.claude-plugin/marketplace.json"
+  run doctor_check_manifests "$ROOT"
+  [ "$(status_of "$output")" = "ready" ]
+}
+
+@test "check_manifests: a stale second plugin entry in a marketplace is a warning, not silently ready" {
+  printf '{ "name": "superskills", "plugins": [{ "version": "2.24.0" }, { "version": "2.23.0" }] }\n' > "$ROOT/.claude-plugin/marketplace.json"
+  run doctor_check_manifests "$ROOT"
+  [ "$(status_of "$output")" = "warning" ]
+  [[ "$(evidence_of "$output")" == *".claude-plugin/marketplace.json"* ]] || false
+  [[ "$(evidence_of "$output")" == *"sync-version.sh"* ]] || false
+}
+
 @test "check_manifests: warning naming a manifest that is missing altogether (not silently ready)" {
   rm "$ROOT/.claude-plugin/marketplace.json"
   run doctor_check_manifests "$ROOT"
@@ -968,6 +982,12 @@ SH
     run kill -0 "$gcpid"
     [ "$status" -ne 0 ] || { echo "grandchild $gcpid still alive after the bounded run returned"; kill -9 "$gcpid" 2>/dev/null; return 1; }
   fi
+}
+
+@test "_doctor_run_bounded returns the command's exit status when it finishes on its own" {
+  rc=0
+  ( _doctor_run_bounded 5 "$BATS_TEST_TMPDIR/out" bash -c 'exit 7' ) || rc=$?
+  [ "$rc" -eq 7 ] || { echo "expected 7, got $rc"; return 1; }
 }
 
 # ── owning-checkout re-anchor ──

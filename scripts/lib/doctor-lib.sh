@@ -387,8 +387,10 @@ doctor_check_manifests() {
       # (e.g. a "source" block) is not this manifest's own version.
       manifest_version="$("$jq" -r '.version // empty' "$root/$f" 2>/dev/null)"
       if [ -z "$manifest_version" ]; then
-        # A marketplace manifest nests version per plugin entry; check those too.
-        manifest_version="$("$jq" -r '(.plugins // [])[0].version // empty' "$root/$f" 2>/dev/null)"
+        # A marketplace manifest nests version per plugin entry; EVERY entry
+        # must match — a bump that misses one means that plugin's installs
+        # never see it.
+        manifest_version="$("$jq" -r --arg v "$v" '[(.plugins // [])[].version // empty] | if length == 0 then empty elif all(. == $v) then $v else "__stale__" end' "$root/$f" 2>/dev/null)"
       fi
       if [ -z "$manifest_version" ]; then noversion="$noversion $f"; continue; fi
       [ "$manifest_version" = "$v" ] || stale="$stale $f"
@@ -525,7 +527,7 @@ _doctor_is_json_array() {
 # caller; the wait is a builtin loop, so no timeout/gtimeout/perl is needed.
 # Returns the command's status, or 124 when it was killed.
 _doctor_run_bounded() {
-  local secs="$1" out="$2" pid ticks=0 limit
+  local secs="$1" out="$2" pid ticks=0 limit rc
   shift 2
   limit=$((secs * 10))
   # A new process group (setsid when available, else bash job control) so the
@@ -549,9 +551,11 @@ _doctor_run_bounded() {
     fi
     sleep 0.1; ticks=$((ticks + 1))
   done
-  wait "$pid"
+  rc=0
+  wait "$pid" || rc=$?
   trap - EXIT
   command -v setsid >/dev/null 2>&1 || set +m
+  return "$rc"
 }
 
 # _doctor_cli_json <claude_bin> [home]
