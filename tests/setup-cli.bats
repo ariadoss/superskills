@@ -39,6 +39,32 @@ setup() {
   [ "$output" -eq 0 ] || false
 }
 
+@test "the file-writing adapters guard frontmatter names before building paths" {
+  # link_skill_continue, link_skill_augment and the Cursor loop all build
+  # file paths from SKILL.md frontmatter names. Like the symlink linkers
+  # (skills-lib.sh), they must reject a name that steers outside the target
+  # dir — _valid_skill_name at every writer site, never just the linkers.
+  run grep -c '_valid_skill_name "$name"' "$REPO_ROOT/setup"
+  [ "$output" -eq 3 ] || false
+}
+
+@test "supply-chain actions are named, not silent" {
+  # The bun install pipes a third-party installer into bash with its output
+  # silenced; the notice must name exactly what runs so the user can veto it
+  # by unselecting the gstack pack.
+  run grep -cF '[install] bun via curl -fsSL https://bun.sh/install | bash (third-party installer)' "$REPO_ROOT/setup"
+  [ "$output" -eq 1 ] || false
+}
+
+@test "knowledge-base names are validated before entering knowledge.conf" {
+  # kb_name becomes a pipe-delimited field and a path under
+  # ~/.superskills/knowledge; whitespace, '|', '/' or a leading '.' would
+  # reshuffle the fields or steer the clone path. The skip message is the pin:
+  # the validation is the only place it can appear.
+  run grep -cF "KB names may not contain spaces, '|' or '/', or start with '.'" "$REPO_ROOT/setup"
+  [ "$output" -eq 1 ] || false
+}
+
 @test "setup manages ~/.zcode/skills as a link target with the full contract" {
   # ZCode is a first-class target: dir-gated like Codex, core + gstack
   # closure linked, and its dangling links pruned with logging (never

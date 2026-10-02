@@ -144,6 +144,15 @@ if [ "$NO_KNOWLEDGE" -eq 0 ]; then
       [ -z "$kb_name" ] && continue
       [ "$kb_name" = "done" ] && break
       [ "$kb_name" = "skip" ] && break
+      # The name becomes a pipe-delimited field AND a path under
+      # ~/.superskills/knowledge — whitespace reshuffles the fields, '|'
+      # splits them, '/' or a leading '.' steers the clone path.
+      case "$kb_name" in
+        *[[:space:]\|/]*|.*)
+          log "  [skip] '$kb_name' — KB names may not contain spaces, '|' or '/', or start with '.'"
+          continue
+          ;;
+      esac
 
       printf "  Git URL for '$kb_name': "
       read -r kb_url </dev/tty 2>/dev/null || break
@@ -212,7 +221,7 @@ if [ "$(gstack_pack_action)" = "ensure" ]; then
   # Ensure bun is installed (required by gstack's browser tool) unless gstack is
   # already a real install that has been through its own setup.
   if [ "$(gstack_install_state "$GSTACK_DIR")" != "real" ] && ! command -v bun >/dev/null 2>&1; then
-    log "  [install] bun (required by gstack)..."
+    log "  [install] bun via curl -fsSL https://bun.sh/install | bash (third-party installer)"
     curl -fsSL https://bun.sh/install | bash >/dev/null 2>&1 || {
       log "  [warn] bun install failed — gstack browse tool may not work"
       log "         Install manually: curl -fsSL https://bun.sh/install | bash"
@@ -632,6 +641,9 @@ if [ -d "$HOME/.continue" ]; then
     local name desc body
     name="$(skill_name_from "$skill_md" "$fallback_name")"
     [ -z "$name" ] && return
+    # A frontmatter name must never steer the written file outside the
+    # target dir (same contract as the symlink linkers in skills-lib.sh).
+    _valid_skill_name "$name" || { log "  [skip] $fallback_name — unusable skill name"; return 0; }
     ss_selected "$name" core "$skill_md" || return 0
     desc=$(skill_desc_from "$skill_md")
     body=$(skill_body_from "$skill_md")
@@ -661,6 +673,9 @@ if [ -d "$HOME/.augment" ]; then
     local name body
     name="$(skill_name_from "$skill_md" "$fallback_name")"
     [ -z "$name" ] && return
+    # A frontmatter name must never steer the written file outside the
+    # target dir (same contract as the symlink linkers in skills-lib.sh).
+    _valid_skill_name "$name" || { log "  [skip] $fallback_name — unusable skill name"; return 0; }
     ss_selected "$name" core "$skill_md" || return 0
     body=$(skill_body_from "$skill_md")
     printf '# /%s\n\n%s\n' "$name" "$body" > "$AUGMENT_COMMANDS_DIR/$name.md"
@@ -711,6 +726,9 @@ if [ "$INSTALL_CURSOR" -eq 1 ]; then
     dir_name="$(basename "$(dirname "$skill_md")")"
     [ "$dir_name" = "node_modules" ] && continue
     name="$(skill_name_from "$skill_md" "$dir_name")"
+    # A frontmatter name must never steer the written file outside the
+    # target dir (same contract as the symlink linkers in skills-lib.sh).
+    _valid_skill_name "$name" || { log "  [skip] $dir_name — unusable skill name"; continue; }
     ss_selected "$name" core "$skill_md" || continue
     desc=$(skill_desc_from "$skill_md")
     body=$(skill_body_from "$skill_md")
