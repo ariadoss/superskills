@@ -172,6 +172,20 @@ explicit current → target versions taken from the repo.
 5. Propose the **smallest viable upgrade set**: prefer one cohesive bump
    per group over many. Mark all target versions as **Suggestion** unless
    they came from an explicit upstream pin in the repo.
+6. **Vendored-tool upstream drift** (always run — read-only, no billing):
+
+   ```bash
+   ./scripts/check-upstream-drift.sh
+   ```
+
+   Compares the vendored pentest tools against their upstreams: Shannon's
+   vendored tag vs the latest stable tag, and clearwing's installed commit
+   vs its vendored pin vs upstream HEAD (by **commit** — upstream's version
+   string is ambiguous). Report its output verbatim in the findings table.
+   It never upgrades anything — when it reports an upgrade available, that is
+   a **Suggestion** with the exact `scripts/sync-*.sh` command it prints, and
+   the sync's contract tests decide whether the upgrade is safe. Offline
+   probes print "unverified"; report that as unverified, never as current.
 
 ## Step 5: Performance / benchmark regression
 

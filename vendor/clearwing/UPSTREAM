@@ -1,0 +1,17 @@
+Upstream:   https://github.com/Lazarus-AI/clearwing
+Pin:        commit 88d3a8a41c22ad9c4d8aaf67bbf5489549740454 (2026-04-24)
+Version:    1.0.0 — AMBIGUOUS upstream: tag v1.0.0 points at a different,
+            older commit (9dcc8b4). The installed tool reported 1.0.0 while
+            running this post-tag commit, and the bridge contract in
+            skills/pentest Mode 3 was verified against THIS commit. Pin by
+            commit, never by version string:
+            uv tool install --force git+https://github.com/Lazarus-AI/clearwing@88d3a8a41c22ad9c4d8aaf67bbf5489549740454
+License:    MIT (see LICENSE; vendored unmodified except: .git removed and
+            this UPSTREAM note added)
+Role:       snapshot + contract reference, NOT the runtime — Mode 3 drives
+            the installed `clearwing` binary; this tree is what its verified
+            behavior was pinned against, and the drift check compares the
+            installed commit to it.
+Refresh:    scripts/sync-clearwing.sh --rev <commit-or-tag>   (deliberate, never auto)
+Contract:   tests/clearwing-vendor.bats pins the facts skills/pentest Mode 3
+            relies on; it fails when a refresh breaks the integration surface.

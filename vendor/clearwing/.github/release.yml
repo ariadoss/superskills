@@ -1,0 +1,49 @@
+# Drives GitHub's "Generate release notes" button when cutting a release.
+# Categorizes merged PRs by label. See:
+# https://docs.github.com/en/repositories/releasing-projects-on-github/automatically-generated-release-notes
+#
+# Rules:
+# - Apply exactly one primary category label to every PR (except meta /
+#   test-only ones, which get `skip-changelog`).
+# - The PR *title* becomes the release-notes line, so write it as the
+#   user-facing change description, imperative tense.
+# - `breaking-change` also labels the PR in the categories below; apply
+#   it in addition to whatever primary label fits.
+
+changelog:
+  exclude:
+    labels:
+      - skip-changelog
+      - duplicate
+      - invalid
+      - wontfix
+
+  categories:
+    - title: ⚠️ Breaking changes
+      labels:
+        - breaking-change
+
+    - title: 🚀 Features
+      labels:
+        - enhancement
+        - feature
+
+    - title: 🐛 Fixes
+      labels:
+        - bug
+
+    - title: 🔒 Security
+      labels:
+        - security
+
+    - title: 📚 Docs
+      labels:
+        - documentation
+
+    - title: 🧰 Maintenance
+      labels:
+        - chore
+
+    - title: Other changes
+      labels:
+        - "*"
