@@ -80,7 +80,7 @@ skills), `superskills-design` (the 36 design skills) and `superskills-marketing`
 /plugin install superskills-marketing@superskills # optional
 /reload-plugins
 ```
-On a new release you'll see *"Plugins updated — run `/reload-plugins`"* at startup
+On a new release you'll see *"Plugins updated—run `/reload-plugins`"* at startup
 (with auto-update enabled for the marketplace).
 
 > `superskills-marketing` is served from `marketing-skills/plugin-skills/`, a
@@ -224,7 +224,7 @@ Your overlay repo can:
 
 ## Optional Dependencies
 
-- `uv tool install clearwing`: for `/pentest`'s clearwing integration — its pipeline runs agent-driven on the session via the bundled bridge (provider-free), its network machinery via MCP, and only provider-driven runs need `clearwing setup` (bills its LLM provider; ask-first)
+- `uv tool install clearwing`: for `/pentest`'s clearwing integration: its pipeline runs agent-driven on the session via the bundled bridge (provider-free), its network machinery via MCP, and only provider-driven runs need `clearwing setup` (bills its LLM provider; ask-first)
 - `brew install ffuf`: for `/fuzz` (web fuzzing)
 - Playwright: for `/playwright` (`npm install -D @playwright/test`)
 
