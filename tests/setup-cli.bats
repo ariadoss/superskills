@@ -51,9 +51,14 @@ setup() {
 @test "supply-chain actions are named, not silent" {
   # The bun install pipes a third-party installer into bash with its output
   # silenced; the notice must name exactly what runs so the user can veto it
-  # by unselecting the gstack pack.
-  run grep -cF '[install] bun via curl -fsSL https://bun.sh/install | bash (third-party installer)' "$REPO_ROOT/setup"
+  # by unselecting the gstack pack. One URL definition feeds the notice, the
+  # invocation and the manual-install hint.
+  run grep -cF 'BUN_INSTALL_URL="https://bun.sh/install"' "$REPO_ROOT/setup"
   [ "$output" -eq 1 ] || false
+  run grep -cF 'curl -fsSL "$BUN_INSTALL_URL" | bash' "$REPO_ROOT/setup"
+  [ "$output" -eq 1 ] || false
+  run grep -c 'https://bun.sh/install' "$REPO_ROOT/setup"
+  [ "$output" -eq 1 ] || false   # the definition is the URL's only literal
 }
 
 @test "knowledge-base fields are validated before entering knowledge.conf" {

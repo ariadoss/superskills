@@ -224,6 +224,9 @@ log ""
 # ── gstack (Garry Tan) ────────────────────────────────────────────────────────
 GSTACK_DIR="$HOME/.claude/skills/gstack"
 GSTACK_VENDOR_DIR="$SOURCE_DIR/vendor/gstack"
+# One definition for the notice, the invocation and the manual-install hint;
+# the supply-chain pin in tests/setup-cli.bats greps this line.
+BUN_INSTALL_URL="https://bun.sh/install"
 
 # The gstack pack's install gate: without gstack selected, nothing is installed
 # or updated here — an existing gstack install is left exactly as it is.
@@ -231,10 +234,10 @@ if [ "$(gstack_pack_action)" = "ensure" ]; then
   # Ensure bun is installed (required by gstack's browser tool) unless gstack is
   # already a real install that has been through its own setup.
   if [ "$(gstack_install_state "$GSTACK_DIR")" != "real" ] && ! command -v bun >/dev/null 2>&1; then
-    log "  [install] bun via curl -fsSL https://bun.sh/install | bash (third-party installer)"
-    curl -fsSL https://bun.sh/install | bash >/dev/null 2>&1 || {
+    log "  [install] bun via curl -fsSL $BUN_INSTALL_URL | bash (third-party installer)"
+    curl -fsSL "$BUN_INSTALL_URL" | bash >/dev/null 2>&1 || {
       log "  [warn] bun install failed — gstack browse tool may not work"
-      log "         Install manually: curl -fsSL https://bun.sh/install | bash"
+      log "         Install manually: curl -fsSL $BUN_INSTALL_URL | bash"
     }
     # Reload PATH to pick up bun
     export PATH="$HOME/.bun/bin:$PATH"
