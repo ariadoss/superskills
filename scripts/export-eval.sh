@@ -19,6 +19,7 @@ set -euo pipefail
 
 SRC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT="${1:-$SRC_ROOT/dist/eval}"
+. "$SRC_ROOT/scripts/lib/export-lib.sh"
 
 SKILL_DIR="$SRC_ROOT/skills/eval"
 [ -f "$SKILL_DIR/SKILL.md" ] || { echo "no skill at $SKILL_DIR" >&2; exit 1; }
@@ -26,17 +27,9 @@ SKILL_DIR="$SRC_ROOT/skills/eval"
 
 mkdir -p "$OUT"
 OUT="$(cd "$OUT" && pwd -P)"
-# The export deletes and rewrites toolkit/ and tests/ under OUT, so OUT must not
-# overlap the source: not the repo itself, not a directory that contains it, and
-# not anywhere inside it except under dist/.
-root="$(cd "$SRC_ROOT" && pwd -P)"
-case "$OUT/" in
-  "$root/dist/"*) ;;
-  "$root/"*) echo "refusing to export into the source tree: $OUT (use a path under $root/dist/ or outside the repo)" >&2; exit 1 ;;
-esac
-case "$root/" in
-  "${OUT%/}/"*) echo "refusing to export into $OUT: it contains the source tree" >&2; exit 1 ;;
-esac
+# The export deletes and rewrites toolkit/ and tests/ under OUT, so OUT must
+# not overlap the source tree in either direction (shared guard).
+export_refuse_source_overlap || exit 1
 # Only our own outputs are cleared; a .git directory or local notes survive.
 rm -rf "$OUT/toolkit" "$OUT/tests"
 mkdir -p "$OUT/toolkit" "$OUT/tests"

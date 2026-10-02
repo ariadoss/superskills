@@ -22,8 +22,9 @@ setup() {
 # plain copy with no tracked-files allowlist.
 fake_repo() {
   local fake="$1" n
-  mkdir -p "$fake/scripts"
+  mkdir -p "$fake/scripts/lib"
   cp "$EXPORT" "$fake/scripts/"
+  cp "$REPO_ROOT/scripts/lib/export-lib.sh" "$fake/scripts/lib/"
   for n in "${SKILLS[@]}"; do
     mkdir -p "$fake/skills/$n"
     cp "$REPO_ROOT/skills/$n/SKILL.md" "$fake/skills/$n/SKILL.md"
@@ -78,8 +79,9 @@ fake_repo() {
 
 @test "fails loudly when a skill is missing rather than exporting a partial repo" {
   fake="$BATS_TEST_TMPDIR/fakerepo"
-  mkdir -p "$fake/scripts" "$fake/skills/dbmap" "$fake/skills/repomap"
+  mkdir -p "$fake/scripts/lib" "$fake/skills/dbmap" "$fake/skills/repomap"
   cp "$EXPORT" "$fake/scripts/"
+  cp "$REPO_ROOT/scripts/lib/export-lib.sh" "$fake/scripts/lib/"
   printf 'only two of six\n' > "$fake/skills/dbmap/SKILL.md"
   printf 'only two of six\n' > "$fake/skills/repomap/SKILL.md"
   run bash "$fake/scripts/export-repomap.sh" "$BATS_TEST_TMPDIR/out2"

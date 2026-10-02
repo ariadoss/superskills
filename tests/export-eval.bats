@@ -21,10 +21,11 @@ setup() {
 # test plants afterwards is therefore untracked, as it would be for real.
 fake_repo() {
   local fake="$1"
-  mkdir -p "$fake/scripts" "$fake/tests" "$fake/skills"
+  mkdir -p "$fake/scripts/lib" "$fake/tests" "$fake/skills"
   cp -R "$REPO_ROOT/skills/eval" "$fake/skills/"
   rm -rf "$fake/skills/eval/toolkit/__pycache__"
   cp "$EXPORT" "$fake/scripts/"
+  cp "$REPO_ROOT/scripts/lib/export-lib.sh" "$fake/scripts/lib/"
   cp "$REPO_ROOT/tests/eval-toolkit.bats" "$fake/tests/"
   cp "$REPO_ROOT/LICENSE" "$fake/"
   git -C "$fake" init -q && git -C "$fake" add -A
@@ -90,8 +91,9 @@ fake_repo() {
 
 @test "fails loudly when the skill is missing rather than exporting an empty repo" {
   fake="$BATS_TEST_TMPDIR/fakerepo"
-  mkdir -p "$fake/scripts" "$fake/tests"
+  mkdir -p "$fake/scripts/lib" "$fake/tests"
   cp "$EXPORT" "$fake/scripts/"
+  cp "$REPO_ROOT/scripts/lib/export-lib.sh" "$fake/scripts/lib/"
   run bash "$fake/scripts/export-eval.sh" "$BATS_TEST_TMPDIR/out2"
   [ "$status" -ne 0 ] || { echo "exported despite a missing skill"; return 1; }
   [[ "$output" == *"no skill at"* ]] || false
@@ -99,8 +101,9 @@ fake_repo() {
 
 @test "fails loudly when the toolkit dir is missing rather than exporting an empty toolkit" {
   fake="$BATS_TEST_TMPDIR/fakerepo2"
-  mkdir -p "$fake/scripts" "$fake/skills/eval"
+  mkdir -p "$fake/scripts/lib" "$fake/skills/eval"
   cp "$EXPORT" "$fake/scripts/"
+  cp "$REPO_ROOT/scripts/lib/export-lib.sh" "$fake/scripts/lib/"
   echo skill > "$fake/skills/eval/SKILL.md"
   run bash "$fake/scripts/export-eval.sh" "$BATS_TEST_TMPDIR/out3"
   [ "$status" -ne 0 ] || { echo "exported despite a missing toolkit"; return 1; }

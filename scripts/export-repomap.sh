@@ -30,6 +30,7 @@ set -euo pipefail
 
 SRC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT="${1:-$SRC_ROOT/dist/repomap}"
+. "$SRC_ROOT/scripts/lib/export-lib.sh"
 
 SKILLS=(
     dbmap
@@ -52,16 +53,8 @@ done
 mkdir -p "$OUT"
 OUT="$(cd "$OUT" && pwd -P)"
 # The export rewrites the six <name>.md files under OUT, so OUT must not
-# overlap the source: not the repo itself, not a directory that contains it,
-# and not anywhere inside it except under dist/.
-root="$(cd "$SRC_ROOT" && pwd -P)"
-case "$OUT/" in
-  "$root/dist/"*) ;;
-  "$root/"*) echo "refusing to export into the source tree: $OUT (use a path under $root/dist/ or outside the repo)" >&2; exit 1 ;;
-esac
-case "$root/" in
-  "${OUT%/}/"*) echo "refusing to export into $OUT: it contains the source tree" >&2; exit 1 ;;
-esac
+# overlap the source tree in either direction (shared guard).
+export_refuse_source_overlap || exit 1
 
 # Only our own outputs are cleared; a .git directory, the public repo's
 # README/LICENSE/code, and any local notes survive.
