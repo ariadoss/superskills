@@ -408,6 +408,54 @@ link_skill_dir_into() {
   printf '%s' "$name"
 }
 
+# The file-writing adapters (Continue prompts, Augment commands, Cursor
+# rules) turn a SKILL.md into a plain file named by its frontmatter name.
+# Shared contract: 0 = written, 1 = not selected (or unnamed), 2 = the
+# frontmatter name is unusable as one safe path segment (same guard the
+# symlink linkers enforce — an unsanitized name must never steer the write
+# outside the target dir). Extracted from setup so the guard is behaviorally
+# testable, like link_skill_into's.
+
+# link_skill_continue <prompts_dir> <skill_md> <fallback_name>
+link_skill_continue() {
+  local prompts_dir="$1" skill_md="$2" fallback_name="$3"
+  local name desc body
+  name="$(skill_name_from "$skill_md" "$fallback_name")"
+  [ -z "$name" ] && return 1
+  _valid_skill_name "$name" || return 2
+  ss_selected "$name" core "$skill_md" || return 1
+  desc=$(skill_desc_from "$skill_md")
+  body=$(skill_body_from "$skill_md")
+  printf 'name: %s\ndescription: %s\n---\n%s\n' "$name" "$desc" "$body" \
+    > "$prompts_dir/$name.prompt"
+}
+
+# link_skill_augment <commands_dir> <skill_md> <fallback_name>
+link_skill_augment() {
+  local commands_dir="$1" skill_md="$2" fallback_name="$3"
+  local name body
+  name="$(skill_name_from "$skill_md" "$fallback_name")"
+  [ -z "$name" ] && return 1
+  _valid_skill_name "$name" || return 2
+  ss_selected "$name" core "$skill_md" || return 1
+  body=$(skill_body_from "$skill_md")
+  printf '# /%s\n\n%s\n' "$name" "$body" > "$commands_dir/$name.md"
+}
+
+# link_skill_cursor <rules_dir> <skill_md> <fallback_name>
+link_skill_cursor() {
+  local rules_dir="$1" skill_md="$2" fallback_name="$3"
+  local name desc body
+  name="$(skill_name_from "$skill_md" "$fallback_name")"
+  [ -z "$name" ] && return 1
+  _valid_skill_name "$name" || return 2
+  ss_selected "$name" core "$skill_md" || return 1
+  desc=$(skill_desc_from "$skill_md")
+  body=$(skill_body_from "$skill_md")
+  printf -- '---\nname: %s\ndescription: %s\nalwaysApply: false\n---\n%s\n' \
+    "$name" "$desc" "$body" > "$rules_dir/superskills-$name.mdc"
+}
+
 # marketing_skill_files <marketing_root>
 # Every marketing SKILL.md, nested at any depth, sorted — the one tree walk
 # shared by ./setup, the doctor and the marketing plugin generator. Skips the

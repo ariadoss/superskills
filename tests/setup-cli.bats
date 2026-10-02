@@ -39,12 +39,20 @@ setup() {
   [ "$output" -eq 0 ] || false
 }
 
-@test "the file-writing adapters guard frontmatter names before building paths" {
-  # link_skill_continue, link_skill_augment and the Cursor loop all build
-  # file paths from SKILL.md frontmatter names. Like the symlink linkers
-  # (skills-lib.sh), they must reject a name that steers outside the target
-  # dir — _valid_skill_name at every writer site, never just the linkers.
-  run grep -c '_valid_skill_name "$name"' "$REPO_ROOT/setup"
+@test "the file-writing adapters are the lib functions and every one guards the name" {
+  # The Continue/Augment/Cursor writers live in skills-lib.sh (extracted from
+  # setup so the frontmatter-name guard is behaviorally testable there), and
+  # setup drives each with the rc 0/1/2 contract (0 = written, 1 = not
+  # selected, 2 = unusable name, logged as a skip).
+  for call in 'link_skill_continue "$CONTINUE_PROMPTS_DIR"' \
+              'link_skill_augment "$AUGMENT_COMMANDS_DIR"' \
+              'link_skill_cursor "$CURSOR_RULES_DIR"'; do
+    run grep -cF "$call" "$REPO_ROOT/setup"
+    [ "$output" -eq 1 ] || { echo "missing call: $call"; return 1; }
+  done
+  run grep -c '_valid_skill_name "$name" || return 2' "$REPO_ROOT/scripts/lib/skills-lib.sh"
+  [ "$output" -eq 3 ] || false
+  run grep -c 'unusable skill name' "$REPO_ROOT/setup"
   [ "$output" -eq 3 ] || false
 }
 

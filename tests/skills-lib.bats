@@ -390,3 +390,49 @@ root"
   link_skill_dir_into "$TARGET" "$FIX/core-x/SKILL.md" "c-fallback" >/dev/null
   [ "$(readlink "$TARGET/same-name")" = "$FIX/core-x" ] || false
 }
+
+# ── file-writing adapters (Continue / Augment / Cursor) ──
+# Extracted from setup so the frontmatter-name guard is behaviorally testable
+# like the symlink linkers'. ss_selected lives in setup; stub it per test.
+
+@test "link_skill_continue writes the prompt file and echoes nothing on success" {
+  ss_selected() { return 0; }
+  link_skill_continue "$TARGET" "$FIX/alpha/SKILL.md" "fallback"
+  [ -f "$TARGET/alpha-cmd.prompt" ] || false
+  grep -q 'name: alpha-cmd' "$TARGET/alpha-cmd.prompt" || false
+  grep -q 'body line 1' "$TARGET/alpha-cmd.prompt" || false
+}
+
+@test "the writer adapters reject a traversal name and write NOTHING" {
+  ss_selected() { return 0; }
+  mkdir -p "$FIX/evil"
+  printf -- '---\nname: ../../.config/foo\ndescription: x\n---\n' > "$FIX/evil/SKILL.md"
+  for fn in link_skill_continue link_skill_augment link_skill_cursor; do
+    rc=0; "$fn" "$TARGET" "$FIX/evil/SKILL.md" "fallback" || rc=$?
+    [ "$rc" -eq 2 ] || { echo "$fn returned $rc, expected 2"; return 1; }
+  done
+  # Nothing landed inside the target, and nothing escaped it either.
+  [ -z "$(ls -A "$TARGET" 2>/dev/null)" ] || false
+  [ ! -e "$BATS_TEST_TMPDIR/.config" ] || { echo "traversal escaped the target dir"; return 1; }
+}
+
+@test "the writer adapters skip silently when the skill is not selected" {
+  ss_selected() { return 1; }
+  rc=0; link_skill_continue "$TARGET" "$FIX/alpha/SKILL.md" "fallback" || rc=$?
+  [ "$rc" -eq 1 ] || false
+  rc=0; link_skill_augment "$TARGET" "$FIX/alpha/SKILL.md" "fallback" || rc=$?
+  [ "$rc" -eq 1 ] || false
+  rc=0; link_skill_cursor "$TARGET" "$FIX/alpha/SKILL.md" "fallback" || rc=$?
+  [ "$rc" -eq 1 ] || false
+  [ -z "$(ls -A "$TARGET" 2>/dev/null)" ] || false
+}
+
+@test "link_skill_cursor prefixes its rule file and link_skill_augment writes the command" {
+  ss_selected() { return 0; }
+  link_skill_cursor "$TARGET" "$FIX/alpha/SKILL.md" "fallback"
+  [ -f "$TARGET/superskills-alpha-cmd.mdc" ] || false
+  grep -q 'alwaysApply: false' "$TARGET/superskills-alpha-cmd.mdc" || false
+  link_skill_augment "$TARGET" "$FIX/alpha/SKILL.md" "fallback"
+  [ -f "$TARGET/alpha-cmd.md" ] || false
+  head -1 "$TARGET/alpha-cmd.md" | grep -q '^# /alpha-cmd$' || false
+}
