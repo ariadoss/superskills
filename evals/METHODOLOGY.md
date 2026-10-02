@@ -92,9 +92,12 @@ positive is then "the judge failed a run the human passed", i.e. too harsh):
 imbalanced classes; reach for it only when you must report one number.)
 
 **Report all four, never accuracy alone.** A wide TPR–TNR gap is a
-directional bias: TPR far above TNR is a lenient judge waving bad runs
-through; the reverse is a harsh one failing good work. Accuracy is blind to
-the difference: 85% correct could be either failure mode.
+directional bias: with FAIL positive, TPR far above TNR means the errors
+lean harsh (failing good work), and the reverse leans lenient (waving bad
+runs through). The convention-proof check is to compare the two error rates
+directly, wrongly-failed against waved-through: whichever is larger names
+the direction. Accuracy is blind to the
+difference: 85% correct could be either failure mode.
 
 Worked example. 80 human-labeled runs: 50 FAIL, 30 PASS. The judge fails 44
 of the 50 human-FAIL runs and passes 21 of the 30 human-PASS runs:
