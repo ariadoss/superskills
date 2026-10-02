@@ -82,6 +82,36 @@ setup() {
   grep -qF 'SHANNON_AI_MODEL=calling-agent:calling-agent' "$LAUNCHER" || false
 }
 
+@test "the launcher keeps the CLI alive for the whole scan (--follow)" {
+  # Shannon's start command WITHOUT --follow prints 'Scan started' and
+  # returns while the scan continues in the Temporal worker container
+  # (vendored start.ts: 'if (args.follow) await followScan(...)'; else
+  # return). The launcher's liveness check and its 'when the scan exits'
+  # guidance both assume the CLI process lives for the scan — so it must
+  # pass --follow or it kills the bridge mid-scan on the happy path.
+  grep -qF -- '--follow' "$REPO_ROOT/skills/pentest/shannon-agent-driven.sh" || false
+}
+
+@test "URL rewriting replaces the 127.0.0.1 literal, on every OS" {
+  # bridge.url ALWAYS carries 127.0.0.1 (loopback is reachable under every
+  # bind), while on Linux the bridge binds the docker0 IP. Rewriting by
+  # \$BIND was a no-op there — the readiness probe curled 127.0.0.1 into a
+  # socket bound to 172.17.0.1 and every Linux run died at readiness, and
+  # models.json would have handed the container its own loopback.
+  grep -qF 'DOCKER_BASE_URL="${BASE_URL/127.0.0.1/host.docker.internal}"' \
+    "$REPO_ROOT/skills/pentest/shannon-agent-driven.sh" || false
+  grep -qF '${BASE_URL/127.0.0.1/$BIND}' \
+    "$REPO_ROOT/skills/pentest/shannon-agent-driven.sh" || false
+}
+
+@test "the workspace flag travels as one argument, spaces included" {
+  # -w "My Scans/ws" word-split into two args when the flag string was
+  # expanded unquoted; the array form (with the bash-3.2 set -u guard for
+  # the empty case) is the fix.
+  grep -qF 'WS_FLAG=(-w "$WS")' "$REPO_ROOT/skills/pentest/shannon-agent-driven.sh" || false
+  grep -qF '${WS_FLAG[@]+"${WS_FLAG[@]}"}' "$REPO_ROOT/skills/pentest/shannon-agent-driven.sh" || false
+}
+
 @test "run refuses to launch before the vendored CLI is built, naming the fix" {
   # The vendored tree ships source only; dist/ appears after 'prepare'. A run
   # must fail on that fact alone, before any Docker or bridge work.
