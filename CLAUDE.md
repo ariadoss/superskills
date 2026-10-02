@@ -93,7 +93,7 @@ The `dbmap`, `repomap`, `dbmap-auto-on`, `dbmap-auto-off`, `repomap-auto-on`, an
 ./scripts/export-repomap.sh            # -> dist/repomap (git-ignored)
 ```
 
-The export is a pure copy — each `skills/<name>/SKILL.md` lands as `<name>.md`, byte-identical, frontmatter and all — and owns only those six paths: the public repo's README, LICENSE, `setup`, `requirements.txt`, and Python sources live in that checkout and are edited there via PR. `tests/export-repomap.bats` asserts byte-identity. Never edit the six `<name>.md` files in the public repo directly; the next export would silently overwrite them.
+The export is a pure copy: each `skills/<name>/SKILL.md` lands as `<name>.md`, byte-identical, frontmatter and all, and owns only those six paths. The public repo's README, LICENSE, `setup`, `requirements.txt`, and Python sources live in that checkout and are edited there via PR. `tests/export-repomap.bats` asserts byte-identity. Never edit the six `<name>.md` files in the public repo directly; the next export would silently overwrite them.
 
 ### Keeping the `vendor/gstack` snapshot current
 
