@@ -1,0 +1,579 @@
+// Copyright (C) 2026 Keygraph, Inc.
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License version 3
+// as published by the Free Software Foundation.
+
+/**
+ * Preflight Validation Service
+ *
+ * Runs cheap, fast checks before any agent execution begins.
+ * Catches configuration and credential problems early, saving
+ * time and API costs compared to failing mid-pipeline.
+ *
+ * Checks run sequentially, cheapest first:
+ * 1. Repository path exists and is a directory
+ * 2. Config file parses and validates (if provided)
+ * 3. code_path rules match real entries in the repo (filesystem only)
+ * 4. Credentials validate via a minimal pi session against the run's own model
+ * 5. Target URL resolves, is not link-local (cloud metadata), and is reachable (DNS + HTTP)
+ */
+
+import type { LookupAddress } from 'node:dns';
+import { lookup } from 'node:dns/promises';
+import fs from 'node:fs/promises';
+import http from 'node:http';
+import https from 'node:https';
+import net, { type LookupFunction } from 'node:net';
+import os from 'node:os';
+import type { Api, AssistantMessage, Model } from '@earendil-works/pi-ai';
+import {
+  type AgentSession,
+  createAgentSession,
+  type ModelRuntime,
+  SessionManager,
+  SettingsManager,
+} from '@earendil-works/pi-coding-agent';
+import { glob } from 'zx';
+import {
+  type CuratedProviderId,
+  createModelRuntime,
+  GENERIC_API_KEY_ENV,
+  type ModelSpec,
+  modelsConfigPath,
+  PI_CATALOG_URL,
+  piAuthPresent,
+  resolveModel,
+  resolveModelSpec,
+  resolveProviderCredentials,
+} from '../ai/models.js';
+import { PI_RETRY_SETTINGS } from '../ai/pi/retry-settings.js';
+import { providerTurnError } from '../ai/pi/turn-error.js';
+import { parseConfig } from '../config-parser.js';
+import type { ActivityLogger } from '../types/activity-logger.js';
+import type { Config, Rule } from '../types/config.js';
+import { ErrorCode } from '../types/errors.js';
+import { err, isErr, ok, type Result } from '../types/result.js';
+import { isRetryableFailure, PentestError } from './error-handling.js';
+
+const TARGET_URL_TIMEOUT_MS = 10_000;
+
+function isLoopbackAddress(address: string): boolean {
+  return address === '127.0.0.1' || address === '::1' || address === '0.0.0.0';
+}
+
+// 169.254.0.0/16 hosts the cloud metadata service. RFC1918 and loopback are
+// intentionally allowed — scanning local targets is a supported Shannon use case.
+const metadataBlockList = new net.BlockList();
+metadataBlockList.addSubnet('169.254.0.0', 16, 'ipv4');
+
+function isBlockedAddress(address: string): boolean {
+  switch (net.isIP(address)) {
+    case 4:
+      return metadataBlockList.check(address, 'ipv4');
+    case 6:
+      return metadataBlockList.check(address, 'ipv6');
+    default:
+      return false;
+  }
+}
+
+/** DNS lookup pinned to already-validated `addresses`, so the socket cannot be re-pointed after validation (DNS rebinding). */
+function pinnedLookup(addresses: LookupAddress[]): LookupFunction {
+  return (hostname, options, callback) => {
+    const matching = options.family ? addresses.filter((a) => a.family === options.family) : addresses;
+    const pool = matching.length > 0 ? matching : addresses;
+    if (options.all) {
+      callback(null, pool);
+      return;
+    }
+    const first = pool[0];
+    if (!first) {
+      callback(new Error(`no resolved address for ${hostname}`), '', 0);
+      return;
+    }
+    callback(null, first.address, first.family);
+  };
+}
+
+// === Repository Validation ===
+
+async function validateRepo(repoPath: string, logger: ActivityLogger): Promise<Result<void, PentestError>> {
+  logger.info('Checking repository path...', { repoPath });
+
+  // Check repo directory exists. The repo is not required to be a git repository:
+  // multi-repo targets (a parent directory containing several repos) have no top-level
+  // .git, and git-based checkpoint/rollback in git-manager already no-ops on non-git dirs.
+  try {
+    const stats = await fs.stat(repoPath);
+    if (!stats.isDirectory()) {
+      return err(
+        new PentestError(
+          `Repository path is not a directory: ${repoPath}`,
+          'config',
+          false,
+          { repoPath },
+          ErrorCode.REPO_NOT_FOUND,
+        ),
+      );
+    }
+  } catch {
+    return err(
+      new PentestError(
+        `Repository path does not exist: ${repoPath}`,
+        'config',
+        false,
+        { repoPath },
+        ErrorCode.REPO_NOT_FOUND,
+      ),
+    );
+  }
+
+  logger.info('Repository path OK');
+  return ok(undefined);
+}
+
+// === Config Validation ===
+
+async function validateConfig(configPath: string, logger: ActivityLogger): Promise<Result<Config, PentestError>> {
+  logger.info('Validating configuration file...', { configPath });
+
+  try {
+    const config = await parseConfig(configPath);
+    logger.info('Configuration file OK');
+    return ok(config);
+  } catch (error) {
+    if (error instanceof PentestError) {
+      return err(error);
+    }
+    const message = error instanceof Error ? error.message : String(error);
+    return err(
+      new PentestError(
+        `Configuration validation failed: ${message}`,
+        'config',
+        false,
+        { configPath },
+        ErrorCode.CONFIG_VALIDATION_FAILED,
+      ),
+    );
+  }
+}
+
+// === code_path Existence Validation ===
+
+// .shannon/ holds this scan's own internal bookkeeping (deliverables, logs, checkpoints), not
+// source the operator meant to scope. Without this exclusion, a code_path rule could match a
+// path Shannon itself created rather than a real entry in the target repo.
+const CODE_PATH_IGNORE = ['.git/**', '.shannon/**'];
+
+async function patternMatchesAny(repoPath: string, pattern: string): Promise<boolean> {
+  const stream = glob.globbyStream(pattern, {
+    cwd: repoPath,
+    dot: true,
+    onlyFiles: false,
+    followSymbolicLinks: false,
+    ignore: CODE_PATH_IGNORE,
+  });
+  for await (const _ of stream) {
+    return true;
+  }
+  return false;
+}
+
+type RuleKind = 'avoid' | 'focus';
+interface MissingCodePath {
+  kind: RuleKind;
+  value: string;
+  description?: string;
+}
+
+async function validateCodePathsExist(
+  config: Config,
+  repoPath: string,
+  logger: ActivityLogger,
+): Promise<Result<void, PentestError>> {
+  const tagged: Array<{ kind: RuleKind; rule: Rule }> = [
+    ...(config.rules?.avoid ?? []).map((rule) => ({ kind: 'avoid' as const, rule })),
+    ...(config.rules?.focus ?? []).map((rule) => ({ kind: 'focus' as const, rule })),
+  ].filter(({ rule }) => rule.type === 'code_path');
+
+  if (tagged.length === 0) {
+    return ok(undefined);
+  }
+
+  logger.info(`Validating ${tagged.length} code_path rule(s) against repo...`);
+
+  // ≥1 match is the only property enforced — malformed globs simply match nothing.
+  const missing: MissingCodePath[] = [];
+  for (const { kind, rule } of tagged) {
+    if (!(await patternMatchesAny(repoPath, rule.value))) {
+      const entry: MissingCodePath = { kind, value: rule.value };
+      if (rule.description) {
+        entry.description = rule.description;
+      }
+      missing.push(entry);
+    }
+  }
+
+  if (missing.length > 0) {
+    const lines = missing.map((m) => `[${m.kind}] '${m.value}'${m.description ? ` - ${m.description}` : ''}`);
+    return err(
+      new PentestError(
+        `code_path rules don't match any file or directory in the repo:\n  - ${lines.join('\n  - ')}\n` +
+          `Fix the patterns or remove the rules.`,
+        'config',
+        false,
+        { missing },
+        ErrorCode.CONFIG_VALIDATION_FAILED,
+      ),
+    );
+  }
+
+  logger.info('All code_path rules matched');
+  return ok(undefined);
+}
+
+// === Credential Validation ===
+
+/**
+ * Minimal pi session probe against the model the scan will use, so credentials the
+ * account cannot use fail here rather than partway through the run. The descriptor
+ * already carries the run's endpoint and wire format, so the probe exercises the
+ * same path the scan will.
+ */
+async function probeCredentialsWithPi(
+  model: Model<Api>,
+  modelRuntime: ModelRuntime,
+  authType: string,
+): Promise<Result<void, PentestError>> {
+  let failedTurn: AssistantMessage | undefined;
+  let session: AgentSession | undefined;
+  try {
+    ({ session } = await createAgentSession({
+      cwd: os.tmpdir(),
+      model,
+      noTools: 'all',
+      modelRuntime,
+      sessionManager: SessionManager.inMemory(),
+      settingsManager: SettingsManager.inMemory({ retry: PI_RETRY_SETTINGS, compaction: { enabled: false } }),
+    }));
+    session.subscribe((e) => {
+      if (e.type === 'turn_end' && e.message.role === 'assistant' && e.message.stopReason === 'error') {
+        failedTurn = e.message;
+      }
+    });
+    await session.prompt('hi');
+  } catch (error) {
+    const thrown = error instanceof Error ? error : new Error(String(error));
+    return err(
+      new PentestError(
+        `${authType} validation failed: ${thrown.message.slice(0, 300)}`,
+        'unknown',
+        isRetryableFailure(thrown),
+        { authType },
+        ErrorCode.AGENT_EXECUTION_FAILED,
+      ),
+    );
+  } finally {
+    session?.dispose();
+  }
+
+  if (failedTurn) return err(providerTurnError(failedTurn, `${authType} validation failed`));
+  return ok(undefined);
+}
+
+/** Credential env var a curated provider reads, for "credential missing" messages. */
+const PROVIDER_CREDENTIAL_HINT: Readonly<Record<CuratedProviderId, string>> = {
+  anthropic: 'ANTHROPIC_API_KEY (or CLAUDE_CODE_OAUTH_TOKEN)',
+  openai: 'OPENAI_API_KEY',
+  xai: 'XAI_API_KEY',
+  'amazon-bedrock': 'AWS_BEARER_TOKEN_BEDROCK and AWS_REGION',
+};
+
+/** Which variable to set when a provider's credential is missing. */
+function credentialHint(providerId: string): string {
+  const curated = (PROVIDER_CREDENTIAL_HINT as Record<string, string | undefined>)[providerId];
+  return curated ?? GENERIC_API_KEY_ENV;
+}
+
+/** Human-readable label for which credential path a run is using. */
+function describeAuth(providerId: string, baseUrl: string | undefined): string {
+  if (baseUrl) return `custom endpoint (${baseUrl})`;
+  if (piAuthPresent()) return `${providerId} credentials from pi auth.json`;
+  if (providerId === 'amazon-bedrock') return 'Bedrock bearer token';
+  return `${providerId} API key`;
+}
+
+/** Validate the model selection and its credentials via a minimal pi session. */
+async function validateCredentials(logger: ActivityLogger): Promise<Result<void, PentestError>> {
+  // 1. Resolve the run's model. A malformed spec or unknown provider fails here,
+  //    before any scan work begins.
+  let spec: ModelSpec;
+  try {
+    spec = resolveModelSpec();
+  } catch (error) {
+    return err(
+      new PentestError(
+        error instanceof Error ? error.message : String(error),
+        'config',
+        false,
+        {},
+        ErrorCode.MODEL_NOT_FOUND,
+      ),
+    );
+  }
+  logger.info(`Model: ${spec.providerId}:${spec.modelId}`);
+
+  // 2. Credential presence. Bedrock needs both AWS_ vars; every other provider
+  //    needs one API key.
+  const credentials = resolveProviderCredentials(spec.providerId);
+
+  // With a mounted pi auth.json the env-var checks don't apply — step 4's probe validates it.
+  const isBedrock = spec.providerId === 'amazon-bedrock';
+  const missing =
+    isBedrock && !piAuthPresent() ? ['AWS_REGION', 'AWS_BEARER_TOKEN_BEDROCK'].filter((n) => !process.env[n]) : [];
+  if (!piAuthPresent() && (missing.length > 0 || (!isBedrock && !credentials.apiKey))) {
+    return err(
+      new PentestError(
+        `No credentials found for provider "${spec.providerId}". Set ${credentialHint(spec.providerId)} in .env.`,
+        'config',
+        false,
+        { providerId: spec.providerId, ...(missing.length > 0 && { missing }) },
+        ErrorCode.AUTH_FAILED,
+      ),
+    );
+  }
+
+  // 3. Model must exist in the registry, for every provider and endpoint — Bedrock IDs
+  //    are the easiest to get wrong, since region prefixes and version suffixes differ
+  //    per model (`us.anthropic.claude-opus-5` exists, bare `anthropic.` does not).
+  //    An id the registry lacks is supplied by --models-config, not guessed at here.
+  const modelRuntime = await createModelRuntime(spec.providerId, credentials.apiKey);
+
+  // A model config that fails to parse or compose leaves pi with an empty or fallback
+  // provider, which would surface below as "model not found" and blame SHANNON_AI_MODEL
+  // for the file's fault. Report the real cause first.
+  const modelsConfig = modelsConfigPath();
+  if (modelsConfig) {
+    logger.info(`Model config: ${modelsConfig}`);
+  }
+  const modelConfigError = modelRuntime.getError();
+  if (modelConfigError) {
+    return err(
+      new PentestError(
+        `Model configuration is invalid:\n${modelConfigError}`,
+        'config',
+        false,
+        { providerId: spec.providerId, ...(modelsConfig && { modelsConfig }) },
+        ErrorCode.MODEL_CONFIG_INVALID,
+      ),
+    );
+  }
+
+  const baseModel = resolveModel(modelRuntime, spec.providerId, spec.modelId, credentials.baseUrl);
+  if (!baseModel) {
+    return err(
+      new PentestError(
+        `Model not found in pi registry: provider="${spec.providerId}" model="${spec.modelId}". Check SHANNON_AI_MODEL — browse valid providers and models at ${PI_CATALOG_URL}. A model the catalogue does not carry can be defined in a model config passed with --models-config.`,
+        'config',
+        false,
+        { providerId: spec.providerId, modelId: spec.modelId },
+        ErrorCode.MODEL_NOT_FOUND,
+      ),
+    );
+  }
+  if (credentials.baseUrl && spec.providerId === 'openai') {
+    logger.info(`Gateway API: ${baseModel.api}`);
+  }
+
+  // 4. One real request, so a credential the account cannot use fails here
+  //    rather than partway through the run. Bedrock included: pi resolves the
+  //    bearer token from the primed credential and the region from AWS_REGION,
+  //    so the probe exercises the same auth path the scan will.
+  const authType = describeAuth(spec.providerId, credentials.baseUrl);
+  logger.info(`Validating ${authType} via pi...`);
+  const probe = await probeCredentialsWithPi(baseModel, modelRuntime, authType);
+  if (isErr(probe)) return probe;
+  logger.info(`${authType} OK`);
+  return ok(undefined);
+}
+
+// === Target URL Validation ===
+
+/** HTTP HEAD with TLS verification disabled — we check reachability, not certificate validity. */
+function httpHead(url: string, timeoutMs: number, addresses: LookupAddress[]): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const parsed = new URL(url);
+    const isHttps = parsed.protocol === 'https:';
+    const transport = isHttps ? https : http;
+
+    const req = transport.request(
+      url,
+      {
+        method: 'HEAD',
+        timeout: timeoutMs,
+        lookup: pinnedLookup(addresses),
+        ...(isHttps && { rejectUnauthorized: false }),
+      },
+      (res) => {
+        res.resume();
+        resolve(res.statusCode ?? 0);
+      },
+    );
+
+    req.on('timeout', () => {
+      req.destroy();
+      reject(new Error(`Connection timed out after ${timeoutMs}ms`));
+    });
+    req.on('error', reject);
+    req.end();
+  });
+}
+
+/** Check that the target URL is reachable from inside the container. */
+async function validateTargetUrl(targetUrl: string, logger: ActivityLogger): Promise<Result<void, PentestError>> {
+  logger.info('Checking target URL reachability...');
+
+  // 1. Parse URL
+  let parsed: URL;
+  try {
+    parsed = new URL(targetUrl);
+  } catch {
+    return err(
+      new PentestError(
+        `Invalid target URL: ${targetUrl}`,
+        'config',
+        false,
+        { targetUrl },
+        ErrorCode.TARGET_UNREACHABLE,
+      ),
+    );
+  }
+
+  // 2. Resolve all records once — reused (pinned) for the connection below.
+  const hostname = parsed.hostname;
+  let addresses: LookupAddress[];
+  try {
+    addresses = await lookup(hostname, { all: true });
+  } catch {
+    return err(
+      new PentestError(
+        `Target URL ${targetUrl} is not reachable. Verify the URL is correct and the site is up.`,
+        'network',
+        false,
+        { targetUrl, hostname },
+        ErrorCode.TARGET_UNREACHABLE,
+      ),
+    );
+  }
+
+  // 3. Reject the link-local metadata range (169.254.0.0/16).
+  const blocked = addresses.find((entry) => isBlockedAddress(entry.address));
+  if (blocked) {
+    return err(
+      new PentestError(
+        `Target URL ${targetUrl} resolves to ${blocked.address}, a link-local address ` +
+          `(169.254.0.0/16). This range hosts the cloud instance metadata service and cannot be scanned.`,
+        'config',
+        false,
+        { targetUrl, hostname, address: blocked.address },
+        ErrorCode.TARGET_UNREACHABLE,
+      ),
+    );
+  }
+
+  // 4. HTTP reachability check (socket pinned to the resolved addresses).
+  try {
+    await httpHead(targetUrl, TARGET_URL_TIMEOUT_MS, addresses);
+
+    logger.info('Target URL OK');
+    return ok(undefined);
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    const isLoopback = addresses.some((entry) => isLoopbackAddress(entry.address));
+
+    if (isLoopback) {
+      const suggestion = targetUrl.replace(hostname, 'host.docker.internal');
+      return err(
+        new PentestError(
+          `Target URL ${targetUrl} resolves to a loopback address and is not reachable. ` +
+            `For local services, use host.docker.internal instead of ${hostname} (e.g., ${suggestion})`,
+          'network',
+          false,
+          { targetUrl, hostname },
+          ErrorCode.TARGET_UNREACHABLE,
+        ),
+      );
+    }
+
+    return err(
+      new PentestError(
+        `Target URL ${targetUrl} is not reachable: ${detail}`,
+        'network',
+        false,
+        { targetUrl },
+        ErrorCode.TARGET_UNREACHABLE,
+      ),
+    );
+  }
+}
+
+// === Preflight Orchestrator ===
+
+/**
+ * Run all preflight checks sequentially (cheapest first).
+ *
+ * 1. Repository path exists and is a directory
+ * 2. Config file parses and validates (if configPath provided)
+ * 3. code_path rules match at least one entry in the repo (skipped without config)
+ * 4. Credentials validate (API key, OAuth, or Bedrock)
+ * 5. Target URL is reachable from the container
+ *
+ * Returns on first failure.
+ */
+export async function runPreflightChecks(
+  targetUrl: string,
+  repoPath: string,
+  configPath: string | undefined,
+  logger: ActivityLogger,
+): Promise<Result<void, PentestError>> {
+  // 1. Repository check (free — filesystem only)
+  const repoResult = await validateRepo(repoPath, logger);
+  if (!repoResult.ok) {
+    return repoResult;
+  }
+
+  // 2. Config check (free — filesystem + CPU)
+  let parsedConfig: Config | null = null;
+  if (configPath) {
+    const configResult = await validateConfig(configPath, logger);
+    if (!configResult.ok) {
+      return configResult;
+    }
+    parsedConfig = configResult.value;
+  }
+
+  // 3. code_path rules must match real entries in the repo (filesystem only).
+  // Runs after both repo and config are valid, before any network round-trip.
+  if (parsedConfig) {
+    const codePathResult = await validateCodePathsExist(parsedConfig, repoPath, logger);
+    if (!codePathResult.ok) {
+      return codePathResult;
+    }
+  }
+
+  // 4. Credential check (cheap — 1 pi round-trip)
+  const credResult = await validateCredentials(logger);
+  if (!credResult.ok) {
+    return credResult;
+  }
+
+  // 5. Target URL reachability check (cheap — 1 HTTP round-trip)
+  const urlResult = await validateTargetUrl(targetUrl, logger);
+  if (!urlResult.ok) {
+    return urlResult;
+  }
+
+  logger.info('All preflight checks passed');
+  return ok(undefined);
+}

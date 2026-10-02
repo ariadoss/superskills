@@ -1,0 +1,23 @@
+networks:
+  default:
+    name: shannon-net
+
+services:
+  temporal:
+    image: temporalio/temporal:1.7.0
+    container_name: shannon-temporal
+    command: ["server", "start-dev", "--db-filename", "/home/temporal/temporal.db", "--ip", "0.0.0.0"]
+    ports:
+      - "127.0.0.1:7233:7233"   # gRPC
+      - "127.0.0.1:8233:8233"   # Web UI (built-in)
+    volumes:
+      - temporal-data:/home/temporal
+    healthcheck:
+      test: ["CMD", "temporal", "operator", "cluster", "health", "--address", "localhost:7233"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+volumes:
+  temporal-data:

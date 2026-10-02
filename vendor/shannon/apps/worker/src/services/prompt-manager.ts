@@ -1,0 +1,555 @@
+// Copyright (C) 2026 Keygraph, Inc.
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License version 3
+// as published by the Free Software Foundation.
+
+import { fs, path } from 'zx';
+import { PROMPTS_DIR } from '../paths.js';
+import { PLAYWRIGHT_SESSION_MAPPING } from '../session-manager.js';
+import type { ActivityLogger } from '../types/activity-logger.js';
+import type { Authentication, DistributedConfig, DistributedReportConfig, Rule, VulnClass } from '../types/config.js';
+import { assertFixedAnalysisScope } from '../types/run-state.js';
+import { isGlobPattern } from '../utils/glob.js';
+import { handlePromptError, PentestError } from './error-handling.js';
+
+function renderRuleLine(tag: string, value: string, description?: string): string {
+  const base = `- ${tag} ${value}`;
+  return description ? `${base} - ${description}` : base;
+}
+
+function renderUrlRules(rules: Rule[]): string {
+  if (rules.length === 0) return 'None';
+  return rules.map((r) => renderRuleLine(`[${r.type.toUpperCase()}]`, r.value, r.description)).join('\n');
+}
+
+function renderCodePathRules(rules: Rule[]): string {
+  const filtered = rules.filter((r) => r.type === 'code_path');
+  if (filtered.length === 0) return 'None';
+  return filtered
+    .map((r) => renderRuleLine(isGlobPattern(r.value) ? '[GLOB]' : '[FILE]', r.value, r.description))
+    .join('\n');
+}
+
+const VULN_CLASS_HEADINGS: Record<VulnClass, string> = {
+  auth: 'Authentication Vulnerabilities',
+  authz: 'Authorization Vulnerabilities',
+  xss: 'Cross-Site Scripting (XSS) Vulnerabilities',
+  injection: 'SQL/Command Injection Vulnerabilities',
+  ssrf: 'Server-Side Request Forgery (SSRF) Vulnerabilities',
+};
+
+// Inline report scope labels are intentionally separate from section headings. The report
+// needs formal names without the repeated "Vulnerabilities" suffix.
+const VULN_CLASS_SCOPE_LABELS: Readonly<Record<VulnClass, string>> = Object.freeze({
+  injection: 'Injection',
+  xss: 'Cross-Site Scripting (XSS)',
+  auth: 'Authentication',
+  authz: 'Authorization',
+  ssrf: 'Server-Side Request Forgery (SSRF)',
+});
+
+/** Render the fixed workflow-owned vulnerability scope for a reader. */
+export function formatVulnClassScope(classes: readonly VulnClass[]): string {
+  return classes.map((vulnerabilityClass) => VULN_CLASS_SCOPE_LABELS[vulnerabilityClass]).join(', ');
+}
+
+/**
+ * Renders the <not_assessed_classes> block. Empty when every class completed.
+ *
+ * A class whose analysis failed was never assessed, so the report must not present its
+ * absence of findings as a clean result. The block is authoritative for that caveat.
+ */
+function renderNotAssessedClassesBlock(failed: readonly VulnClass[] = []): string {
+  if (failed.length === 0) {
+    return '';
+  }
+
+  const classes = [...new Set(failed)];
+  const lines: string[] = [
+    '<not_assessed_classes>',
+    'The following vulnerability classes did not complete and were NOT assessed in this run. Treat this list as authoritative for completeness caveats.',
+    '',
+  ];
+
+  for (const cls of classes) {
+    lines.push(
+      `- ${VULN_CLASS_HEADINGS[cls]}: analysis did not complete; this class was NOT assessed. Absence of findings here does not indicate the class is clean.`,
+    );
+  }
+
+  lines.push(
+    '',
+    'When writing report_meta.executive_summary, scope any no-findings statement to the classes that were assessed and mention these not-assessed classes. Do not state or imply that the target is clean for these classes.',
+    '</not_assessed_classes>',
+  );
+  return lines.join('\n');
+}
+
+/**
+ * Which configured filters this run can actually enforce.
+ *
+ * Every finding carries `severity` (see ../collectors/finding-collector.ts), so a severity
+ * threshold always applies. `confidence` exists only on an analysed finding — handing an
+ * exploit run a confidence threshold is a directive it cannot honor.
+ */
+function applicableFilters(report: DistributedReportConfig | undefined, exploitEnabled: boolean) {
+  return {
+    severity: Boolean(report?.min_severity),
+    confidence: Boolean(report?.min_confidence) && !exploitEnabled,
+    guidance: Boolean(report?.guidance?.trim()),
+  };
+}
+
+/**
+ * Renders the top-level <report_filters> block. Empty when no filters are set —
+ * each filter is included only when the operator configured it, so the agent
+ * never sees `none` placeholders or instructions for filters that don't apply.
+ */
+function renderReportFiltersBlock(report: DistributedReportConfig | undefined, exploitEnabled: boolean): string {
+  if (!report) return '';
+  const guidance = report.guidance?.trim();
+  const applies = applicableFilters(report, exploitEnabled);
+  if (!applies.severity && !applies.confidence && !applies.guidance) return '';
+
+  const lines: string[] = [
+    '<report_filters>',
+    'The filters below are user-supplied and binding for this assessment. Honor each strictly when assembling the final report.',
+    '',
+  ];
+  if (applies.severity) {
+    lines.push(
+      `- Minimum severity: ${report.min_severity} — keep only findings rated this severity or higher (scale: low < medium < high < critical).`,
+    );
+  }
+  if (applies.confidence) {
+    lines.push(
+      `- Minimum confidence: ${report.min_confidence} — keep only findings rated this confidence or higher (scale: low < medium < high).`,
+    );
+  }
+  if (guidance) {
+    lines.push('');
+    lines.push('User guidance — apply throughout the report as binding directives for finding selection:');
+    lines.push(guidance);
+  }
+  lines.push('</report_filters>');
+  return lines.join('\n');
+}
+
+/**
+ * Renders the per-finding DROP rules used inside the cleanup step. Severity and
+ * confidence inline as concrete thresholds; guidance is referenced by pointer
+ * so the actual text only lives in <report_filters>, avoiding double-statement.
+ */
+function renderReportFilterRules(report: DistributedReportConfig | undefined, exploitEnabled: boolean): string {
+  const applies = applicableFilters(report, exploitEnabled);
+  const drops: string[] = [];
+  if (applies.severity) drops.push(`* severity is below ${report?.min_severity}`);
+  if (applies.confidence) drops.push(`* confidence is below ${report?.min_confidence}`);
+  if (report?.guidance?.trim()) drops.push('* topic matches an exclusion in the user guidance');
+  if (drops.length === 0) return '';
+  return ['   - DROP any `### [TYPE]-VULN-[NUMBER]` finding whose:', ...drops.map((d) => `     ${d}`)].join('\n');
+}
+
+interface PromptVariables {
+  webUrl: string;
+  repoPath: string;
+  /** Workflow-owned UTC date for report metadata and prose. */
+  assessmentDate?: string;
+  /** Classes whose analysis did not complete, so the report can mark them not assessed. */
+  failedClasses?: readonly VulnClass[];
+  /** Explicit workflow-owned analysis scope for prompts that describe tested classes. */
+  analysisClasses?: readonly VulnClass[];
+  AUTH_STATE_FILE: string;
+  PLAYWRIGHT_SESSION?: string;
+}
+
+interface IncludeReplacement {
+  placeholder: string;
+  content: string;
+}
+
+// Pure function: Build complete login instructions from config
+//
+// Username, password, TOTP secret, and email-login credentials are substituted directly into
+// the returned string, which only ever lives in process memory on its way into the prompt sent
+// to the model. Nothing in this function writes credentials to a file.
+async function buildLoginInstructions(
+  authentication: Authentication,
+  logger: ActivityLogger,
+  promptsBaseDir: string = PROMPTS_DIR,
+): Promise<string> {
+  try {
+    // 1. Load the login instructions template
+    const loginInstructionsPath = path.join(promptsBaseDir, 'shared', 'login-instructions.txt');
+
+    if (!(await fs.pathExists(loginInstructionsPath))) {
+      throw new PentestError('Login instructions template not found', 'filesystem', false, { loginInstructionsPath });
+    }
+
+    const fullTemplate = await fs.readFile(loginInstructionsPath, 'utf8');
+
+    const getSection = (content: string, sectionName: string): string => {
+      const regex = new RegExp(`<!-- BEGIN:${sectionName} -->([\\s\\S]*?)<!-- END:${sectionName} -->`, 'g');
+      const match = regex.exec(content);
+      return match?.[1]?.trim() ?? '';
+    };
+
+    // 2. Extract sections based on login type
+    const loginType = authentication.login_type?.toUpperCase();
+    let loginInstructions = '';
+
+    const commonSection = getSection(fullTemplate, 'COMMON');
+    const authSection = loginType ? getSection(fullTemplate, loginType) : ''; // FORM or SSO
+    const verificationSection = getSection(fullTemplate, 'VERIFICATION');
+
+    // 3. Assemble instructions from sections (fallback to full template if markers missing)
+    if (!commonSection && !authSection && !verificationSection) {
+      logger.warn('Section markers not found, using full login instructions template');
+      loginInstructions = fullTemplate;
+    } else {
+      loginInstructions = [commonSection, authSection, verificationSection].filter((section) => section).join('\n\n');
+    }
+
+    // 4. Interpolate login flow and credential placeholders
+    let userInstructions = (authentication.login_flow ?? []).join('\n');
+
+    if (authentication.credentials) {
+      if (authentication.credentials.username) {
+        userInstructions = replaceLiteral(userInstructions, /\$username/g, authentication.credentials.username);
+      }
+      if (authentication.credentials.password) {
+        userInstructions = replaceLiteral(userInstructions, /\$password/g, authentication.credentials.password);
+      }
+      if (authentication.credentials.totp_secret) {
+        userInstructions = replaceLiteral(
+          userInstructions,
+          /\$totp/g,
+          `generated TOTP code using secret "${authentication.credentials.totp_secret}"`,
+        );
+      }
+      if (authentication.credentials.email_login?.address) {
+        userInstructions = replaceLiteral(
+          userInstructions,
+          /\$email_address/g,
+          authentication.credentials.email_login.address,
+        );
+      }
+      if (authentication.credentials.email_login?.password) {
+        userInstructions = replaceLiteral(
+          userInstructions,
+          /\$email_password/g,
+          authentication.credentials.email_login.password,
+        );
+      }
+      if (authentication.credentials.email_login?.totp_secret) {
+        userInstructions = replaceLiteral(
+          userInstructions,
+          /\$email_totp/g,
+          `generated TOTP code using secret "${authentication.credentials.email_login.totp_secret}"`,
+        );
+      }
+    }
+
+    loginInstructions = replaceLiteral(loginInstructions, /{{user_instructions}}/g, userInstructions);
+
+    // 5. Replace TOTP secret placeholder if present in template
+    if (authentication.credentials?.totp_secret) {
+      loginInstructions = replaceLiteral(loginInstructions, /{{totp_secret}}/g, authentication.credentials.totp_secret);
+    }
+
+    return loginInstructions;
+  } catch (error) {
+    if (error instanceof PentestError) {
+      throw error;
+    }
+    const errMsg = error instanceof Error ? error.message : String(error);
+    throw new PentestError(`Failed to build login instructions: ${errMsg}`, 'config', false, {
+      authentication,
+      originalError: errMsg,
+    });
+  }
+}
+
+// Pure function: Process @include() directives
+async function processIncludes(content: string, baseDir: string): Promise<string> {
+  const includeRegex = /@include\(([^)]+)\)/g;
+  const resolvedBase = path.resolve(baseDir);
+
+  const replacements: IncludeReplacement[] = await Promise.all(
+    Array.from(content.matchAll(includeRegex)).map(async (match) => {
+      const rawPath = match[1] ?? '';
+      const includePath = path.resolve(baseDir, rawPath);
+      if (!includePath.startsWith(resolvedBase + path.sep) && includePath !== resolvedBase) {
+        throw new PentestError(`Path traversal detected in @include(): ${rawPath}`, 'prompt', false, {
+          includePath,
+          baseDir: resolvedBase,
+        });
+      }
+      const sharedContent = await fs.readFile(includePath, 'utf8');
+      return {
+        placeholder: match[0],
+        content: sharedContent,
+      };
+    }),
+  );
+
+  for (const replacement of replacements) {
+    content = replaceLiteral(content, replacement.placeholder, replacement.content);
+  }
+  return content;
+}
+
+/**
+ * Replaces `pattern` with `replacement` treating the replacement as a literal
+ * string. Native `String.replace` interprets `$&`, `$1`, `$$` in the replacement
+ * as special patterns, which mangles credential and config values that legitimately
+ * contain `$`. The function form of `replace` bypasses that interpretation.
+ */
+function replaceLiteral(input: string, pattern: RegExp | string, replacement: string): string {
+  return input.replace(pattern, () => replacement);
+}
+
+// Deliberately omits password, TOTP secret, and email-login credentials: this block is
+// background context for the agent's prompt header, not the login mechanism itself. The
+// actual secret values are only ever interpolated into {{LOGIN_INSTRUCTIONS}} via
+// buildLoginInstructions, so a secret is never duplicated into this second location.
+function buildAuthContext(config: DistributedConfig | null): string {
+  if (!config?.authentication) {
+    return 'No authentication configured - unauthenticated testing only';
+  }
+
+  const auth = config.authentication;
+  const lines = [
+    `- Login type: ${auth.login_type.toUpperCase()}`,
+    `- Username: ${auth.credentials.username}`,
+    `- Login URL: ${auth.login_url}`,
+  ];
+
+  if (auth.credentials?.totp_secret) {
+    lines.push('- MFA: TOTP enabled');
+  }
+
+  return lines.join('\n');
+}
+
+// Pure function: Variable interpolation
+async function interpolateVariables(
+  template: string,
+  variables: PromptVariables,
+  config: DistributedConfig | null = null,
+  logger: ActivityLogger,
+  promptsBaseDir: string = PROMPTS_DIR,
+): Promise<string> {
+  try {
+    if (!template || typeof template !== 'string') {
+      throw new PentestError('Template must be a non-empty string', 'validation', false, {
+        templateType: typeof template,
+        templateLength: template?.length,
+      });
+    }
+
+    if (!variables || !variables.webUrl || !variables.repoPath) {
+      throw new PentestError('Variables must include webUrl and repoPath', 'validation', false, {
+        variables: Object.keys(variables || {}),
+      });
+    }
+
+    // replaceLiteral is used for all value insertions so config values that
+    // contain `$&`/`$$`/`$1`/etc. aren't mangled as replacement patterns.
+    let result = template;
+    result = replaceLiteral(result, /{{WEB_URL}}/g, variables.webUrl);
+    result = replaceLiteral(result, /{{REPO_PATH}}/g, variables.repoPath);
+    if (result.includes('{{ASSESSMENT_DATE}}')) {
+      if (variables.assessmentDate === undefined) {
+        throw new PentestError('Prompt requires a workflow-owned assessment date', 'prompt', false, {
+          placeholder: 'ASSESSMENT_DATE',
+        });
+      }
+      result = replaceLiteral(result, /{{ASSESSMENT_DATE}}/g, variables.assessmentDate);
+    }
+    result = replaceLiteral(result, /{{PLAYWRIGHT_SESSION}}/g, variables.PLAYWRIGHT_SESSION || 'agent1');
+    result = replaceLiteral(result, /{{AUTH_CONTEXT}}/g, buildAuthContext(config));
+    result = replaceLiteral(
+      result,
+      /{{DESCRIPTION}}/g,
+      config?.description ? `Description: ${config.description}` : '',
+    );
+
+    const avoidUrlRules = config?.avoid?.filter((r) => r.type !== 'code_path') ?? [];
+    const focusUrlRules = config?.focus?.filter((r) => r.type !== 'code_path') ?? [];
+    if (avoidUrlRules.length === 0 && focusUrlRules.length === 0) {
+      result = result.replace(/<rules>[\s\S]*?<\/rules>\s*/g, '');
+    } else {
+      const avoidStr = renderUrlRules(avoidUrlRules);
+      const focusStr = renderUrlRules(focusUrlRules);
+      result = replaceLiteral(result, /{{RULES_AVOID}}/g, avoidStr);
+      result = replaceLiteral(result, /{{RULES_FOCUS}}/g, focusStr);
+    }
+
+    const avoidCodeRules = (config?.avoid ?? []).filter((r) => r.type === 'code_path');
+    const focusCodeRules = (config?.focus ?? []).filter((r) => r.type === 'code_path');
+    if (avoidCodeRules.length === 0 && focusCodeRules.length === 0) {
+      result = result.replace(/<code_path_rules>[\s\S]*?<\/code_path_rules>\s*/g, '');
+    } else {
+      result = replaceLiteral(result, /{{CODE_RULES_AVOID}}/g, renderCodePathRules(config?.avoid ?? []));
+      result = replaceLiteral(result, /{{CODE_RULES_FOCUS}}/g, renderCodePathRules(config?.focus ?? []));
+    }
+
+    const roe = config?.rules_of_engagement?.trim() ?? '';
+    if (roe) {
+      result = replaceLiteral(result, /{{RULES_OF_ENGAGEMENT}}/g, roe);
+    } else {
+      result = result.replace(/<rules_of_engagement>[\s\S]*?<\/rules_of_engagement>\s*/g, '');
+    }
+
+    if (!config?.authentication) {
+      result = result.replace(/<shared_authenticated_session>[\s\S]*?<\/shared_authenticated_session>\s*/g, '');
+    } else {
+      result = replaceLiteral(result, /{{AUTH_STATE_FILE}}/g, variables.AUTH_STATE_FILE);
+    }
+
+    if (config?.authentication?.login_flow) {
+      const loginInstructions = await buildLoginInstructions(config.authentication, logger, promptsBaseDir);
+      result = replaceLiteral(result, /{{LOGIN_INSTRUCTIONS}}/g, loginInstructions);
+    } else {
+      result = result.replace(/{{LOGIN_INSTRUCTIONS}}/g, '');
+    }
+
+    if (result.includes('{{VULN_CLASSES_TESTED}}')) {
+      // Fails closed instead of falling back to a guessed or hardcoded class list: a template
+      // that describes tested classes must receive the workflow's resolved scope explicitly, so
+      // a caller that forgets to pass analysisClasses cannot silently render a stale scope.
+      if (variables.analysisClasses === undefined) {
+        throw new PentestError('Prompt requires an explicit workflow-owned analysis scope', 'prompt', false, {
+          placeholder: 'VULN_CLASSES_TESTED',
+        });
+      }
+      assertFixedAnalysisScope(variables.analysisClasses);
+      result = replaceLiteral(result, /{{VULN_CLASSES_TESTED}}/g, formatVulnClassScope(variables.analysisClasses));
+    }
+    result = replaceLiteral(
+      result,
+      /{{NOT_ASSESSED_CLASSES}}/g,
+      renderNotAssessedClassesBlock(variables.failedClasses ?? []),
+    );
+
+    const exploitEnabled = config?.exploit ?? true;
+
+    // Drop every block belonging to the mode this run is not in, so the prompt never documents
+    // a field the tool would reject. The backreference pins each match to a closed pair.
+    const droppedMode = exploitEnabled ? 'analysis' : 'exploit';
+    result = result.replace(new RegExp(`<(${droppedMode}_mode_[a-z_]+)>[\\s\\S]*?</\\1>\\n?`, 'g'), '');
+    result = result.replace(/<\/?(?:exploit|analysis)_mode_[a-z_]+>\n?/g, '');
+
+    result = replaceLiteral(result, /{{EXPLOITATION}}/g, exploitEnabled ? 'enabled' : 'disabled');
+    result = replaceLiteral(
+      result,
+      /{{REPORT_VULN_SUBHEADING}}/g,
+      exploitEnabled ? 'Successfully Exploited Vulnerabilities' : 'Identified Vulnerabilities',
+    );
+
+    if (config?.report?.min_confidence && exploitEnabled) {
+      logger.warn(
+        `report.min_confidence="${config.report.min_confidence}" is ignored when exploit=true: an ` +
+          'exploited finding is rated by severity, not confidence. Use report.min_severity.',
+      );
+    }
+    result = replaceLiteral(
+      result,
+      /{{REPORT_FILTERS_BLOCK}}/g,
+      renderReportFiltersBlock(config?.report, exploitEnabled),
+    );
+    result = replaceLiteral(
+      result,
+      /{{REPORT_FILTER_RULES}}/g,
+      renderReportFilterRules(config?.report, exploitEnabled),
+    );
+
+    // Collapse runs of 3+ newlines (left behind by tag-strip and empty-fragment substitutions).
+    result = result.replace(/\n{3,}/g, '\n\n');
+
+    // Validate that all placeholders have been replaced (excluding instructional text)
+    const remainingPlaceholders = result.match(/\{\{[^}]+\}\}/g);
+    if (remainingPlaceholders) {
+      logger.warn(`Found unresolved placeholders in prompt: ${remainingPlaceholders.join(', ')}`);
+    }
+
+    return result;
+  } catch (error) {
+    if (error instanceof PentestError) {
+      throw error;
+    }
+    const errMsg = error instanceof Error ? error.message : String(error);
+    throw new PentestError(`Variable interpolation failed: ${errMsg}`, 'prompt', false, { originalError: errMsg });
+  }
+}
+
+// Prompt families that drive deterministic, model-only stages with no browser of their own.
+// They share loadPrompt with the browser agents but must never claim a Playwright session.
+const NON_BROWSER_PROMPT_PREFIXES: readonly string[] = Object.freeze(['task-formation-', 'sast-enrichment-']);
+
+function isNonBrowserPrompt(promptName: string): boolean {
+  return NON_BROWSER_PROMPT_PREFIXES.some((prefix) => promptName.startsWith(prefix));
+}
+
+// Resolve promptDir override against SHANNON_WORKER_ROOT so relative paths
+// from callers stay cwd-independent.
+function resolvePromptDir(promptDir: string | undefined): string {
+  if (!promptDir) return PROMPTS_DIR;
+  if (path.isAbsolute(promptDir)) return promptDir;
+  return path.resolve(process.env.SHANNON_WORKER_ROOT ?? process.cwd(), promptDir);
+}
+
+// Pure function: Load and interpolate prompt template
+export async function loadPrompt(
+  promptName: string,
+  variables: PromptVariables,
+  config: DistributedConfig | null = null,
+  pipelineTestingMode: boolean = false,
+  logger: ActivityLogger,
+  promptDir?: string,
+): Promise<string> {
+  try {
+    const basePromptsDir = resolvePromptDir(promptDir);
+    const promptsDir = pipelineTestingMode ? path.join(basePromptsDir, 'pipeline-testing') : basePromptsDir;
+    const promptPath = path.join(promptsDir, `${promptName}.txt`);
+
+    if (pipelineTestingMode) {
+      logger.info(`Using pipeline testing prompt: ${promptPath}`);
+    }
+
+    if (!(await fs.pathExists(promptPath))) {
+      throw new PentestError(`Prompt file not found: ${promptPath}`, 'prompt', false, { promptName, promptPath });
+    }
+
+    // 2. Assign Playwright session based on agent name
+    const enhancedVariables: PromptVariables = { ...variables };
+
+    const session = PLAYWRIGHT_SESSION_MAPPING[promptName as keyof typeof PLAYWRIGHT_SESSION_MAPPING];
+    if (session) {
+      enhancedVariables.PLAYWRIGHT_SESSION = session;
+      logger.info(`Assigned ${promptName} -> ${enhancedVariables.PLAYWRIGHT_SESSION}`);
+    } else if (!isNonBrowserPrompt(promptName)) {
+      // A browser agent missing from the table is a real gap; a non-browser family is not, so it
+      // takes neither the fallback session nor the warning.
+      enhancedVariables.PLAYWRIGHT_SESSION = 'agent1';
+      logger.warn(`Unknown agent ${promptName}, using fallback -> ${enhancedVariables.PLAYWRIGHT_SESSION}`);
+    }
+
+    // 3. Read template file
+    let template = await fs.readFile(promptPath, 'utf8');
+
+    // 4. Process @include directives
+    template = await processIncludes(template, promptsDir);
+
+    // 5. Interpolate variables and return final prompt
+    return await interpolateVariables(template, enhancedVariables, config, logger, basePromptsDir);
+  } catch (error) {
+    if (error instanceof PentestError) {
+      throw error;
+    }
+    const promptError = handlePromptError(promptName, error as Error);
+    throw promptError.error;
+  }
+}

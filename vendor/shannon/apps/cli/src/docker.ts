@@ -1,0 +1,663 @@
+/**
+ * Docker orchestration — compose lifecycle, network, image pull/build, worker spawning.
+ *
+ * Local mode: builds locally, uses docker-compose.yml from repo root, mounts prompts.
+ * NPX mode: pulls from Docker Hub, uses bundled compose.yml.
+ */
+
+import { type ChildProcess, execFileSync, spawn } from 'node:child_process';
+import crypto from 'node:crypto';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { setTimeout as sleep } from 'node:timers/promises';
+import { fileURLToPath } from 'node:url';
+import type { SpinnerResult } from '@clack/prompts';
+import { envBool, PI_AUTH_CONTAINER_PATH } from './env.js';
+import { fail, warn } from './errors.js';
+import { getMode, isDevMode } from './mode.js';
+import { INTERNAL_DIR } from './paths.js';
+import { runStep, spawnCaptured, surfaceOutput } from './ui.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const NPX_IMAGE_REPO = 'keygraph/shannon';
+const DEV_IMAGE = 'shannon-worker';
+
+/** Docker label stamped on each worker container, mapping it back to its workspace so a single scan can be stopped by name. */
+const WORKSPACE_LABEL = 'shannon.workspace';
+
+/** Docker label that joins a worker container to the Temporal workflow polling its unique task queue. */
+const TASK_QUEUE_LABEL = 'shannon.task-queue';
+
+/** Docker label carrying the workflow ID selected before the worker starts. */
+const WORKFLOW_ID_LABEL = 'shannon.workflow-id';
+
+/** Image/container protocol proving that the worker honors the preselected workflow ID. */
+const WORKER_PROTOCOL_LABEL = 'shannon.worker-protocol';
+export const WORKFLOW_ID_PROTOCOL = 'workflow-id-v1';
+
+export function getWorkerImage(version: string): string {
+  return getMode() === 'local' ? DEV_IMAGE : `${NPX_IMAGE_REPO}:${version}`;
+}
+
+/** True when the working directory supplies a Dockerfile and build context. */
+export function canBuildImage(): boolean {
+  if (getMode() === 'local') return true;
+  if (!isDevMode()) return false;
+
+  const hasDockerfile = fs.existsSync(path.resolve('Dockerfile'));
+  const hasCompose = fs.existsSync(path.resolve('docker-compose.yml'));
+
+  return hasDockerfile && hasCompose;
+}
+
+function getComposeFile(): string {
+  return getMode() === 'local'
+    ? path.resolve('docker-compose.yml')
+    : path.resolve(__dirname, '..', 'infra', 'compose.yml');
+}
+
+/** Generate an 8-char random hex suffix for container/queue names. */
+export function randomSuffix(): string {
+  return crypto.randomBytes(4).toString('hex');
+}
+
+/** Run a command silently, return true if it succeeds. */
+function runQuiet(cmd: string, args: string[]): boolean {
+  try {
+    execFileSync(cmd, args, { stdio: 'pipe' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Run a command and return stdout, or empty string on failure. */
+function runOutput(cmd: string, args: string[]): string {
+  try {
+    return execFileSync(cmd, args, { stdio: 'pipe', encoding: 'utf-8' }).trim();
+  } catch {
+    return '';
+  }
+}
+
+/** Run a command asynchronously, resolving true on success. Never rejects. */
+function spawnQuiet(cmd: string, args: string[]): Promise<boolean> {
+  return new Promise((resolve) => {
+    const child = spawn(cmd, args, { stdio: 'ignore' });
+    child.on('close', (code) => resolve(code === 0));
+    child.on('error', () => resolve(false));
+  });
+}
+
+const TEMPORAL_CONTAINER = 'shannon-temporal';
+const TEMPORAL_ADDRESS = 'localhost:7233';
+
+/** Build `docker exec` args for a `temporal` CLI command run inside the Temporal container. */
+function temporalCmd(...args: string[]): string[] {
+  return ['exec', TEMPORAL_CONTAINER, 'temporal', ...args, '--address', TEMPORAL_ADDRESS];
+}
+
+/**
+ * Verify Docker is installed and its daemon is running, exiting otherwise.
+ * `docker info` succeeds only when both are true. Call this before any command
+ * that shells out to Docker.
+ */
+export function ensureDocker(): void {
+  try {
+    execFileSync('docker', ['info'], { stdio: 'pipe' });
+  } catch {
+    fail(
+      'Docker must be installed and running. Start Docker and try again.',
+      'Install Docker: https://docs.docker.com/get-docker/',
+    );
+  }
+}
+
+/**
+ * Check if Temporal is running and healthy.
+ */
+export function isTemporalReady(): boolean {
+  const output = runOutput('docker', temporalCmd('operator', 'cluster', 'health'));
+  return output.includes('SERVING');
+}
+
+/** Start (or find) Temporal via compose and wait until it serves; exits the process on failure. */
+async function ensureTemporalHealthy(spinner: SpinnerResult): Promise<void> {
+  if (isTemporalReady()) {
+    return;
+  }
+
+  // Drive the caller's spinner — the whole "start" flow is one spinner, not several.
+  spinner.message('Starting Temporal');
+  const composeFile = getComposeFile();
+  const result = await spawnCaptured('docker', ['compose', '-f', composeFile, 'up', '-d']);
+  if (!result.ok) {
+    spinner.error('Could not start Temporal');
+    surfaceOutput(result.output);
+    process.exit(1);
+  }
+
+  spinner.message('Waiting for Temporal to be ready');
+  for (let i = 0; i < 30; i++) {
+    if (isTemporalReady()) {
+      return;
+    }
+    await sleep(2000);
+  }
+
+  spinner.error('Temporal did not become ready in time');
+  process.exit(1);
+}
+
+const DEFAULT_RETENTION_HOURS = 168;
+const RETENTION_ENV = 'SHANNON_TEMPORAL_RETENTION';
+const RETENTION_NAMESPACE = 'default';
+
+/**
+ * Desired retention in whole hours: unset or empty env → 168 (7 days); a positive
+ * whole-hour override like `72h`; anything else warns and returns null (leave unchanged).
+ */
+function desiredRetentionHours(): number | null {
+  const raw = process.env[RETENTION_ENV];
+  if (raw === undefined || raw.trim() === '') {
+    return DEFAULT_RETENTION_HOURS;
+  }
+  const match = raw.trim().match(/^([1-9][0-9]*)h$/);
+  if (!match) {
+    warn(
+      `Ignoring invalid ${RETENTION_ENV} "${raw}" — Temporal retention left unchanged.`,
+      'Use a positive whole number of hours, e.g. "168h".',
+    );
+    return null;
+  }
+  return Number(match[1]);
+}
+
+/** Convert a Go duration such as "24h0m0s" or "168h" to whole seconds, or null when it doesn't parse. */
+function parseGoDurationSeconds(text: string): number | null {
+  const match = text.match(/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/);
+  if (!match || (match[1] === undefined && match[2] === undefined && match[3] === undefined)) {
+    return null;
+  }
+  const hours = Number(match[1] ?? 0);
+  const minutes = Number(match[2] ?? 0);
+  const seconds = Number(match[3] ?? 0);
+  return hours * 3600 + minutes * 60 + seconds;
+}
+
+/**
+ * Current retention of the `default` namespace in seconds, or null when it can't be read.
+ * `runOutput` returns '' on a failed describe, so a failed read and an unparseable one both
+ * collapse to null — either way the live value is unknown, which the caller handles the same way.
+ */
+function readCurrentRetentionSeconds(): number | null {
+  const output = runOutput('docker', temporalCmd('operator', 'namespace', 'describe', RETENTION_NAMESPACE));
+  const match = output.match(/WorkflowExecutionRetentionTtl\s+(\S+)/);
+  if (!match || match[1] === undefined) {
+    return null;
+  }
+  return parseGoDurationSeconds(match[1]);
+}
+
+/**
+ * Converge the `default` namespace's retention to the CLI-owned value after Temporal is
+ * healthy. The CLI is the authority: a manual change is replaced on the next start unless
+ * the operator sets the matching override. A describe or update failure warns once that the
+ * requested value wasn't applied and never blocks the scan.
+ */
+function convergeNamespaceRetention(): void {
+  const hours = desiredRetentionHours();
+  if (hours === null) {
+    return;
+  }
+
+  const currentSeconds = readCurrentRetentionSeconds();
+  if (currentSeconds === null) {
+    warn(
+      `Could not read Temporal retention for namespace "${RETENTION_NAMESPACE}" — the requested value (${hours}h) was not applied.`,
+    );
+    return;
+  }
+
+  if (currentSeconds === hours * 3600) {
+    return;
+  }
+
+  const updated = runQuiet(
+    'docker',
+    temporalCmd('operator', 'namespace', 'update', '--namespace', RETENTION_NAMESPACE, '--retention', `${hours}h`),
+  );
+  if (!updated) {
+    warn(`Could not update Temporal retention to ${hours}h — the requested value was not applied.`);
+  }
+}
+
+/**
+ * Ensure Temporal is running via compose, then converge its scan-history retention.
+ */
+export async function ensureInfra(spinner: SpinnerResult): Promise<void> {
+  await ensureTemporalHealthy(spinner);
+  convergeNamespaceRetention();
+}
+
+/**
+ * Build the worker image from the repository, tagged with the name this mode
+ * resolves at run time.
+ */
+export function buildImage(noCache: boolean, version: string): void {
+  const image = getWorkerImage(version);
+  console.log(`Building ${image}...`);
+  const args = ['build'];
+  if (noCache) args.push('--no-cache');
+  args.push('-t', image, '.');
+  execFileSync('docker', args, { stdio: 'inherit' });
+  console.log(`Build complete: ${image}`);
+}
+
+/**
+ * Ensure the worker image is available.
+ * Buildable checkout: auto-builds if missing. Otherwise: pulls from Docker Hub.
+ */
+export function ensureImage(version: string): void {
+  const image = getWorkerImage(version);
+  const exists = runQuiet('docker', ['image', 'inspect', image]);
+  if (exists) {
+    ensureWorkerImageProtocol(image);
+    return;
+  }
+
+  if (canBuildImage()) {
+    console.log('Shannon image not found, building...');
+    buildImage(false, version);
+  } else {
+    console.log(`Pulling ${image}...`);
+    try {
+      execFileSync('docker', ['pull', image], { stdio: 'inherit' });
+    } catch {
+      fail(
+        `Failed to pull ${image}`,
+        'The image may not be available for your platform yet.',
+        'Check https://hub.docker.com/r/keygraph/shannon for available tags.',
+      );
+    }
+    pruneOldImages(version);
+  }
+  ensureWorkerImageProtocol(image);
+}
+
+/** Refuse a stale worker image that would ignore the CLI-selected workflow ID. */
+function ensureWorkerImageProtocol(image: string): void {
+  const protocol = runOutput('docker', [
+    'image',
+    'inspect',
+    image,
+    '--format',
+    `{{ index .Config.Labels "${WORKER_PROTOCOL_LABEL}" }}`,
+  ]);
+  if (protocol === WORKFLOW_ID_PROTOCOL) return;
+
+  const hint = canBuildImage() ? 'Run ./shannon build, then retry.' : 'Reinstall this Shannon version, then retry.';
+  fail('The Shannon worker image is incompatible with this CLI.', hint);
+}
+
+/**
+ * Detect if --add-host is needed (Linux without Podman).
+ * macOS has host.docker.internal built in.
+ */
+function addHostFlag(): string[] {
+  if (os.platform() === 'linux') {
+    const hasPodman = runQuiet('which', ['podman']);
+    if (!hasPodman) {
+      return ['--add-host', 'host.docker.internal:host-gateway'];
+    }
+  }
+  return [];
+}
+
+/**
+ * Names whose standard IPs aren't covered by `shouldSkipHostsIp`. Loopback names
+ * stay because their IPs (127.x, ::1) get rewritten — not skipped. Others like
+ * `broadcasthost` and `ip6-mcastprefix` are intentionally omitted: their IPs
+ * (255.255.255.255, ff00::/8) are already dropped at the IP filter.
+ */
+const HOSTS_SKIP_NAMES = new Set([
+  'localhost',
+  'ip6-localhost',
+  'ip6-loopback',
+  'ip6-localnet',
+  'host.docker.internal',
+  'gateway.docker.internal',
+  'kubernetes.docker.internal',
+]);
+
+function isLoopbackIp(ip: string): boolean {
+  return ip.startsWith('127.') || ip === '::1';
+}
+
+function shouldSkipHostsIp(ip: string): boolean {
+  if (ip === '0.0.0.0' || ip === '255.255.255.255') return true;
+  // Cloud metadata range — consistent with Shannon's SSRF guard
+  if (ip.startsWith('169.254.')) return true;
+  const lower = ip.toLowerCase();
+  if (lower.startsWith('fe80:') || lower.startsWith('ff')) return true;
+  return false;
+}
+
+function shouldSkipHostsName(name: string, hostname: string): boolean {
+  const lower = name.toLowerCase();
+  if (HOSTS_SKIP_NAMES.has(lower)) return true;
+  if (lower === hostname.toLowerCase()) return true;
+  if (lower.endsWith('.localhost')) return true;
+  return false;
+}
+
+/**
+ * Read the host's /etc/hosts and emit --add-host flags so the worker resolves
+ * user-added entries the same way. Loopback IPs (127.x, ::1) are rewritten to
+ * `host-gateway` so they target the host's loopback instead of the container's.
+ */
+function forwardEtcHostsFlags(): string[] {
+  if (!envBool('SHANNON_FORWARD_HOSTS', true)) return [];
+
+  let content: string;
+  try {
+    content = fs.readFileSync('/etc/hosts', 'utf-8');
+  } catch {
+    return [];
+  }
+
+  const hostname = os.hostname();
+  const flags: string[] = [];
+
+  for (const rawLine of content.split('\n')) {
+    const hashIdx = rawLine.indexOf('#');
+    const line = (hashIdx >= 0 ? rawLine.slice(0, hashIdx) : rawLine).trim();
+    if (!line) continue;
+
+    const tokens = line
+      .split(' ')
+      .flatMap((t) => t.split('\t'))
+      .filter(Boolean);
+    const ip = tokens[0];
+    const names = tokens.slice(1);
+    if (!ip || names.length === 0) continue;
+    if (shouldSkipHostsIp(ip)) continue;
+
+    const targetIp = isLoopbackIp(ip) ? 'host-gateway' : ip;
+    const formattedIp = targetIp.includes(':') ? `[${targetIp}]` : targetIp;
+    for (const name of names) {
+      if (shouldSkipHostsName(name, hostname)) continue;
+      flags.push('--add-host', `${name}:${formattedIp}`);
+    }
+  }
+
+  return flags;
+}
+
+export interface WorkerOptions {
+  version: string;
+  url: string;
+  repo: { hostPath: string; containerPath: string };
+  workspacesDir: string;
+  taskQueue: string;
+  workflowId: string;
+  containerName: string;
+  envFlags: string[];
+  config?: { hostPath: string; containerPath: string };
+  modelsConfig?: { hostPath: string; containerPath: string };
+  promptsDir?: string;
+  outputDir?: string;
+  workspace: string;
+  pipelineTesting?: boolean;
+  keepContainer?: boolean;
+  piAuthHostPath?: string;
+}
+
+/**
+ * Spawn the worker container in detached mode and return the process.
+ * When `opts.keepContainer` is true, omits `--rm` so the container persists for log inspection.
+ */
+export function spawnWorker(opts: WorkerOptions): ChildProcess {
+  const args = ['run', '-d'];
+  if (!opts.keepContainer) {
+    args.push('--rm');
+  }
+  args.push('--name', opts.containerName, '--network', 'shannon-net');
+
+  // Keep the launch identity on the container before session.json exists. The fixed workflow
+  // ID lets stop verify the pre-registration window without trusting visibility timing.
+  args.push(
+    '--label',
+    `${WORKSPACE_LABEL}=${opts.workspace}`,
+    '--label',
+    `${TASK_QUEUE_LABEL}=${opts.taskQueue}`,
+    '--label',
+    `${WORKFLOW_ID_LABEL}=${opts.workflowId}`,
+  );
+
+  // Add host flag for Linux
+  args.push(...addHostFlag());
+
+  // Forward user-added /etc/hosts entries into the worker
+  args.push(...forwardEtcHostsFlags());
+
+  // UID remapping for Linux bind mounts
+  if (os.platform() === 'linux' && process.getuid && process.getgid) {
+    args.push('-e', `SHANNON_HOST_UID=${process.getuid()}`, '-e', `SHANNON_HOST_GID=${process.getgid()}`);
+  }
+
+  // Volume mounts
+  args.push('-v', `${opts.workspacesDir}:/app/workspaces`);
+  args.push('-v', `${opts.repo.hostPath}:${opts.repo.containerPath}:ro`);
+
+  // Writable overlays: shadow .shannon/ and .playwright/ inside the :ro repo with workspace-backed
+  // dirs, nested under the run's INTERNAL_DIR. Container paths are unchanged.
+  const internalPath = path.join(opts.workspacesDir, opts.workspace, INTERNAL_DIR);
+  args.push('-v', `${path.join(internalPath, 'deliverables')}:${opts.repo.containerPath}/.shannon/deliverables`);
+  args.push('-v', `${path.join(internalPath, 'scratchpad')}:${opts.repo.containerPath}/.shannon/scratchpad`);
+  args.push('-v', `${path.join(internalPath, '.playwright-cli')}:${opts.repo.containerPath}/.shannon/.playwright-cli`);
+  args.push('-v', `${path.join(internalPath, '.playwright')}:${opts.repo.containerPath}/.playwright`);
+
+  // Local mode: mount prompts for live editing
+  if (opts.promptsDir) {
+    args.push('-v', `${opts.promptsDir}:/app/apps/worker/prompts:ro`);
+  }
+
+  if (opts.config) {
+    args.push('-v', `${opts.config.hostPath}:${opts.config.containerPath}:ro`);
+  }
+
+  // pi model config. The mount is the only signal the worker gets: it detects the file at
+  // this fixed path, so nothing about --models-config travels through the environment.
+  if (opts.modelsConfig) {
+    args.push('-v', `${opts.modelsConfig.hostPath}:${opts.modelsConfig.containerPath}:ro`);
+  }
+
+  // Customer-copy destination. The workflow surfaces only final report artifacts here.
+  if (opts.outputDir) {
+    args.push('-v', `${opts.outputDir}:/app/output`);
+  }
+
+  // Reuse the host's pi credentials: mount only the auth file, allowing token refreshes to persist.
+  if (opts.piAuthHostPath) {
+    args.push('-v', `${opts.piAuthHostPath}:${PI_AUTH_CONTAINER_PATH}`);
+  }
+
+  // Environment
+  args.push(...opts.envFlags);
+
+  // Container settings. Chromium's own sandbox needs syscalls Docker's default seccomp
+  // profile blocks, which is why the profile is dropped. `seccomp=unconfined` is a
+  // container-wide setting, not a per-process one: every process here runs unfiltered,
+  // the worker included — not just the browser automation that motivates it.
+  args.push('--shm-size', '2gb', '--security-opt', 'seccomp=unconfined');
+
+  // Image
+  args.push(getWorkerImage(opts.version));
+
+  // Worker command
+  args.push('node', 'apps/worker/dist/temporal/worker.js', opts.url, opts.repo.containerPath);
+  args.push('--task-queue', opts.taskQueue);
+  args.push('--workflow-id', opts.workflowId);
+  if (opts.config) {
+    args.push('--config', opts.config.containerPath);
+  }
+  if (opts.outputDir) {
+    args.push('--output', '/app/output');
+  }
+  args.push('--workspace', opts.workspace);
+  if (opts.pipelineTesting) {
+    args.push('--pipeline-testing');
+  }
+
+  // Inherit stderr so `docker run` daemon errors surface to the user;
+  // ignore stdin/stdout (the container ID is noise).
+  return spawn('docker', args, {
+    stdio: ['ignore', 'ignore', 'inherit'],
+  });
+}
+
+/** `docker ps --filter` args matching every running worker container. */
+export const WORKER_FILTER: readonly string[] = ['--filter', 'name=shannon-worker-'];
+
+/** Result of a command-backed query whose unavailable state must not be mistaken for an empty result. */
+export type CommandQueryResult<T> = { kind: 'ok'; value: T } | { kind: 'unavailable' };
+
+/** Identity carried by a running scan worker container. Older workers may lack the newer labels. */
+export interface RunningScanContainer {
+  readonly id: string;
+  readonly workspace?: string;
+  readonly taskQueue?: string;
+  readonly workflowId?: string;
+  readonly workerProtocol?: string;
+}
+
+/** `docker ps --filter` args matching one scan's worker container(s), by workspace label. */
+export function scanFilter(workspace: string): readonly string[] {
+  return ['--filter', `label=${WORKSPACE_LABEL}=${workspace}`];
+}
+
+/**
+ * IDs of running containers matching the filter. Re-querying this after a stop is
+ * the authoritative check for whether containers actually stopped — `docker stop`'s
+ * exit code can't distinguish "already gone" from "failed to stop".
+ */
+export function runningContainersChecked(filter: readonly string[]): CommandQueryResult<string[]> {
+  try {
+    const output = execFileSync('docker', ['ps', '-q', ...filter], { stdio: 'pipe', encoding: 'utf-8' }).trim();
+    return { kind: 'ok', value: output.split('\n').filter(Boolean) };
+  } catch {
+    return { kind: 'unavailable' };
+  }
+}
+
+/**
+ * Best-effort counterpart for callers where Docker unavailability is intentionally
+ * presented as no local running containers.
+ */
+export function runningContainers(filter: readonly string[]): string[] {
+  const result = runningContainersChecked(filter);
+  return result.kind === 'ok' ? result.value : [];
+}
+
+function normalizedLabel(value: string | undefined): string | undefined {
+  const normalized = value?.trim();
+  return normalized && normalized !== '<no value>' ? normalized : undefined;
+}
+
+/**
+ * Running scan containers with the labels needed to correlate a worker to its Temporal
+ * workflow. A successful query keeps unlabeled legacy workers in the result by ID.
+ */
+export function runningScanContainersChecked(
+  filter: readonly string[] = WORKER_FILTER,
+): CommandQueryResult<RunningScanContainer[]> {
+  try {
+    const format = `{{.ID}}\t{{ index .Labels "${WORKSPACE_LABEL}" }}\t{{ index .Labels "${TASK_QUEUE_LABEL}" }}\t{{ index .Labels "${WORKFLOW_ID_LABEL}" }}\t{{ index .Labels "${WORKER_PROTOCOL_LABEL}" }}`;
+    const output = execFileSync('docker', ['ps', ...filter, '--format', format], {
+      stdio: 'pipe',
+      encoding: 'utf-8',
+    }).trim();
+    if (!output) return { kind: 'ok', value: [] };
+
+    const containers: RunningScanContainer[] = [];
+    for (const line of output.split('\n')) {
+      const [rawId, rawWorkspace, rawTaskQueue, rawWorkflowId, rawWorkerProtocol] = line.split('\t');
+      const id = rawId?.trim();
+      if (!id) return { kind: 'unavailable' };
+      const workspace = normalizedLabel(rawWorkspace);
+      const taskQueue = normalizedLabel(rawTaskQueue);
+      const workflowId = normalizedLabel(rawWorkflowId);
+      const workerProtocol = normalizedLabel(rawWorkerProtocol);
+      containers.push({
+        id,
+        ...(workspace !== undefined && { workspace }),
+        ...(taskQueue !== undefined && { taskQueue }),
+        ...(workflowId !== undefined && { workflowId }),
+        ...(workerProtocol !== undefined && { workerProtocol }),
+      });
+    }
+    return { kind: 'ok', value: containers };
+  } catch {
+    return { kind: 'unavailable' };
+  }
+}
+
+/**
+ * Workspace names of every running worker container, read from the shannon.workspace
+ * label each scan is stamped with at spawn. The checked form preserves Docker query
+ * failures so lifecycle commands do not mistake an unavailable daemon for an empty list.
+ */
+export function runningScanWorkspacesChecked(): CommandQueryResult<string[]> {
+  const result = runningScanContainersChecked();
+  if (result.kind === 'unavailable') return result;
+  return {
+    kind: 'ok',
+    value: result.value.flatMap((container) => (container.workspace === undefined ? [] : [container.workspace])),
+  };
+}
+
+/** Best-effort counterpart for callers that only need the local scan list. */
+export function runningScanWorkspaces(): string[] {
+  const result = runningScanWorkspacesChecked();
+  return result.kind === 'ok' ? result.value : [];
+}
+
+/**
+ * Stop containers by ID, tolerating any that vanished between being listed and
+ * stopped (a `--rm` worker exiting is success, not an error). Async so a spinner
+ * can animate during docker's graceful-shutdown wait.
+ */
+export async function stopContainers(ids: string[]): Promise<void> {
+  await Promise.all(ids.map((id) => spawnQuiet('docker', ['stop', id])));
+}
+
+/**
+ * Tear down the compose stack. When `clean` is set, volumes are removed too.
+ */
+export async function stopInfra(clean: boolean): Promise<void> {
+  const composeFile = getComposeFile();
+  const args = ['compose', '-f', composeFile, 'down'];
+  if (clean) args.push('-v');
+  const label = clean ? 'Removing Temporal data and volumes' : 'Stopping Temporal';
+  const step = await runStep(label, 'docker', args);
+  if (!step.ok) {
+    fail(`${label} failed. See the output above.`);
+  }
+}
+
+/**
+ * Remove old keygraph/shannon images that don't match the current version.
+ */
+function pruneOldImages(currentVersion: string): void {
+  const output = runOutput('docker', ['images', NPX_IMAGE_REPO, '--format', '{{.Tag}}']);
+  if (!output) return;
+
+  const currentTag = currentVersion;
+  const stale = output.split('\n').filter((tag) => tag && tag !== currentTag);
+  for (const tag of stale) {
+    runQuiet('docker', ['rmi', `${NPX_IMAGE_REPO}:${tag}`]);
+  }
+}

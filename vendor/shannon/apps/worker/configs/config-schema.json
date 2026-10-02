@@ -1,0 +1,230 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/pentest-config-schema.json",
+  "title": "Penetration Testing Configuration Schema",
+  "description": "Schema for YAML configuration files used in the penetration testing agent",
+  "type": "object",
+  "properties": {
+    "authentication": {
+      "type": "object",
+      "description": "Authentication configuration for the target application",
+      "properties": {
+        "login_type": {
+          "type": "string",
+          "enum": ["form", "sso", "api", "basic"],
+          "description": "Type of authentication mechanism"
+        },
+        "login_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL for the login page or endpoint"
+        },
+        "credentials": {
+          "type": "object",
+          "description": "Login credentials",
+          "properties": {
+            "username": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255,
+              "description": "Username or email for authentication"
+            },
+            "password": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255,
+              "description": "Password for authentication"
+            },
+            "totp_secret": {
+              "type": "string",
+              "pattern": "^[A-Za-z2-7]+=*$",
+              "description": "TOTP secret for two-factor authentication (Base32 encoded, case insensitive)"
+            },
+            "email_login": {
+              "type": "object",
+              "description": "Email account credentials for magic-link or OTP follow-through flows",
+              "properties": {
+                "address": {
+                  "type": "string",
+                  "format": "email",
+                  "description": "Email address used to receive magic links or OTPs"
+                },
+                "password": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255,
+                  "description": "Password for the email account"
+                },
+                "totp_secret": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z2-7]+=*$",
+                  "description": "TOTP secret for the email account's two-factor authentication (Base32 encoded)"
+                }
+              },
+              "required": ["address", "password"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["username"],
+          "additionalProperties": false
+        },
+        "login_flow": {
+          "type": "array",
+          "description": "Step-by-step instructions for the login process",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "minItems": 1,
+          "maxItems": 20
+        },
+        "success_condition": {
+          "type": "object",
+          "description": "Condition that indicates successful authentication",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["url_contains", "element_present", "url_equals_exactly", "text_contains"],
+              "description": "Type of success condition to check"
+            },
+            "value": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500,
+              "description": "Value to match against the success condition"
+            }
+          },
+          "required": ["type", "value"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["login_type", "login_url", "credentials", "success_condition"],
+      "additionalProperties": false
+    },
+    "rules": {
+      "type": "object",
+      "description": "Testing rules that define what to focus on or avoid during penetration testing",
+      "properties": {
+        "avoid": {
+          "type": "array",
+          "description": "Rules defining areas to avoid during testing",
+          "items": {
+            "$ref": "#/$defs/rule"
+          },
+          "maxItems": 50
+        },
+        "focus": {
+          "type": "array",
+          "description": "Rules defining areas to focus on during testing",
+          "items": {
+            "$ref": "#/$defs/rule"
+          },
+          "maxItems": 50
+        }
+      },
+      "additionalProperties": false
+    },
+    "agentic_sast": {
+      "type": "object",
+      "description": "Opt in to agentic static analysis, which reads the repository for vulnerabilities before the pentest and feeds what it finds into the exploitation phase. Off by default. It does not change which vulnerability classes run. If agentic static analysis fails, the pentest continues without its findings and the scan finishes as \"partial\".",
+      "properties": {
+        "enabled": {
+          "type": "string",
+          "enum": ["true", "false"],
+          "description": "Set to \"true\" to run agentic static analysis. Defaults to \"false\"."
+        }
+      },
+      "required": ["enabled"],
+      "additionalProperties": false
+    },
+    "exploit": {
+      "type": "string",
+      "enum": ["true", "false"],
+      "description": "Whether to run the exploitation phase (default true). Set false to run only analysis."
+    },
+    "report": {
+      "type": "object",
+      "description": "Report filtering and guidance applied by the report agent.",
+      "properties": {
+        "min_severity": {
+          "type": "string",
+          "enum": ["low", "medium", "high", "critical"],
+          "description": "Minimum severity threshold; findings below are dropped by the report agent."
+        },
+        "min_confidence": {
+          "type": "string",
+          "enum": ["low", "medium", "high"],
+          "description": "Minimum confidence threshold; findings below are dropped by the report agent."
+        },
+        "guidance": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "description": "Free-text guidance to the report agent (e.g., 'Drop findings about missing security headers')."
+        },
+        "sarif": {
+          "type": "string",
+          "enum": ["true", "false"],
+          "description": "Emit a SARIF 2.1.0 log (report.sarif) beside the report. On by default for exploit runs; set \"false\" to opt out. Ignored when exploit=false."
+        }
+      },
+      "additionalProperties": false
+    },
+    "rules_of_engagement": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000,
+      "description": "Free-text instructions to the agent that render into every prompt."
+    },
+    "login": {
+      "type": "object",
+      "description": "Deprecated: Use 'authentication' section instead",
+      "deprecated": true
+    },
+    "description": {
+      "type": "string",
+      "description": "Description of the target environment, its deployment context, and any information that helps guide the security assessment",
+      "minLength": 1,
+      "maxLength": 500,
+      "pattern": "\\S"
+    }
+  },
+  "anyOf": [
+    { "required": ["authentication"] },
+    { "required": ["rules"] },
+    { "required": ["authentication", "rules"] },
+    { "required": ["description"] },
+    { "required": ["agentic_sast"] },
+    { "required": ["exploit"] },
+    { "required": ["report"] },
+    { "required": ["rules_of_engagement"] }
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "rule": {
+      "type": "object",
+      "description": "A single testing rule",
+      "properties": {
+        "description": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Human-readable description of the rule"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["url_path", "subdomain", "domain", "method", "header", "parameter", "code_path"],
+          "description": "Type of rule (what aspect of requests or source code to match against)"
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000,
+          "description": "Value to match"
+        }
+      },
+      "required": ["type", "value"],
+      "additionalProperties": false
+    }
+  }
+}

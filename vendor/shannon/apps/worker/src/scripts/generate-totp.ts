@@ -1,0 +1,173 @@
+#!/usr/bin/env node
+
+// Copyright (C) 2026 Keygraph, Inc.
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License version 3
+// as published by the Free Software Foundation.
+
+/**
+ * generate-totp CLI
+ *
+ * Generates a TOTP code for the target's MFA.
+ * Based on RFC 6238 (TOTP) and RFC 4226 (HOTP).
+ *
+ * The login flow prompt has the agent run this via the `bash` tool with the TOTP secret
+ * substituted in, rather than asking the model to work out HOTP/TOTP arithmetic itself.
+ * The secret is only ever held in memory here; nothing is written to disk, and the
+ * result is emitted as JSON on stdout for the caller to parse.
+ *
+ * Usage:
+ *   generate-totp --secret JBSWY3DPEHPK3PXP
+ */
+
+import { createHmac } from 'node:crypto';
+
+// === Base32 Decoding ===
+
+function base32Decode(encoded: string): Buffer {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  const cleanInput = encoded.toUpperCase().replace(/[^A-Z2-7]/g, '');
+
+  if (cleanInput.length === 0) {
+    throw new Error('TOTP secret is empty after cleaning');
+  }
+
+  const output: number[] = [];
+  let bits = 0;
+  let value = 0;
+
+  for (const char of cleanInput) {
+    const index = alphabet.indexOf(char);
+    if (index === -1) {
+      throw new Error(`Invalid base32 character: ${char}`);
+    }
+
+    value = (value << 5) | index;
+    bits += 5;
+
+    if (bits >= 8) {
+      output.push((value >>> (bits - 8)) & 255);
+      bits -= 8;
+    }
+  }
+
+  return Buffer.from(output);
+}
+
+// === TOTP Generation (RFC 6238) ===
+
+function generateHOTP(secret: string, counter: number, digits: number = 6): string {
+  const key = base32Decode(secret);
+
+  // Convert counter to 8-byte buffer (big-endian)
+  const counterBuffer = Buffer.alloc(8);
+  counterBuffer.writeBigUInt64BE(BigInt(counter));
+
+  // Generate HMAC-SHA1
+  const hmac = createHmac('sha1', key);
+  hmac.update(counterBuffer);
+  const hash = hmac.digest();
+
+  // Dynamic truncation (SHA-1 always produces 20 bytes). The low nibble of the last byte
+  // picks a 4-byte window anywhere in the hash; masking the top bit of that window's first
+  // byte (0x7f) keeps the result a positive 31-bit int per RFC 4226, regardless of JS's
+  // signed 32-bit bitwise operators.
+  const lastByte = hash[hash.length - 1] ?? 0;
+  const offset = lastByte & 0x0f;
+  const code =
+    (((hash[offset] ?? 0) & 0x7f) << 24) |
+    (((hash[offset + 1] ?? 0) & 0xff) << 16) |
+    (((hash[offset + 2] ?? 0) & 0xff) << 8) |
+    ((hash[offset + 3] ?? 0) & 0xff);
+
+  return (code % 10 ** digits).toString().padStart(digits, '0');
+}
+
+function generateTOTP(secret: string, timeStep: number = 30, digits: number = 6): string {
+  const counter = Math.floor(Date.now() / 1000 / timeStep);
+  return generateHOTP(secret, counter, digits);
+}
+
+// === Help ===
+
+function printHelp(): void {
+  console.log(
+    `generate-totp - emit a current 6-digit TOTP code for a base32-encoded secret.
+
+Usage:
+  generate-totp --secret <BASE32>
+  generate-totp --help
+
+Options:
+  --secret      Base32-encoded TOTP shared secret (characters A-Z, 2-7).
+  -h, --help    Show this help and exit.
+
+Output:
+  JSON to stdout. On success: {"status":"success","totpCode":"123456","expiresIn":<sec>}.
+  On error:   {"status":"error","message":"...","retryable":false} (exit 1).`,
+  );
+}
+
+// === Argument Parsing ===
+
+function parseSecret(argv: string[]): string {
+  for (let i = 2; i < argv.length; i++) {
+    const next = argv[i + 1];
+    if (argv[i] === '--secret' && next) {
+      return next;
+    }
+  }
+  return '';
+}
+
+// === Main ===
+
+function main(): void {
+  if (process.argv.includes('--help') || process.argv.includes('-h')) {
+    printHelp();
+    return;
+  }
+
+  const secret = parseSecret(process.argv);
+
+  if (!secret) {
+    console.log(JSON.stringify({ status: 'error', message: 'Missing required --secret argument', retryable: false }));
+    process.exit(1);
+  }
+
+  // Strip base32 padding ('=') and whitespace so grouped/padded secrets
+  // (e.g. "JBSW Y3DP" or "...PXP=") pass validation instead of being rejected.
+  const normalizedSecret = secret.replace(/[=\s]/g, '');
+
+  const base32Regex = /^[A-Z2-7]+$/i;
+  if (!base32Regex.test(normalizedSecret)) {
+    console.log(
+      JSON.stringify({
+        status: 'error',
+        message: 'Secret must be base32-encoded (characters A-Z and 2-7)',
+        retryable: false,
+      }),
+    );
+    process.exit(1);
+  }
+
+  try {
+    const totpCode = generateTOTP(normalizedSecret);
+    const expiresIn = 30 - (Math.floor(Date.now() / 1000) % 30);
+
+    console.log(
+      JSON.stringify({
+        status: 'success',
+        totpCode,
+        expiresIn,
+      }),
+    );
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.log(JSON.stringify({ status: 'error', message: `TOTP generation failed: ${msg}`, retryable: false }));
+    process.exit(1);
+  }
+}
+
+main();

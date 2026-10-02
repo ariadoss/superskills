@@ -1,0 +1,28 @@
+{
+  "name": "shannon",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "build": "turbo run build",
+    "check": "turbo run check",
+    "biome": "biome check .",
+    "biome:fix": "biome check --write .",
+    "clean": "turbo run clean",
+    "temporal:worker": "node apps/worker/dist/temporal/worker.js",
+    "temporal:start": "node apps/worker/dist/temporal/worker.js"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.0.0",
+    "@types/node": "^25.0.3",
+    "turbo": "^2.5.0",
+    "typescript": "^5.9.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@swc/core",
+      "protobufjs"
+    ]
+  }
+}

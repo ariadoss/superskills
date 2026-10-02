@@ -1,0 +1,74 @@
+# Node.js
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime directories
+sessions/
+deliverables/
+xben-benchmark-results/
+.claude/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Development files
+*.md
+!CLAUDE.md
+!THIRD_PARTY_NOTICES.md
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# CLI package (runs on host, not in container)
+# Keep apps/cli/package.json so pnpm workspaces resolve
+apps/cli/src/
+**/dist/
+apps/cli/infra/
+apps/cli/tsconfig.json
+apps/cli/tsdown.config.ts
+
+# Docker files (avoid recursive copying)
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Test files
+test/
+tests/
+spec/
+coverage/
+
+# Documentation (except CLAUDE.md which is needed)
+docs/
+README.md
+LICENSE
+!LICENSE
+CHANGELOG.md

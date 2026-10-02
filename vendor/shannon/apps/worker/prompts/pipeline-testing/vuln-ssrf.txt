@@ -1,0 +1,13 @@
+@include(shared/_filesystem.txt)
+
+Please complete these tasks using your CLI tools:
+
+1. Navigate to https://httpbin.org and take a screenshot:
+   - Invoke the `playwright-cli` skill to learn the available commands
+   - Use `playwright-cli -s={{PLAYWRIGHT_SESSION}}` to navigate to https://httpbin.org
+   - Use `playwright-cli -s={{PLAYWRIGHT_SESSION}}` to take a screenshot
+
+2. Save an analysis deliverable:
+   - Run: `save-deliverable --type SSRF_ANALYSIS --content '# SSRF Analysis Report\n\nAnalysis complete. No SSRF vulnerabilities identified.'`
+
+As a final step, return an empty array for vulnerabilities.

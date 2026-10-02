@@ -1,0 +1,8 @@
+Upstream:   https://github.com/KeygraphHQ/shannon
+Tag:        v3.3.0
+Commit:     327c10fd90a6186a9f035b4b6ddb5bbba1839e92 (2026-09-21)
+License:    AGPL-3.0 (see LICENSE; vendored unmodified except: .git and two
+            README GIFs removed for size, and this UPSTREAM note added)
+Refresh:    scripts/sync-shannon.sh --tag <new-tag>   (deliberate, never auto)
+Contract:   tests/shannon-vendor.bats pins the facts skills/pentest Mode 5
+            relies on; it fails when a refresh breaks the integration surface.
