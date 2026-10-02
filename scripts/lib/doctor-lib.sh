@@ -389,8 +389,9 @@ doctor_check_manifests() {
       if [ -z "$manifest_version" ]; then
         # A marketplace manifest nests version per plugin entry; EVERY entry
         # must match — a bump that misses one means that plugin's installs
-        # never see it.
-        manifest_version="$("$jq" -r --arg v "$v" '[(.plugins // [])[].version // empty] | if length == 0 then empty elif all(. == $v) then $v else "__stale__" end' "$root/$f" 2>/dev/null)"
+        # never see it. An entry with no version at all maps to a sentinel
+        # so it lands in the stale bucket instead of being dropped silently.
+        manifest_version="$("$jq" -r --arg v "$v" '[(.plugins // [])[] | (.version // "__noversion__")] | if length == 0 then empty elif all(. == $v) then $v else "__stale__" end' "$root/$f" 2>/dev/null)"
       fi
       if [ -z "$manifest_version" ]; then noversion="$noversion $f"; continue; fi
       [ "$manifest_version" = "$v" ] || stale="$stale $f"
@@ -547,6 +548,7 @@ _doctor_run_bounded() {
       kill -TERM -- -"$pid" 2>/dev/null; sleep 0.1; kill -KILL -- -"$pid" 2>/dev/null
       wait "$pid" 2>/dev/null
       trap - EXIT
+      command -v setsid >/dev/null 2>&1 || set +m
       return 124
     fi
     sleep 0.1; ticks=$((ticks + 1))

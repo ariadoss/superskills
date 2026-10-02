@@ -146,10 +146,11 @@ if [ "$NO_KNOWLEDGE" -eq 0 ]; then
       [ "$kb_name" = "skip" ] && break
       # The name becomes a pipe-delimited field AND a path under
       # ~/.superskills/knowledge — whitespace reshuffles the fields, '|'
-      # splits them, '/' or a leading '.' steers the clone path.
+      # splits them, '/' or a leading '.' steers the clone path, and a
+      # leading '#' would read as a comment in every consumer of the conf.
       case "$kb_name" in
-        *[[:space:]\|/]*|.*)
-          log "  [skip] '$kb_name' — KB names may not contain spaces, '|' or '/', or start with '.'"
+        *[[:space:]\|/]*|.*|\#*)
+          log "  [skip] '$kb_name' — KB names may not contain spaces, '|' or '/', or start with '.' or '#'"
           continue
           ;;
       esac
@@ -161,6 +162,15 @@ if [ "$NO_KNOWLEDGE" -eq 0 ]; then
       printf "  Description (optional): "
       read -r kb_desc </dev/tty 2>/dev/null || kb_desc=""
       [ -z "$kb_desc" ] && kb_desc="Knowledge base: $kb_name"
+
+      # desc and url are pipe-delimited fields too — a '|' in either
+      # reshuffles the record the clone loop parses.
+      case "$kb_desc$kb_url" in
+        *'|'*)
+          log "  [skip] '$kb_name' — the description and URL may not contain '|'"
+          continue
+          ;;
+      esac
 
       echo "$kb_name|~/.superskills/knowledge/$kb_name|$kb_desc|$kb_url" >> "$KB_CONF"
       log "  [added] $kb_name"
@@ -183,7 +193,7 @@ if [ "$NO_KNOWLEDGE" -eq 0 ]; then
         log "  [ok] $name already cloned"
       elif [ -n "$url" ]; then
         log "  [clone] $name"
-        git clone --quiet "$url" "$resolved" 2>/dev/null || {
+        git clone --quiet -- "$url" "$resolved" 2>/dev/null || {
           log "  [warn] Failed to clone $name — check access to $url"
           continue
         }

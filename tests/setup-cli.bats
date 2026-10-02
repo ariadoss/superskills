@@ -56,12 +56,17 @@ setup() {
   [ "$output" -eq 1 ] || false
 }
 
-@test "knowledge-base names are validated before entering knowledge.conf" {
+@test "knowledge-base fields are validated before entering knowledge.conf" {
   # kb_name becomes a pipe-delimited field and a path under
-  # ~/.superskills/knowledge; whitespace, '|', '/' or a leading '.' would
-  # reshuffle the fields or steer the clone path. The skip message is the pin:
-  # the validation is the only place it can appear.
-  run grep -cF "KB names may not contain spaces, '|' or '/', or start with '.'" "$REPO_ROOT/setup"
+  # ~/.superskills/knowledge; whitespace, '|', '/', a leading '.' (path
+  # steering) or a leading '#' (comment in every conf consumer) corrupt it.
+  # desc and url are pipe-delimited fields too — '|' reshuffles the record.
+  run grep -cF "KB names may not contain spaces, '|' or '/', or start with '.' or '#'" "$REPO_ROOT/setup"
+  [ "$output" -eq 1 ] || false
+  run grep -cF "the description and URL may not contain '|'" "$REPO_ROOT/setup"
+  [ "$output" -eq 1 ] || false
+  # A pasted URL must never parse as a git option (--upload-pack=...).
+  run grep -cF 'git clone --quiet -- "$url"' "$REPO_ROOT/setup"
   [ "$output" -eq 1 ] || false
 }
 

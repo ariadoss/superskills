@@ -373,6 +373,15 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
   [[ "$(evidence_of "$output")" == *"sync-version.sh"* ]] || false
 }
 
+@test "check_manifests: a plugin entry with NO version field is a warning, not silently ready" {
+  # The extreme case of "a bump that misses one": an entry whose version is
+  # absent entirely must not be dropped by the jq filter before comparison.
+  printf '{ "name": "superskills", "plugins": [{ "version": "2.24.0" }, { "name": "superskills-design" }] }\n' > "$ROOT/.claude-plugin/marketplace.json"
+  run doctor_check_manifests "$ROOT"
+  [ "$(status_of "$output")" = "warning" ]
+  [[ "$(evidence_of "$output")" == *".claude-plugin/marketplace.json"* ]] || false
+}
+
 @test "check_manifests: warning naming a manifest that is missing altogether (not silently ready)" {
   rm "$ROOT/.claude-plugin/marketplace.json"
   run doctor_check_manifests "$ROOT"
@@ -988,6 +997,14 @@ SH
   rc=0
   ( _doctor_run_bounded 5 "$BATS_TEST_TMPDIR/out" bash -c 'exit 7' ) || rc=$?
   [ "$rc" -eq 7 ] || { echo "expected 7, got $rc"; return 1; }
+}
+
+@test "_doctor_run_bounded returns 124 when it kills the command" {
+  # The kill path's return value is what _doctor_cli_json actually branches
+  # on; the group-kill test above discards it with `|| true`.
+  rc=0
+  ( _doctor_run_bounded 1 "$BATS_TEST_TMPDIR/out2" sleep 30 ) || rc=$?
+  [ "$rc" -eq 124 ] || { echo "expected 124, got $rc"; return 1; }
 }
 
 # ── owning-checkout re-anchor ──
