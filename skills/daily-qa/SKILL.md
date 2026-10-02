@@ -384,7 +384,32 @@ under §4c "Infra misconfig (auto-run /iac-scan)" with severity and file:line. O
 CRITICAL/HIGH go in the executive summary. If no infra files changed, skip silently.
 For a deeper hunt after HIGH/CRITICAL, recommend `/pentest` (§7c).
 
-### 7j. Other related commands — recommend only
+### 7j. `/humanize` — recommend only (prose drift)
+
+Doc-heavy commits land from every branch, and merged prose is exactly what the
+per-branch pipelines never re-check. Recommend `/humanize` when commits in the
+window added or modified prose files (`**/*.md`, `**/*.mdx`), excluding
+changelogs, vendored/mirrored trees, and generated files (that wording is
+deliberate or upstream's). It edits, not just reports, and rewrites voice, so
+it never auto-runs unattended.
+
+Include the list of changed prose files so the user can scope the pass, and
+state it as a suggestion with the files as context: e.g. _"Run `/humanize` on
+`docs/billing.md` and `README.md` — the window's commits touched them and the
+prose has not been swept."_
+
+### 7k. `/eval` — recommend only (AI-behavior drift)
+
+Commits in the window that redefine AI behavior are behavior changes, and
+unattended sweeps cannot measure behavior. Judge by content, not filename: a
+prompt string edited inside code, a retrieval parameter, a judge rubric, or an
+agent-loop change is a behavior change even when the file is ordinary source;
+obvious signals are prompts, skill or agent instruction files, and LLM/RAG
+pipeline code or configuration. Recommend `/eval` with the changed files
+listed, stating that the run costs model calls and is launched by the user.
+Never auto-run it: the spend needs a human yes.
+
+### 7l. Other related commands — recommend only
 
 - `/code-review ultra` — when Step 3's local `/code-review` (or a CI failure)
   surfaced a high-stakes correctness concern that warrants a deep multi-agent

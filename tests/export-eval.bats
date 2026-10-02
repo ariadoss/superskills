@@ -1,0 +1,198 @@
+#!/usr/bin/env bats
+# Tests for scripts/export-eval.sh - assembling the standalone eval repo.
+#
+# The invariant worth protecting is that the export is a PURE COPY of the
+# files that exist in this repo. A rewriting export is the thing that drifts:
+# a sed that half-applies yields a tree whose tests pass and whose docs point
+# at paths that no longer exist. So the central test here compares every
+# exported file byte-for-byte against its source. The two files with no
+# in-repo source (README.md and .gitignore are written by the script itself,
+# since the eval export deliberately owns no helper directory) are guarded by
+# the content test instead.
+
+setup() {
+  REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
+  EXPORT="$REPO_ROOT/scripts/export-eval.sh"
+  OUT="$BATS_TEST_TMPDIR/out"
+}
+
+# fake_repo <dir> - a minimal source repo holding just what the export reads,
+# with those files staged: the export ships only files git knows about. Junk a
+# test plants afterwards is therefore untracked, as it would be for real.
+fake_repo() {
+  local fake="$1"
+  mkdir -p "$fake/scripts" "$fake/tests" "$fake/skills"
+  cp -R "$REPO_ROOT/skills/eval" "$fake/skills/"
+  rm -rf "$fake/skills/eval/toolkit/__pycache__"
+  cp "$EXPORT" "$fake/scripts/"
+  cp "$REPO_ROOT/tests/eval-toolkit.bats" "$fake/tests/"
+  cp "$REPO_ROOT/LICENSE" "$fake/"
+  git -C "$fake" init -q && git -C "$fake" add -A
+}
+
+@test "exports the standalone layout" {
+  run bash "$EXPORT" "$OUT"
+  [ "$status" -eq 0 ]
+  for f in SKILL.md README.md LICENSE .gitignore \
+           toolkit/calibrate.py tests/eval-toolkit.bats; do
+    [ -f "$OUT/$f" ] || { echo "missing $f"; return 1; }
+  done
+}
+
+@test "the export is a pure copy: every file with an in-repo source is byte-identical to it" {
+  bash "$EXPORT" "$OUT" >/dev/null
+  cmp "$OUT/SKILL.md"                "$REPO_ROOT/skills/eval/SKILL.md" || return 1
+  cmp "$OUT/LICENSE"                 "$REPO_ROOT/LICENSE" || return 1
+  cmp "$OUT/tests/eval-toolkit.bats" "$REPO_ROOT/tests/eval-toolkit.bats" || return 1
+  for f in "$REPO_ROOT"/skills/eval/toolkit/*; do
+    [ -f "$f" ] || continue   # e.g. a local __pycache__/, which is never exported
+    cmp "$f" "$OUT/toolkit/$(basename "$f")" || { echo "differs: $(basename "$f")"; return 1; }
+  done
+}
+
+@test "the exported tree passes its own tests, and the script says so" {
+  run bash "$EXPORT" "$OUT"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"tests pass in the exported tree"* ]] || false
+}
+
+@test "re-running is idempotent" {
+  bash "$EXPORT" "$OUT" >/dev/null
+  first="$(cd "$OUT" && find . -type f -exec shasum {} \; | LC_ALL=C sort)"
+  bash "$EXPORT" "$OUT" >/dev/null
+  second="$(cd "$OUT" && find . -type f -exec shasum {} \; | LC_ALL=C sort)"
+  [ "$first" = "$second" ] || { echo "export is not idempotent"; return 1; }
+}
+
+@test "re-export preserves a real checkout's .git and unrelated files" {
+  bash "$EXPORT" "$OUT" >/dev/null
+  mkdir -p "$OUT/.git" && echo marker > "$OUT/.git/HEAD"
+  echo "local note" > "$OUT/NOTES.local.md"
+  # A file it no longer owns inside toolkit/ SHOULD be cleared, so assert both.
+  echo stale > "$OUT/toolkit/stale.json"
+  bash "$EXPORT" "$OUT" >/dev/null
+  [ "$(cat "$OUT/.git/HEAD")" = "marker" ] || { echo ".git was clobbered"; return 1; }
+  [ -f "$OUT/NOTES.local.md" ] || { echo "unrelated file was removed"; return 1; }
+  [ ! -f "$OUT/toolkit/stale.json" ] || { echo "stale toolkit file survived"; return 1; }
+}
+
+@test "the exported README points at toolkit/ and never at a path the export does not create" {
+  bash "$EXPORT" "$OUT" >/dev/null
+  run grep -c 'toolkit/' "$OUT/README.md"
+  [ "$output" -ge 1 ] || false
+  # scripts/ and evals/ exist only in the source repo, and a relative skills/
+  # reference would point into it; a README that named them would be lying
+  # about the standalone tree. The ~/.claude/skills/... install destination is
+  # the user's home, not this tree, so it is allowed.
+  run grep -cE '(^|[[:space:](])skills/|scripts/|evals/' "$OUT/README.md"
+  [ "$output" = "0" ] || { echo "README references a path the export does not create"; return 1; }
+}
+
+@test "fails loudly when the skill is missing rather than exporting an empty repo" {
+  fake="$BATS_TEST_TMPDIR/fakerepo"
+  mkdir -p "$fake/scripts" "$fake/tests"
+  cp "$EXPORT" "$fake/scripts/"
+  run bash "$fake/scripts/export-eval.sh" "$BATS_TEST_TMPDIR/out2"
+  [ "$status" -ne 0 ] || { echo "exported despite a missing skill"; return 1; }
+  [[ "$output" == *"no skill at"* ]] || false
+}
+
+@test "fails loudly when the toolkit dir is missing rather than exporting an empty toolkit" {
+  fake="$BATS_TEST_TMPDIR/fakerepo2"
+  mkdir -p "$fake/scripts" "$fake/skills/eval"
+  cp "$EXPORT" "$fake/scripts/"
+  echo skill > "$fake/skills/eval/SKILL.md"
+  run bash "$fake/scripts/export-eval.sh" "$BATS_TEST_TMPDIR/out3"
+  [ "$status" -ne 0 ] || { echo "exported despite a missing toolkit"; return 1; }
+  [[ "$output" == *"no toolkit at"* ]] || false
+}
+
+@test "the default output path is inside the repo's dist/" {
+  run bash -c "grep -n 'dist/eval' '$EXPORT'"
+  [ "$status" -eq 0 ]
+}
+
+@test "a __pycache__ inside the toolkit neither aborts the export nor ships" {
+  # Importing the module creates toolkit/__pycache__/, whose stray presence in
+  # a source checkout must not leak into the public tree.
+  fake="$BATS_TEST_TMPDIR/pyrepo"
+  fake_repo "$fake"
+  mkdir -p "$fake/skills/eval/toolkit/__pycache__"
+  echo junk > "$fake/skills/eval/toolkit/__pycache__/calibrate.cpython-311.pyc"
+  run bash "$fake/scripts/export-eval.sh" "$BATS_TEST_TMPDIR/pyout"
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+  [ ! -e "$BATS_TEST_TMPDIR/pyout/toolkit/__pycache__" ] || { echo "__pycache__ shipped"; return 1; }
+}
+
+@test "hidden files (e.g. a macOS .DS_Store) in the toolkit never ship to the public tree" {
+  fake="$BATS_TEST_TMPDIR/dotrepo"
+  fake_repo "$fake"
+  printf 'finder junk\n' > "$fake/skills/eval/toolkit/.DS_Store"
+  run bash "$fake/scripts/export-eval.sh" "$BATS_TEST_TMPDIR/dotout"
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+  [ ! -e "$BATS_TEST_TMPDIR/dotout/toolkit/.DS_Store" ] || { echo ".DS_Store shipped"; return 1; }
+}
+
+@test "only git-tracked toolkit files ship; a stray untracked file does not" {
+  # The public tree is built from an allowlist (the index), not a denylist, so
+  # scratch notes or a misnamed secret left in the toolkit cannot be published.
+  fake="$BATS_TEST_TMPDIR/strayrepo"
+  fake_repo "$fake"
+  printf 'private scratch\n' > "$fake/skills/eval/toolkit/zz_stray_notes.txt"
+  run bash "$fake/scripts/export-eval.sh" "$BATS_TEST_TMPDIR/strayout"
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+  [ ! -e "$BATS_TEST_TMPDIR/strayout/toolkit/zz_stray_notes.txt" ] || { echo "untracked file shipped"; return 1; }
+  [[ "$output" == *"zz_stray_notes.txt"* ]] || { echo "did not warn about the skipped file"; return 1; }
+}
+
+@test "without bats the export fails instead of shipping an unverified tree" {
+  command -v bats | grep -qvE '^/(usr/)?bin/' || skip "bats lives in /usr/bin or /bin here"
+  run env PATH=/usr/bin:/bin bash "$EXPORT" "$OUT"
+  [ "$status" -ne 0 ] || { echo "exited 0 unverified: $output"; return 1; }
+  [[ "$output" == *"bats"* ]] || false
+}
+
+@test "an untracked file named like a glob is reported literally, not expanded" {
+  # $untracked was expanded unquoted, so a file named '*' listed the cwd.
+  fake="$BATS_TEST_TMPDIR/globrepo"
+  fake_repo "$fake"
+  printf 'x\n' > "$fake/skills/eval/toolkit/*"
+  run bash -c "cd '$fake/skills/eval/toolkit' && bash '$fake/scripts/export-eval.sh' '$BATS_TEST_TMPDIR/globout' 2>&1 >/dev/null"
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+  [ "$(printf '%s\n' "$output" | grep -c 'not exported')" = "1" ] || { echo "$output"; return 1; }
+  [[ "$output" == *"publish): *"* ]] || { echo "$output"; return 1; }
+  [[ "$output" != *"calibrate.py"* ]] || { echo "glob expanded: $output"; return 1; }
+}
+
+@test "refuses an output directory that overlaps the source tree" {
+  fake="$BATS_TEST_TMPDIR/overlaprepo"
+  fake_repo "$fake"
+  # `/` needs its own case: "$OUT/" is then "//", which prefixes nothing.
+  for out in "$fake" "$fake/skills" "$BATS_TEST_TMPDIR" /; do
+    run bash "$fake/scripts/export-eval.sh" "$out"
+    [ "$status" -eq 1 ] || { echo "exported into $out: $output"; return 1; }
+    [[ "$output" == *"refusing to export"* ]] || { echo "$output"; return 1; }
+  done
+  [ -f "$fake/tests/eval-toolkit.bats" ] || { echo "the source tests/ was deleted"; return 1; }
+  [ -f "$fake/skills/eval/toolkit/calibrate.py" ] || { echo "the source toolkit was deleted"; return 1; }
+}
+
+@test "a symlinked toolkit file is refused, not published as its target" {
+  fake="$BATS_TEST_TMPDIR/linkrepo"
+  fake_repo "$fake"
+  printf 'secret\n' > "$BATS_TEST_TMPDIR/outside.txt"
+  ln -s "$BATS_TEST_TMPDIR/outside.txt" "$fake/skills/eval/toolkit/linked.txt"
+  git -C "$fake" add -A
+  run bash "$fake/scripts/export-eval.sh" "$BATS_TEST_TMPDIR/linkout"
+  [ "$status" -ne 0 ] || { echo "exported a symlink: $output"; return 1; }
+  [[ "$output" == *"symlinked toolkit file: linked.txt"* ]] || { echo "$output"; return 1; }
+  [ ! -e "$BATS_TEST_TMPDIR/linkout/toolkit/linked.txt" ] || { echo "symlink target shipped"; return 1; }
+}
+
+@test "dist/ itself is an accepted output directory, as the refusal message suggests" {
+  fake="$BATS_TEST_TMPDIR/distrepo"
+  fake_repo "$fake"
+  run bash "$fake/scripts/export-eval.sh" "$fake/dist"
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+  [ -f "$fake/dist/toolkit/calibrate.py" ] || false
+}

@@ -538,6 +538,62 @@ contrast finding is authoritative.
 New public surface still untested after this step ⇒ UNFIXED blocker. Internal
 helpers without tests are warnings.
 
+## Step 9b: Prose quality pipeline — `/humanize` (auto-run if triggered)
+
+**Trigger:** the diff adds or modifies prose files (`*.md`, `*.mdx`).
+Markdown only, never code comments; NOT-TRIGGERED when no prose changed.
+
+**Scope rules:**
+
+- Exclude prose the project does not own (vendored, mirrored, or generated
+  trees) and historical records (`CHANGELOG.md` and the like): that wording is
+  deliberate or upstream's, and rewriting it falsifies provenance.
+- **Warnings tier.** A prose-slop flag is style, not correctness: it never
+  enters the blocker set below. A flag that survives the fix rounds ships as a
+  warning with a follow-up note.
+
+1. **Audit:** run `/humanize`'s deterministic scan (its toolkit's
+   `slop_report.py`) over each in-scope changed prose file and read the report.
+2. **Fix:** invoke `/humanize` and apply it surgically to flagged spans only —
+   its own contract (deterministic fixes, subtractive edits, re-scan as the
+   gate; never a whole-document rewrite) is the fix policy here too. Commit
+   atomically like any other fix.
+3. **Verify:** re-scan the edited files and re-run the test suite. Repos often
+   pin exact doc strings in tests; a humanize edit that touched pinned prose
+   must break here, loudly, not silently ship.
+
+The ledger row resolves to RAN-CLEAN (no flags worth fixing), FIXED(n)
+(flags fixed and re-scanned), SKIPPED(reason), or NOT-TRIGGERED. Remaining
+flags are warnings, never UNFIXED blockers.
+
+## Step 9c: AI-behavior pipeline — `/eval` (ask-first if triggered)
+
+**Trigger:** the diff changes AI behavior. Judge it the way human eyes would:
+does the change alter what a model sees, how it is instructed, or how its
+output is judged or used? A prompt template edited inside source code counts,
+not just prompt files. The obvious file signals are prompts, agent or skill
+instructions (`**/SKILL.md`, `.claude/commands/**`, `AGENTS.md` /
+`CLAUDE.md` instruction files), and LLM/RAG pipeline code or configuration
+(retrieval parameters, judge rubrics, agent-loop logic). Pure formatting
+changes to the same files do not count. NOT-TRIGGERED means "no plausible
+behavior change," never "no matching filename."
+
+An eval run spends model calls (case runs plus judge votes), so it follows the
+money rule: ask the user first, name what it will cost, and run only on an
+explicit yes. A decline is SKIPPED(reason: not authorized) — a legal skip with
+reason, not a blocker.
+
+1. **Audit:** invoke `/eval`; it builds or reuses the project's synthetic eval
+   set for the changed behavior and reports before/after metrics (TPR, TNR,
+   accuracy, precision, plus the bias reading).
+2. **Fix:** wording first, structure second — the method's fix ladder.
+3. **Verify:** re-run the eval. The changed behavior must be no worse than the
+   baseline on every reported metric, and better on the dimension the change
+   targeted. "No degradation" is the floor, not the goal.
+
+A metric regression is a warning unless the project marks evals MANDATORY in
+`CLAUDE.md`; a MANDATORY eval that was declined or never ran is MANDATORY-FAIL.
+
 ## Step 10: Final verification pass, ledger, verdict
 
 The fix rounds changed the branch, so verify the *whole* result once more:
@@ -640,6 +696,8 @@ HEAD before fixes: <sha>  HEAD after: <sha>  Fix commits: K
 | /design-review (Step 8)  | … / SKIPPED(reason) / NOT-TRIGGERED | screens, fix SHAs |
 | /a11y (Step 8)           | … / SKIPPED(reason) / NOT-TRIGGERED | static + dynamic, fix SHAs |
 | /test-coverage + /playwright (Step 9) | RAN-CLEAN / FIXED(n) / UNFIXED | tests added, suite result |
+| /humanize (Step 9b)      | … / SKIPPED(reason) / NOT-TRIGGERED | prose files in scope, flags fixed (SHAs), warnings carried |
+| /eval (Step 9c)          | … / SKIPPED(reason: not authorized) / NOT-TRIGGERED | behavior files in scope, before/after metrics or the ask-first outcome |
 | Final pass (Step 10)     | RAN-CLEAN / FIXED(n) / UNFIXED | fresh test/build + re-audit of fix commits |
 
 > No row may be blank or "recommend" for a check whose trigger fired — that is an

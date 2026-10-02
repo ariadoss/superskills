@@ -74,6 +74,14 @@ Check the draft against:
 - **Completeness**: Cover all key points from the outline
 - **Voice**: Match the target audience and content type
 
+### Phase 5: Humanize (auto-run /humanize)
+
+Run `/humanize` on the final draft before delivering it. Its scan-and-fix pass
+strips AI tells (stock phrases, em-dash spam, template rhythm) without
+changing facts, so accuracy, positioning, and knowledge-base citations survive
+intact. If `/humanize` is not installed (deselected from the pack), skip this
+phase and deliver the reviewed draft.
+
 ## Tips
 
 - Research before writing — always check the knowledge base first

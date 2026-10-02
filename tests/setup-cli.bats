@@ -229,3 +229,46 @@ setup() {
   [ "$status" -eq 0 ] || false
   [ ! -e "$HOME/.dsh" ] || false
 }
+
+@test "workflow rule targets are per-harness instruction files" {
+  # Source contract: the developer-workflow block writes each detected
+  # harness's own instruction file (CLAUDE.md for Claude Code, the primary
+  # target; AGENTS.md for the dir-gated harnesses), gated by top-level dir,
+  # never by a second bare `if [ -d ~/.zcode ]` (those pins belong to the
+  # skills blocks).
+  run grep -c 'for wf_rel in \.claude/CLAUDE\.md \.zcode/AGENTS\.md \.codex/AGENTS\.md \.dsh/AGENTS\.md' "$REPO_ROOT/setup"
+  [ "$output" -eq 1 ] || false
+  run grep -c 'WORKFLOW_MARKER=' "$REPO_ROOT/setup"
+  [ "$output" -eq 1 ] || false
+}
+
+@test "a real install writes the workflow rule to every detected harness's instruction file" {
+  # Behavioral pin: ~/.claude/CLAUDE.md always (primary target, created if
+  # absent); ~/.{zcode,codex,dsh}/AGENTS.md only when the harness is present.
+  mkdir -p "$HOME/.zcode" "$HOME/.codex" "$HOME/.dsh"
+  run bash "$REPO_ROOT/setup" -q --no-knowledge < /dev/null
+  [ "$status" -eq 0 ] || false
+  for f in .claude/CLAUDE.md .zcode/AGENTS.md .codex/AGENTS.md .dsh/AGENTS.md; do
+    grep -qF '<!-- superskills-workflow-rule -->' "$HOME/$f" || { echo "missing workflow rule: $HOME/$f"; return 1; }
+  done
+}
+
+@test "the workflow rule is dir-gated: absent harnesses get no instruction file" {
+  mkdir -p "$HOME/.zcode"
+  run bash "$REPO_ROOT/setup" -q --no-knowledge < /dev/null
+  [ "$status" -eq 0 ] || false
+  grep -qF '<!-- superskills-workflow-rule -->' "$HOME/.claude/CLAUDE.md" || false
+  grep -qF '<!-- superskills-workflow-rule -->' "$HOME/.zcode/AGENTS.md" || false
+  [ ! -e "$HOME/.codex" ] || false
+  [ ! -e "$HOME/.dsh" ] || false
+}
+
+@test "re-running setup never duplicates the workflow rule" {
+  mkdir -p "$HOME/.zcode"
+  run bash "$REPO_ROOT/setup" -q --no-knowledge < /dev/null
+  [ "$status" -eq 0 ] || false
+  run bash "$REPO_ROOT/setup" -q --no-knowledge < /dev/null
+  [ "$status" -eq 0 ] || false
+  [ "$(grep -cF '<!-- superskills-workflow-rule -->' "$HOME/.claude/CLAUDE.md")" -eq 1 ] || false
+  [ "$(grep -cF '<!-- superskills-workflow-rule -->' "$HOME/.zcode/AGENTS.md")" -eq 1 ] || false
+}

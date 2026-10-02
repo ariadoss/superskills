@@ -757,20 +757,38 @@ if [ "$INSTALL_CLINE" -eq 1 ]; then
 fi
 
 # ── Developer workflow rule ───────────────────────────────────────────────────
-GLOBAL_CLAUDE_MD="$HOME/.claude/CLAUDE.md"
+# Each harness reads a different global instruction file: CLAUDE.md for Claude
+# Code, AGENTS.md for the dir-gated harnesses. Claude Code is the primary
+# target (created if absent); the others follow their skills roots' gating so
+# a machine without a harness never gets a file for it. One prompt covers all
+# pending targets; the marker keeps each file idempotent.
 WORKFLOW_MARKER="<!-- superskills-workflow-rule -->"
-if ! grep -qF "$WORKFLOW_MARKER" "$GLOBAL_CLAUDE_MD" 2>/dev/null; then
+WORKFLOW_PENDING=""
+for wf_rel in .claude/CLAUDE.md .zcode/AGENTS.md .codex/AGENTS.md .dsh/AGENTS.md; do
+  wf_root="$HOME/${wf_rel%%/*}"
+  if [ "$wf_root" = "$HOME/.claude" ] || [ -d "$wf_root" ]; then
+    wf_file="$HOME/$wf_rel"
+    if ! grep -qF "$WORKFLOW_MARKER" "$wf_file" 2>/dev/null; then
+      WORKFLOW_PENDING="${WORKFLOW_PENDING}${wf_file}"$'\n'
+    fi
+  fi
+done
+if [ -n "$WORKFLOW_PENDING" ]; then
   if [ -t 0 ] && [ "$QUIET" -eq 0 ]; then
-    printf '  Add superskills workflow guide to ~/.claude/CLAUDE.md? [y/N] '
+    wf_count="$(printf '%s' "$WORKFLOW_PENDING" | grep -c .)"
+    printf '  Add superskills workflow guide to %s instruction file(s)? [y/N] ' "$wf_count"
     read -r add_workflow </dev/tty 2>/dev/null || add_workflow=""
   else
     add_workflow="y"
   fi
   if [ "$add_workflow" = "y" ] || [ "$add_workflow" = "Y" ]; then
-    mkdir -p "$(dirname "$GLOBAL_CLAUDE_MD")"
-    printf '\n%s\n## Superskills Developer Workflow\n\nRead %s/DEVELOPER_WORKFLOW.md to understand how to use superskills commands together effectively — parallel agents, vertical slices, quality pipeline, performance optimization, and shipping workflow.\n' \
-      "$WORKFLOW_MARKER" "$SOURCE_DIR" >> "$GLOBAL_CLAUDE_MD"
-    log "  [ok] workflow rule added to $GLOBAL_CLAUDE_MD"
+    printf '%s' "$WORKFLOW_PENDING" | while IFS= read -r wf_file; do
+      [ -n "$wf_file" ] || continue
+      mkdir -p "$(dirname "$wf_file")"
+      printf '\n%s\n## Superskills Developer Workflow\n\nRead %s/DEVELOPER_WORKFLOW.md to understand how to use superskills commands together effectively — parallel agents, vertical slices, quality pipeline, performance optimization, and shipping workflow.\n' \
+        "$WORKFLOW_MARKER" "$SOURCE_DIR" >> "$wf_file"
+      log "  [ok] workflow rule added to $wf_file"
+    done
   fi
 fi
 log ""

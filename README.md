@@ -1,8 +1,8 @@
-# Superskills `v2.33.1`
+# Superskills `v2.34.0`
 
 Curated AI skills pack for Claude Code, ZCode, OpenCode, Codex CLI, DSH (DeepSeek Harness), Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Integrates [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team; an opt-in pack) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
-46 core skills + 54 gstack skills + 174 marketing skills + 36 design skills, selected by [packs](#packs-choose-what-gets-installed). gstack is vendored in this repo so its skills are available even if the upstream repo is removed.
+47 core skills + 54 gstack skills + 174 marketing skills + 36 design skills, selected by [packs](#packs-choose-what-gets-installed). gstack is vendored in this repo so its skills are available even if the upstream repo is removed.
 
 > **[Full command reference →](COMMANDS.md)**: all skills with descriptions and overlap notes
 > **[10x+ Engineering Workflow →](DEVELOPER_WORKFLOW.md)**: run 10+ parallel AI agents, each with a full quality pipeline ([full write-up](https://hyperion360.com/blog/parallel-ai-agents-engineering-workflow/))
@@ -20,16 +20,16 @@ Setup will:
 - Prompt you to connect knowledge base repos (optional)
 - Check for optional dependencies (clearwing, ffuf)
 - Auto-detect and install into: **Claude Code**, **ZCode**, **OpenCode**, **Codex CLI**, **DSH (DeepSeek Harness)**, **Continue.dev**, **Augment Code**, **Windsurf**
-- Offer to add the developer workflow guide to `~/.claude/CLAUDE.md`
+- Offer to add the developer workflow guide to each detected harness's instruction file (`~/.claude/CLAUDE.md`, plus `~/.zcode/AGENTS.md`, `~/.codex/AGENTS.md`, `~/.dsh/AGENTS.md` when that harness is installed)
 
 ### Packs: choose what gets installed
 
 Every skill belongs to a pack. `./setup` installs the **coding pack by
-default** (38 skills: 30 in-repo + 8 via gstack when a clone exists, the
+default** (39 skills: 31 in-repo + 8 via gstack when a clone exists, the
 spec → plan → TDD → QA → ship workflow plus every check `/qa-full` can
 trigger: security (`/defense`, `/iac-scan`, `/pentest`, `/fuzz`, `/cso`),
 performance (`/db-optimize`, `/web-perf`, `/perf-profile`), browser/design QA
-(`/playwright`, `/a11y`, `/design-review`) and the gstack review loop
+(`/playwright`, `/a11y`, `/design-review`), evaluation (`/eval`) and the gstack review loop
 (`/review`, `/qa`)) so your harness's always-on context stays small.
 Skill *descriptions* load on every turn; only a triggered skill's body does. So every extra pack is a real per-token cost in every session. The coding
 pack is always on: no pack list excludes it.
@@ -104,7 +104,7 @@ The plugin `version` is driven by the repo's `VERSION` file via
 watch. The `./setup` install above remains the way to get a chosen pack
 selection across every supported tool.
 
-## Skills (46)
+## Skills (47)
 
 ### Dev Methodology (from [superpowers](https://github.com/obra/superpowers))
 | Command | Description |
@@ -119,6 +119,7 @@ selection across every supported tool.
 | `/quota-resilience` | Usage-limit hard stops, handled: commit complete work, clean tree, committed `QUOTA-RESUME.md`, exact-state report, one bounded auto-restart where the host can schedule one; resume sessions pick up from the note |
 | `/finish-branch` | Branch cleanup and merge decisions |
 | `/verify` | Pre-merge validation |
+| `/eval` | Measure whether a change to AI behavior (prompt wording, skill body, agent loop, RAG pipeline) actually helped: grid-sampled synthetic eval set, hand-labeled answer key, an LLM judge written like code, calibrated with TPR/TNR/accuracy/precision and a harsh/lenient bias reading before gating |
 | `/write-plan` | Detailed implementation planning |
 | `/subagent-driven-development` | Execute a plan in-session via fresh subagent per task + review loop |
 | `/executing-plans` | Execute a plan in a separate session with review checkpoints |

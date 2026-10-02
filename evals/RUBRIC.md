@@ -1,9 +1,10 @@
 # Superskills eval rubric
 
 How the `evals/` suite decides whether a skill made Claude *better*, and how the
-results are analysed. Method follows the AI Bootcamp Unit 1.6 deck
-("Evaluation-Centric AI Engineering, Synthetic Data, and Error Modes") and the
-2026-09-16 instructor guidance on tool-use evals:
+results are analysed. The general method (building a synthetic dataset,
+writing and calibrating an LLM judge, and the metric definitions with example
+code) is distilled in [`METHODOLOGY.md`](METHODOLOGY.md); this file is the
+suite-specific instance of it:
 
 1. define what "good" means measurably, per dimension;
 2. sample prompts across a **plan**, not at random;
@@ -77,9 +78,16 @@ end-to-end test that the generated manifest exposes nested skill directories.
    skill*, *selection: no skill*, *safety: mutated*, *correctness: missed
    fixture fact*, *honesty: false ready*, *harness: sandbox/limit error*).
    Report count and rate per mode, per arm.
-4. **Judge calibration.** Human-label every `llm`-graded run; report agreement,
-   and where the judge was too harsh (false positive) or too lenient (false
-   negative). Rewrite the rubric where they disagree; re-judge.
+4. **Judge calibration.** Human-label every `llm`-graded run; compute the
+   judge's **TPR, TNR, accuracy and precision** against those labels, with
+   **FAIL as the positive class** (so a false positive is a run the judge
+   failed but the human passed, a too-harsh judge, and a false negative the
+   reverse). Report all four together plus the TP/TN/FP/FN counts, never
+   accuracy alone: at this suite's size the counts are the signal and the
+   rates are rounding. A wide TPR–TNR gap is a directional bias (harsh or
+   lenient); read the disagreeing runs, rewrite the rubric, re-judge.
+   Formulas and a calibration-harness skeleton:
+   [`METHODOLOGY.md §4–6`](METHODOLOGY.md).
 5. **Fix ladder.** Description/body edits first; re-run only the affected cases;
    report before/after Δ. Structural changes only if the category rate does not move.
 6. **Stopping rule.** Add cases until new traces stop producing new failure

@@ -45,8 +45,12 @@ The shim tree is the repo's only committed symlinks: a Windows checkout without
 `core.symlinks` gets text files there and the marketing plugin will not load.
 
 Skill *behaviour* is evaluated with `claude plugin eval`: suite in `evals/`,
-method in `evals/RUBRIC.md`. Runs cost model calls, so they are a release step,
-not part of `./tests/run.sh`. `AGENTS.md` is the Codex-facing pointer to this
+the suite rubric in `evals/RUBRIC.md`, the general method (synthetic
+datasets, judge calibration, TPR/TNR/accuracy/precision) in
+`evals/METHODOLOGY.md`. Run it whenever a change alters behaviour (a skill
+`description` or body rewording, prompt logic), not only at release. Runs cost
+model calls, so they are a release step, not part of `./tests/run.sh`.
+`AGENTS.md` is the Codex-facing pointer to this
 file and to `ENGINEERING_STANDARDS.md`, which carries the skill-authoring
 conventions every SKILL.md follows; `/superskills-doctor` is their reference
 implementation.
@@ -81,17 +85,19 @@ Two patterns are valid. Pick the one that matches the skill's runtime needs:
 
 Never reference an external repo as a live dependency without one of these two backups in place. Record the upstream URL in the skill's frontmatter (e.g. `metadata.upstream: https://...`) so the source is traceable.
 
-### Keeping in-tree mirrors current
+### dbmap/repomap are canonical here; their public repo is an export
 
-The `dbmap`, `repomap`, `dbmap-auto-on`, `dbmap-auto-off`, `repomap-auto-on`, and `repomap-auto-off` skills are in-tree mirrors of the upstream [ariadoss/repomap](https://github.com/ariadoss/repomap) repo. Before bumping VERSION on any release, run:
+The `dbmap`, `repomap`, `dbmap-auto-on`, `dbmap-auto-off`, `repomap-auto-on`, and `repomap-auto-off` skills are the single source of truth for the public [ariadoss/repomap](https://github.com/ariadoss/repomap) repo (the old pull direction is retired). After changing any of the six skills, regenerate and publish the standalone tree:
 
 ```bash
-./scripts/sync-mirrors.sh
+./scripts/export-repomap.sh            # -> dist/repomap (git-ignored)
 ```
 
-This pulls the latest upstream and copies each `<name>.md` into `skills/<name>/SKILL.md`. The setup script does **not** auto-modify the source tree. Syncing is an explicit maintainer step so end users never see surprise diffs after running `setup`. The script resolves the upstream from `$REPOMAP_HOME` or the standard locations (`~/claude-repomap-command`, `~/.claude-repomap-command`, `~/.local/share/claude-repomap-command`).
+The export is a pure copy — each `skills/<name>/SKILL.md` lands as `<name>.md`, byte-identical, frontmatter and all — and owns only those six paths: the public repo's README, LICENSE, `setup`, `requirements.txt`, and Python sources live in that checkout and are edited there via PR. `tests/export-repomap.bats` asserts byte-identity. Never edit the six `<name>.md` files in the public repo directly; the next export would silently overwrite them.
 
-Likewise, `vendor/gstack/` is a markdown-only snapshot of the gstack install
+### Keeping the `vendor/gstack` snapshot current
+
+`vendor/gstack/` is a markdown-only snapshot of the gstack install
 (`~/.claude/skills/gstack`). When the live install is ahead of
 `vendor/gstack/VERSION`, run:
 
@@ -127,6 +133,23 @@ own tests under `bats`; `tests/export-humanize.bats` asserts byte-identity. Neve
 public repo directly. The next export would silently overwrite the change.
 Whole-text LLM rewriting humanizers are private and must never be added here;
 `/humanize` only makes surgical, span-level edits.
+
+### `/eval` is canonical here; its public repo is an export
+
+`skills/eval/` is the single source of truth for the public
+[`ariadoss/eval`](https://github.com/ariadoss/eval) repo. After changing the
+skill or its toolkit, regenerate and publish the standalone tree:
+
+```bash
+./scripts/export-eval.sh              # -> dist/eval (git-ignored)
+```
+
+Same doctrine as `/humanize`: pure copy of git-tracked files only, refuses to
+finish unless the exported tree passes its own tests under `bats`;
+`tests/export-eval.bats` asserts byte-identity. Never edit the public repo
+directly. The in-repo prose method the skill operationalizes lives in
+`evals/METHODOLOGY.md`; keep the two telling the same story when either
+changes.
 
 <!-- superskills-workflow-rule -->
 ## Superskills Developer Workflow

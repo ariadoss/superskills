@@ -3,7 +3,10 @@
 Behavioural tests for the skills, run with Claude Code's `claude plugin eval`.
 Each case is a prompt a user might type plus graders that check what Claude did
 (which skill fired, whether it mutated anything, what the reply contains). The
-rubric, sampling plan and analysis protocol are in [`RUBRIC.md`](RUBRIC.md).
+rubric, sampling plan and analysis protocol are in [`RUBRIC.md`](RUBRIC.md);
+the general method (synthetic datasets, judge calibration, and the
+TPR/TNR/accuracy/precision definitions with example code) is in
+[`METHODOLOGY.md`](METHODOLOGY.md).
 
 **Cost:** every run and every `llm` grader vote is a real model call on your
 account. The default is 3 runs per case per arm and two arms (with/without the

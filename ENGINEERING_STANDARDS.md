@@ -87,6 +87,10 @@ the agent, so every skill fails safe the same way. Adapted from Spotify's
   fix**, so there is no measured routing defect for the clause to repair here,
   and any production precision claim for it is untested either way. See
   `evals/reports/2026-09-25-waza-negative-scope.md`.
+- **Behaviour edits are measured, not eyeballed.** A change to a skill's
+  `description` or body is a behaviour change: evaluate it before pushing
+  (suite: `evals/RUBRIC.md`; method for building a run: `evals/METHODOLOGY.md`).
+  Fix wording first, structure only if the measured category rate does not move.
 - **Scripts over prose pipelines.** Multi-step shell logic lives in a tested
   script under `scripts/` that the skill calls with named flags; the skill never
   asks the agent to assemble the pipeline from a description.
