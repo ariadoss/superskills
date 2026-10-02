@@ -272,3 +272,19 @@ setup() {
   [ "$(grep -cF '<!-- superskills-workflow-rule -->' "$HOME/.claude/CLAUDE.md")" -eq 1 ] || false
   [ "$(grep -cF '<!-- superskills-workflow-rule -->' "$HOME/.zcode/AGENTS.md")" -eq 1 ] || false
 }
+
+@test "an unwritable instruction file is skipped, never aborts the install" {
+  # A chmod-000 ~/.claude/CLAUDE.md makes the marker grep fail (treated as
+  # marker-absent) and the append fail. The install must still exit 0 with a
+  # logged skip: one bad config file cannot retroactively fail a successful
+  # skills link.
+  mkdir -p "$HOME/.claude"
+  printf 'existing instructions\n' > "$HOME/.claude/CLAUDE.md"
+  chmod 000 "$HOME/.claude/CLAUDE.md"
+  run bash "$REPO_ROOT/setup" -q --no-knowledge < /dev/null
+  [ "$status" -eq 0 ] || { echo "setup aborted on unwritable instruction file"; return 1; }
+  # The Claude target links files inside a real skills dir (not dir symlinks).
+  [ -f "$HOME/.claude/skills/tdd/SKILL.md" ] || false
+  chmod 644 "$HOME/.claude/CLAUDE.md"
+  [ "$(cat "$HOME/.claude/CLAUDE.md")" = "existing instructions" ] || { echo "unwritable file was modified"; return 1; }
+}

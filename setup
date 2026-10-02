@@ -785,9 +785,12 @@ if [ -n "$WORKFLOW_PENDING" ]; then
     printf '%s' "$WORKFLOW_PENDING" | while IFS= read -r wf_file; do
       [ -n "$wf_file" ] || continue
       mkdir -p "$(dirname "$wf_file")"
-      printf '\n%s\n## Superskills Developer Workflow\n\nRead %s/DEVELOPER_WORKFLOW.md to understand how to use superskills commands together effectively — parallel agents, vertical slices, quality pipeline, performance optimization, and shipping workflow.\n' \
-        "$WORKFLOW_MARKER" "$SOURCE_DIR" >> "$wf_file"
-      log "  [ok] workflow rule added to $wf_file"
+      if printf '\n%s\n## Superskills Developer Workflow\n\nRead %s/DEVELOPER_WORKFLOW.md to understand how to use superskills commands together effectively — parallel agents, vertical slices, quality pipeline, performance optimization, and shipping workflow.\n' \
+        "$WORKFLOW_MARKER" "$SOURCE_DIR" 2>/dev/null >> "$wf_file"; then
+        log "  [ok] workflow rule added to $wf_file"
+      else
+        log "  [skip] cannot write $wf_file (unwritable or not a regular file); it was left as-is"
+      fi
     done
   fi
 fi
