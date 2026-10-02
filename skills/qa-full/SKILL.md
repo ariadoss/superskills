@@ -584,8 +584,10 @@ explicit yes. A decline is SKIPPED(reason: not authorized) — a legal skip with
 reason, not a blocker.
 
 1. **Audit:** invoke `/eval`; it builds or reuses the project's synthetic eval
-   set for the changed behavior and reports before/after metrics (TPR, TNR,
-   accuracy, precision, plus the bias reading).
+   set for the changed behavior and reports the behavior's before/after
+   system metrics (pass rate per dimension), with the judge's calibration
+   (TPR, TNR, accuracy, precision, plus the bias reading) attached so the
+   numbers are trusted before they are read.
 2. **Fix:** wording first, structure second — the method's fix ladder.
 3. **Verify:** re-run the eval. The changed behavior must be no worse than the
    baseline on every reported metric, and better on the dimension the change
