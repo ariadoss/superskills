@@ -14,9 +14,10 @@
 #
 # rate_limits is absent until the session's first API response and Claude Code
 # drops each window once its `resets_at` passes, so a fresh session would show
-# "--" for minutes. Hence the cache. Staleness is decided by `resets_at`, not by
-# a high-water mark: within a window used_percentage only climbs, and a changed
-# resets_at means a new window, which is the whole rule.
+# "--" for minutes. Hence the cache: it covers that absence and is itself
+# dropped when its `resets_at` passes. When the payload does carry a window,
+# that reading wins outright — the windows are rolling, so used_percentage
+# decays within a window and must never be held at an earlier peak.
 #
 # Concurrency: sessions share one cache (rate limits are account-wide) and write
 # it last-writer-wins via an atomic rename. Deliberately no lock. A racing write
@@ -88,14 +89,15 @@ def live($w): ($w | type) == "object"
               and ($w.resets_at | type) == "number"
               and $w.resets_at > $now;
 
-# live beats cache; same window keeps the higher reading (a stale lower value
-# must not walk the number backwards); a later resets_at means a new window.
+# live beats cache. Both windows are rolling — old usage drops out, so
+# used_percentage falls as well as rises within one resets_at — and a lower
+# live reading is normally that decay, not staleness, so it must be shown. The
+# cache exists only for a payload without rate_limits (a session before its
+# first API response). A concurrent session's older response can transiently
+# walk the number back for one render; accepted, because the alternative —
+# keeping the higher reading — latches a rolling window's peak until its reset.
 def merge($l; $c):
-  if live($l) and live($c) then
-    if $l.resets_at == $c.resets_at
-      then (if $l.used_percentage >= $c.used_percentage then $l else $c end)
-      else $l end
-  elif live($l) then $l
+  if live($l) then $l
   elif live($c) then $c
   else null end;
 

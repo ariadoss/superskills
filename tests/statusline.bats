@@ -82,11 +82,14 @@ J"
   [[ "$output" != *"5h"* ]] || false
 }
 
-@test "within one window a lower live reading does not walk the number backwards" {
+@test "a decayed live reading replaces the cached peak within the same window" {
+  # Both windows are rolling: old usage drops out and used_percentage falls with
+  # it, so a lower live reading is normally real decay. The cache must yield to
+  # it, or the line latches the window's peak until reset (a 7d peak stuck for
+  # days while the app shows the decayed value).
   bash -c "'$SL' < <(echo '$(payload 60 7800)')" >/dev/null
-  # Same resets_at, lower percentage: keep the higher value.
   run bash -c "'$SL' < <(echo '$(payload 42 7800)')"
-  [[ "$output" == *"5h 60%"* ]] || false
+  [[ "$output" == *"5h 42%"* ]] || false
 }
 
 @test "a new window (later resets_at) accepts a lower percentage" {
