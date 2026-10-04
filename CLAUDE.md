@@ -16,7 +16,12 @@ to a Google/Meta-quality bar. Concretely:
 
 ## Versioning
 
-Always increment VERSION before committing and pushing any change:
+VERSION gets one reviewed bump per merged change, never one per intermediate
+commit: bump it when a change is about to land on `main` (on the feature
+branch, at `/ship` time), re-reading latest `main` first so parallel branches
+never claim the same number. The full decision model (SemVer vs CalVer vs
+build IDs, release tags, changelog fragments for parallel agents) lives in
+[`DEVELOPER_WORKFLOW.md`](DEVELOPER_WORKFLOW.md):
 - Patch (2.x.X): bug fixes, typo corrections, small clarifications to existing skills
 - Minor (2.X.0): new skills, significant updates to existing skills, new tool support
 - Major (X.0.0): breaking changes, major new capability bundles

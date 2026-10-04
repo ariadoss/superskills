@@ -83,6 +83,67 @@ branches modify the same thing. Multi-human teams can add a CODEOWNERS map that
 routes each slice's review to its owner; solo-agent repos get the
 same guarantee from scoping alone.
 
+## Versioning and releases with parallel agents
+
+> The git model above governs when code merges. This section governs what
+> reaches users and who decides. A merge, a version bump, a release tag, and
+> a deployment are four different events — conflating them is the classic
+> parallel-agent failure: two branches claiming the same version, an agent
+> tagging unmerged work, a "release" nobody verified.
+
+**Pick the scheme once per repo, by what the version is for:**
+
+| The version is… | Scheme | Looks like |
+|---|---|---|
+| A **contract** someone pins against: library, SDK, public API, plugin whose manifests drive update alerts | **SemVer** — the number promises compatibility (MAJOR = breaking) | superskills itself; any npm/PyPI package |
+| A **time-boxed product** with no API consumers | **CalVer** — the number tells you how old the release is | Ubuntu 24.04, Firefox |
+| A **deployed service** | The build ID / immutable **artifact digest + commit SHA** is the real identifier; the version is a human label for audit and rollback | typical Google/Meta-style services |
+
+"Which version is on production" is answered by the deploy record (artifact
+digest linked to its source SHA), never by a git tag alone — a version label
+doesn't recreate the build, config, or DB state.
+
+**Rules under the trunk-based model:**
+
+1. **One release authority.** Every agent PR may carry provisional bump intent
+   and a changelog fragment; exactly one actor — a human release owner or one
+   piece of controlled automation — finalizes the version, tags, and
+   publishes. Never two bump authorities: if fragments/changesets decide the
+   number, don't also run semantic-release over commit messages deciding it
+   again.
+2. **Bump at landing, serialized.** VERSION files, manifests, and badges are
+   single files that parallel branches collide on. Don't pre-claim numbers on
+   long-lived branches; recompute the bump against latest `main` when the PR
+   lands (merge queue or landing recheck) so two branches can't both ship
+   2.36.1.
+3. **Tag the trunk, after the release is real.** Annotated tag on the exact
+   merged commit, after publish/verify succeeds — never from an unmerged agent
+   branch. Protect tag names from force-move: an unprotected tag is a movable
+   pointer, not a snapshot.
+4. **Release branches only on demand.** This repo's model cuts none and rolls
+   forward (CD style). A repo that must patch an older production release cuts
+   one from the release tag, fixes on **trunk first** (with the test), and
+   cherry-picks to the branch; nothing ever merges from the branch back to
+   trunk. Urgent exception: a fix may start from the released commit and be
+   carried forward to trunk.
+5. **Changelog fragments, never a shared Unreleased section.** N parallel
+   agents appending to one `CHANGELOG.md` section is a guaranteed conflict.
+   Each PR adds its own `changelog.d/<PR>.<type>.md`; the release step
+   compiles them (Keep a Changelog format, `YYYY-MM-DD` release dates) and
+   fails if fragments are left over. Changesets (JS) also carries bump
+   intent; towncrier (Python) only assembles notes — for parallel agents,
+   prefer intent-carrying fragments.
+6. **Humans review agent-drafted notes.** Agent-written summaries drop and
+   misstate changes. The release owner reads the compiled draft against the
+   actual diff before publishing.
+
+**What superskills itself does:** `VERSION` is the single source of truth with
+one reviewed bump per merged change (see [CLAUDE.md](CLAUDE.md));
+`./scripts/sync-version.sh` stamps every plugin manifest from it. The
+installed `/ship` owns the mechanics (bump classification, changelog entry,
+PR). Tags, if ever adopted, happen after `/land-and-deploy`, never inside
+`/ship`.
+
 ## The Workflow
 
 ### 1. Spec and plan work as vertical slices
