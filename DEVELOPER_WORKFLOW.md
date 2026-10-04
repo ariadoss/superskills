@@ -87,7 +87,7 @@ same guarantee from scoping alone.
 
 > The git model above governs when code merges. This section governs what
 > reaches users and who decides. A merge, a version bump, a release tag, and
-> a deployment are four different events — conflating them is the classic
+> a deployment are four different events—conflating them is the classic
 > parallel-agent failure: two branches claiming the same version, an agent
 > tagging unmerged work, a "release" nobody verified.
 
@@ -95,19 +95,19 @@ same guarantee from scoping alone.
 
 | The version is… | Scheme | Looks like |
 |---|---|---|
-| A **contract** someone pins against: library, SDK, public API, plugin whose manifests drive update alerts | **SemVer** — the number promises compatibility (MAJOR = breaking) | superskills itself; any npm/PyPI package |
-| A **time-boxed product** with no API consumers | **CalVer** — the number tells you how old the release is | Ubuntu 24.04, Firefox |
+| A **contract** someone pins against: library, SDK, public API, plugin whose manifests drive update alerts | **SemVer**: the number promises compatibility (MAJOR = breaking) | superskills itself; any npm/PyPI package |
+| A **time-boxed product** with no API consumers | **CalVer**: the number tells you how old the release is | Ubuntu 24.04, Firefox |
 | A **deployed service** | The build ID / immutable **artifact digest + commit SHA** is the real identifier; the version is a human label for audit and rollback | typical Google/Meta-style services |
 
 "Which version is on production" is answered by the deploy record (artifact
-digest linked to its source SHA), never by a git tag alone — a version label
+digest linked to its source SHA), never by a git tag alone—a version label
 doesn't recreate the build, config, or DB state.
 
 **Rules under the trunk-based model:**
 
 1. **One release authority.** Every agent PR may carry provisional bump intent
-   and a changelog fragment; exactly one actor — a human release owner or one
-   piece of controlled automation — finalizes the version, tags, and
+   and a changelog fragment; exactly one actor (a human release owner or one
+   piece of controlled automation) finalizes the version, tags, and
    publishes. Never two bump authorities: if fragments/changesets decide the
    number, don't also run semantic-release over commit messages deciding it
    again.
@@ -117,7 +117,7 @@ doesn't recreate the build, config, or DB state.
    lands (merge queue or landing recheck) so two branches can't both ship
    2.36.1.
 3. **Tag the trunk, after the release is real.** Annotated tag on the exact
-   merged commit, after publish/verify succeeds — never from an unmerged agent
+   merged commit, after publish/verify succeeds—never from an unmerged agent
    branch. Protect tag names from force-move: an unprotected tag is a movable
    pointer, not a snapshot.
 4. **Release branches only on demand.** This repo's model cuts none and rolls
@@ -131,7 +131,7 @@ doesn't recreate the build, config, or DB state.
    Each PR adds its own `changelog.d/<PR>.<type>.md`; the release step
    compiles them (Keep a Changelog format, `YYYY-MM-DD` release dates) and
    fails if fragments are left over. Changesets (JS) also carries bump
-   intent; towncrier (Python) only assembles notes — for parallel agents,
+   intent; towncrier (Python) only assembles notes—for parallel agents,
    prefer intent-carrying fragments.
 6. **Humans review agent-drafted notes.** Agent-written summaries drop and
    misstate changes. The release owner reads the compiled draft against the
