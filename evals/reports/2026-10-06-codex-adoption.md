@@ -85,3 +85,17 @@ Findings and dispositions:
 
 Deferred follow-up (not blocking): grep read-errors hidden by process
 substitution after the `-r` guard in the lint lib.
+
+## Round 2 (2026-10-06, post-qa-full): the remaining Codex candidates
+
+| Candidate | Outcome | Evidence |
+|---|---|---|
+| Compaction/handoff framing → quota-resilience | **REJECTED — measured null (baseline at ceiling)** | `2026-10-06-quota-handoff.md`: handoff-selfcontained 3/3, handoff-antiredo 3/3, guard clean at baseline; +0.175 gate unreachable by construction; the original section-equivalence argument is now measurement. New permanent case kept. |
+| Testing philosophy (specific→broad, no frameworks into test-less repos, bounded repair) → write-plan | **IN FLIGHT** | `2026-10-06-writeplan-testphilosophy-PREREG.md`: original phrasing fired the skill 0/3 (documented greenfield under-firing; amendment precedent invoked, prompt rephrased infra-flavoured); plugin-less plans scored specific-first 0/3 — real headroom; re-calibration blocked on the eval account's 2:30pm ET session limit |
+| Status invariants (todo discipline) | **Rejected — unmeasurable in this harness** | Requires grading in-session plan-tool state transitions; our graders see last_message (llm) or tool-input regex (tool_used), neither can observe "never pending→completed" ordering. Host-specific semantics violate the cross-harness rule on top. |
+| Tool-hygiene block (parallelize reads, no re-reads after edits) | **Rejected — unmeasurable** | "Did the model batch reads" needs turn-structure analysis the grader types cannot express; host prompts already carry this guidance where the host supports it |
+| Context meta-tools (get_context_remaining, new_context, tool_search) | **Rejected — wrong layer** | Harness features; a skill cannot install a tool. The lexical-baseline row (adopted) is the transferable slice of this research |
+| Approval-mode-aware validation | **Rejected — unmeasurable** | `claude plugin eval` runs under one permission configuration; the intervention's trigger (interactive vs autonomous mode) cannot vary between arms |
+
+Round-2 spend so far: $1.65 (C2) + $3.76 (E calibration, including the $0.17
+harness-artifact run discarded when the account limit hit mid-run).
