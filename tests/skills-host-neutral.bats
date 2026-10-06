@@ -6,7 +6,10 @@
 # is not a general host-syntax checker — see the lib header for scope.
 
 setup() {
-  REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
+  # dirname, not $(cd .. && pwd): the cd-in-subshell form interacts badly with
+  # the tracked-files test's ~1.9k process substitutions under bats (spins at
+  # 100% CPU; the dirname form is instant and equivalent here).
+  REPO_ROOT="$(dirname "$BATS_TEST_DIRNAME")"
   source "$REPO_ROOT/tests/lib/host-neutral-lib.sh"
   TMPDIR_FIXTURE="$(mktemp -d)"
 }
@@ -28,7 +31,7 @@ EOF
   echo "$output" | grep -q "multi_tool_use"
 }
 
-@test "host-neutral lint passes the allowlist escape" {
+@test "host-neutral lint passes the allowlist escape naming the token" {
   cat > "$TMPDIR_FIXTURE/OK_SKILL.md" <<'EOF'
 ---
 name: ok
@@ -40,17 +43,32 @@ EOF
   [ "$status" -eq 0 ]
 }
 
+@test "an escape comment that does not name the token does not exempt the line" {
+  cat > "$TMPDIR_FIXTURE/SNEAKY_SKILL.md" <<'EOF'
+---
+name: sneaky
+description: Instructs a host-exclusive call with a blanket escape comment.
+---
+Call TodoWrite now to track this. <!-- host-tool-allow: something-else -->
+EOF
+  run host_neutral_check "$TMPDIR_FIXTURE/SNEAKY_SKILL.md"
+  [ "$status" -ne 0 ]
+  echo "$output" | grep -q "TodoWrite"
+}
+
 @test "host-neutral lint fails loudly on an unreadable file" {
   run host_neutral_check "$TMPDIR_FIXTURE/does-not-exist.md"
   [ "$status" -eq 2 ]
 }
 
-@test "tracked skill bodies name no host-specific tools" {
-  files="$(git ls-files -- 'skills/*/SKILL.md' 'design-skills/*/SKILL.md' 'marketing-skills/*/SKILL.md')"
-  [ -n "$files" ]
-  saw_violation=0
-  while IFS= read -r f; do
-    host_neutral_check "$f" || saw_violation=1
-  done <<< "$files"
-  [ "$saw_violation" -eq 0 ]
+@test "tracked skill bodies (incl. vendor/gstack snapshot) name no host-specific tools" {
+  run bash -c 'source "${0}/tests/lib/host-neutral-lib.sh" && git ls-files -- "skills/*/SKILL.md" "design-skills/*/SKILL.md" "marketing-skills/*/SKILL.md" "vendor/gstack/**/SKILL.md" | host_neutral_check_tree' "$REPO_ROOT"
+  [ "$status" -eq 0 ]
+}
+
+@test "host-token lists in the lint lib and the lexical baseline stay in sync" {
+  bash_tokens="$(grep -oE 'multi_tool_use|TodoWrite|update_plan|write_stdin|exec_command|get_context_remaining' "$REPO_ROOT/tests/lib/host-neutral-lib.sh" | sort -u)"
+  py_tokens="$(grep -oE '"(multi_tool_use|TodoWrite|update_plan|write_stdin|exec_command|get_context_remaining)"' "$REPO_ROOT/evals/_lib/lexical-baseline.py" | tr -d '"' | sort -u)"
+  [ -n "$bash_tokens" ]
+  [ "$bash_tokens" = "$py_tokens" ]
 }
