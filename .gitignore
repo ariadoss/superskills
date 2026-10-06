@@ -10,3 +10,5 @@ __pycache__/
 *.pyc
 .worktrees/
 evals/_lib/.selftest-tmp/
+# /handoff's ephemeral bridge (quota-resilience folds it into QUOTA-RESUME.md)
+handoff.md
