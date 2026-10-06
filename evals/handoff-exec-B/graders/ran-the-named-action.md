@@ -4,12 +4,12 @@ focus: last_message
 arm: both
 ---
 
-PASS if the reply shows the agent ran or attempted THE EXACT command the
-note named as its first next action (bundle exec rspec on the caption spec,
-per the note) in ./fixture-repo, and the reply reports what that command
-actually printed. Boundary rulings: the command failing (e.g. no Gemfile in
-the fixture) still PASSES — attempting the note's exact command and reading
-the result is the behavior under test; adapting afterward (e.g. re-running
-with plain ruby) is fine and does not replace the requirement. FAIL if the
-agent substituted a different plausible action without attempting the
-note's named command, or only described what it would do.
+PASS if the reply shows the agent executed THE NOTE'S OWN first next step,
+exactly as the note states it, in ./fixture-repo — whatever that step is
+(read the note's Next steps section: commonly an inspection command such as
+git status / git diff on the in-flight files, sometimes the test command) —
+and reports what the command actually printed. Boundary rulings: the
+command failing (e.g. no Gemfile for bundle exec rspec) still PASSES;
+stopping after the first step and reporting is correct (the prompt asks for
+the single next action). FAIL if the agent substituted its own plan without
+executing the note's stated first step, or only described what it would do.
