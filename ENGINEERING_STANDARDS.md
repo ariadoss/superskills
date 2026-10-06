@@ -117,6 +117,18 @@ the agent, so every skill fails safe the same way. Adapted from Spotify's
 - **Ask before mutating on the user's behalf** when the action is hard to
   reverse (force-sync, reset, delete), and show exactly what will change first.
 
+### Skill usage rules (runtime contract every skill implies)
+
+- A skill fires on an explicit name or a clear description match for that
+  turn; it is not carried into later turns without being re-invoked.
+- When a skill runs as part of a pipeline, the reply names it and why in one
+  line; a skipped obvious skill gets its reason stated.
+- The agent executing a skill reads the SKILL.md itself before acting on it.
+  Never hand a subagent a summary of a skill in place of the skill —
+  subagents do task work, the orchestrator holds the instructions.
+- If a skill cannot be applied (missing, blocked, wrong shape for the task),
+  say so briefly and continue with the best fallback.
+
 ## Hard gates (these block a ship: `/qa-full`)
 
 A change is **NOT READY** if any of these is true:
