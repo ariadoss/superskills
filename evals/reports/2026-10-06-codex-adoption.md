@@ -91,11 +91,16 @@ substitution after the `-r` guard in the lint lib.
 | Candidate | Outcome | Evidence |
 |---|---|---|
 | Compaction/handoff framing → quota-resilience | **REJECTED — measured null (baseline at ceiling)** | `2026-10-06-quota-handoff.md`: handoff-selfcontained 3/3, handoff-antiredo 3/3, guard clean at baseline; +0.175 gate unreachable by construction; the original section-equivalence argument is now measurement. New permanent case kept. |
-| Testing philosophy (specific→broad, no frameworks into test-less repos, bounded repair) → write-plan | **IN FLIGHT** | `2026-10-06-writeplan-testphilosophy-PREREG.md`: original phrasing fired the skill 0/3 (documented greenfield under-firing; amendment precedent invoked, prompt rephrased infra-flavoured); plugin-less plans scored specific-first 0/3 — real headroom; re-calibration blocked on the eval account's 2:30pm ET session limit |
+| Testing philosophy (specific→broad, no frameworks into test-less repos, bounded repair) → write-plan | **CLOSED UNMEASURED (firing gate), finding booked** | `2026-10-06-writeplan-testphilosophy.md`: 0/3 → 0/3 → 1/3 firing across personal/team/fleet phrasings vs 3/3 on system-scale asks — write-plan's firing tracks ask weight; intervention preserved in the PREREG for the day a description fix fires the case; plugin-less runs show the headroom is real (specific-first ≤ 1/3) |
 | Status invariants (todo discipline) | **Rejected — unmeasurable in this harness** | Requires grading in-session plan-tool state transitions; our graders see last_message (llm) or tool-input regex (tool_used), neither can observe "never pending→completed" ordering. Host-specific semantics violate the cross-harness rule on top. |
 | Tool-hygiene block (parallelize reads, no re-reads after edits) | **Rejected — unmeasurable** | "Did the model batch reads" needs turn-structure analysis the grader types cannot express; host prompts already carry this guidance where the host supports it |
 | Context meta-tools (get_context_remaining, new_context, tool_search) | **Rejected — wrong layer** | Harness features; a skill cannot install a tool. The lexical-baseline row (adopted) is the transferable slice of this research |
 | Approval-mode-aware validation | **Rejected — unmeasurable** | `claude plugin eval` runs under one permission configuration; the intervention's trigger (interactive vs autonomous mode) cannot vary between arms |
 
-Round-2 spend so far: $1.65 (C2) + $3.76 (E calibration, including the $0.17
-harness-artifact run discarded when the account limit hit mid-run).
+Round-2 spend: $8.38 total (C2 $1.65; E $6.73 across three calibrations,
+one discarded limit-artifact, and the guard run). No round-2 skill-body
+changes shipped — both candidates resolved without adoption (one measured
+null, one unmeasurable) — so VERSION stays 2.37.0. Coordination note: a
+sibling agent session landed a /handoff plan + PREREG on branch
+`handoff-skill` mid-round (shared eval account — the source of the
+session-limit walls); no file overlap with this branch.
