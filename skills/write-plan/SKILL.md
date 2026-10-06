@@ -76,6 +76,44 @@ If the feature crosses **no** trust boundary, state that in one line and skip �
 - "Run the tests and make sure they pass" - step
 - "Commit" - step
 
+## Plan Quality Examples
+
+High-quality task lists — every step names its artifact and its completion
+signal:
+
+1. Add `/exports/<model>` route returning `StreamingHttpResponse`
+2. Serialize chosen columns via `values_list(*cols).iterator()`
+3. Stream 500-row pages; write the CSV header before the first page
+4. Cap exported rows at 500k; test truncation at the cap
+5. Test: 3-column export of 1,200 rows streams all rows plus header
+
+1. Write failing test: `parse_duration("90s")` → `90_000`
+2. Implement unit tokenizer for `s`/`m`/`h` suffixes
+3. Handle `m:ss` and `h:mm:ss` behind the same entrypoint
+4. Fuzz round-trip: `format(parse(x))` stable for 10k samples
+5. Replace the three ad-hoc parsers with the new helper
+
+1. Add `POST /api/tokens` issuing scoped, 24h refresh tokens
+2. Reject unsigned requests with 401 plus a machine-readable error code
+3. Rotate the refresh token on use; invalidate the old one atomically
+4. Test concurrent refresh: one winner, the loser gets 401
+5. Load-test 1k concurrent refreshes against the rotation lock
+
+Filler to avoid — no artifact, no completion signal, no reader can tell
+done from not-done:
+
+1. Create export feature
+2. Add CSV generation
+3. Convert to output
+
+1. Add duration parsing
+2. Save the result
+3. Make parsing robust
+
+1. Build token endpoint
+2. Run quick sanity check
+3. Summarize usage instructions
+
 ## Plan Document Header
 
 **Every plan MUST start with this header:**
