@@ -23,6 +23,18 @@ iterations, then report the residue).
 | `writeplan-test-strategy` (new) | primary: no framework imposed on a test-less repo; specific-first + bounded verification |
 | `writeplan-plan-quality` | guard (must not regress ≥ 0.34) |
 
+**Amendment after calibration, before any comparative run (the 2026-10-04
+precedent):** the first baseline ($0.65) calibrated the original prompt
+("my dotfiles repo…") and found write-plan fired 0/3 — the known
+under-firing on casual product asks (2026-10-04 report: 0/3 on greenfield
+asks vs 3/3 infrastructure-flavoured). With the skill absent the
+intervention is unmeasurable (specific-first 0/3 on plugin-less plans
+confirms headroom exists). The prompt is rephrased infrastructure-flavoured
+("our ops repo…", identical no-tests constraint, identical ask) and the
+calibration re-run; the comparative arms start only after the rephrased
+case fires ≥ 2/3. No intervention has been applied at amendment time; no
+comparative data exists.
+
 ## Fairness rule (fixed in advance)
 
 The case prompt states the no-tests constraint in the USER's voice (both
