@@ -13,38 +13,38 @@ setup() {
 }
 
 @test "fires above threshold with correctly-nested additionalContext" {
-  printf '%s' '{"rate_limits":{"five_hour":{"used_percentage":93,"resets_at":"2026-10-06T20:00:00Z"},"seven_day":{"used_percentage":41,"resets_at":"2026-10-09T12:00:00Z"}}}' > "$CACHE"
+  printf '%s' '{"rate_limits":{"five_hour":{"used_percentage":93,"resets_at":1791288000},"seven_day":{"used_percentage":41,"resets_at":1791547200}}}' > "$CACHE"
   run bash -c "printf '%s' '$STDIN_JSON' | XDG_CACHE_HOME='$CACHE_HOME' bash '$HOOK'"
   [ "$status" -eq 0 ]
   [ -n "$output" ]
   echo "$output" | jq -e '.hookSpecificOutput.hookEventName == "UserPromptSubmit"' >/dev/null
   echo "$output" | jq -e '.hookSpecificOutput.additionalContext | test("/handoff") and test("p.jsonl") and test("abc")' >/dev/null
   [ -f "$CACHE_HOME/claude-statusline/handoff-notified-abc" ]
-  [ "$(cat "$CACHE_HOME/claude-statusline/handoff-notified-abc")" = "2026-10-06T20:00:00Z" ]
+  [ "$(cat "$CACHE_HOME/claude-statusline/handoff-notified-abc")" = "1791288000" ]
 }
 
 @test "silent below threshold" {
-  printf '%s' '{"rate_limits":{"five_hour":{"used_percentage":62,"resets_at":"2026-10-06T20:00:00Z"}}}' > "$CACHE"
+  printf '%s' '{"rate_limits":{"five_hour":{"used_percentage":62,"resets_at":1791288000}}}' > "$CACHE"
   run bash -c "printf '%s' '$STDIN_JSON' | XDG_CACHE_HOME='$CACHE_HOME' bash '$HOOK'"
   [ "$status" -eq 0 ]
   [ -z "$output" ]
 }
 
 @test "marker for the same window suppresses; a new window re-fires" {
-  printf '%s' '{"rate_limits":{"five_hour":{"used_percentage":93,"resets_at":"2026-10-06T20:00:00Z"}}}' > "$CACHE"
-  printf '%s' '2026-10-06T20:00:00Z' > "$CACHE_HOME/claude-statusline/handoff-notified-abc"
+  printf '%s' '{"rate_limits":{"five_hour":{"used_percentage":93,"resets_at":1791288000}}}' > "$CACHE"
+  printf '%s' '1791288000' > "$CACHE_HOME/claude-statusline/handoff-notified-abc"
   run bash -c "printf '%s' '$STDIN_JSON' | XDG_CACHE_HOME='$CACHE_HOME' bash '$HOOK'"
   [ "$status" -eq 0 ]
   [ -z "$output" ]
-  printf '%s' '{"rate_limits":{"five_hour":{"used_percentage":91,"resets_at":"2026-10-07T02:00:00Z"}}}' > "$CACHE"
+  printf '%s' '{"rate_limits":{"five_hour":{"used_percentage":91,"resets_at":1791345600}}}' > "$CACHE"
   run bash -c "printf '%s' '$STDIN_JSON' | XDG_CACHE_HOME='$CACHE_HOME' bash '$HOOK'"
   [ "$status" -eq 0 ]
   [ -n "$output" ]
-  [ "$(cat "$CACHE_HOME/claude-statusline/handoff-notified-abc")" = "2026-10-07T02:00:00Z" ]
+  [ "$(cat "$CACHE_HOME/claude-statusline/handoff-notified-abc")" = "1791345600" ]
 }
 
 @test "fractional percentages compare float-safely" {
-  printf '%s' '{"rate_limits":{"five_hour":{"used_percentage":92.7,"resets_at":"2026-10-06T21:00:00Z"}}}' > "$CACHE"
+  printf '%s' '{"rate_limits":{"five_hour":{"used_percentage":92.7,"resets_at":1791291600}}}' > "$CACHE"
   run bash -c "printf '%s' '$STDIN_JSON' | XDG_CACHE_HOME='$CACHE_HOME' bash '$HOOK'"
   [ "$status" -eq 0 ]
   [ -n "$output" ]
@@ -62,7 +62,7 @@ setup() {
 }
 
 @test "HANDOFF_USAGE_THRESHOLD is honored" {
-  printf '%s' '{"rate_limits":{"five_hour":{"used_percentage":93,"resets_at":"2026-10-06T20:00:00Z"}}}' > "$CACHE"
+  printf '%s' '{"rate_limits":{"five_hour":{"used_percentage":93,"resets_at":1791288000}}}' > "$CACHE"
   run bash -c "printf '%s' '$STDIN_JSON' | XDG_CACHE_HOME='$CACHE_HOME' HANDOFF_USAGE_THRESHOLD=95 bash '$HOOK'"
   [ "$status" -eq 0 ]
   [ -z "$output" ]

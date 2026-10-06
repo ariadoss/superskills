@@ -23,9 +23,11 @@ allowed-tools:
 # /handoff
 
 Write `handoff.md` at the repo root — the bridge a successor session reads
-first. It is uncommitted by design (gitignored): the durable record is git
-itself; the handoff is the ephemeral state git cannot hold (what is
-half-done, what to verify first, how to resume THIS session).
+first. It is uncommitted by design: the durable record is git itself; the handoff
+is the ephemeral state git cannot hold (what is half-done, what to verify
+first, how to resume THIS session). In superskills checkouts the file is
+gitignored; elsewhere it simply stays untracked (and superskills' own
+export ships an ignore rule for standalone users).
 
 ## When
 
@@ -40,20 +42,21 @@ half-done, what to verify first, how to resume THIS session).
 
 ## Step 1 — the session reference
 
-Run this skill's session-ref script (in a plugin install it lives at
-`${CLAUDE_PLUGIN_ROOT}/skills/handoff/scripts/session-ref.sh`; standalone,
-next to this SKILL.md under `scripts/`):
+Run this skill's session-ref script. Resolve its path relative to THIS
+skill's directory (wherever the host loaded it from — plugin installs and
+the standalone repo both keep it at `scripts/session-ref.sh` directly under
+the skill):
 
 ```bash
-bash skills/handoff/scripts/session-ref.sh
+bash "$(dirname <this-SKILL.md-path>)/scripts/session-ref.sh"
 ```
 
-If the nudge or caller provided a transcript path and/or session id, export
-them first so they win over discovery:
+If the nudge or caller provided a transcript path, export it first so it
+wins over discovery:
 
 ```bash
-HANDOFF_SESSION_FILE="<transcript_path>" HANDOFF_SESSION_ID="<session_id>" \
-  bash skills/handoff/scripts/session-ref.sh
+HANDOFF_SESSION_FILE="<transcript_path>" \
+  bash "$(dirname <this-SKILL.md-path>)/scripts/session-ref.sh"
 ```
 
 The script prints the session file (absolute path), the verified resume

@@ -28,6 +28,10 @@ that best lets a fresh agent resume the work?
 | C | 1.000 | 1.000 | **1.000** |
 
 All three arms' notes are executable by a fresh agent; no disqualification.
+Stated limit: the execution layer measures first-step compliance and honest
+reporting, not a completed continuation — the fixture is deliberately
+bundle-free (the notes' `bundle exec rspec` fails for real), and the recall
+layer carries the substance of resumption knowledge.
 
 **Layer 2 — recall (primary; 5 questions × 3 runs × 4 scenarios):**
 

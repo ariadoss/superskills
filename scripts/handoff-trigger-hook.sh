@@ -24,7 +24,7 @@ verdict="$(jq -r --arg t "${HANDOFF_USAGE_THRESHOLD:-90}" '
   [.rate_limits[]?.used_percentage // 0] as $p
   | if ($p | max) >= ($t | tonumber)
     then "1 " + ([.rate_limits[]? | select(.used_percentage == ($p | max))
-                  | (.resets_at // "")][0] // "")
+                  | (.resets_at // "" | tostring)][0] // "")
     else "0 " end' "$CACHE" 2>/dev/null || echo '0 ')"
 fire="${verdict%% *}"
 resets_at="${verdict#* }"

@@ -19,6 +19,12 @@ export_refuse_source_overlap || exit 1
 rm -rf "$OUT/scripts" "$OUT/hooks" "$OUT/tests"
 mkdir -p "$OUT/scripts" "$OUT/hooks" "$OUT/tests"
 
+# A symlinked destination would redirect the copy outside the guarded OUT
+# tree; refuse rather than follow.
+for dest in SKILL.md scripts/session-ref.sh hooks/handoff-trigger-hook.sh tests/handoff-session-ref.bats LICENSE README.md .gitignore NOTICE.md; do
+  [ ! -L "$OUT/$dest" ] || { echo "refusing symlinked export destination: $OUT/$dest" >&2; exit 1; }
+done
+
 cp "$SKILL_DIR/SKILL.md"                     "$OUT/SKILL.md"
 # The one relocation: the skill's internal scripts/ dir becomes the public
 # repo's scripts/ (the exported bats file's dual-path lookup covers both).
