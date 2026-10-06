@@ -35,6 +35,15 @@ calibration re-run; the comparative arms start only after the rephrased
 case fires ≥ 2/3. No intervention has been applied at amendment time; no
 comparative data exists.
 
+**Amendment 2 (same rule):** the rephrased infra case STILL fired 0/3
+($1.30, clean run) while writeplan-plan-quality's system-scale ask fires
+3/3 — the apparent discriminator is ask WEIGHT, not domain. Final
+amendment tests that: fleet-scale framing (~40 hosts, cron, on-call),
+identical no-tests constraint. If this still fires < 2/3, the experiment
+closes as structurally unmeasurable for this case shape and the firing
+gap itself becomes the recorded finding (matching the 2026-10-04
+report's treatment of its 0/3-firing cases).
+
 ## Fairness rule (fixed in advance)
 
 The case prompt states the no-tests constraint in the USER's voice (both
