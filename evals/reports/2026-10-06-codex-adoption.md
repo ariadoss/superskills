@@ -52,3 +52,36 @@ by the new lint). VERSION 2.36.1 → 2.37.0 (new skill behavior = minor),
 manifests stamped via `scripts/sync-version.sh`, README title updated. All
 12 eval cases, 4 PREREGs/reports, the lint, and the lexical baseline ride in
 the same branch so future runs reproduce the numbers.
+
+## Final review round (codex read-only, post-ship-gate)
+
+Findings and dispositions:
+
+1. **[P1] Two manifests missed by the release commit's git add** — FIXED:
+   `design-skills` and `marketing-skills` plugin.json amended into the
+   release commit (7432bdf); all seven stamped manifests now at 2.37.0 at
+   HEAD.
+2. **[P1] Plan examples wording conflicts with task-format/granularity
+   rules** — RESOLVED BY SHIPPING THE MEASURED TEXT: the adoption's
+   evidence belongs to the exact C-arm text, so the attempted rewording
+   ("task" vs "step" + clarifier) was reverted unmerged. Follow-up for the
+   next session: apply the wording fix and spot-check with
+   `claude plugin eval . --case writeplan-plan-quality --runs 3 --ablation none --trust-plugin --no-publish --scaffold --allow-tools Bash --judge-model sonnet --max-cost-usd 5 --json evals/results/spotcheck-wording.json`
+   (~$3); the attempt on 2026-10-06 06:38 could not run — the eval account
+   hit its session limit (resets 04:30 ET); its all-zero JSON is a harness
+   artifact, not behavior, and was discarded.
+3. **[P2] Lint over-promises** — FIXED: lib and bats headers now scope the
+   check to exactly the six host-exclusive tokens, explicitly not a general
+   host-syntax checker.
+4. **[P2] skips-style grader described a nonexistent `tmp` rename** — FIXED:
+   grader text corrected to the actual style bait (intermediate `value`
+   variable). The 3/3 scores stand: the graded dimension (no style findings
+   on a pure-style change) was present in the fixture; only the grader's
+   description of the bait's name was wrong.
+5. **[P2] Lexical report denominator mix (9/15 vs 1/7)** — FIXED: model
+   writeplan TPR restated as 9/18 runs over the same six 2026-10-04 cases;
+   ranker 1/6 on those cases; plan-quality excluded from that ratio;
+   "structurally unmeasurable" softened to "forced-choice as implemented".
+
+Deferred follow-up (not blocking): grep read-errors hidden by process
+substitution after the `-r` guard in the lint lib.

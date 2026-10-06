@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # host_neutral_check <file> — exit 1 naming violations, exit 0 when clean.
-# Tokens are host-specific tool names that must never appear as instructions
-# in a shared skill body. A line containing "host-tool-allow:" is exempt
-# (documenting a host's behavior is fine; instructing a call is not).
+# Scope: exactly the six host-EXCLUSIVE tool tokens below — names that exist
+# on one host and not the others. It is not a general host-syntax checker:
+# tools shared across hosts (Skill, Bash, Read) and path variables are out
+# of scope. A line containing "host-tool-allow:" is exempt (documenting a
+# host's behavior is fine; instructing a call is not).
 host_neutral_check() {
   local file="$1"
   [[ -r "$file" ]] || { echo "host-neutral: cannot read $file" >&2; return 2; }

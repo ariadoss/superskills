@@ -34,9 +34,12 @@ grader. One command, zero model cost.
 | writeplan-simple-crud | write-plan | basic-review | ✗ |
 
 **Top-1 accuracy over keyed in-catalog positives: 8/15 = 0.53.** Negatives
-(no-skill-fired cases) are excluded: a forced-choice ranker cannot abstain,
-so true-negative rate is structurally unmeasurable here — that is where
-model judgement earns its cost.
+(no-skill-fired cases) are excluded: this ranker is forced-choice as
+implemented (it always names a top-1), so it would score 0 on the negatives
+by construction — the model's ability to abstain is exactly what it earns
+over the baseline. The writeplan comparison below uses the same six cases on
+both sides; the new plan-quality row has no model number and stays out of
+that ratio.
 
 ## Comparison — denominators
 
@@ -47,17 +50,20 @@ has no baseline counterpart. Compare TPR-to-top-1 only:
 | Slice | Model (TPR, cited) | Lexical (top-1) | Reading |
 |---|---|---|---|
 | doctor-* | 12/12 under `claude plugin eval` (`evals/README.md`, routing section) | 3/4 | both near ceiling; the miss (doctor-symptom-missing-skill → clean-code) is a description-overlap case |
-| writeplan-* | 9/15 (`evals/reports/2026-10-04-orchestration-checklist.md`: 3/3 batch, 3/3 router, 2/3 judge-loop, 0/3 docs-agent, 1/3 simple-crud, 0/3 overreach) | 1/7 | **model judgement earns its cost** — the case prompts say "plan this for me" while routing signals live in write-plan's description body ("spec", "engineering plan", "TDD tasks"); a keyword ranker cannot bridge that gap |
+| writeplan-* (the six 2026-10-04 cases) | 9/18 runs = 0.50 TPR (`evals/reports/2026-10-04-orchestration-checklist.md`: 3/3 batch, 3/3 router, 2/3 judge-loop, 0/3 docs-agent, 1/3 simple-crud, 0/3 overreach — firing per run, 6 cases × 3) | 1/6 on the same six (plan-quality excluded: no model number exists for it) | **model judgement earns its cost** — the case prompts say "plan this for me" while routing signals live in write-plan's description body ("spec", "engineering plan", "TDD tasks"); a keyword ranker cannot bridge that gap |
 | review-* | no model number yet (Experiment A runs, 2026-10-06) | 2/2 | prompt contains "a basic review is fine" — trivial lexical overlap; treat as unmeasured for the model until Experiment A's skill-fired counts land |
 | quota-* | no recent model number | 2/2 | description carries "quota"/"usage limit"; easy lexical case |
 
 ## Verdict
 
 - **Model judgement earns its cost on the routing slice that matters.** On
-  the writeplan slice the model scores 0.60 TPR against the ranker's 0.14,
-  and the model's TNR (abstaining on offtopic-no-skill etc.) has no
-  deterministic counterpart at all. No deterministic pre-filter is justified
-  on this evidence.
+  the same six writeplan cases the model fires 0.50 per run against the
+  ranker's 1/6 top-1, and the model's TNR (abstaining on offtopic-no-skill
+  etc.) has no counterpart in this ranker as implemented — it is forced to
+  pick a skill every time, so it scores 0 on the negatives by construction.
+  A score-threshold abstention could give a ranker a crude TNR; that is
+  future work, not a property of this tool. No deterministic pre-filter is
+  justified on this evidence.
 - The baseline's value is as a **floor row for future routing reports**: if
   a description edit cannot beat 0.53-from-a-keyword-ranker, it did not
   improve routing. It also localizes *which* prompts are lexically easy

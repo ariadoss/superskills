@@ -1,8 +1,9 @@
 #!/usr/bin/env bats
-# Host-neutrality lint: shared skill bodies must not name host-specific tools.
-# Superskills installs into Claude Code, Codex, ZCode, OpenCode and minimal
-# harnesses; a skill that tells the model to call another host's tool teaches
-# a call that cannot succeed here.
+# Host-neutrality lint: shared skill bodies must not name host-EXCLUSIVE
+# tools (the six tokens in the lib). Superskills installs into Claude Code,
+# Codex, ZCode, OpenCode and minimal harnesses; a skill that tells the model
+# to call another host's tool teaches a call that cannot succeed here. This
+# is not a general host-syntax checker — see the lib header for scope.
 
 setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
