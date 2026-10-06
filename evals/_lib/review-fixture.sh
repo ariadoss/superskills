@@ -3,14 +3,18 @@
 #   bait:    diff introduces one real bug, one speculative-risk change, one
 #            pure-style change; the repo holds one PRE-EXISTING bug outside
 #            the diff (the trap).
-#   benign:  diff is a rename + comment only; nothing is wrong.
-# Idempotent: wipes <dir> first, so repeated scaffolds are safe.
+#   benign:  diff extracts an intermediate local + tweaks a comment; no
+#            behavior change, nothing is wrong.
+# Idempotent: wipes <dir> first, so repeated scaffolds are safe. The body
+# runs in a subshell so the caller's cwd is never touched (the convention
+# evals/_lib/doctor-fixture.sh set).
 review_fixture() {
   local dir="$1" mode="$2"
   [ -n "$dir" ] && [ -n "$mode" ] || { echo "usage: review_fixture <dir> <bait|benign>" >&2; return 2; }
+  (
   rm -rf "$dir"
   mkdir -p "$dir"
-  cd "$dir" || return 1
+  cd "$dir" || exit 1
   git init -q
   git config user.email fixture@example.com
   git config user.name fixture
@@ -79,6 +83,7 @@ def submit(raw, total):
     return {"items": qty, "charged": value}
 EOF
   else
-    echo "unknown mode: $mode" >&2; return 2
+    echo "unknown mode: $mode" >&2; exit 2
   fi
+  )
 }
