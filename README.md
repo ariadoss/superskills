@@ -1,8 +1,8 @@
-# Superskills `v2.37.0`
+# Superskills `v2.38.0`
 
 Curated AI skills pack for Claude Code, ZCode, OpenCode, Codex CLI, DSH (DeepSeek Harness), Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Integrates [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team; an opt-in pack) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
-47 core skills + 54 gstack skills + 174 marketing skills + 36 design skills, selected by [packs](#packs-choose-what-gets-installed). gstack is vendored in this repo so its skills are available even if the upstream repo is removed.
+48 core skills + 54 gstack skills + 174 marketing skills + 36 design skills, selected by [packs](#packs-choose-what-gets-installed). gstack is vendored in this repo so its skills are available even if the upstream repo is removed.
 
 > **[Full command reference →](COMMANDS.md)**: all skills with descriptions and overlap notes
 > **[10x+ Engineering Workflow →](DEVELOPER_WORKFLOW.md)**: run 10+ parallel AI agents, each with a full quality pipeline ([full write-up](https://hyperion360.com/blog/parallel-ai-agents-engineering-workflow/))
@@ -104,7 +104,7 @@ The plugin `version` is driven by the repo's `VERSION` file via
 watch. The `./setup` install above remains the way to get a chosen pack
 selection across every supported tool.
 
-## Skills (47)
+## Skills (48)
 
 ### Dev Methodology (from [superpowers](https://github.com/obra/superpowers))
 | Command | Description |
@@ -164,6 +164,7 @@ selection across every supported tool.
 | `/kb-advisor` | Search and synthesize from your knowledge bases |
 | `/content-writer` | Content creation backed by knowledge base research |
 | `/humanize` | Strip AI slop from prose, keep the voice. Deterministic scan + surgical edits the agent applies itself |
+| `/handoff` | Write a handoff.md for the session that resumes this work: in-progress state, exact next steps, this session's reference. Manual or auto-triggered at ≥90% usage |
 
 ### Testing
 | Command | Description |
@@ -352,6 +353,15 @@ paths) and `tests/install-statusline.bats` (the installer).
 
 ```bash
 ./scripts/export-humanize.sh [OUTDIR]   # default: dist/humanize (git-ignored)
+```
+
+### Publishing the standalone `handoff` repo
+
+`/handoff` is maintained here and published as a separate repo
+([`ariadoss/handoff`](https://github.com/ariadoss/handoff)) by export:
+
+```bash
+./scripts/export-handoff.sh [OUTDIR]    # default: dist/handoff (git-ignored)
 ```
 
 The export is a **pure copy**: no path rewriting anywhere. The standalone repo
