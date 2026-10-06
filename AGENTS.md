@@ -53,8 +53,10 @@ The rules live in two files; this page only points at them so they are defined o
 
 ```bash
 ./tests/run.sh                                  # bats suite (includes manifest validation)
-claude plugin validate --strict .               # marketplace + root plugin
-claude plugin validate --strict marketing-skills
+claude plugin validate .                        # marketplace + root plugin — non-strict:
+claude plugin validate marketing-skills         # current CLIs surface the accepted
+                                                # CLAUDE.md-at-root warning under --strict
+                                                # (tests/plugin-manifests.bats owns the contract)
 claude plugin eval . --trust-plugin --no-publish --judge-model sonnet \
   --scaffold --allow-tools Bash                  # behavioural evals — costs model calls
 ```

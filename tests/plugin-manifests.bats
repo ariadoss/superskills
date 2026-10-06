@@ -42,6 +42,12 @@ setup() {
   [ "$status" -eq 0 ] || { echo "$output"; return 1; }
   warnings="$(printf '%s\n' "$output" | grep '❯' | grep -v 'CLAUDE.md at the plugin root is not loaded' || true)"
   [ -z "$warnings" ] || { echo "unexpected: $warnings"; return 1; }
+  # Loud-guard the accepted-warning contract: the sibling tests above filter
+  # on this exact text, so if the CLI rewords or stops emitting it, the
+  # filters would pass vacuously. Fail here instead, and a human decides
+  # whether to restore --strict or re-pin the wording.
+  accepted="$(printf '%s\n' "$output" | grep -c 'CLAUDE.md at the plugin root is not loaded' || true)"
+  [ "$accepted" -ge 1 ] || { echo "accepted CLAUDE.md warning missing from validate output (CLI format drift?): $output"; return 1; }
 }
 
 @test "every skill dir in the root plugin is named exactly like its frontmatter name (the loader uses the dir name)" {
