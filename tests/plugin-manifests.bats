@@ -19,11 +19,17 @@ setup() {
   done
 }
 
-@test "claude plugin validate --strict accepts the marketplace, both plugin dirs and every core skill" {
+@test "claude plugin validate accepts the marketplace, both plugin dirs and every core skill (only the accepted CLAUDE.md-at-root warning)" {
   command -v claude >/dev/null 2>&1 || skip "claude CLI not installed"
+  # CLAUDE.md at the plugin root is contributor context, deliberately not
+  # plugin context (see the sibling test below); current CLI versions surface
+  # that one warning on the marketplace path too and --strict turns it into
+  # an error. Validate without --strict and accept exactly that warning.
   for target in . marketing-skills design-skills skills; do
-    run claude plugin validate --strict "$REPO_ROOT/$target"
+    run claude plugin validate "$REPO_ROOT/$target"
     [ "$status" -eq 0 ] || { echo "validate failed for $target: $output"; return 1; }
+    unexpected="$(printf '%s\n' "$output" | grep '❯' | grep -v 'CLAUDE.md at the plugin root is not loaded' || true)"
+    [ -z "$unexpected" ] || { echo "unexpected warnings for $target: $unexpected"; return 1; }
   done
 }
 
