@@ -1,0 +1,8 @@
+good-A	1	1	1	1	1
+good-B	1	1	1	1	1
+bad1-dangling	0	1	1	1	1
+bad2-commandless	1	0	1	1	1
+bad3-nosession	1	1	0	1	1
+bad4-noredo	1	1	1	0	1
+bad5-bloated	1	1	1	1	0
+bad6-wrongcmd	1	0	1	1	1
