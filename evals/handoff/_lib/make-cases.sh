@@ -91,9 +91,10 @@ context:
 YAML
   cat > "$dir/fixture.sh" <<FIX
 #!/bin/bash
-. "\$(dirname "\$0")/../../_lib/handoff-resume-fixture.sh"
+. "\$(dirname "\$0")/../_lib/handoff-resume-fixture.sh"
 handoff_resume_fixture ./fixture-repo
 FIX
+  chmod +x "$dir/fixture.sh"
   {
     printf '%s\n' '---'
     printf 'max_turns: 8\n'
