@@ -62,7 +62,7 @@ def skill_documents(skills_root):
 
 
 def expected_skill_from_graders(case_dir):
-    """Derive the answer key from graders/skill-fired.md input_match.
+    r"""Derive the answer key from graders/skill-fired.md input_match.
 
     The value is a quoted regex like '"skill"\s*:\s*"(?:[\w-]+:)?NAME"' —
     take the last double-quoted segment and strip the optional namespace
@@ -94,7 +94,7 @@ class Bm25:
     def score(self, query, doc_tokens):
         s = 0.0
         dl = len(doc_tokens)
-        for t in set(query):
+        for t in sorted(set(query)):
             if t not in self.df:
                 continue
             idf = math.log(1 + (len(self.docs) - self.df[t] + 0.5) / (self.df[t] + 0.5))
@@ -148,7 +148,9 @@ def run_report(evals_root, skills_root, out=print):
 
 
 def selftest():
+    import shutil
     tmp = Path(sys.argv[0]).resolve().parent / ".selftest-tmp"
+    shutil.rmtree(tmp, ignore_errors=True)  # a prior failed assert must not poison the retry
     (tmp / "skills" / "banana-peeler").mkdir(parents=True)
     (tmp / "skills" / "rock-crusher").mkdir(parents=True)
     (tmp / "skills" / "banana-peeler" / "SKILL.md").write_text(
@@ -165,12 +167,24 @@ def selftest():
     report = "\n".join(lines)
     assert "banana-peeler" in report and "✓" in report, report
     assert acc == 1.0 and total == 1, (acc, total)
-    # cleanliness guard: this tool itself must stay host-neutral
-    src = Path(sys.argv[0]).read_text()
+    # cleanliness guard: this tool itself must stay host-neutral. Exempt the
+    # HOST_TOKENS definition itself, line-wise, whatever quoting it uses.
+    src_lines = Path(sys.argv[0]).read_text().splitlines()
+    in_tokens_def = False
+    body = []
+    for line in src_lines:
+        if line.startswith("HOST_TOKENS = ("):
+            in_tokens_def = True
+            continue
+        if in_tokens_def:
+            if line.strip().startswith(")"):
+                in_tokens_def = False
+            continue
+        body.append(line)
+    body_src = "\n".join(body)
     for tok in HOST_TOKENS:
-        assert f"'{tok}'" not in src.replace("HOST_TOKENS = (", ""), f"self names {tok}"
+        assert tok not in body_src, f"self names {tok}"
     print("selftest OK")
-    import shutil
     shutil.rmtree(tmp)
 
 

@@ -5,6 +5,7 @@
 # (documenting a host's behavior is fine; instructing a call is not).
 host_neutral_check() {
   local file="$1"
+  [[ -r "$file" ]] || { echo "host-neutral: cannot read $file" >&2; return 2; }
   local tokens=(multi_tool_use TodoWrite update_plan write_stdin exec_command get_context_remaining)
   local bad=0 t line
   for t in "${tokens[@]}"; do
