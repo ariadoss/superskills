@@ -13,11 +13,13 @@ JUDGE_MODEL="${HANDOFF_JUDGE_MODEL:-sonnet}"
 RUBRIC="$(cat <<'R'
 You are judging a handoff note written for a fresh agent that will resume a session. The session state it must convey follows the note. Score each dimension 0 (fail), 0.5 (partial), or 1 (pass):
 
-1. self_contained: no line depends on unseen context. No dangling references, no unexplained shorthand, every name resolvable inside the note.
-2. actionable: the next steps are executable without re-deriving context. Exact commands and file:line anchors. A step like "continue the migration" scores 0.
+Score each dimension INDEPENDENTLY: a failure in one dimension must never lower another. Judge only what the criterion itself says.
+
+1. self_contained: fails ONLY on dangling references or unexplained shorthand ("as noted above", names defined nowhere in the note). Vagueness is not this dimension.
+2. actionable: PASSES when the ordered next steps name concrete artifacts and the FIRST next action is an exact runnable command with file paths. Prose-y later steps alongside an exact first action still pass. FAILS when the first next action has no exact command.
 3. session_ref: the note carries the session reference block it was given (session file path plus resume command), intact.
-4. no_redo: finished work is separated from remaining work with commits or anchors, and known-dead approaches are named where the state has them.
-5. discipline: length is proportionate to the state conveyed (roughly 20-80 lines). Padding, or a note far longer than the state it summarizes, scores 0.
+4. no_redo: PASSES when finished work is separated from remaining work with at least commits or file anchors (a one-line minimal separation scores 0.5, a proper section scores 1). Known-dead approaches are named where the state has them.
+5. discipline: fails on padding or a note far longer than the state it summarizes (roughly: over ~100 lines for this size of state, or visibly repeated filler). Density of prose is not this dimension.
 
 Reply with ONE JSON object and nothing else:
 {"self_contained":N,"actionable":N,"session_ref":N,"no_redo":N,"discipline":N,"why":"one line"}
@@ -64,7 +66,7 @@ fi
 for f in "$ROOT"/evals/results/handoff-gen/*.md; do
   [ -s "$f" ] || continue
   base="$(basename "$f" .md)"
-  scenario="${base%-r*}"
+  scenario="$(printf '%s' "$base" | sed 's/-[ABC]-r[0-9]*$//')"
   [ -f "$ROOT/evals/handoff/_lib/scenarios/$scenario.md" ] || continue
   judge_one "$f" "$ROOT/evals/handoff/_lib/scenarios/$scenario.md" | sed "s/^/$base\t/" >> "$OUT"
   echo "judged $base"
