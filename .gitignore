@@ -8,3 +8,4 @@ evals/results/
 dist/
 __pycache__/
 *.pyc
+.worktrees/
