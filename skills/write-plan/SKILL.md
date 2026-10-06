@@ -78,8 +78,10 @@ If the feature crosses **no** trust boundary, state that in one line and skip �
 
 ## Plan Quality Examples
 
-High-quality task lists — every step names its artifact and its completion
-signal:
+High-quality task lists — every task names its artifact and its completion
+signal (these one-liners are the task list; inside each task, the Task
+Structure rules below still apply — failing-test-first steps, exact files,
+code, and commands):
 
 1. Add `/exports/<model>` route returning `StreamingHttpResponse`
 2. Serialize chosen columns via `values_list(*cols).iterator()`
