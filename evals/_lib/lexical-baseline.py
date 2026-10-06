@@ -151,6 +151,13 @@ def selftest():
     import shutil
     tmp = Path(sys.argv[0]).resolve().parent / ".selftest-tmp"
     shutil.rmtree(tmp, ignore_errors=True)  # a prior failed assert must not poison the retry
+    try:
+        _selftest_body(tmp)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)  # and a failed assert leaves no debris either
+
+
+def _selftest_body(tmp):
     (tmp / "skills" / "banana-peeler").mkdir(parents=True)
     (tmp / "skills" / "rock-crusher").mkdir(parents=True)
     (tmp / "skills" / "banana-peeler" / "SKILL.md").write_text(
@@ -185,7 +192,6 @@ def selftest():
     for tok in HOST_TOKENS:
         assert tok not in body_src, f"self names {tok}"
     print("selftest OK")
-    shutil.rmtree(tmp)
 
 
 def main():
