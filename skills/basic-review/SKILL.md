@@ -1,6 +1,6 @@
 ---
 name: basic-review
-version: 1.1.0
+version: 1.2.0
 description: |
   Read-only correctness review of pending changes, needing no external
   install: correctness, security, reliability/performance and contract risk,
@@ -67,6 +67,25 @@ gstack-only markers.
 For each finding cite `file:line`, explain *why* it is wrong (not what the code
 does), and propose a concrete fix when one is obvious. Be calibrated: if a
 finding is not high-confidence, say so or skip it.
+
+### What earns a finding
+
+A candidate earns a finding only if every one of these holds:
+
+- It meaningfully affects correctness, security, performance, or
+  maintainability, and it is discrete and actionable — one defect, one fix.
+- **The diff introduced it.** Problems that predate the change get at most a
+  one-line aside labelled "pre-existing" — never a finding, never a blocker.
+- The rigor demanded matches the file's neighborhood: a corner of one-off
+  scripts does not need enterprise-grade validation.
+- The author of this change would fix it if told; if they would reasonably
+  argue, it is not a finding.
+- No speculation: a harm of the form "may break other callers" needs the
+  caller that is provably affected, named — or it is dropped.
+- It is not an intentional behavior change dressed up as a bug.
+
+If nothing clears this bar, "No findings worth fixing in <range>" is the
+correct and complete review. An empty result beats an invented one.
 
 Skip pure style, formatting, naming, and anything a linter or CI already
 enforces.
