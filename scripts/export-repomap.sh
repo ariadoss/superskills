@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
-# export-repomap.sh [OUTDIR] — regenerate the six slash-command markdown files
-# of the public ariadoss/repomap repo from this repo, which is their single
-# source of truth. The old pull direction (which copied the public repo's
+# export-repomap.sh [OUTDIR] — regenerate the three slash-command markdown files
+# (the dbmap skill and its auto-update toggles) of the public ariadoss/repomap
+# repo from this repo, which is their single source of truth. /repomap and its
+# toggles were REMOVED from superskills 2026-10-07 after five eval-gated
+# experiments measured no agent-context utility (evals/reports/2026-10-06-* and
+# 2026-10-07-*); the public repo remains their home. The old pull direction (which copied the public repo's
 # files INTO skills/) is retired: the skills are edited, tested, and linked by
 # ./setup here, and pushed out before a release.
 #
@@ -10,7 +13,7 @@
 # stripping — a transformation step is the thing that drifts, and a rewrite
 # that half-applies produces a repo whose docs lie.
 #
-# Aux-file policy — the export owns ONLY the six <name>.md paths. The public
+# Aux-file policy — the export owns ONLY the three <name>.md paths. The public
 # repo is a standalone Python project (README.md, LICENSE, setup,
 # requirements.txt, dbmap/, repomap/, scripts/, tests/) and those files are
 # NOT generated here: they live in the public checkout and are edited there
@@ -22,7 +25,7 @@
 # checkout leaves .git and anything else in place.
 #
 # Verification: export-humanize.sh proves its export by running the exported
-# tree's own tests. This export ships six markdown files with no runnable
+# tree's own tests. This export ships three markdown files with no runnable
 # tests of their own, so the equivalent proof is the byte-identity self-check
 # below — the export refuses to finish unless every copied file cmps equal to
 # its source. tests/export-repomap.bats pins the same invariants.
@@ -34,11 +37,8 @@ OUT="${1:-$SRC_ROOT/dist/repomap}"
 
 SKILLS=(
     dbmap
-    repomap
     dbmap-auto-on
     dbmap-auto-off
-    repomap-auto-on
-    repomap-auto-off
 )
 
 # Fail before writing anything if any source skill is missing: a partial
@@ -52,7 +52,7 @@ done
 
 mkdir -p "$OUT"
 OUT="$(cd "$OUT" && pwd -P)"
-# The export rewrites the six <name>.md files under OUT, so OUT must not
+# The export rewrites the three <name>.md files under OUT, so OUT must not
 # overlap the source tree in either direction (shared guard).
 export_refuse_source_overlap || exit 1
 

@@ -61,11 +61,8 @@ are part of the plan, not an afterthought.
 | `quota-stop` | quota-resilience | symptom | maintainer | dirty tree: one verified change, one stub with a failing test |
 | `quota-stop-handoff` | quota-resilience | symptom | maintainer | stop-mode fixture; grades the note's CONTENT (self-contained handoff, anti-redo, constraints) — the only content-level guard on the resume-note contract |
 | `writeplan-test-strategy` | write-plan | direct | maintainer | — (no fixture); firing-gap probe + verification-strategy shape; currently documents write-plan's utility-ask under-firing |
-| `repomap-real-nav` | repomap | direct | maintainer | payroll-next git-archive (artifacts stripped per arm); nav task; key repaired to Frappe architecture |
 | `dbmap-real-audit` | dbmap | direct | maintainer | payroll-next archive; prisma-vs-live-DB source disagreement = ill-posed confound |
-| `graphify-corpus` | graphify | direct | maintainer | hyperion360 archive; corpus Qs; A/B only (agent-driven build) |
 | `quota-resume` | quota-resilience | direct | maintainer | committed `QUOTA-RESUME.md`, clean tree on `feature/express` |
-| `repomap-nav-task` | repomap | direct | maintainer | nav-fixture; measures map utility A/B/C (null @ scale) |
 | `dbmap-schema-task` | dbmap | direct | maintainer | db-fixture + sqlite; measures map utility A/B/C (null @ ceiling) |
 | `rate-limit-429` | none (app-level 429) | direct | — | negative control for quota-resilience |
 | `offtopic-no-skill` | none | — | — | — (negative control for all) |

@@ -23,6 +23,22 @@ setup() {
   skill_selected plan-eng-review gstack
 }
 
+@test "the quota-resilience companion handoff is pinned on the repo roster by name" {
+  # /handoff shipped in skills/ and the README/COMMANDS tables documented it,
+  # but only this roster decides that ./setup links it — it sat in the tree
+  # unlinked (and prunable as deselected) until it joined the roster. Named
+  # pin, not just loop coverage: removing it from the roster must fail THIS
+  # test.
+  case " $PACK_CODING_REPO " in
+    *" handoff "*) : ;;
+    *) false ;;
+  esac
+  SS_PACKS=coding
+  skill_selected handoff core
+  SS_PACKS=design
+  skill_selected handoff core
+}
+
 @test "coding selects exactly the requested names including external design-review" {
   local name count=0
   # Iterate the rosters themselves so the test cannot drift from the constants:

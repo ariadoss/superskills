@@ -1,4 +1,4 @@
-# Superskills `v2.38.1`
+# Superskills `v2.39.0`
 
 Curated AI skills pack for Claude Code, ZCode, OpenCode, Codex CLI, DSH (DeepSeek Harness), Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Integrates [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team; an opt-in pack) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
@@ -37,7 +37,7 @@ pack is always on: no pack list excludes it.
 | Pack | Contents |
 |------|----------|
 | `coding` (default, always on) | `/specify`, `/write-plan`, `/tdd`, `/qa-full`, `/debug`, `/verify`, … |
-| `core` | the rest of the core skills (`/cache-strategy`, `/pentest`, `/graphify`, …) |
+| `core` | the rest of the core skills (`/cache-strategy`, `/pentest`, …) |
 | `design` | the 36 design skills (UX, typography, SwiftUI, Vercel) |
 | `marketing` | the 174 marketing skills (SEO, content, pages, ads) |
 | `media` | the video-editing subtree |
@@ -104,7 +104,7 @@ The plugin `version` is driven by the repo's `VERSION` file via
 watch. The `./setup` install above remains the way to get a chosen pack
 selection across every supported tool.
 
-## Skills (48)
+## Skills (44)
 
 ### Dev Methodology (from [superpowers](https://github.com/obra/superpowers))
 | Command | Description |
@@ -173,16 +173,12 @@ selection across every supported tool.
 | `/playwright` | E2E testing with Playwright |
 | `/a11y` | Accessibility audit: WCAG 2.2 AA, screen-reader, keyboard nav, ARIA, contrast |
 
-### Codebase Context (from [ariadoss/repomap](https://github.com/ariadoss/repomap), [safishamsi/graphify](https://github.com/safishamsi/graphify))
+### Database Schema Map (from [ariadoss/repomap](https://github.com/ariadoss/repomap))
 | Command | Description |
 |---------|-------------|
-| `/repomap` | Generate structural map of the codebase (REPOMAP.md) |
 | `/dbmap` | Generate database schema map (DBMAP.md) |
-| `/repomap-auto-on` | Auto-update REPOMAP.md on every code change |
-| `/repomap-auto-off` | Disable automatic repo map updates |
 | `/dbmap-auto-on` | Auto-regenerate DBMAP.md after migration commands run |
 | `/dbmap-auto-off` | Disable automatic database schema map updates |
-| `/graphify` | Turn any folder into a queryable knowledge graph: HTML, JSON, audit report |
 
 ### Superskills itself
 | Command | Description |
@@ -429,7 +425,7 @@ From [kostja94/marketing-skills](https://github.com/kostja94/marketing-skills), 
 ## Credits
 
 Written by [Danilo Stern-Sapad](https://danilosapad.com):
-- [`/repomap`, `/dbmap`](https://github.com/ariadoss/repomap) and their auto-on/off toggles (also a standalone repo)
+- [`/dbmap`](https://github.com/ariadoss/repomap) and its auto-on/off toggles (also a standalone repo). `/repomap` was removed in 2.39.0: five eval-gated experiments (2026-10) measured no agent-context utility for static repo maps against tool-using agents; the tool itself lives on in the standalone repo.
 - [`/humanize`](https://github.com/ariadoss/humanize) (also a standalone repo)
 - `/qa-full`, `/daily-qa`, `/clean-code`, `/test-coverage`, `/a11y`, `/iac-scan`, `/db-optimize`, `/perf-profile`, `/cache-strategy`, `/superskills-doctor`, `/superskills-upgrade`
 - the statusline (`scripts/statusline.sh`)
@@ -453,7 +449,6 @@ Skills curated from:
 - [Dammyjay93/interface-design](https://github.com/Dammyjay93/interface-design): interface design craft
 - [ParthJadhav/app-store-screenshots](https://github.com/ParthJadhav/app-store-screenshots): app store screenshot generator
 - [browser-use/video-use](https://github.com/browser-use/video-use): conversation-driven video editor (cut, grade, subtitle, animate)
-- [safishamsi/graphify](https://github.com/safishamsi/graphify): knowledge graph from any codebase or corpus
 
 ## License
 
