@@ -160,3 +160,16 @@ changes.
 ## Superskills Developer Workflow
 
 Read DEVELOPER_WORKFLOW.md to understand how to use superskills commands together: parallel agents, vertical slices, quality pipeline, performance optimization, and shipping workflow.
+
+## Prose quality before push
+
+Run `/humanize` (or at minimum its deterministic scan,
+`python3 skills/humanize/toolkit/slop_report.py <files>`) on every .md
+file a change touches — documentation, READMEs, reports — before
+committing and always before pushing. A PreToolUse gate
+(`scripts/humanize-prepush-hook.sh`) blocks pushes carrying flagged .md
+until the scan is clean; `HUMANIZE_PREPUSH=0` is the honest bypass when
+wording is deliberately held: eval-bound skill text (trigger descriptions
+and measured content the adoption evidence binds to), vendored or
+upstream text, and historical records (PREREGs, result reports). Humanize
+those categories surgically, never wholesale.
