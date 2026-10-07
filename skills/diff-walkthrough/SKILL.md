@@ -19,6 +19,7 @@ allowed-tools:
   - Read
   - Grep
   - Glob
+metadata.upstream: https://github.com/cursor/plugins (pr-review-canvas/skills/pr-review-canvas, MIT)
 ---
 
 # /diff-walkthrough
