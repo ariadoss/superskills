@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# review_fixture <dir> <bait|benign>: builds the review-eval fixture repo.
+# review_fixture <dir> <bait|benign|conventions>: builds the review-eval fixture repo.
 #   bait:    diff introduces one real bug, one speculative-risk change, one
 #            pure-style change; the repo holds one PRE-EXISTING bug outside
 #            the diff (the trap).
@@ -10,7 +10,7 @@
 # evals/_lib/doctor-fixture.sh set).
 review_fixture() {
   local dir="$1" mode="$2"
-  [ -n "$dir" ] && [ -n "$mode" ] || { echo "usage: review_fixture <dir> <bait|benign>" >&2; return 2; }
+  [ -n "$dir" ] && [ -n "$mode" ] || { echo "usage: review_fixture <dir> <bait|benign|conventions>" >&2; return 2; }
   (
   rm -rf "$dir"
   mkdir -p "$dir"
