@@ -16,16 +16,21 @@ setup() {
 
 @test "claude code: newest transcript in the exactly-munged project dir wins" {
   work="$BATS_TEST_TMPDIR/work/fixture-repo"; mkdir -p "$work"; cd "$work"
-  proj="$HOME_FIX/.claude/projects/$(printf '%s' "$PWD" | sed 's:[/.]:-:g')"
+  # Derive the munge with the SAME rule the script uses (every
+  # non-alphanumeric char -> '-'): the tmp path contains 'b_', so the old
+  # /.-only munge writes the fixture into a differently-named dir.
+  proj="$HOME_FIX/.claude/projects/$(printf '%s' "$PWD" | sed 's/[^A-Za-z0-9]/-/g')"
   mkdir -p "$proj"
   printf '{}' > "$proj/11111111-1111-1111-1111-111111111111.jsonl"
-  sleep 0.05
+  sleep 1   # 1s apart: distinct on even 1-second-mtime filesystems, and always inside the 6h window
   printf '{}' > "$proj/22222222-2222-2222-2222-222222222222.jsonl"
   run env -i HOME="$HOME_FIX" PWD="$PWD" CLAUDECODE=1 bash "$REF"
   [ "$status" -eq 0 ]
   echo "$output" | grep -q "22222222-2222-2222-2222-222222222222.jsonl"
   echo "$output" | grep -q 'claude --resume 22222222-2222-2222-2222-222222222222'
-  ! echo "$output" | grep -q "caution:" || false
+  # Discovery always carries the parallel-session caution by design;
+  # the basename-only caution must NOT appear for an exact match.
+  ! echo "$output" | grep -q "caution: project dir matched by basename only"
 }
 
 @test "claude code: basename-only match emits the verify caution" {
@@ -79,4 +84,62 @@ setup() {
   [ "$status" -eq 0 ]
   echo "$output" | grep -q "claude -c"   # falls back to continue-most-recent
   ! echo "$output" | grep -q "33333333" || false
+}
+
+@test "claude code: underscore in the repo name still matches (full munge)" {
+  work="$BATS_TEST_TMPDIR/work/my_repo"; mkdir -p "$work"; cd "$work"
+  proj="$HOME_FIX/.claude/projects/$(printf '%s' "$PWD" | sed 's/[^A-Za-z0-9]/-/g')"
+  mkdir -p "$proj"
+  printf '{}' > "$proj/55555555-5555-5555-5555-555555555555.jsonl"
+  run env -i HOME="$HOME_FIX" PWD="$PWD" CLAUDECODE=1 bash "$REF"
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q "55555555-5555-5555-5555-555555555555.jsonl"
+  echo "$output" | grep -q 'claude --resume 55555555'
+}
+
+@test "claude code: exact-match discovery still carries the parallel-session caution" {
+  work="$BATS_TEST_TMPDIR/work/exactrepo"; mkdir -p "$work"; cd "$work"
+  proj="$HOME_FIX/.claude/projects/$(printf '%s' "$PWD" | sed 's/[^A-Za-z0-9]/-/g')"
+  mkdir -p "$proj"
+  printf '{}' > "$proj/66666666-6666-6666-6666-666666666666.jsonl"
+  run env -i HOME="$HOME_FIX" PWD="$PWD" CLAUDECODE=1 bash "$REF"
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q "caution: newest-transcript discovery"
+  ! echo "$output" | grep -q "caution: project dir matched by basename only"
+}
+
+@test "claude code: a hook-supplied file suppresses the discovery caution" {
+  printf '{}' > "$HOME_FIX/hook.jsonl"
+  run env -i HOME="$HOME_FIX" CLAUDECODE=1 HANDOFF_SESSION_FILE="$HOME_FIX/hook.jsonl" bash "$REF"
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q "hook.jsonl"
+  ! echo "$output" | grep -q "caution: newest-transcript discovery"
+}
+
+@test "claude code: empty transcript dir fabricates nothing (GNU xargs hazard)" {
+  work="$BATS_TEST_TMPDIR/work/emptyrepo"; mkdir -p "$work"; cd "$work"
+  touch "$work/README.md"
+  proj="$HOME_FIX/.claude/projects/$(printf '%s' "$PWD" | sed 's/[^A-Za-z0-9]/-/g')"
+  mkdir -p "$proj"
+  run env -i HOME="$HOME_FIX" PWD="$PWD" CLAUDECODE=1 bash "$REF"
+  [ "$status" -eq 0 ]
+  ! echo "$output" | grep -q "session file: README.md"
+  echo "$output" | grep -q "not found"
+}
+
+@test "claude code: named-but-missing HANDOFF_SESSION_FILE says so, then falls back" {
+  run env -i HOME="$HOME_FIX" CLAUDECODE=1 HANDOFF_SESSION_FILE="$HOME_FIX/missing.jsonl" bash "$REF"
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q "was named but does not exist"
+  echo "$output" | grep -q 'claude -c'
+}
+
+@test "codex: thread id emits the preference line without the basename caution" {
+  sess="$HOME_FIX/.codex/sessions/2026/10/06"
+  mkdir -p "$sess"
+  printf '{}' > "$sess/rollout-2026-10-06T11-00-00-22222222.jsonl"
+  run env -i HOME="$HOME_FIX" CODEX_THREAD_ID=thread-123 bash "$REF"
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q "current thread id: thread-123"
+  ! echo "$output" | grep -q "caution: newest rollout"
 }
