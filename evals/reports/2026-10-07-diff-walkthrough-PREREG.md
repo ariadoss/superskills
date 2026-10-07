@@ -77,3 +77,35 @@ unchanged. Disclosure: this amendment is registered with the baseline known
 the deciding data does not exist yet. The skill's value proposition on this
 fixture is now explicitly wiring-connected (baseline 0.000) and core-first
 (0.667), not tracing.
+
+## Addendum — E5b (registered 2026-10-07, before any E5b run)
+
+E5 was mechanically REJECTED (primary Δ +0.111 < +0.15 after Amendment 1).
+Open coding found a judge-calibration defect in wiring-connected: treatment
+runs 0 and 1 present a "## 2. Wiring" section whose text mirrors the grader's
+own PASS clause ("registers like /checkout does through the @route decorator
+into HANDLERS"), yet the judge failed all runs — it appears to pattern-match
+any shown code hunk to the "full hunk-by-hunk treatment" FAIL arm. Showing a
+5-line route under a wiring header IS the condensed treatment for a 5-line
+route. Per METHODOLOGY's judge-repair rule, E5b re-runs with a sharpened
+boundary; E5's committed rejection stands as history.
+
+### E5b changes from E5
+
+- wiring-connected gains the boundary ruling: "Showing the route's short code
+  excerpt inside a wiring section is condensed treatment and does NOT fail;
+  FAIL only if /refund is absent from the walkthrough entirely, or is
+  presented with analysis depth equal to the pricing-policy change (walked
+  through line-by-line with its own divergence trace)."
+- Everything else unchanged: same case, same fixture, same skill text
+  (re-created between arms per the ordering rule), same n=3 fresh both arms,
+  same primary/thresholds as amended (primary ≥ +0.15, traces-divergence no
+  regression ≥ 0.34, treatment firing ≥ 2/3 else void, no outcome grader
+  regresses ≥ 0.34).
+- The offtopic-no-skill treatment-arm evidence from E5
+  (walkthrough-change-offtopic.json: clean, no firing) carries over — the
+  E5b treatment tree is identical to E5's treatment tree; no re-run needed.
+- Budget: `--max-cost-usd 4` per arm (E5 measured $0.66–0.73 per arm).
+- If E5b still fails its gates, the null stands and no further re-runs of
+  this experiment are registered (one repair per instrument, per the
+  methodology's fix ladder).
