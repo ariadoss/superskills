@@ -62,6 +62,8 @@ are part of the plan, not an afterthought.
 | `quota-stop-handoff` | quota-resilience | symptom | maintainer | stop-mode fixture; grades the note's CONTENT (self-contained handoff, anti-redo, constraints) — the only content-level guard on the resume-note contract |
 | `writeplan-test-strategy` | write-plan | direct | maintainer | — (no fixture); firing-gap probe + verification-strategy shape; currently documents write-plan's utility-ask under-firing |
 | `quota-resume` | quota-resilience | direct | maintainer | committed `QUOTA-RESUME.md`, clean tree on `feature/express` |
+| `repomap-nav-task` | repomap | direct | maintainer | nav-fixture; measures map utility A/B/C (null @ scale) |
+| `dbmap-schema-task` | dbmap | direct | maintainer | db-fixture + sqlite; measures map utility A/B/C (null @ ceiling) |
 | `rate-limit-429` | none (app-level 429) | direct | — | negative control for quota-resilience |
 | `offtopic-no-skill` | none | — | — | — (negative control for all) |
 | `marketing-meta-description` | marketing (depth 2) | direct | new user | — |
