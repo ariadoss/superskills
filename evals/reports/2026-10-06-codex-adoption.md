@@ -91,16 +91,22 @@ substitution after the `-r` guard in the lint lib.
 | Candidate | Outcome | Evidence |
 |---|---|---|
 | Compaction/handoff framing → quota-resilience | **REJECTED — measured null (baseline at ceiling)** | `2026-10-06-quota-handoff.md`: handoff-selfcontained 3/3, handoff-antiredo 3/3, guard clean at baseline; +0.175 gate unreachable by construction; the original section-equivalence argument is now measurement. New permanent case kept. |
-| Testing philosophy (specific→broad, no frameworks into test-less repos, bounded repair) → write-plan | **CLOSED UNMEASURED (firing gate), finding booked** | `2026-10-06-writeplan-testphilosophy.md`: 0/3 → 0/3 → 1/3 firing across personal/team/fleet phrasings vs 3/3 on system-scale asks — write-plan's firing tracks ask weight; intervention preserved in the PREREG for the day a description fix fires the case; plugin-less runs show the headroom is real (specific-first ≤ 1/3) |
+| Testing philosophy (specific→broad, no frameworks into test-less repos, bounded repair) → write-plan | **CLOSED UNMEASURED (firing gate), flat under-firing booked** (gradient claim retracted after qa-full red-team verification) | `2026-10-06-writeplan-testphilosophy.md`: 0/3 firing on every utility phrasing (personal/team/fleet; calibrations 3-4 ran double-plugin contaminated — sibling worktree registered as a second plugin, disclosed in the report and PREREG addendum; the one observed fire was the sibling copy's run, discarded) vs 3/3 same-day on the system-scale ask; intervention preserved in the PREREG; with-plugin-untriggered runs show the headroom is real (specific-first ≤ 1/3) |
 | Status invariants (todo discipline) | **Rejected — unmeasurable in this harness** | Requires grading in-session plan-tool state transitions; our graders see last_message (llm) or tool-input regex (tool_used), neither can observe "never pending→completed" ordering. Host-specific semantics violate the cross-harness rule on top. |
 | Tool-hygiene block (parallelize reads, no re-reads after edits) | **Rejected — unmeasurable** | "Did the model batch reads" needs turn-structure analysis the grader types cannot express; host prompts already carry this guidance where the host supports it |
 | Context meta-tools (get_context_remaining, new_context, tool_search) | **Rejected — wrong layer** | Harness features; a skill cannot install a tool. The lexical-baseline row (adopted) is the transferable slice of this research |
 | Approval-mode-aware validation | **Rejected — unmeasurable** | `claude plugin eval` runs under one permission configuration; the intervention's trigger (interactive vs autonomous mode) cannot vary between arms |
 
-Round-2 spend: $8.38 total (C2 $1.65; E $6.73 across three calibrations,
-one discarded limit-artifact, and the guard run). No round-2 skill-body
-changes shipped — both candidates resolved without adoption (one measured
-null, one unmeasurable) — so VERSION stays 2.37.0. Coordination note: a
-sibling agent session landed a /handoff plan + PREREG on branch
-`handoff-skill` mid-round (shared eval account — the source of the
-session-limit walls); no file overlap with this branch.
+Round-2 spend: $7.73 total (C2 $1.65; E $6.08 = calibrations $3.45 +
+discarded limit-artifact $0.17 + guard $2.46; figures reconciled from the
+result JSONs by the qa-full red team after three earlier drafts
+disagreed). No round-2 skill-body changes shipped — both candidates
+resolved without adoption — so VERSION stays 2.37.0. Coordination note
+(corrected): a sibling agent session landed /handoff on branch
+`handoff-skill` mid-round; its worktree was registered as a second
+superskills plugin, which contaminated E's later calibrations at RUN time
+(the `--case` glob executed the sibling worktree's copy of the
+test-strategy case) even though the branches share no authored-file
+diff. The contamination is disclosed in E's report and PREREG; any future
+eval run on this machine must check `suite.plugins` for a single root
+first.

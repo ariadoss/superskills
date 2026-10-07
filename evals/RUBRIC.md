@@ -59,6 +59,8 @@ are part of the plan, not an afterthought.
 | `doctor-release-check` | doctor | direct | maintainer | stale manifest + gstack vendor copy |
 | `upgrade-not-doctor` | upgrade | direct | new user | — (negative control for doctor) |
 | `quota-stop` | quota-resilience | symptom | maintainer | dirty tree: one verified change, one stub with a failing test |
+| `quota-stop-handoff` | quota-resilience | symptom | maintainer | stop-mode fixture; grades the note's CONTENT (self-contained handoff, anti-redo, constraints) — the only content-level guard on the resume-note contract |
+| `writeplan-test-strategy` | write-plan | direct | maintainer | — (no fixture); firing-gap probe + verification-strategy shape; currently documents write-plan's utility-ask under-firing |
 | `quota-resume` | quota-resilience | direct | maintainer | committed `QUOTA-RESUME.md`, clean tree on `feature/express` |
 | `rate-limit-429` | none (app-level 429) | direct | — | negative control for quota-resilience |
 | `offtopic-no-skill` | none | — | — | — (negative control for all) |

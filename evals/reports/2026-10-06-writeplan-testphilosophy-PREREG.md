@@ -61,3 +61,16 @@ vocabulary lifted from the skill. skill-fired is an unscored indicator.
   regresses AND the guard holds within 0.34 AND the firing gate holds.
 - **Reject** otherwise: revert, keep the case, report the null.
 - Stated limits: n=3/arm; one run = 0.333 of any grader; same-day drift.
+
+
+## Post-run addendum (2026-10-06, qa-full red team; before any future rerun)
+
+Calibrations 3 and 4 ran under a contaminated configuration: a sibling
+agent session's worktree (`.worktrees/handoff-skill`) was registered as a
+second superskills plugin, so both plugin roots loaded and the `--case`
+name glob matched the sibling worktree's copy of this case (amend-1
+phrasing) alongside this repo's. The suite.plugins arrays in
+testphil-baseline3/4.json record it. This repo's entries fired 0/3 at
+both phrasings; the single observed fire (1/3) was the sibling copy's
+run and is discarded. Any rerun must verify a single plugin root in the
+result JSON before reading firing numbers.
