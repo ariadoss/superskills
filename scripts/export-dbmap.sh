@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# export-repomap.sh [OUTDIR] — regenerate the three slash-command markdown files
-# (the dbmap skill and its auto-update toggles) of the public ariadoss/repomap
-# repo from this repo, which is their single source of truth. /repomap and its
-# toggles were REMOVED from superskills 2026-10-07 after five eval-gated
-# experiments measured no agent-context utility (evals/reports/2026-10-06-* and
-# 2026-10-07-*); the public repo remains their home. The old pull direction (which copied the public repo's
+# export-dbmap.sh [OUTDIR] — regenerate the three slash-command markdown files
+# (the dbmap skill and its auto-update toggles) of the public ariadoss/dbmap
+# repo from this repo, which is their single source of truth. History: these
+# exported to ariadoss/repomap until that repo's deprecation (2026-10-07);
+# /repomap itself was removed from superskills 2.39.0 after five eval-gated
+# experiments measured no agent-context utility (evals/reports/2026-10-06/07). The old pull direction (which copied the public repo's
 # files INTO skills/) is retired: the skills are edited, tested, and linked by
 # ./setup here, and pushed out before a release.
 #
@@ -28,11 +28,11 @@
 # tree's own tests. This export ships three markdown files with no runnable
 # tests of their own, so the equivalent proof is the byte-identity self-check
 # below — the export refuses to finish unless every copied file cmps equal to
-# its source. tests/export-repomap.bats pins the same invariants.
+# its source. tests/export-dbmap.bats pins the same invariants.
 set -euo pipefail
 
 SRC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-OUT="${1:-$SRC_ROOT/dist/repomap}"
+OUT="${1:-$SRC_ROOT/dist/dbmap}"
 . "$SRC_ROOT/scripts/lib/export-lib.sh"
 
 SKILLS=(

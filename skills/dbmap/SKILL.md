@@ -6,17 +6,18 @@ metadata:
 ---
 Generate a database schema map for the current project and analyze indexes.
 
-First, locate the repomap install. Search in this order and use the first hit:
+First, locate the dbmap install. Search in this order and use the first hit:
 
-1. `$REPOMAP_HOME` (if set)
-2. `$HOME/claude-repomap-command`
-3. `$HOME/.claude-repomap-command`
-4. `$HOME/.local/share/claude-repomap-command`
+1. `$REPOMAP_HOME` (if set — historical override, still honored)
+2. `$HOME/claude-dbmap-command`
+3. `$HOME/claude-repomap-command` (legacy combined install — dbmap still works from it)
+4. `$HOME/.claude-repomap-command`
+5. `$HOME/.local/share/claude-repomap-command`
 
 If none of those contain a `scripts/run.sh` file, tell the user to clone the repo:
 
 ```bash
-git clone https://github.com/ariadoss/repomap.git ~/claude-repomap-command
+git clone https://github.com/ariadoss/dbmap.git ~/claude-dbmap-command
 ```
 
 Then scan the project for database connection configurations (replace `<REPOMAP_DIR>` with the path you found):

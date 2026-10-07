@@ -38,9 +38,9 @@ The rules live in two files; this page only points at them so they are defined o
 - **Imported skills are vendored.** No live dependency on an external repo without an
   in-tree copy (or `vendor/` snapshot) and `metadata.upstream` in the frontmatter.
 - **Public skill repos are exports.** The dbmap skill (and its auto-update
-  toggles) is canonical here; `scripts/export-repomap.sh` pushes it out before a
-  release (and owns only its three `<name>.md` paths; the rest of that repo is
-  edited there via PR), exactly as
+  toggles) is canonical here; `scripts/export-dbmap.sh` pushes it to
+  ariadoss/dbmap before a release (and owns only its three `<name>.md` paths;
+  the rest of that repo is edited there via PR), exactly as
   `scripts/export-humanize.sh` does for `/humanize` and `scripts/export-eval.sh`
   for `/eval`. `scripts/sync-gstack.sh` remains
   a maintainer pull step for the `vendor/gstack` snapshot; `./setup` never modifies

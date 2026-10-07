@@ -127,6 +127,21 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
   [[ "$(evidence_of "$output")" != *"Not linked"* ]] || false
 }
 
+@test "check_zcode: a roster skill unlinked under packs=coding is named (the handoff incident)" {
+  # The incident: skills/handoff existed while the roster omitted it, so a
+  # packs=coding install never linked it. Expected via the REAL roster, so
+  # this test fails if handoff ever leaves it again.
+  mkdir -p "$HOME_DIR/.superskills"
+  printf 'packs=coding\n' > "$HOME_DIR/.superskills/packs.conf"
+  mkdir -p "$ROOT/skills/handoff"
+  printf -- '---\nname: handoff\ndescription: h\n---\n' > "$ROOT/skills/handoff/SKILL.md"
+  Z="$HOME_DIR/.zcode/skills"; mkdir -p "$Z"
+  run doctor_check_zcode "$ROOT" "$Z" "$SKILLS/gstack" "$HOME_DIR"
+  [ "$(status_of "$output")" = "warning" ]
+  [[ "$(evidence_of "$output")" == *"Not linked: handoff"* ]] || false
+  [[ "$(evidence_of "$output")" == *"Run ./setup"* ]] || false
+}
+
 @test "report: the ZCode row appears only when ~/.zcode exists" {
   FAKE="$BATS_TEST_TMPDIR/claude"; fake_plugin_list "$FAKE"
   run doctor_report "$ROOT" "$HOME_DIR" "$FAKE"
@@ -240,6 +255,24 @@ evidence_of() { printf '%s\n' "$1" | cut -f3-; }
   run doctor_check_links "$ROOT" "$SKILLS" "" "" "$HOME_DIR"
   [ "$(status_of "$output")" = "ready" ]
   [[ "$(evidence_of "$output")" == *"1/1"* ]] || false
+}
+
+@test "check_links: a roster skill unlinked under packs=coding is blocked and named (the handoff incident)" {
+  # The incident: skills/handoff existed while the roster omitted it, so a
+  # packs=coding install never linked it AND the doctor — whose expected set
+  # comes from the same roster — could not see the gap. This test uses the
+  # REAL roster: it stays green only while handoff is on it.
+  mkdir -p "$HOME_DIR/.superskills"
+  printf 'packs=coding\n' > "$HOME_DIR/.superskills/packs.conf"
+  mkdir -p "$ROOT/skills/handoff"
+  printf -- '---\nname: handoff\ndescription: h\n---\n' > "$ROOT/skills/handoff/SKILL.md"
+  run doctor_check_links "$ROOT" "$SKILLS" "" "" "$HOME_DIR"
+  [ "$(status_of "$output")" = "blocked" ]
+  [[ "$(evidence_of "$output")" == *"Not linked: handoff"* ]] || false
+  [[ "$(evidence_of "$output")" == *"./setup"* ]] || false
+  # Non-roster alpha/beta stay invisible under this selection: only the
+  # roster's own gap blocks.
+  [[ "$(evidence_of "$output")" != *"alpha"* ]] || false
 }
 
 @test "check_links: without packs.conf a pre-packs install expects every skill" {

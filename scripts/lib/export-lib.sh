@@ -1,5 +1,5 @@
 # export-lib.sh — the shared source-overlap guard for the pure-copy export
-# scripts (export-humanize.sh, export-eval.sh, export-repomap.sh).
+# scripts (export-humanize.sh, export-eval.sh, export-dbmap.sh).
 #
 # Sourced, never executed. The caller sets SRC_ROOT (repo root) and OUT
 # (already resolved to an absolute physical path, and already created) and

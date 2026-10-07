@@ -1,4 +1,4 @@
-# Superskills `v2.39.0`
+# Superskills `v2.40.0`
 
 Curated AI skills pack for Claude Code, ZCode, OpenCode, Codex CLI, DSH (DeepSeek Harness), Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Integrates [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team; an opt-in pack) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
@@ -173,7 +173,7 @@ selection across every supported tool.
 | `/playwright` | E2E testing with Playwright |
 | `/a11y` | Accessibility audit: WCAG 2.2 AA, screen-reader, keyboard nav, ARIA, contrast |
 
-### Database Schema Map (from [ariadoss/repomap](https://github.com/ariadoss/repomap))
+### Database Schema Map (from [ariadoss/dbmap](https://github.com/ariadoss/dbmap))
 | Command | Description |
 |---------|-------------|
 | `/dbmap` | Generate database schema map (DBMAP.md) |
@@ -425,7 +425,7 @@ From [kostja94/marketing-skills](https://github.com/kostja94/marketing-skills), 
 ## Credits
 
 Written by [Danilo Stern-Sapad](https://danilosapad.com):
-- [`/dbmap`](https://github.com/ariadoss/repomap) and its auto-on/off toggles (also a standalone repo). `/repomap` was removed in 2.39.0: five eval-gated experiments (2026-10) measured no agent-context utility for static repo maps against tool-using agents; the tool itself lives on in the standalone repo.
+- [`/dbmap`](https://github.com/ariadoss/dbmap) and its auto-on/off toggles (also a standalone repo). `/repomap` was removed in 2.39.0: five eval-gated experiments (2026-10) measured no agent-context utility for static repo maps against tool-using agents; the tool itself lives on in the standalone repo.
 - [`/humanize`](https://github.com/ariadoss/humanize) (also a standalone repo)
 - `/qa-full`, `/daily-qa`, `/clean-code`, `/test-coverage`, `/a11y`, `/iac-scan`, `/db-optimize`, `/perf-profile`, `/cache-strategy`, `/superskills-doctor`, `/superskills-upgrade`
 - the statusline (`scripts/statusline.sh`)

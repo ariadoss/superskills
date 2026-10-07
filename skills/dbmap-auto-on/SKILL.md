@@ -15,7 +15,7 @@ Steps:
 1. Ask the user which DSN to use. Either run detection:
 
    ```bash
-   "${REPOMAP_HOME:-$HOME/claude-repomap-command}/scripts/run.sh" dbmap --list
+   "${REPOMAP_HOME:-$HOME/claude-dbmap-command}/scripts/run.sh" dbmap --list
    ```
 
    …and have the user confirm one of the detected connections, or ask them to provide a DSN directly.

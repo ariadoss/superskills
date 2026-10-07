@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
-# Tests for scripts/export-repomap.sh — regenerating the public
-# ariadoss/repomap repo's three slash-command markdown files (dbmap + toggles).
+# Tests for scripts/export-dbmap.sh — regenerating the public
+# ariadoss/dbmap repo's three slash-command markdown files (dbmap + toggles).
 #
 # The invariant worth protecting is that the export is a PURE COPY of
 # skills/<name>/SKILL.md as <name>.md. A rewriting export is the thing that
@@ -12,7 +12,7 @@
 
 setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
-  EXPORT="$REPO_ROOT/scripts/export-repomap.sh"
+  EXPORT="$REPO_ROOT/scripts/export-dbmap.sh"
   OUT="$BATS_TEST_TMPDIR/out"
   SKILLS=(dbmap dbmap-auto-on dbmap-auto-off)
 }
@@ -84,7 +84,7 @@ fake_repo() {
   cp "$REPO_ROOT/scripts/lib/export-lib.sh" "$fake/scripts/lib/"
   printf 'divergent content\n' > "$fake/skills/dbmap/SKILL.md"
   printf 'divergent content\n' > "$fake/skills/dbmap-auto-on/SKILL.md"
-  run bash "$fake/scripts/export-repomap.sh" "$BATS_TEST_TMPDIR/out2"
+  run bash "$fake/scripts/export-dbmap.sh" "$BATS_TEST_TMPDIR/out2"
   [ "$status" -ne 0 ] || { echo "exported despite a missing skill"; return 1; }
   [[ "$output" == *"no skill at"* ]] || false
   [ ! -e "$BATS_TEST_TMPDIR/out2/dbmap-auto-on.md" ] || { echo "partial export was written"; return 1; }
@@ -95,7 +95,7 @@ fake_repo() {
   fake_repo "$fake"
   # `/` needs its own case: "$OUT/" is then "//", which prefixes nothing.
   for out in "$fake" "$fake/skills" "$BATS_TEST_TMPDIR" /; do
-    run bash "$fake/scripts/export-repomap.sh" "$out"
+    run bash "$fake/scripts/export-dbmap.sh" "$out"
     [ "$status" -eq 1 ] || { echo "exported into $out: $output"; return 1; }
     [[ "$output" == *"refusing to export"* ]] || { echo "$output"; return 1; }
   done
@@ -105,12 +105,12 @@ fake_repo() {
 @test "dist/ itself is an accepted output directory, as the refusal message suggests" {
   fake="$BATS_TEST_TMPDIR/distrepo"
   fake_repo "$fake"
-  run bash "$fake/scripts/export-repomap.sh" "$fake/dist"
+  run bash "$fake/scripts/export-dbmap.sh" "$fake/dist"
   [ "$status" -eq 0 ] || { echo "$output"; return 1; }
   [ -f "$fake/dist/dbmap.md" ] || false
 }
 
 @test "the default output path is inside the repo's dist/" {
-  run bash -c "grep -n 'dist/repomap' '$EXPORT'"
+  run bash -c "grep -n 'dist/dbmap' '$EXPORT'"
   [ "$status" -eq 0 ]
 }
