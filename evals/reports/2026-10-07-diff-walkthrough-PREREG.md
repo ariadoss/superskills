@@ -61,3 +61,19 @@ is disjoint from the skill's examples (validator/routes — anti-leakage per
   ask-when-ambiguous rule are guarded only by the regression cases.
 - Stated limit: n=3; same-day drift between the two sequential runs is an
   uncontrolled small confound (precedent: 2026-10-06 calibration report).
+
+## Amendment 1 — registered after the baseline arm, BEFORE the treatment arm (2026-10-07)
+
+The adopt condition "traces-divergence ≥ +0.15" is mathematically impossible:
+the baseline arm measured traces-divergence at 1.000 (3/3 — the model already
+traces old-vs-new divergences on a concrete input without any skill). The gate
+was written expecting baseline weakness on tracing; that expectation was
+wrong. Amended condition: traces-divergence does not regress ≥ 0.34 in the
+treatment arm (the same no-regression form the other guards use). Everything
+else — primary ≥ +0.15 (mean of the three outcome graders), treatment firing
+≥ 2/3 (else void), offtopic clean, no outcome grader regressing ≥ 0.34 — is
+unchanged. Disclosure: this amendment is registered with the baseline known
+(0.667 / 1.000 / 0.000, primary 0.556) but before the treatment arm runs;
+the deciding data does not exist yet. The skill's value proposition on this
+fixture is now explicitly wiring-connected (baseline 0.000) and core-first
+(0.667), not tracing.
