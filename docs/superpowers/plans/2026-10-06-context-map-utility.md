@@ -28,7 +28,7 @@
 - **B (skill-first):** fixture + task prompt preceded by one instruction line: `Start by running /<skill> to orient yourself, then do the task below.` — the intervention is the skill invocation itself.
 - **C (map pre-injected):** fixture + the map artifact (REPOMAP.md / DBMAP.md) already committed in the fixture repo + the SAME plain prompt as A. The artifact is generated once by the executor before any run (deterministic content for every C run). No instruction mentions it — the agent must discover it, which is exactly the "would this file help if it existed" question.
 
-**Readings:** primary = mean of the case's task-correctness llm graders (per-grader pass-rate over runs, averaged); secondary (reported, descriptive, never gated) = mean `turns` and `durationSeconds` per arm from the result JSONs; indicator = skill-fired (arm B only).
+**Readings (plan-eng-review findings 6+9):** primary = mean of the case's task-correctness llm graders CROSS-CHECKED against the tool_used edit-proof graders (a claim without its edit-proof fails; an edit the reply omits fails no-wrong-edits only if unrelated); secondary (reported, descriptive, never gated) = per-arm `turns` and `durationSeconds` means PLUS exploration-action counts (Read/Grep/Glob calls) from the archived traces, with per-arm truncation accounting (runs at `partial: true`, non-null `error`, or turns == max_turns are reported as truncated and excluded from secondary means, never silently dropped); indicator = skill-fired (arm B only). Every run command carries `--keep-temp`, and after each command run `scripts/eval-traces.sh` to archive transcripts next to the results before the temp dir evaporates. Traces also carry the leakage probe: any Read/Glob of paths OUTSIDE ./fixture-repo (e.g. ../.. reaching the case dir's committed map or graders) is reported per arm as contamination.
 
 **Verdicts the design can separate (fixed in both PREREGs):**
 
@@ -39,9 +39,9 @@
 | B > A and B > C | freshness/authoring matters beyond the artifact (unlikely here) |
 | B ≡ A ≡ C | no measurable utility at this fixture scale — a real null |
 
-**Gates (both experiments):** adopt a positive verdict only if the winning arm beats A by ≥ +0.10 on the primary AND no task grader regresses ≥ 0.34; skill-fired ≥ 2/3 in arm B (else under-powered, adopt nothing); n=3/arm with the 0.333-per-flip noise disclosure. Nothing ships into skill bodies from these experiments regardless — outcomes are guidance (reports +, if positive, a documented follow-up), so no VERSION bump rides this plan.
+**Gates (pilot framing — plan-eng-review finding 8):** n=3 × 2 binary graders means one changed vote moves the primary by 0.167, so this is a PILOT, not a rate estimate. |Δ| < 0.34 on the primary = "no signal at this scale" (never worded as a proven null); Δ ≥ +0.34 with no grader regressing ≥ 0.34 = signal, which licenses ONE optional confirmatory n=5 re-run of the winning comparison before any guidance sentence is written; skill-fired ≥ 2/3 in arm B else arm B is under-powered (A/C readings still report). Nothing ships into skill bodies regardless — outcomes are guidance (reports + documented follow-ups), so no VERSION bump rides this plan. METHODOLOGY.md's small-count caveat is cited in both reports.
 
-**Cost governance:** per-command `--max-cost-usd` caps (8 per command); per-experiment budget $12; plan total ≤ $25. Abort an experiment at its calibration step if a single run exceeds $1.50.
+**Cost governance (plan-eng-review finding 11):** per-command cap `--max-cost-usd 4` (six commands ⇒ hard ceiling $24 ≤ the $25 plan total); per-experiment budget $12 enforced CUMULATIVELY — before each command, sum `costUsd` across that experiment's existing result JSONs and skip to the report if the budget is spent; a limit-error mid-experiment halts that experiment (runs already paid for are analyzed; missing arms are reported as such, never imputed). The Task-0 Step-4 pilot is the single-run calibration: if it exceeds $2, arm B's economics are the finding.
 
 ---
 
@@ -69,10 +69,11 @@ YAGNI: no new harness code, no graphify consumer, no CLAUDE.md auto-rule task (t
 
 - This repo IS superskills (markdown skills + bash/bats + evals). Read `evals/README.md` before running anything paid. Suite: `./tests/run.sh` (662 tests at plan time). Judge model stays `sonnet`. Never push mid-experiment; commits land per task.
 - Eval command shape (ONE case per invocation — the second `--case` overrides the first):
-  `claude plugin eval . --case <name> --runs 3 --ablation none --trust-plugin --no-publish --scaffold --allow-tools Bash --judge-model sonnet --max-cost-usd <cap> --json evals/results/<out>.json`
+  `claude plugin eval . --case <name> --runs 3 --ablation none --trust-plugin --no-publish --scaffold --allow-tools Bash --judge-model sonnet --max-cost-usd 4 --keep-temp --json evals/results/<out>.json && scripts/eval-traces.sh`
 - **Single-plugin check (mandatory before reading any number):**
   `python3 -c "import json;d=json.load(open('<out>.json'));ps=[(p['name'],p['path']) for p in d['suite']['plugins']];print(ps);assert len(ps)==1 and ps[0][1].endswith('/superskills') and 'worktrees' not in ps[0][1], 'CONTAMINATED — stop'"`
-- Arm B and C differ by tree state AND (B only) one prompt line — that is the intervention, not a confound; both PREREGs state it.
+- Arm B and C differ by tree state AND (B only) one prompt line — that is the intervention, not a confound; both PREREGs state it (and B−A is a POLICY effect — "told to run the skill first" — while C−A is an ambient-file effect; the verdict table's claims are narrowed accordingly, per plan-eng-review finding 5).
+- **Leakage boundary (plan-eng-review finding 2):** the C artifact and the graders live in the case dir inside the plugin repo, and a determined agent reading ../../ could reach them. The prompt anchors all work to ./fixture-repo, and the traces probe reports any out-of-fixture read per arm; a C or A run that reads the case dir's map is contamination and its arm's reading is flagged. This is the harness's structural limit (the doctor cases accept the same), disclosed in both reports rather than solved.
 - `evals/results/` is git-ignored by design; numbers get committed inside the reports.
 
 ---
@@ -86,7 +87,12 @@ YAGNI: no new harness code, no graphify consumer, no CLAUDE.md auto-rule task (t
 Run: `ls ~/claude-repomap-command/scripts/run.sh && which tbls && which sqlite3`
 Expected: all three present (verified 2026-10-06). Any miss = BLOCKED, report; do not invent substitutes.
 
-- [ ] **Step 2: Smoke the tools against a scratch repo**
+- [ ] **Step 2: Pre-spend contamination check (FREE — before any paid run)**
+
+Run: `claude plugin list`
+Expected: exactly ONE superskills entry, pointing at this repo (not a worktree). If two appear, the sibling registration is still live — STOP and report; every number this plan would produce is unreadable until it is removed. Repeat this check before each experiment's first paid command; after each run, also assert `suite.plugins` in the produced JSON (the executor-context snippet).
+
+- [ ] **Step 3: Host-side toolchain smoke**
 
 ```bash
 T=$(mktemp -d) && cd "$T" && git init -q .
@@ -100,6 +106,10 @@ printf 'DATABASE_URL=sqlite://%s/app.db\n' "$PWD" > .env
 cd / && rm -rf "$T"
 ```
 Expected: REPOMAP.md lists calc.py/main.py; dbmap `--list` prints the sqlite DSN; `tbls doc` emits schema docs. Record output tails in the eventual reports. If `dbmap --list` needs a different env key, adapt the fixture's `.env` to whatever it detects (say so in the report).
+
+- [ ] **Step 4: IN-HARNESS toolchain pilot (the $HOME problem — plan-eng-review finding 1)**
+
+`evals/RUBRIC.md` Known limits: sandboxed runs cannot read `$HOME`, and both skills search `$HOME` paths for the toolchain — arm B as originally designed would die on toolchain lookup. Both skills honor `$REPOMAP_HOME` FIRST, so the scaffold vendors the toolchain into the workspace: each fixture's `fixture.sh` additionally runs `cp -R ~/claude-repomap-command ./toolchain` (size-check first: `du -sh`; if the copy is over ~200MB, copy only `scripts/` + `pyproject`/lockfile and note the delta), and the arm-B prompt line names it: `REPOMAP_HOME=$PWD/toolchain`. Verify with ONE cheapest-possible in-harness run (1 run, `--max-cost-usd 2`, arm-B prompt, repomap case skeleton with the real fixture): the run's trace must show `scripts/run.sh` executing INSIDE ./fixture-repo and REPOMAP.md written there. If the toolchain cannot run in-sandbox (dependency install needs network the sandbox blocks), arm B is structurally impossible — record that as the experiment's headline finding (headless-sandbox infeasibility) and run arms A/C only, narrowing every verdict claim accordingly.
 
 ---
 
@@ -152,7 +162,7 @@ Expected: FAIL — `evals/_lib/nav-fixture.sh` does not exist.
 
 - [ ] **Step 3: Write the fixture lib**
 
-`evals/_lib/nav-fixture.sh` — one function, subshell-isolated, ~30 small files across 6 modules with the notification feature deliberately split between a service, a model, a controller, a background job, and a web hook (only the job and the hook CONSUME the service; the rest is realistic ballast):
+`evals/_lib/nav-fixture.sh` — one function, subshell-isolated, ~20 small files across 6 modules with the notification feature deliberately split between a service, a model, a controller, a background job, and a web hook (only the job and the hook CONSUME the service; the rest is realistic ballast):
 
 ```bash
 #!/usr/bin/env bash
@@ -270,9 +280,9 @@ tags: [repomap, nav-task, maintainer]
 
 The repo at ./fixture-repo has a notifications feature with a priority
 concept that is currently dead weight: Notification.priority is set to 1
-and never read. Make priority real end to end: senders must be able to
-pass an urgent priority, and BOTH places that currently send notifications
-through the service must forward it. Don't touch anything unrelated.
+and never read. Make priority real end to end: callers must be able to
+pass an urgent priority, and EVERY place that currently creates or sends
+a Notification must carry it through. Don't touch anything unrelated.
 Reply with the files you changed and one line each on what changed.
 ```
 
@@ -304,12 +314,18 @@ the task's "both places that send" means these two). app/controllers/
 notification_controller.py calls send_digest too but only via the job-facing
 helper — accepting it as a third edit is fine, never required.
 
-PASS if: the reply's changed-files list includes the model or service
-(making priority settable) AND both consumers (digest_job, notification_hook)
-with changes that forward/accept priority.
+Ground truth (corrected — plan-eng-review finding 3): the service-CALLERS
+are app/jobs/digest_job.py and app/controllers/notification_controller.py
+(both call send_digest); web/hooks/notification_hook.py CONSTRUCTS a
+Notification (a priority-carrier site, not a sender).
 
-FAIL if either real consumer is missing, or priority is made settable
-nowhere. Grade the reply's claimed changes against these names; vocabulary
+PASS if: the model or service is updated to accept priority AND all three
+carrier sites (job, controller, hook) forward/accept it, AND the reply's
+list matches the Edit-tool edit-proofs (below) — claims without matching
+edits FAIL.
+
+FAIL if any carrier site is missing, priority is settable nowhere, or the
+reply claims edits the edit-proof graders did not observe. Vocabulary
 irrelevant.
 ```
 `graders/no-wrong-edits.md`:
@@ -320,13 +336,32 @@ focus: last_message
 arm: both
 ---
 
+Boundary ruling (plan-eng-review finding 6): the map artifacts (REPOMAP.md,
+DBMAP.md) are workflow outputs, never wrong edits — arm B listing them is
+fine.
+
 PASS if the changed-files list touches only notification-feature files
-(model, service, consumers, controller, tests) — in particular NOT
+(model, service, job, controller, hook, tests) — in particular NOT
 app/helpers/admin_notifier.py or app/models/settings.py (near-miss ballast)
 and not unrelated modules (blog controller, slug helper, migrations).
 
 FAIL if any ballast or unrelated file is claimed as changed.
 ```
+
+Edit-proof graders (plan-eng-review finding 6 — mechanical proof the edits
+happened; claims alone never pass task-correct). `graders/edits-made.md`:
+```
+---
+type: tool_used
+tool: Edit
+input_match: '"file_path"\s*:\s*"[^"]*(digest_job|notification_controller|notification_hook)"'
+min: 3
+---
+```
+(A Write to the same paths also satisfies the intent; if the harness
+input_match cannot express alternation cleanly at execution time, split
+into three single-pattern tool_used graders, `min: 1` each — same
+commit.)
 
 - [ ] **Step 5: Generate arm C's artifact**
 
@@ -454,6 +489,7 @@ CREATE TABLE payments (id INTEGER PRIMARY KEY, order_id INTEGER NOT NULL REFEREN
 CREATE INDEX idx_payments_order ON payments(order_id);
 CREATE TABLE events (id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id), kind TEXT NOT NULL, occurred_at TEXT NOT NULL);
 CREATE INDEX idx_events_occurred ON events(occurred_at);
+CREATE INDEX idx_events_user ON events(user_id);
 CREATE TABLE audit_logs (id INTEGER PRIMARY KEY, actor TEXT, action TEXT, at TEXT);
 """)
 for i in range(1, 21):
@@ -481,13 +517,13 @@ EOF
   printf 'class Order:\n    table = "orders"\n    fields = ["id", "user_id", "status", "placed_at"]\n' > app/models/order.py
   printf 'import sqlite3, sys\ndb = sqlite3.connect("app.db")\nsys.path.insert(0, ".")\n' > scripts/repl.py
   printf 'DATABASE_URL=sqlite:///%s/app.db\n' "$PWD" > .env
-  printf '# fixture shop\nOrders live in orders (user_id FK, deliberately un-indexed).\nQuery paths: app/queries/*.py\n' > README.md
+  printf '# fixture shop\nOrders live in the orders table.\nQuery paths: app/queries/*.py\n' > README.md
   git add -A && git commit -qm "fixture: sqlite shop schema + raw-SQL query app"
   )
 }
 ```
 
-The trap: `orders.user_id` is the schema's only un-indexed FK, and `app/queries/orders_by_user.py` filters on it — exactly what dbmap's Index Analysis is designed to surface.
+The trap: `orders.user_id` is the schema's ONLY un-indexed foreign key (every other FK is indexed — corrected per plan-eng-review finding 4), and `app/queries/orders_by_user.py` filters on it — exactly what dbmap's Index Analysis is designed to surface. The fixture README states only that orders live in `orders` and query paths are app/queries/*.py — it does NOT name the missing index (the original draft leaked the answer).
 
 - [ ] **Step 4: Green, wire, graders, arm-C artifact**
 
@@ -519,9 +555,9 @@ focus: last_message
 arm: both
 ---
 
-Ground truth: orders.user_id is the schema's only un-indexed foreign key
-and app/queries/orders_by_user.py filters on it — the diagnosis the
-fixture plants.
+Ground truth: orders.user_id is the schema's ONLY un-indexed foreign key
+(every other FK carries an index) and app/queries/orders_by_user.py
+filters on it — the diagnosis the fixture plants.
 
 PASS if the reply: names the missing index on orders.user_id (FK + query
 filter), provides CREATE INDEX SQL for it, and does NOT rewrite either
@@ -547,7 +583,7 @@ FAIL if unrelated files are claimed as changed.
 ```
 `graders/skill-fired.md` matches `dbmap`.
 
-Arm C artifact: generate DBMAP.md once from a scratch build (Task 0's scratch-repo recipe with the real fixture), commit it into `evals/dbmap-schema-task/DBMAP.md`, and `cp` it into `./fixture-repo/` in the scaffold for arm C.
+Arm C artifact (corrected — plan-eng-review finding 5): B and C must receive the SAME information, and /dbmap's output includes the agent-authored `## Index Analysis` on top of the tbls doc. Generate C's artifact by actually running the /dbmap skill once against a scratch build of the fixture (executor-side, Task-0-style scratch repo), commit the resulting FULL DBMAP.md into `evals/dbmap-schema-task/DBMAP.md`, and `cp` it into `./fixture-repo/` in the scaffold for arm C only.
 
 - [ ] **Step 5: PREREG, commit, run A → B → C with single-plugin checks, analyze, report, commit**
 
@@ -601,3 +637,23 @@ No VERSION bump: this plan ships measurements only; any skill-body change its ve
 - [ ] Map-value vs skill-call-overhead separated → the C arm exists in both experiments and its delta is reported
 - [ ] Exploration cost measured → turns + durationSeconds per arm in both reports
 - [ ] graphify question answered → scope-out note with the consumer rationale
+
+## GSTACK REVIEW REPORT
+
+Target: docs/superpowers/plans/2026-10-06-context-map-utility.md (plan review, /write-plan → /plan-eng-review chain; codex outside voice per maintainer config)
+Date: 2026-10-06 · Scope Challenge: complexity gate tripped (~12 files); structure kept — the scope is the maintainer's named question ("this test"); aborts and pilot framing added instead of cuts.
+
+| Review | Trigger | Why | Status | Findings |
+|---|---|---|---|---|
+| Scope Challenge | 12+ files | challenge cuts/structure | read-only | scope accepted (single question, three-arm design is the minimum that separates map value from overhead) | F0: budget math $48>​$25 and plugin check placed post-spend — both folded (caps→4, free `claude plugin list` pre-check) |
+| 1. Architecture | experiment design | arm isolation, feasibility | read-only | FOLDED | F1 [P0 10/10] sandbox cannot read $HOME → skills' toolchain lookup dies in-harness (verified RUBRIC.md Known limits) → toolchain vendored into workspace + REPOMAP_HOME + mandatory in-harness pilot; F5 B−A is a policy effect, C−A ambient-file → verdict claims narrowed; F2 leakage boundary disclosed + traces probe |
+| 2. Code quality | fixture/DRY | shared-code rubric | read-only | FOLDED | F10 pre-spend free plugin check added |
+| 3. Tests | grader validity | coverage/power | read-only | FOLDED | F6 [P0 9/10] graders scored claims not edits → tool_used edit-proof graders added, claims-without-proofs fail, map artifacts exempted from no-wrong-edits; F8 n=3 one-vote=0.167 → pilot framing, ±0.34 signal rule, optional n=5 confirmatory, no "proven null" language; F9 turns truncation/partial/error accounting + archived-trace exploration counts |
+| 4. Performance | cost = budget | arithmetic | read-only | FOLDED | F11 caps 8→4, cumulative per-experiment budget checks, limit-error policy |
+| Outside Voice | codex exec (read-only, user-configured) | independent second opinion | 1 pass — 11 findings, ALL verified against RUBRIC/eval-traces/claude-CLI before folding (three citations spot-checked: RUBRIC.md Known-limits line, scripts/eval-traces.sh, `claude plugin list` output) | COMPLETED | F3 [P1 10/10] nav ground truth was wrong (hook constructs, never sends; controller is the second caller; bats grep impossible) → task wording, grader, bats all corrected; F4 [P1 9/10] events.user_id was a second un-indexed FK + README leaked the answer → indexed + de-leaked; F7 headless dbmap interactivity → pilot + separate headless-usability finding channel |
+
+VERDICT: PASS AFTER REVISION — all 11 findings folded; the plan now leads with an in-harness toolchain pilot (which can itself conclude "arm B structurally impossible in-sandbox" and narrow the experiment to A/C), grades edits rather than claims, and speaks in pilot language.
+
+OUTSIDE COVERAGE: codex (read-only sandbox; Recommendation was "fix-first because the current fixtures, grading, and arm isolation can produce confident-looking verdicts about the wrong intervention" — the fixes are folded above).
+
+NO UNRESOLVED DECISIONS
