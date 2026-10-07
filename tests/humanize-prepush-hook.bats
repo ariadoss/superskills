@@ -102,3 +102,46 @@ run_hook() {  # run_hook <cwd> — feeds a git-push JSON payload on stdin
   [ "$status" -eq 0 ]
   [ -z "$output" ]
 }
+
+@test "a NEW .md outside skills is gated at creation" {
+  mkdir -p "$WORK/docs"
+  printf 'He took a deep breath and began. She nodded, a ghost of a smile playing at her lips.\\n' > "$WORK/docs/getting-started.md"
+  git -C "$WORK" add docs/getting-started.md
+  git -C "$WORK" commit -qm "new doc"
+  run run_hook "$WORK"
+  [ "$status" -eq 0 ]
+  echo "$output" | jq -e '.decision == "block"' >/dev/null
+}
+
+@test "a MODIFIED internal doc (not the README) is not gated" {
+  printf 'Install the tool. Run the checks. Ship when green.\\n' > "$WORK/NOTES.md"
+  git -C "$WORK" add NOTES.md && git -C "$WORK" commit -qm "seed notes"
+  printf 'He took a deep breath and began. The room seemed to hold its breath.\\n' > "$WORK/NOTES.md"
+  git -C "$WORK" add NOTES.md && git -C "$WORK" commit -qm "rewrite notes badly"
+  run run_hook "$WORK"
+  [ "$status" -eq 0 ]
+  [ -z "$(echo "$output" | jq -r '.decision // empty')" ]
+}
+
+@test "a renamed .md with a sloppy destination path is gated as new" {
+  printf 'Clean prose here. Install and run.\\n' > "$WORK/OLD.md"
+  git -C "$WORK" add OLD.md && git -C "$WORK" commit -qm "seed old"
+  git -C "$WORK" mv OLD.md GUIDE.md
+  cat > "$WORK/GUIDE.md" <<'SLOP'
+I couldn't help but smile. He took a deep breath and began. She nodded, a ghost of a smile playing at her lips.
+SLOP
+  git -C "$WORK" add GUIDE.md && git -C "$WORK" commit -qm "rename and rewrite"
+  run run_hook "$WORK"
+  [ "$status" -eq 0 ]
+  echo "$output" | jq -e '.decision == "block"' >/dev/null
+}
+
+@test "a deleted .md never gates" {
+  printf 'He took a deep breath and began.\\n' > "$WORK/GONE.md"
+  git -C "$WORK" add GONE.md && git -C "$WORK" commit -qm "seed gone"
+  git -C "$WORK" push -q origin main
+  git -C "$WORK" rm -q GONE.md && git -C "$WORK" commit -qm "delete"
+  run run_hook "$WORK"
+  [ "$status" -eq 0 ]
+  [ -z "$(echo "$output" | jq -r '.decision // empty')" ]
+}

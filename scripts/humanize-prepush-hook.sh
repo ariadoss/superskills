@@ -31,15 +31,40 @@ command -v python3 >/dev/null 2>&1 || exit 0
 # Try the push upstream first, then the default remote branch; a repo with
 # neither has nothing pending — allow.
 branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
-# Scope is the STOREFRONT text only: the repo-root README.md (and any
-# README.*.md at the root) — the GitHub-facing page. Everything else is
-# out of scope: skill bodies are agent-to-agent register (frequently
-# eval-bound; a rewrite would falsify measured adoption evidence), and
-# internal docs/reports/plans are working records, not public prose.
-files="$( { git diff --name-only @{push}..HEAD 2>/dev/null \
-             || git diff --name-only "origin/${branch:-main}..HEAD" 2>/dev/null \
-             || git diff --name-only origin/HEAD..HEAD 2>/dev/null; } \
-           | grep -E '^README(\.[\w-]+)?\.md$' || true )"
+# Gate set (maintainer rule, 2026-10-07): (a) the root README when
+# MODIFIED, and (b) any NEWLY-CREATED .md outside the skill packs and
+# vendor trees — new docs are human-facing by default. Modified internal
+# records stay out of scope; renames/copies count by their destination
+# path; deletions never gate.
+status="$( { git diff --name-status @{push}..HEAD 2>/dev/null \
+              || git diff --name-status "origin/${branch:-main}..HEAD" 2>/dev/null \
+              || git diff --name-status origin/HEAD..HEAD 2>/dev/null; } || true)"
+[ -n "$status" ] || exit 0
+files=""
+while IFS=$'\t' read -r st p1 p2 _; do
+  [ -n "${st:-}" ] || continue
+  path="${p2:-$p1}"
+  case "$st" in
+    M)
+      case "$path" in
+        README*.md) files="$files $path" ;;
+      esac
+      ;;
+    A|R[0-9]*|C|C[0-9]*)
+      case "$path" in
+        *.md) ;;
+        *) continue ;;
+      esac
+      case "$path" in
+        skills/*/SKILL.md|design-skills/*/SKILL.md|marketing-skills/*/SKILL.md|vendor/*) continue ;;
+        *) files="$files $path" ;;
+      esac
+      ;;
+  esac
+done <<EOF
+$(printf '%s\n' "$status")
+EOF
+files="${files# }"
 [ -n "$files" ] || exit 0
 
 # Scan prose, not code or URLs: strip inline-code spans and link targets

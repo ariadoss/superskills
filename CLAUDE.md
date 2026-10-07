@@ -163,9 +163,12 @@ Read DEVELOPER_WORKFLOW.md to understand how to use superskills commands togethe
 
 ## Prose quality before push
 
-The storefront text — the repo-root `README.md` — is gated: a PreToolUse
-hook (`scripts/humanize-prepush-hook.sh`) blocks any push whose README
-carries deterministic slop flags until `/humanize` cleans it
+Two push surfaces are gated by the PreToolUse hook
+(`scripts/humanize-prepush-hook.sh`): the repo-root `README.md` when
+MODIFIED, and any NEWLY-CREATED `.md` outside the skill packs (new docs
+are human-facing by default). Modified internal records are not gated;
+renames count by destination; deletions never gate. A push carrying
+flagged text is blocked until `/humanize` cleans it
 (`HUMANIZE_PREPUSH=0` is the bypass for deliberately-held wording).
 Everything else is deliberately OUT of the gate: skill bodies are how
 agents speak to agents (register is the product; wording is often the
