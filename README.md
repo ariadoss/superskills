@@ -331,9 +331,8 @@ points at the checkout, `/superskills-upgrade` updates the statusline too.
 Needs `bash` and `jq` 1.6 or newer (`brew install jq`, `apt install jq`); macOS
 and Linux. Set `NO_COLOR=1` for plain output, `STATUSLINE_DEBUG=1` to surface stderr.
 
-It renders in **17ms** against 74ms for the [Waza](https://github.com/tw93/Waza)
-statusline it started from (100 renders each, same payload, steady state), because
-a statusline is on a hot path: Claude Code debounces updates at 300ms and cancels
+It renders in **17ms** steady state (100 renders, same payload), because a
+statusline is on a hot path: Claude Code debounces updates at 300ms and cancels
 an in-flight script when a new update arrives. One `jq` call does all parsing, the
 cache merge, the clock arithmetic and the rendering. No `awk` (context % is a
 documented field), no `date` (jq has `now`), no `stat`, `tr`, `sleep`, or lock.
@@ -433,7 +432,7 @@ Written by [Danilo Stern-Sapad](https://danilosapad.com):
 - [`/repomap`, `/dbmap`](https://github.com/ariadoss/repomap) and their auto-on/off toggles (also a standalone repo)
 - [`/humanize`](https://github.com/ariadoss/humanize) (also a standalone repo)
 - `/qa-full`, `/daily-qa`, `/clean-code`, `/test-coverage`, `/a11y`, `/iac-scan`, `/db-optimize`, `/perf-profile`, `/cache-strategy`, `/superskills-doctor`, `/superskills-upgrade`
-- the statusline (`scripts/statusline.sh`), a faster rewrite of Waza's
+- the statusline (`scripts/statusline.sh`)
 
 Skills curated from:
 - [garrytan/gstack](https://github.com/garrytan/gstack): virtual engineering team (QA, review, ship, security, planning, browser automation)
@@ -455,7 +454,6 @@ Skills curated from:
 - [ParthJadhav/app-store-screenshots](https://github.com/ParthJadhav/app-store-screenshots): app store screenshot generator
 - [browser-use/video-use](https://github.com/browser-use/video-use): conversation-driven video editor (cut, grade, subtitle, animate)
 - [safishamsi/graphify](https://github.com/safishamsi/graphify): knowledge graph from any codebase or corpus
-- [tw93/Waza](https://github.com/tw93/Waza): statusline design and the skill-vs-script rule
 
 ## License
 
