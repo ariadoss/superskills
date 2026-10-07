@@ -4,16 +4,18 @@ focus: last_message
 arm: both
 ---
 
-Grade against this key: the user preference system is app/models/preference.rb
-(fields), app/controllers/preferences_controller.rb (update path),
-app/views/preferences/ (form), plus locale files under config/locales/ for
-new strings. app/models/collection_preference.rb is the collection-scoped
-near-miss, not the user system. user.rb (association) and routes are
-acceptable optional extras.
+Key: the notification system lives in app/prisma/schema.prisma (models),
+app/app/(private)/(dashboard)/notifications/ (_schemas/notification-schemas.ts
+for the type union, _services/notifications-service.ts and
+notifications-realtime.ts for delivery, page.tsx + use-notifications-page.ts
+for UI), and _components/NotificationsProvider.tsx for consumption. A
+per-user preference needs schema.prisma plus a preferences/settings
+surface if one exists.
 
-PASS if the reply's list includes the model, the controller, the view
-location, AND a locale file, each with a plausible why — and does not
-present the collection preference files as the user preference system.
+PASS if the reply identifies schema.prisma AND the notifications
+_schemas file AND at least one _services file AND a UI file
+(Provider/page/hook), each with a plausible why.
 
-FAIL if any of the four core elements is missing, or the collection
-sibling is named as the primary system, or unrelated files dominate.
+FAIL if schema.prisma or the type-union file is missing, or the list is
+dominated by unrelated files. Invented paths also fail (see sibling
+grader).

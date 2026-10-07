@@ -5,12 +5,11 @@ allowed_tools: [Read, Glob, Grep, Bash, Skill]
 tags: [graphify, corpus, maintainer]
 ---
 
-The folder ./fixture-repo is a song corpus (lyrics, style notes, mapping
-notes across pop/, rap/ and other dirs). Answer these questions from the
-corpus, with evidence (file names / quoted lines):
-1. List every band, its genre, and where its songs live in the folder
-   structure.
-2. Which tracks are the breakouts, for which bands, and what are their play
-   counts? Which bands have NO hit yet, and what range do their tracks sit in?
-3. In pop/, which songs exist in both a _style and a _suno variant? Which
-   song has Russian-language variants, and what are they?
+The folder ./fixture-repo is a content site repo (product docs, design
+docs, a writing style guide, todos/handoffs, and a content tree). Answer
+from the corpus, with evidence (file names / quoted lines):
+1. What is the offering, who is the audience, and what differentiators
+   are claimed? (cite the doc)
+2. What are the site's voice rules? List at least three actual rules.
+3. Which top-level docs reference each other, and on what topics?
+4. What work is currently open or in flight? List at least three items.

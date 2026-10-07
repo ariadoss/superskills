@@ -1,20 +1,18 @@
-# ats database-audit ground truth (derived mechanically 2026-10-07)
+# payroll-next audit ground truth (derived from schema.prisma 2026-10-07)
 
-Schema: PocketBase-style sqlite (21 tables; relations are plain *_id columns, no SQL FKs).
+## Relation fields WITHOUT @@index (the schema's index gaps — 8 total)
+EmployerLoginDirectory.tenant · TenantProvisioningRequest.tenant ·
+PlatformAuditEvent.tenant · TokenBalance.hiringAccount ·
+AgentTokenUsage.tenant · AgentTokenUsage.hiringAccount ·
+Contractor.hiringAccount · ChatMessage.hiringAccount
+(Any subset naming ≥5 with model.field precision counts as finding the gap
+class; naming the tenant/hiringAccount pattern explicitly is the core.)
 
-## Index gaps (verified via pragma: relation column, zero indexes covering it)
-1. jobs.job_id — un-indexed relation column
-2. candidates.candidate_id — un-indexed relation column
-(Core PocketBase tables and users/clients carry indexes; these two are the app-level gaps.)
+## Supplementary (never required)
+Prisma query patterns in _services (findMany in loops, missing take/skip),
+audit-event tables without retention bounds.
 
-## N+1 patterns
-1. PRODUCTION: applicant_validation.go ~line 276 — `for _, ownerID := range jobOwners { app.FindRecordById("users", ownerID) ... }` — one query per owner.
-2. TEST-FILE instances (batch_test.go, record_query_test.go, blog_publishing_test.go) are distractors: same shape, but not shipped query paths. A complete audit may mention them but must NOT count them as production findings.
-
-## Acceptable additional true findings
-Any other real observation backed by the schema/code (e.g. missing composite opportunities on filtered+sorted columns) — never required.
-
-## The audit is WRONG if it
-- claims index gaps on tables that have them (users, clients, _externalAuths),
-- counts test-file loops as production N+1s without flagging them as tests,
-- fabricates findings with no file:line or schema backing.
+## WRONG if
+- the audit claims indexed relations are un-indexed (any field carrying @@index),
+- "findings" lack model.field or file:line anchors,
+- the Prisma layer is confused for raw SQL it cannot see.

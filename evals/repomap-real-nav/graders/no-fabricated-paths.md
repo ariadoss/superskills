@@ -4,11 +4,10 @@ focus: last_message
 arm: both
 ---
 
-PASS if every file path in the reply is plausible for a standard Rails
-layout (app/models/*.rb, app/controllers/*_controller.rb, app/views/**,
-config/locales/**) and none is obviously invented (wrong extension,
-nonexistent-sounding dirs like app/mailers/user_email_timing.rb presented
-as the preference system).
+PASS if every load-bearing path in the reply plausibly matches a Next.js
+app-router layout (app/**/_schemas|_services|_components, prisma/) and
+none is invented as the primary answer.
 
-FAIL if the reply invents files as load-bearing (e.g. a dedicated
-email_timing model/controller that the app would not have).
+FAIL if the primary file list contains fabricated files (e.g.
+app/notifications/email-preferences.ts presented as existing) or paths
+incompatible with the layout described above.

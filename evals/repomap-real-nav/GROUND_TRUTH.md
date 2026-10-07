@@ -1,26 +1,17 @@
-# otwarchive navigation ground truth (derived by grep, 2026-10-07)
+# payroll-next navigation ground truth (grep-derived 2026-10-07)
 
-Question: "add a user preference controlling email timing — which files change?"
+## Core set (all four areas required)
+1. app/prisma/schema.prisma — Notification model + user preference field/model.
+2. app/app/(private)/(dashboard)/notifications/_schemas/notification-schemas.ts — the notification type union/validation.
+3. app/app/(private)/(dashboard)/notifications/_services/notifications-service.ts (+ notifications-realtime.ts where delivery is handled) — emitting/reading the new type.
+4. NotificationsProvider.tsx and/or notifications/page.tsx + use-notifications-page.ts — UI consumption; and any email-sending service path the codebase uses for notification delivery (server-side sender file) OR the preference UI location.
 
-## Core answer set (all three required for a PASS)
-1. app/models/preference.rb — the preference fields live here (email prefs
-   are columns on this model; collection_preference.rb is the COLLECTION
-   sibling, a near-miss).
-2. app/controllers/preferences_controller.rb — the update path.
-3. app/views/preferences/ — the preference form/partials the user edits.
-4. Locale files under config/locales/ (at minimum the English controllers/
-   views yml) for the new label strings.
-
-## Near-miss distractors (a WRONG answer leans on these)
-- app/models/collection_preference.rb + collections controllers — the
-  collection-scoped preference system, NOT user email prefs.
-
-## A correct answer
-names the core set with one-line reasons; may mention user.rb (owner
-association) and routing as optional extras.
+## Optional extras (fine, never required)
+migration file reference (prisma migrations are generated), notification-count.ts,
+_schemas files for contractors/invoices if the dispute link is wired.
 
 ## WRONG if
-- the collection preference files are presented as THE user preference
-  system,
-- no view or no locale file is identified,
-- files are named that have nothing to do with preferences.
+- no schema.prisma change is identified,
+- no zod/schema union file is identified,
+- files unrelated to notifications/preferences dominate the list,
+- paths are invented.

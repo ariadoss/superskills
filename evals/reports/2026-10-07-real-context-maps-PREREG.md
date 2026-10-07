@@ -1,12 +1,19 @@
 # PREREG — real-project utility test for repomap / dbmap / graphify
 
-Registered before any run of the three new cases. The synthetic-fixture
+Registered before any run of the three cases. AMENDED 2026-10-07 before
+any paid run, per the maintainer's mid-round correction: drop ats
+("legacy") and otwarchive ("isn't mine") — no runs had occurred. Final
+vehicles, all the maintainer's own GitHub-pushed repos: payroll-next
+(VoltPay-AI/payroll, 1,146-file Next.js+Prisma monorepo) for BOTH the
+repomap navigation test and the dbmap→audit composition; hyperion360
+(the maintainer's content site, 589 docs) for graphify's corpus
+questions. Notable in-situ fact: payroll-next already carries committed
+DBMAP.md/REPOMAP.md/MIGRATION_TRACKER.md at root — the team has used
+these tools on it — so arm C for payroll experiments is the repo
+AS-IS (own artifacts present) and arms A/B are the same archive with
+REPOMAP.md/DBMAP.md stripped by the scaffold. The synthetic-fixture
 round (2026-10-06) returned mechanism-limited nulls (discovery failure,
-task ceiling). This round re-tests each skill in its best-case habitat on
-REAL projects from ~/Sites: ats (Go+PocketBase/sqlite, 1,187 files) for
-the dbmap→audit composition; songs (504 txt + mapping hub, cross-document
-relational questions) for graphify; otwarchive (Rails monolith, 2,707
-files) for repomap navigation.
+task ceiling); this round tests each skill in its best-case habitat.
 
 ## Arms per experiment (same skeleton as the prior round)
 A cold plain prompt · B skill-first (one inserted instruction line naming
@@ -41,6 +48,14 @@ the sandbox; the user's real trees are never touched by agent runs.
    --wiki build succeeds host-side); B gets whatever the skill produces.
 3. dbmap C artifact: full DBMAP.md incl. an Index Analysis authored per
    the skill's own recipe (as the prior round).
-4. Real-repo scaffold sizes: otwarchive ~2.7k files, ats ~1.2k + the
-   8-month-old backup .db (the live schema stand-in; registered as a
-   staleness risk the audit question itself surfaces).
+4. dbmap on payroll-next has NO live database in this environment (no
+   tracked DSN); the audit works from schema.prisma + migrations + code.
+   Registered consequence: arm B's /dbmap skill run may be infeasible
+   headless (its DSN detection finds nothing, its interactive ask cannot
+   be answered) — that outcome is recorded as the skill's headless
+   finding, and arms A (artifacts stripped) vs C (repo's own committed
+   DBMAP.md present) decide the artifact question.
+5. graphify arm B uses the vendored graphifyy package
+   (graphify-vendor/bin/graphify, PYTHONPATH-wired); hyperion360's own
+   committed REPOMAP.md stays in the archive for all graphify arms
+   (it is not the variable under test there; noted as ambient context).

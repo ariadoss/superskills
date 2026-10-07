@@ -5,9 +5,11 @@ allowed_tools: [Read, Glob, Grep, Bash, Skill]
 tags: [dbmap, real-audit, maintainer]
 ---
 
-The repo at ./fixture-repo is a Go hiring app with a sqlite database in
-app.db (connection string in .env — the only connection; use it). Audit
-its database performance: schema index gaps, N+1 query patterns in the Go
-code, and heavy per-endpoint query paths. Reply with a prioritized
-findings list — each finding with file:line or schema evidence — and
-state clearly which are production code vs tests.
+The repo at ./fixture-repo is a Next.js payroll app with a Prisma schema
+(app/prisma/schema.prisma) and a migration history under
+app/prisma/migrations. Audit its database design for performance risks:
+relations without supporting indexes, query patterns in the TS services
+that look like N+1s or unbounded scans, and any per-endpoint heavy query
+paths. There is no live database connection in this environment — work
+from the schema, migrations, and code. Reply with a prioritized findings
+list, each with file:line or schema-field evidence.
