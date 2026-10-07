@@ -4,7 +4,9 @@
 #   commit 1 (base):    video.rb, caption.rb, subtitles.rb with their v1
 #                       ad-hoc parsers; a caption_spec.rb with existing
 #                       passing tests and 200 lines of padding
-#   commit 2 (helper):  app/utils/duration_parser.rb + 12 passing tests
+#   commit 2 (helper):  app/utils/duration_parser.rb + 16 passing tests
+#                        (12 trivial + 4 behavioral; the digest's 12/12 is
+#                        realized and covered)
 #   commit 3 (migrate): video.rb migrated to the shared helper
 #   unstaged:           caption.rb half-applied edit (tracked file, working
 #                       tree ahead of HEAD: keeps a legacy normalize()
@@ -111,7 +113,7 @@ RUBY
   git add -A
   git commit -qm "base: v1 parsers + caption specs"
 
-  # 12 passing helper tests (the digest says 12/12 green).
+  # Helper tests: 12 trivial + 4 behavioral, all passing at this commit.
   {
     printf '%s\n' 'require_relative "../../app/utils/duration_parser"'
     printf '%s\n' 'require "minitest/autorun"'
@@ -130,7 +132,7 @@ RUBY
     printf '%s\n' 'end'
   } > test_duration_parser.rb
   git add test_duration_parser.rb
-  git commit -qm "duration helper + 12 passing tests"
+  git commit -qm "duration helper + passing tests"
 
   # Migration commit: video.rb moves to the helper.
   cat > app/models/video.rb <<'RUBY'

@@ -50,6 +50,8 @@ NOTE UNDER JUDGMENT:
 
 if [ "${1:-}" = "--calibrate" ]; then
   agree=0; total=0
+  # Adoption bar: >= 3/4 of the labeled artifacts (ceil), so the bar scales
+  # with the calibration set instead of a hardcoded 6-for-8.
   while IFS=$'\t' read -r f s1 s2 s3 s4 s5 rest; do
     [ -n "$f" ] || continue
     total=$((total+1))
@@ -58,8 +60,9 @@ if [ "${1:-}" = "--calibrate" ]; then
     if [ "$got" = "$want" ]; then agree=$((agree+1)); echo "MATCH  $f"
     else echo "DIFFER $f: want [$want] got [$got]"; fi
   done < "$CAL/labels.tsv"
-  echo "agreement: $agree/$total (adopt judge at >=6/8)"
-  [ "$agree" -ge 6 ] || exit 1
+  need=$(( (total * 3 + 3) / 4 ))
+  echo "agreement: $agree/$total (adopt judge at >=$need/$total)"
+  [ "$agree" -ge "$need" ] || exit 1
   exit 0
 fi
 
@@ -68,6 +71,10 @@ for f in "$ROOT"/evals/results/handoff-gen/*.md; do
   base="$(basename "$f" .md)"
   scenario="$(printf '%s' "$base" | sed 's/-[ABC]-r[0-9]*$//')"
   [ -f "$ROOT/evals/handoff/_lib/scenarios/$scenario.md" ] || continue
-  judge_one "$f" "$ROOT/evals/handoff/_lib/scenarios/$scenario.md" | sed "s/^/$base\t/" >> "$OUT"
+  # Idempotent like generate.sh: a re-run replaces a cell's row instead of
+  # appending a duplicate that would double-count in any downstream mean.
+  grep -v "^$base	" "$OUT" > "$OUT.tmp" 2>/dev/null || true
+  judge_one "$f" "$ROOT/evals/handoff/_lib/scenarios/$scenario.md" | sed "s/^/$base	/" >> "$OUT.tmp"
+  mv "$OUT.tmp" "$OUT"
   echo "judged $base"
 done

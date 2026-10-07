@@ -34,6 +34,7 @@ chmod +x "$OUT/scripts/session-ref.sh"
 cp "$SRC_ROOT/scripts/handoff-trigger-hook.sh" "$OUT/hooks/handoff-trigger-hook.sh"
 chmod +x "$OUT/hooks/handoff-trigger-hook.sh"
 cp "$SRC_ROOT/tests/handoff-session-ref.bats" "$OUT/tests/"
+cp "$SRC_ROOT/tests/handoff-trigger-hook.bats" "$OUT/tests/"
 cp "$SRC_ROOT/LICENSE"                       "$OUT/LICENSE"
 cp "$SRC_ROOT/scripts/handoff-dist/README.md"   "$OUT/README.md"
 cp "$SRC_ROOT/scripts/handoff-dist/.gitignore"  "$OUT/.gitignore"
@@ -43,11 +44,11 @@ command -v bats >/dev/null 2>&1 || {
   echo "bats is required to verify the export (brew install bats-core); $OUT is NOT publishable" >&2
   exit 1
 }
-if bats "$OUT/tests/handoff-session-ref.bats" >/dev/null 2>&1; then
-  verdict="tests pass in the exported tree"
+if bats "$OUT/tests" >/dev/null 2>&1; then
+  verdict="tests pass in the exported tree (session-ref + trigger hook)"
 else
   echo "export FAILED its own tests at $OUT — not publishable" >&2
-  bats "$OUT/tests/handoff-session-ref.bats" >&2 || true
+  bats "$OUT/tests" >&2 || true
   exit 1
 fi
 

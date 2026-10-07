@@ -42,12 +42,14 @@ setup() {
   printf '%s\n' "$output" | grep -qF "$REPO_ROOT/scripts/qa-full-ledger-hook.sh" || false
 }
 
-@test "hooks.json: valid JSON registering the ledger hook for Stop and SubagentStop" {
+@test "hooks.json: valid JSON registering the ledger hook and the handoff trigger" {
   command -v jq >/dev/null || skip "jq not installed"
   run jq -r '.hooks | to_entries[] | "\(.key) \(.value[0].hooks[0].command)"' "$REPO_ROOT/hooks/hooks.json"
   [ "$status" -eq 0 ]
   printf '%s\n' "$output" | grep -q '^Stop .*qa-full-ledger-hook.sh' || false
   printf '%s\n' "$output" | grep -q '^SubagentStop .*qa-full-ledger-hook.sh' || false
+  printf '%s\n' "$output" | grep -q '^UserPromptSubmit .*handoff-trigger-hook.sh' || false
+  [ -x "$REPO_ROOT/scripts/handoff-trigger-hook.sh" ] || false
 }
 
 @test "daily-qa fixture: main holds both commits, only the planted one is inside a 24h window" {

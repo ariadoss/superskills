@@ -5,7 +5,11 @@
 
 setup() {
   REPO_ROOT="$(dirname "$BATS_TEST_DIRNAME")"
-  HOOK="$REPO_ROOT/scripts/handoff-trigger-hook.sh"
+  # Dual lookup: scripts/ in superskills, hooks/ in the exported standalone repo.
+  for cand in "$REPO_ROOT/scripts/handoff-trigger-hook.sh" "$REPO_ROOT/hooks/handoff-trigger-hook.sh"; do
+    [ -f "$cand" ] && HOOK="$cand" && break
+  done
+  [ -n "${HOOK:-}" ]
   CACHE_HOME="$BATS_TEST_TMPDIR/cache"
   mkdir -p "$CACHE_HOME/claude-statusline"
   CACHE="$CACHE_HOME/claude-statusline/rate-limits.json"
