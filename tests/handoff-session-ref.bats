@@ -30,7 +30,7 @@ setup() {
   echo "$output" | grep -q 'claude --resume 22222222-2222-2222-2222-222222222222'
   # Discovery always carries the parallel-session caution by design;
   # the basename-only caution must NOT appear for an exact match.
-  ! echo "$output" | grep -q "caution: project dir matched by basename only"
+  ! echo "$output" | grep -q "caution: project dir matched by basename only" || false
 }
 
 @test "claude code: basename-only match emits the verify caution" {
@@ -105,7 +105,7 @@ setup() {
   run env -i HOME="$HOME_FIX" PWD="$PWD" CLAUDECODE=1 bash "$REF"
   [ "$status" -eq 0 ]
   echo "$output" | grep -q "caution: newest-transcript discovery"
-  ! echo "$output" | grep -q "caution: project dir matched by basename only"
+  ! echo "$output" | grep -q "caution: project dir matched by basename only" || false
 }
 
 @test "claude code: a hook-supplied file suppresses the discovery caution" {
@@ -113,7 +113,7 @@ setup() {
   run env -i HOME="$HOME_FIX" CLAUDECODE=1 HANDOFF_SESSION_FILE="$HOME_FIX/hook.jsonl" bash "$REF"
   [ "$status" -eq 0 ]
   echo "$output" | grep -q "hook.jsonl"
-  ! echo "$output" | grep -q "caution: newest-transcript discovery"
+  ! echo "$output" | grep -q "caution: newest-transcript discovery" || false
 }
 
 @test "claude code: empty transcript dir fabricates nothing (GNU xargs hazard)" {
@@ -123,7 +123,7 @@ setup() {
   mkdir -p "$proj"
   run env -i HOME="$HOME_FIX" PWD="$PWD" CLAUDECODE=1 bash "$REF"
   [ "$status" -eq 0 ]
-  ! echo "$output" | grep -q "session file: README.md"
+  ! echo "$output" | grep -q "session file: README.md" || false
   echo "$output" | grep -q "not found"
 }
 
@@ -141,5 +141,5 @@ setup() {
   run env -i HOME="$HOME_FIX" CODEX_THREAD_ID=thread-123 bash "$REF"
   [ "$status" -eq 0 ]
   echo "$output" | grep -q "current thread id: thread-123"
-  ! echo "$output" | grep -q "caution: newest rollout"
+  ! echo "$output" | grep -q "caution: newest rollout" || false
 }

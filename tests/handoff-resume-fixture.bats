@@ -20,7 +20,7 @@ setup() {
   ! git -C "$FIX" status --porcelain | grep -q '^??' || false
   # the new migration test lands around spec line 210 (the digest's anchor)
   line="$(grep -n 'CaptionDurationMigrationTest' "$FIX/spec/services/caption_spec.rb" | cut -d: -f1)"
-  [ "$line" -ge 200 ] && [ "$line" -le 215 ]
+  [ "$line" -ge 200 ] && [ "$line" -le 215 ] || false
 }
 
 @test "the planted failure manifests when the spec runs" {
