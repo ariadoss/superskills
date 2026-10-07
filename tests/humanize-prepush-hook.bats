@@ -12,6 +12,7 @@ setup() {
   git init -q --bare "$ORIGIN"
   git clone -q "$ORIGIN" "$WORK" 2>/dev/null
   git -C "$WORK" config user.email t@example.com
+  git -C "$WORK" checkout -q -b main
   git -C "$WORK" config user.name t
   # Seed one pushed commit so @{push}/origin refs resolve for every test:
   # a clone of an empty origin has neither until the first push lands.
@@ -31,7 +32,7 @@ commit_md() {
 
 run_hook() {  # run_hook <cwd> — feeds a git-push JSON payload on stdin
   local cwd="$1"
-  (cd "$cwd" && printf '%s' '{"tool_name":"Bash","tool_input":{"command":"git push origin main"}}' | HUMANIZE_PREPUSH="${HUMANIZE_PREPUSH:-1}" bash "$HOOK")
+  (cd "$cwd" && printf '%s' '{"tool_name":"Bash","tool_input":{"command":"git push origin main"}}' | HUMANIZE_PREPUSH=1 bash "$HOOK")
 }
 
 @test "blocks a push carrying slop-flagged markdown" {
@@ -79,13 +80,21 @@ run_hook() {  # run_hook <cwd> — feeds a git-push JSON payload on stdin
   [ -z "$(echo "$output" | jq -r '.decision // empty')" ]
 }
 
-@test "non-storefront markdown is never gated (skills, internal docs, reports)" {
+@test "skill bodies and MODIFIED internal docs are never gated" {
   mkdir -p "$WORK/skills/demo" "$WORK/evals/reports" "$WORK/docs"
-  printf 'He took a deep breath and began. The room seemed to hold its breath.\n' > "$WORK/skills/demo/SKILL.md"
-  cp "$WORK/skills/demo/SKILL.md" "$WORK/NOTES.md"
-  cp "$WORK/skills/demo/SKILL.md" "$WORK/evals/reports/r.md"
-  cp "$WORK/skills/demo/SKILL.md" "$WORK/docs/guide.md"
-  git -C "$WORK" add -A && git -C "$WORK" commit -qm "flagged non-storefront text"
+  printf 'Install the tool. Run the checks. Ship when green.\n' > "$WORK/NOTES.md"
+  cp "$WORK/NOTES.md" "$WORK/evals/reports/r.md"
+  cp "$WORK/NOTES.md" "$WORK/docs/guide.md"
+  git -C "$WORK" add -A && git -C "$WORK" commit -qm "seed internal docs"
+  git -C "$WORK" push -q origin main 2>/dev/null || git -C "$WORK" push -q origin HEAD:main
+  # now MODIFY them with flagged text, and CREATE a flagged SKILL.md — none may gate
+  cat > "$WORK/NOTES.md" <<'SLOP'
+I couldn't help but smile. He took a deep breath and began.
+SLOP
+  cp "$WORK/NOTES.md" "$WORK/evals/reports/r.md"
+  cp "$WORK/NOTES.md" "$WORK/docs/guide.md"
+  cp "$WORK/NOTES.md" "$WORK/skills/demo/SKILL.md"
+  git -C "$WORK" add -A && git -C "$WORK" commit -qm "flagged internal + skill text"
   run run_hook "$WORK"
   [ "$status" -eq 0 ]
   [ -z "$(echo "$output" | jq -r '.decision // empty')" ]
@@ -105,7 +114,9 @@ run_hook() {  # run_hook <cwd> — feeds a git-push JSON payload on stdin
 
 @test "a NEW .md outside skills is gated at creation" {
   mkdir -p "$WORK/docs"
-  printf 'He took a deep breath and began. She nodded, a ghost of a smile playing at her lips.\\n' > "$WORK/docs/getting-started.md"
+  cat > "$WORK/docs/getting-started.md" <<'SLOP'
+He took a deep breath and began. She nodded, a ghost of a smile playing at her lips.
+SLOP
   git -C "$WORK" add docs/getting-started.md
   git -C "$WORK" commit -qm "new doc"
   run run_hook "$WORK"
@@ -114,23 +125,25 @@ run_hook() {  # run_hook <cwd> — feeds a git-push JSON payload on stdin
 }
 
 @test "a MODIFIED internal doc (not the README) is not gated" {
-  printf 'Install the tool. Run the checks. Ship when green.\\n' > "$WORK/NOTES.md"
+  printf 'Install the tool. Run the checks. Ship when green.\n' > "$WORK/NOTES.md"
   git -C "$WORK" add NOTES.md && git -C "$WORK" commit -qm "seed notes"
-  printf 'He took a deep breath and began. The room seemed to hold its breath.\\n' > "$WORK/NOTES.md"
+  git -C "$WORK" push -q origin main 2>/dev/null || git -C "$WORK" push -q origin HEAD:main
+  cat > "$WORK/NOTES.md" <<'SLOP'
+I couldn't help but smile. He took a deep breath and began. She nodded, a ghost of a smile playing at her lips.
+SLOP
   git -C "$WORK" add NOTES.md && git -C "$WORK" commit -qm "rewrite notes badly"
   run run_hook "$WORK"
   [ "$status" -eq 0 ]
   [ -z "$(echo "$output" | jq -r '.decision // empty')" ]
 }
 
-@test "a renamed .md with a sloppy destination path is gated as new" {
-  printf 'Clean prose here. Install and run.\\n' > "$WORK/OLD.md"
+@test "a renamed .md with a flagged destination path is gated as new" {
+  printf 'Install the tool. Run the checks. Ship when green. Then he took a deep breath and began to write more.\n' > "$WORK/OLD.md"
   git -C "$WORK" add OLD.md && git -C "$WORK" commit -qm "seed old"
+  git -C "$WORK" push -q origin main 2>/dev/null || git -C "$WORK" push -q origin HEAD:main
   git -C "$WORK" mv OLD.md GUIDE.md
-  cat > "$WORK/GUIDE.md" <<'SLOP'
-I couldn't help but smile. He took a deep breath and began. She nodded, a ghost of a smile playing at her lips.
-SLOP
-  git -C "$WORK" add GUIDE.md && git -C "$WORK" commit -qm "rename and rewrite"
+  printf "I couldn't help but smile. She nodded, a ghost of a smile playing at her lips.\n" >> "$WORK/GUIDE.md"
+  git -C "$WORK" add -A && git -C "$WORK" commit -qm "rename with appended slop"
   run run_hook "$WORK"
   [ "$status" -eq 0 ]
   echo "$output" | jq -e '.decision == "block"' >/dev/null

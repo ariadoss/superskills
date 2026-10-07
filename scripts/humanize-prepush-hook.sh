@@ -23,6 +23,8 @@ esac
 [ "${HUMANIZE_PREPUSH:-1}" = "0" ] && exit 0
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+TOP="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+[ -n "$TOP" ] && cd "$TOP"
 SCANNER="$ROOT/skills/humanize/toolkit/slop_report.py"
 [ -f "$SCANNER" ] || exit 0
 command -v python3 >/dev/null 2>&1 || exit 0
@@ -36,18 +38,19 @@ branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
 # vendor trees — new docs are human-facing by default. Modified internal
 # records stay out of scope; renames/copies count by their destination
 # path; deletions never gate.
-status="$( { git diff --name-status @{push}..HEAD 2>/dev/null \
-              || git diff --name-status "origin/${branch:-main}..HEAD" 2>/dev/null \
-              || git diff --name-status origin/HEAD..HEAD 2>/dev/null; } || true)"
+status="$( { git -c core.quotePath=false diff --name-status @{push}..HEAD 2>/dev/null \
+              || git -c core.quotePath=false diff --name-status "origin/${branch:-main}..HEAD" 2>/dev/null \
+              || git -c core.quotePath=false diff --name-status origin/HEAD..HEAD 2>/dev/null; } || true)"
 [ -n "$status" ] || exit 0
 files=""
+add() { files="${files:+$files$'\n'}$1"; }
 while IFS=$'\t' read -r st p1 p2 _; do
   [ -n "${st:-}" ] || continue
   path="${p2:-$p1}"
   case "$st" in
-    M)
+    M|T)
       case "$path" in
-        README*.md) files="$files $path" ;;
+        README*.md) add "$path" ;;
       esac
       ;;
     A|R[0-9]*|C|C[0-9]*)
@@ -57,32 +60,37 @@ while IFS=$'\t' read -r st p1 p2 _; do
       esac
       case "$path" in
         skills/*/SKILL.md|design-skills/*/SKILL.md|marketing-skills/*/SKILL.md|vendor/*) continue ;;
-        *) files="$files $path" ;;
+        *) add "$path" ;;
       esac
       ;;
   esac
 done <<EOF
 $(printf '%s\n' "$status")
 EOF
-files="${files# }"
 [ -n "$files" ] || exit 0
 
 # Scan prose, not code or URLs: strip inline-code spans and link targets
 # into temp copies so `/command` names and repo URLs cannot false-positive
-# (the scanner counts bare words regardless of markdown context).
+# (the scanner counts bare words regardless of markdown context). One
+# scanner invocation PER FILE — the scanner reads argv[1] only, so a
+# multi-file push would otherwise gate just its first file.
 tmpdir="$(mktemp -d 2>/dev/null)" || exit 0
 trap '[ -n "$tmpdir" ] && rm -rf "$tmpdir"' EXIT
-scan_args=""
-for f in $files; do
-  [ -f "$f" ] || continue
-  t="$tmpdir/$(printf '%s' "$f" | tr '/' '_')"
-  sed -e 's/`[^`]*`//g' -e 's/(https\?:\/\/[^)]*)//g' "$f" > "$t" 2>/dev/null || continue
-  scan_args="$scan_args $t"
-done
-[ -n "$scan_args" ] || exit 0
 EXEMPT_FLAG=""
 [ -f "$ROOT/.humanize-exempt.txt" ] && EXEMPT_FLAG="--exempt $ROOT/.humanize-exempt.txt"
-report="$(python3 "$SCANNER" $scan_args $EXEMPT_FLAG 2>/dev/null)" || exit 0
+report=""
+n=0
+while IFS= read -r f; do
+  [ -f "$f" ] || continue
+  n=$((n + 1))
+  t="$tmpdir/${n}_$(printf '%s' "${f//\//_}")"
+  sed -e 's/`[^`]*`//g' -e 's/(https\?:\/\/[^)]*)//g' "$f" > "$t" 2>/dev/null || continue
+  r="$(python3 "$SCANNER" "$t" $EXEMPT_FLAG 2>/dev/null)" || continue
+  report="${report:+$report
+}$f
+$r"
+done <<< "$files"
+[ -n "$report" ] || exit 0
 
 # Verdict from the report — HIGH-PRECISION signals only. The unambiguous
 # AI-slop markers block on any hit: EQ-BENCH slop words/bigrams and phrase
@@ -91,14 +99,13 @@ report="$(python3 "$SCANNER" $scan_args $EXEMPT_FLAG 2>/dev/null)" || exit 0
 # only a heavy density (index >= 10) blocks. Word/bigram/trigram counts
 # alone do NOT block.
 dirty=0
-if printf '%s' "$report" | grep -qE '^— (EQ-BENCH SLOP (WORDS|BIGRAMS)|SLOP PHRASE CLICHÉS|CLICHÉ SIMILES)[^:]*:' \
-   && ! printf '%s' "$report" | grep -qE '^— (EQ-BENCH SLOP (WORDS|BIGRAMS)|SLOP PHRASE CLICHÉS|CLICHÉ SIMILES)[^:]*: none'; then
+if printf '%s' "$report" | grep -qE '^— (EQ-BENCH SLOP (WORDS|BIGRAMS)|SLOP PHRASE CLICHÉS|CLICHÉ SIMILES)[^:]*: [0-9]'; then
   dirty=1
 fi
-idx="$(printf '%s' "$report" | sed -n 's/.*slop_index = \([0-9.]*\) .*/\1/p' | head -1)"
-if [ -n "$idx" ]; then
+while IFS= read -r idx; do
+  [ -n "$idx" ] || continue
   [ "$(python3 -c "print(1 if float('$idx') >= 10 else 0)" 2>/dev/null)" = "1" ] && dirty=1
-fi
+done <<< "$(printf '%s' "$report" | sed -n 's/^slop_index = \([0-9.]*\).*/\1/p')"
 [ "$dirty" -eq 1 ] || exit 0
 
 jq -n --arg r "$report" --arg f "$files" '{
