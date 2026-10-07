@@ -6,7 +6,7 @@ description: |
   in-progress state, exact next steps, and this session's reference (path +
   resume command), so a fresh session can continue cheaply instead of
   reconstructing. Use when asked to "write a handoff", "leave a handoff",
-  when a session/usage limit is approaching or announced (the auto-trigger
+  when a session or usage limit is near (the auto-trigger
   nudge says so), before compaction, before ending a long session that is
   not finished, or when handing work to another agent. Composes with, and
   deliberately fires earlier than, /quota-resilience (which owns the hard
@@ -22,11 +22,11 @@ allowed-tools:
 
 # /handoff
 
-Write `handoff.md` at the repo root — the bridge a successor session reads
+Write `handoff.md` at the repo root: the bridge a successor session reads
 first. It is uncommitted by design: the durable record is git itself; the handoff
 is the ephemeral state git cannot hold (what is half-done, what to verify
 first, how to resume THIS session). In superskills checkouts the file is
-gitignored; elsewhere it simply stays untracked (and superskills' own
+gitignored; elsewhere it stays untracked (and superskills' own
 export ships an ignore rule for standalone users).
 
 ## When
@@ -38,12 +38,12 @@ export ships an ignore rule for standalone users).
   statusline's rate-limit cache. Prerequisite: the superskills statusline
   is installed (`./setup --statusline`); without it there is no cache and
   only manual invocation works. The nudge supplies `transcript_path` and
-  `session_id` — use them.
+  `session_id`. Use them.
 
 ## Step 1 — the session reference
 
 Run this skill's session-ref script. Resolve its path relative to THIS
-skill's directory (wherever the host loaded it from — plugin installs and
+skill's directory (wherever the host loaded it from: plugin installs and
 the standalone repo both keep it at `scripts/session-ref.sh` directly under
 the skill):
 
@@ -108,16 +108,16 @@ be self-contained (no "as above", no pronouns without antecedents), must
 build on work already done, and must not duplicate finished work. Target
 40-80 lines; a note longer than the session state it summarizes has failed.
 
-Facts only. Commit hashes, file:line anchors, exact commands — no padding,
+Facts only. Commit hashes, file:line anchors, exact commands. No padding,
 no speculation. If `$ARGUMENTS` carries a user note, fold it into Context.
 
 ## Step 3 — composition
 
 - On the quota hard stop, `/quota-resilience` folds this file into
-  `QUOTA-RESUME.md` and deletes it — one bridge, not two. Do not leave both.
+  `QUOTA-RESUME.md` and deletes it: one bridge, not two. Do not leave both.
 - A parallel-session collision (usage windows are account-wide; another
   session may overwrite this file) is why the header records which session
-  wrote it — last-writer-wins stays auditable.
+  wrote it; last-writer-wins stays auditable.
 - In a minimal harness with no session persistence, this file is the ONLY
   bridge: say so in the note when session-ref prints the unknown-harness
   fallback, and let the successor rebuild from the note plus git.

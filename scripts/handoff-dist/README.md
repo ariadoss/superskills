@@ -3,7 +3,7 @@
 A cross-harness `/handoff` skill for coding agents: writes a `handoff.md`
 at the repo root — in-progress state, exact next steps, and this session's
 reference (absolute session/transcript path plus the verified resume
-command) — so a fresh session can resume the work cheaply instead of
+command), so a fresh session can resume the work cheaply instead of
 reconstructing it.
 
 ## Two trigger modes
@@ -24,7 +24,7 @@ reconstructing it.
   The hook reads the rate-limit cache written by
   [superskills](https://github.com/ariadoss/superskills)' statusline
   (`~/.cache/claude-statusline/rate-limits.json`). Without that statusline
-  there is no cache and only manual invocation works — nothing breaks.
+  there is no cache and only manual invocation works. Nothing breaks.
 
 ## Harness support
 
@@ -45,6 +45,6 @@ and updates it.
 ## Provenance
 
 Canonical source: [ariadoss/superskills](https://github.com/ariadoss/superskills)
-(`skills/handoff/`); this repo is its standalone export — file issues there.
+(`skills/handoff/`); this repo is its standalone export; file issues there.
 The note's content model won a pre-registered three-variant bake-off
 (judge + behavioral resume evals); see superskills' `evals/reports/`.
