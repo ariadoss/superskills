@@ -68,3 +68,62 @@ grader texts, committed before runs.
   the null. A null is a real answer.
 - Stated limit: n=3; same-day drift between the two sequential runs is an
   uncontrolled small confound (precedent: 2026-10-06 calibration report).
+
+## Addendum — E3b (registered 2026-10-07, before any E3b run)
+
+E3 was mechanically REJECTED per the gates above (names-judo Δ 0.000). The
+open-coding pass found an instrument defect, not a null: all three change-arm
+runs applied and named a category-deleting reframe (the Dispatcher if-chain
+became a format-to-function lookup table; "adding a format is one line
+instead of an edit to Dispatcher.export"), but the names-judo PASS definition
+admitted only the maximal single-exporter form, so the judge failed replies
+that exhibited the measured construct. Per METHODOLOGY ("every disagreement
+is a rubric bug before it is a model bug: rewrite the rubric, re-judge,
+re-measure"), E3b re-runs the experiment with a construct-faithful grader.
+E3's committed rejection stands as history; this addendum is a new
+pre-registration, decided on its own gates.
+
+### E3b Intervention
+
+Identical to E3's: the "Ambition bar" subsection at the end of `## Step 2:
+Audit` in `skills/clean-code/SKILL.md` (same text E3 applied, then reverted;
+one transcription deviation recorded in the SDD ledger: the plan block's
+trailing experiment-meta sentence stays out of the skill body).
+
+### E3b Cases and grader
+
+Same case (`cleancode-judo`, unchanged fixture). The names-judo grader is
+replaced by `names-judo-v2` (behavior-preserved and diff-scoped unchanged),
+text in the case directory, committed before any E3b run:
+
+PASS if the reply names a reframe that deletes a category of complexity from
+the implementation — qualifying examples: replacing the per-format `if fmt ==
+...` chain in Dispatcher with a format-to-function lookup table or registry;
+a single spec-driven exporter replacing the per-format copies; merging the
+per-format functions behind shared structure so a new format is data, not
+code. FAIL if the reply's deepest structural suggestion is extracting or
+deduplicating a helper while the four export functions and the branching
+dispatcher remain the shape of the design.
+
+### E3b Fairness rule
+
+Same as E3. The v2 rubric is construct-faithful, not outcome-fitted: it still
+fails extract-a-helper-only, and the baseline arm runs fresh under the same
+grader — if the baseline also names dispatcher-reframes, E3b returns null
+and that is the answer.
+
+### E3b Endpoints and thresholds (set before the runs)
+
+- Fresh runs, both arms, same day, n=3: baseline = reverted tree (v1.0.0),
+  change = Ambition bar applied. Budget: `--max-cost-usd 4` per arm (≤ $8;
+  E3 measured $1.52–1.56 per arm).
+- **Firing-power gate:** clean-code fires ≥ 2/3 runs in BOTH arms.
+- **Primary:** names-judo-v2 pass rate, change vs baseline.
+- **Adopt** iff: names-judo-v2 Δ ≥ +0.15 AND behavior-preserved does not
+  regress at all AND diff-scoped does not regress ≥ 0.34 AND firing gate
+  holds.
+- **Reject** otherwise: revert, keep everything, report. If rejected because
+  the baseline also reframes under v2, the honest conclusion is "the model
+  already does judo; the skill text adds nothing measurable" — a real null.
+- Limits: n=3; same-day drift; run errors (max-turns exhaustion) are
+  reported and their runs count as failing every scored grader, as in E3.

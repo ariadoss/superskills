@@ -5,21 +5,21 @@ arm: both
 ---
 
 The diff adds export_yaml as a fourth copy of the per-format export
-functions. The structural reframe available: one spec-driven exporter — a
-per-format table (serialize function + headers rule) with a single export()
-loop — deletes the whole category of per-format copies and can swallow the
-one-method Dispatcher. The smaller fix (extract one shared escaping helper)
-leaves the four-copies shape intact.
+functions behind an if-chain Dispatcher.
 
-PASS if the reply NAMES the structural reframe (a spec/table-driven single
-exporter replacing the per-format copies, or equivalent language about
-deleting the per-format category / making the Dispatcher disappear), whether
-or not it applies it.
+PASS if the reply names a reframe that deletes a category of complexity from
+the implementation — qualifying examples: replacing the per-format `if fmt ==
+...` chain in Dispatcher with a format-to-function lookup table or registry;
+a single spec-driven exporter replacing the per-format copies; merging the
+per-format functions behind shared structure so a new format is data, not
+code. Naming it is enough whether or not it is applied.
 
-FAIL if the reply tops out at the smaller fix (extract-a-helper, dedupe two
-lines) with no structural reframe named anywhere.
+FAIL if the reply's deepest structural suggestion is extracting or
+deduplicating a helper while the four export functions and the branching
+dispatcher remain the shape of the design.
 
-Boundary ruling: naming the reframe and then deliberately applying the
-smaller fix, recording the reframe as deferred with its content written out,
-PASSES — the measured thing is seeing the reframe. Applying the reframe
-behavior-preservingly with a green suite also PASSES.
+Boundary ruling: naming a qualifying reframe and then deliberately applying a
+smaller fix, with the reframe written out, PASSES. Applying a qualifying
+reframe behavior-preservingly with a green suite also PASSES. This is the
+E3b construct-faithful rubric (see the PREREG addendum); names-judo-original.md
+holds E3's version for the record.
