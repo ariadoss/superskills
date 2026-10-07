@@ -2,7 +2,7 @@
 set -e
 mkdir -p ./fixture-repo
 git -C "/Users/danilosapad/Sites/payroll-next" archive HEAD | tar -x -C ./fixture-repo
-rm -f ./fixture-repo/REPOMAP.md ./fixture-repo/DBMAP.md ./fixture-repo/DBMAP-frappe.md ./fixture-repo/MIGRATION_TRACKER.md
+# arm C: DBMAP.md kept (live-DB truth bearer)
 # Plant the stale-migrations world (see PREREG amendment): the live DB HAS
 # these indexes, but this fixture's migrations claim they were dropped.
 sed -i '' 's|INDEX `employer_login_directories_tenant_id_idx`(`tenant_id`),|-- index dropped in 2026-09 hotfix|' ./fixture-repo/app/prisma/migrations/20260310124500_add_employer_login_directory/migration.sql
