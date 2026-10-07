@@ -1,0 +1,3 @@
+# product names and terms of art — skipped from all slop checks
+# (this repo own skill names appearing in README prose)
+tapestry

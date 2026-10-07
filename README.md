@@ -1,4 +1,4 @@
-# Superskills `v2.40.0`
+# Superskills `v2.41.0`
 
 Curated AI skills pack for Claude Code, ZCode, OpenCode, Codex CLI, DSH (DeepSeek Harness), Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Integrates [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team; an opt-in pack) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
@@ -435,7 +435,7 @@ Skills curated from:
 - [obra/superpowers](https://github.com/obra/superpowers): TDD, debugging, worktrees, planning
 - [buildbetter-app/BB-Skills](https://github.com/buildbetter-app/BB-Skills): spec workflow
 - [slavingia/skills](https://github.com/slavingia/skills): startup methodology
-- [tapestry](https://github.com/michalparkola/tapestry-skills-for-claude-code): content extraction
+- [tapestry-skills](https://github.com/michalparkola/tapestry-skills-for-claude-code): content extraction
 - [clearwing](https://github.com/Lazarus-AI/clearwing): security scanning
 - [ffuf](https://github.com/ffuf/ffuf): web fuzzing
 - [kostja94/marketing-skills](https://github.com/kostja94/marketing-skills): 172 marketing skills

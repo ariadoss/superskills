@@ -163,13 +163,13 @@ Read DEVELOPER_WORKFLOW.md to understand how to use superskills commands togethe
 
 ## Prose quality before push
 
-Run `/humanize` (or at minimum its deterministic scan,
-`python3 skills/humanize/toolkit/slop_report.py <files>`) on every .md
-file a change touches — documentation, READMEs, reports — before
-committing and always before pushing. A PreToolUse gate
-(`scripts/humanize-prepush-hook.sh`) blocks pushes carrying flagged .md
-until the scan is clean; `HUMANIZE_PREPUSH=0` is the honest bypass when
-wording is deliberately held: eval-bound skill text (trigger descriptions
-and measured content the adoption evidence binds to), vendored or
-upstream text, and historical records (PREREGs, result reports). Humanize
-those categories surgically, never wholesale.
+The storefront text — the repo-root `README.md` — is gated: a PreToolUse
+hook (`scripts/humanize-prepush-hook.sh`) blocks any push whose README
+carries deterministic slop flags until `/humanize` cleans it
+(`HUMANIZE_PREPUSH=0` is the bypass for deliberately-held wording).
+Everything else is deliberately OUT of the gate: skill bodies are how
+agents speak to agents (register is the product; wording is often the
+exact bytes an eval adopted — humanize only deliberately and surgically),
+and internal docs, reports, and plans are working records. As a habit,
+run `/humanize` over human-facing prose you author (READMEs, public docs)
+before it ships; never batch-rewrite the excluded categories.
