@@ -127,6 +127,8 @@ EOF
 
 (`refund` computes a float fraction — a violation of pinned rule 1 — while remaining functionally correct, so the finding can only come from the convention, not from a bug.)
 
+**Verify before committing** (this repo's history shows fixture breakage discovered mid-run burning paid budget): append the new branch to a copy of the real `evals/_lib/review-fixture.sh`, `bash -n` it, build the `conventions` mode into a `/tmp` dir, and assert: `git log --oneline | head -2` shows `docs: house rules` on top of `base: orders helpers`; `git show HEAD --stat | grep -q CONVENTIONS`; `grep -q 'pct_bp / 10000' app.py`; `git diff --name-only` lists `app.py`. Delete the temp dir.
+
 - [ ] **Step 2: Write the case**
 
 `evals/review-conventions/case.yaml`:
@@ -211,7 +213,8 @@ units — the diff conforms to house rule 2.
 PASS if the reply raises no finding about README.md, the docstring, or
 anything other than the pinned-rule violation.
 
-FAIL if the reply invents findings beyond the convention violation.
+FAIL if the reply invents findings beyond the convention violation, or treats
+a house rule the diff conforms to as a finding.
 ```
 
 - [ ] **Step 3: Write the PREREG (commit before any run)**
@@ -286,8 +289,8 @@ Expected: 1 run completes; note the cost. If > $2.50 → execute the PREREG abor
 
 - [ ] **Step 6: Baseline run**
 
-Run: `claude plugin eval . --case review-conventions --case review-clean --case review-calibration --runs 3 --ablation none --trust-plugin --no-publish --scaffold --allow-tools Bash --judge-model sonnet --max-cost-usd 8 --json evals/results/conv-baseline.json`
-Expected: 9 runs. Record per-grader means and the skill-fired indicators.
+Run: `claude plugin eval . --case 'review-*' --runs 3 --ablation none --trust-plugin --no-publish --scaffold --allow-tools Bash --judge-model sonnet --max-cost-usd 8 --json evals/results/conv-baseline.json`
+Expected: 9 runs — `--case` takes a **single glob** (verified against `claude plugin eval --help`; multiple `--case` flags do not accumulate), and `review-*` matches exactly the three cases that exist at this point: review-conventions, review-clean, review-calibration. Record per-grader means and the skill-fired indicators.
 
 - [ ] **Step 7: Apply the intervention**
 
@@ -304,7 +307,9 @@ file the README names. A rule pinned there applies even when this skill's
 defaults would skip it, and a diff that violates it is a finding — the author
 pinned it, so they would fix it if told. Cite the source in the finding as
 `(convention: <file>)`. Rules the diff follows are not findings; do not
-restate them.
+restate them. Judge relevance like any other finding: a pinned rule this repo
+no longer follows in practice, or one the diff's context makes inapplicable,
+is worth at most a one-line aside — never a finding.
 ```
 
 (b) In `## Scope`, append a bullet:
@@ -329,7 +334,6 @@ severity level.
 Same command as Step 6 with `--json evals/results/conv-change.json`. Expected: 9 runs.
 
 - [ ] **Step 9: Decide against the pre-registered gates**
-
 Apply the PREREG decision rule verbatim. ADOPT → bump `skills/basic-review/SKILL.md` frontmatter `version: 1.2.0` → `1.3.0`. REJECT → `git restore skills/basic-review/SKILL.md` (cases and PREREG stay either way).
 
 - [ ] **Step 10: Commit**
@@ -353,7 +357,7 @@ git commit -m "evals: review-conventions A/B for /basic-review — repo-pinned c
 
 - [ ] **Step 1: Add the two `guided` modes to the review fixture**
 
-In `evals/_lib/review-fixture.sh`, add two more branches after the `conventions` branch (before the `else`). Both commit the guidelines file as part of the base, then leave their respective `app.py` as the uncommitted diff:
+In `evals/_lib/review-fixture.sh`, add two more branches directly before the closing `else` (after the `conventions` branch when Task 1's fixture edit landed; before the `else` regardless — Task 1 may have aborted before its fixture edit). Both commit the guidelines file as part of the base, then leave their respective `app.py` as the uncommitted diff:
 
 ```bash
   elif [ "$mode" = "guided-violation" ] || [ "$mode" = "guided-clean" ]; then
@@ -419,6 +423,8 @@ EOF
 ```
 
 (`guided-violation`'s `refund` computes a float fraction — a `money-cents` violation that is functionally correct, so only the guideline can justify the finding. `guided-clean`'s `refund_cents` conforms exactly, so the correct review is "no findings".)
+
+**Verify before committing** (same rule as Task 1): extend a copy of the lib with both new branches, `bash -n` it, build each mode into a `/tmp` dir, and assert: both modes show `REVIEW_GUIDELINES.yaml` in `git show HEAD --stat`; `guided-violation` has `pct_bp / 10000` uncommitted in `app.py`; `guided-clean` has `refund_cents` uncommitted and `refund_cents(20000) == 17000` by direct evaluation. Delete the temp dirs.
 
 - [ ] **Step 2: Write the two cases**
 
@@ -493,7 +499,7 @@ presenting the guidelines file itself as missing, stale, or wrong.
 
 - [ ] **Step 3: Write the PREREG (commit before any run)**
 
-`evals/reports/2026-10-07-review-guidelines-PREREG.md` — same structure as Task 1's, with: provenance = auggie `plugin_marketplace/code-review/commands/local.md` Step 2 (fetched 2026-10-07) + the schema/citation adapted to a tool-neutral root file; intervention = the "Repository review guidelines (opt-in contract)" subsection (full text in the plan, inserted after the Task 1 conventions subsection if Task 1 adopted, else after "What earns a finding"); cases table (`review-guidelines` primary, `review-guidelines-clean` precision control, `review-clean` + `review-calibration` unchanged regression guards); fairness rule identical in shape; thresholds: price run $3 cap (abort > $2.50), baseline $8, change $8, ≤ $19 total; firing ≥ 2/3 both arms; **primary = mean of cites-guideline + no-bleed + no-guideline-findings; adopt if primary ≥ +0.15 AND no grader across the four cases regresses ≥ 0.34 AND `no-false-positive` and `no-guideline-findings` each do not regress at all AND firing gate holds;** same stated limits as Task 1. Dependency note: this experiment runs after Task 1's decision, and its PREREG records Task 1's outcome (adopted/reverted) so the baseline state is unambiguous.
+`evals/reports/2026-10-07-review-guidelines-PREREG.md` — same structure as Task 1's, with: provenance = auggie `plugin_marketplace/code-review/commands/local.md` Step 2 (fetched 2026-10-07) + the schema/citation adapted to a tool-neutral root file; intervention = the "Repository review guidelines (opt-in contract)" subsection (full text in the plan, inserted after the Task 1 conventions subsection if Task 1 adopted, else after "What earns a finding"); cases table (`review-guidelines` primary, `review-guidelines-clean` precision control, `review-clean` + `review-calibration` unchanged regression guards); fairness rule identical in shape; thresholds: price run $3 cap (abort > $2.50), baseline $8, change $8, ≤ $19 total; firing ≥ 2/3 both arms; **primary = mean of cites-guideline + no-bleed + no-guideline-findings; adopt if primary ≥ +0.15 AND no grader across the four cases regresses ≥ 0.34 AND `no-false-positive` and `no-guideline-findings` each do not regress at all AND firing gate holds;** declared untested limits: the invalid-YAML fallback and glob-scoping edge cases are defensive text guarded only by the regression cases (no fixture exercises them); if E2 adopts, a follow-up case may pin them; same stated limits as Task 1. Dependency note: this experiment runs after Task 1's decision, and its PREREG records Task 1's outcome (adopted/reverted) so the baseline state is unambiguous.
 
 - [ ] **Step 4: Commit PREREG + cases BEFORE any run**
 
@@ -509,8 +515,8 @@ Expected: 1 run; if > $2.50 → abort per PREREG.
 
 - [ ] **Step 6: Baseline run**
 
-Run: `claude plugin eval . --case review-guidelines --case review-guidelines-clean --case review-clean --case review-calibration --runs 3 --ablation none --trust-plugin --no-publish --scaffold --allow-tools Bash --judge-model sonnet --max-cost-usd 8 --json evals/results/guidelines-baseline.json`
-Expected: 12 runs.
+Run: `claude plugin eval . --case 'review-*' --runs 3 --ablation none --trust-plugin --no-publish --scaffold --allow-tools Bash --judge-model sonnet --max-cost-usd 8 --json evals/results/guidelines-baseline.json`
+Expected: 12 runs — `review-*` matches exactly the five cases that exist at this point (review-guidelines, review-guidelines-clean, review-conventions, review-clean, review-calibration).
 
 - [ ] **Step 7: Apply the intervention**
 
@@ -525,7 +531,10 @@ extension of this review. Match each changed path against every area's
 as `(Guideline: <area-id>)` after the severity tag. If the file is absent,
 unreadable, or invalid YAML, continue without it and never treat that as a
 finding. Guideline rules can only add findings (the repo pinned them) or name
-the house fix for a default finding — they never loosen the bar above.
+the house fix for a default finding — they never loosen the bar above. Judge
+relevance like any other finding: a pinned rule this repo no longer follows in
+practice, or one the diff's context makes inapplicable, is worth at most a
+one-line aside — never a finding.
 
 Schema (areas with `id`, `globs`, `rules`; `globs` defaults to `["**"]`):
 
@@ -667,7 +676,10 @@ def test_unknown_format_raises():
         Dispatcher().export("parquet", ROWS)
 EOF
   git add -A && git commit -qm "base: csv/json/xml exporters"
-  # --- the diff under review: a fourth format as a fourth copy ---
+  git switch -qc feature/export-yaml
+  # --- the diff under review: a fourth format as a fourth copy (committed on
+  # the feature branch so clean-code's Step 1.4 clean-tree precondition holds
+  # without a user to ask) ---
   cat > exporters.py <<'EOF'
 def _validate(rows):
     out = []
@@ -761,9 +773,12 @@ def test_yaml_dispatcher():
     out = Dispatcher().export("yaml", [{"id": 1, "name": "Ann"}])
     assert out.startswith("---")
 EOF
+  git add -A && git commit -qm "feature: add yaml exporter as a fourth copy"
   )
 }
 ```
+
+**Verify before committing:** source the lib, build into a `/tmp` dir, and assert: 2 commits (`feature: …` on top of `base: csv/json/xml exporters`), `git status --porcelain` is EMPTY (clean-code Step 1.4 refuses a dirty tree and there is no user to ask), and `pytest -q` passes on HEAD (6 tests — the planted diff must be green or `clean-code` Step 1.3 exits). Delete the temp dir.
 
 - [ ] **Step 2: Write the case**
 
@@ -777,7 +792,7 @@ allowed_tools: [Read, Glob, Grep, Bash, Skill, Edit, Write]
 tags: [clean-code, judo]
 ---
 
-The repo under review is at ./fixture-repo (a small exporters library with a pytest suite). Clean up the pending changes before I ship.
+The repo under review is at ./fixture-repo (a small exporters library with a pytest suite). Clean up the changes on this branch before I ship.
 ```
 
 `graders/skill-fired.md` — pattern `'"skill"\s*:\s*"(?:[\w-]+:)?clean-code"'`.
@@ -852,7 +867,7 @@ here.
 
 - [ ] **Step 3: Write the PREREG (commit before any run)**
 
-`evals/reports/2026-10-07-cleancode-judo-PREREG.md` — same structure: provenance = cursor/plugins `thermos/skills/thermo-nuclear-code-quality-review/SKILL.md` (fetched 2026-10-07); intervention = the "Ambition bar" subsection (full text in Step 7) inserted at the end of `## Step 2: Audit`, which explicitly resolves the tension with the "Smallest safe refactor" hard rule (smallest is the default fix; the reframe is recorded and may be applied only when behavior-preserving, test-covered, and strictly simpler); cases: `cleancode-judo` primary; fairness rule identical in shape; thresholds: price run `--max-cost-usd 6` (abort > $5), baseline $15, change $15 (≤ $36); firing ≥ 2/3 both arms; **primary = mean of names-judo + behavior-preserved + diff-scoped; adopt if names-judo ≥ +0.15 AND primary ≥ +0.10 AND behavior-preserved does not regress at all AND diff-scoped does not regress ≥ 0.34 AND firing gate holds;** limits as before.
+`evals/reports/2026-10-07-cleancode-judo-PREREG.md` — same structure: provenance = cursor/plugins `thermos/skills/thermo-nuclear-code-quality-review/SKILL.md` (fetched 2026-10-07); intervention = the "Ambition bar" subsection (full text in Step 7) inserted at the end of `## Step 2: Audit`, which explicitly resolves the tension with the "Smallest safe refactor" hard rule (smallest is the default fix; the reframe is recorded and may be applied only when behavior-preserving, test-covered, and strictly simpler); the fixture commits the diff on a feature branch so Step 1.4's clean-tree precondition holds without a user to ask, and the measured thing is SEEING the reframe (audit quality — applying it is optional and suite-gated); cases: `cleancode-judo` primary; fairness rule identical in shape; thresholds: price run `--max-cost-usd 6` (abort > $5), baseline $15, change $15 (≤ $36); firing ≥ 2/3 both arms; **primary = mean of names-judo + behavior-preserved + diff-scoped; adopt if names-judo ≥ +0.15 AND primary ≥ +0.10 AND behavior-preserved does not regress at all AND diff-scoped does not regress ≥ 0.34 AND firing gate holds;** limits as before.
 
 - [ ] **Step 4: Commit PREREG + case BEFORE any run**
 
@@ -901,7 +916,10 @@ finding may be applied as the fix when it is behavior-preserving, covered by
 tests (characterization test first, like any other fix), and strictly simpler
 — fewer concepts, not more movement. If it is bigger than the diff's own risk
 budget, leave it UNFIXED with the reframe written out so the author can
-decide. A visible reframe that goes unreported is a miss.
+decide. A visible reframe that goes unreported is a miss. The ambition bar
+ships as four rules; the fixture measures the reframe dimension — size-smell,
+spaghetti-growth, and canonical-layer ride as declared-unmeasured, guarded by
+the behavior-preserved and diff-scoped graders.
 ```
 
 - [ ] **Step 8: Change run**
@@ -932,6 +950,199 @@ git commit -m "evals: cleancode-judo A/B for /clean-code — ambition bar (therm
 - Run: `./setup` (new skill is invisible without it)
 
 - [ ] **Step 1: Write the fixture and case**
+
+`evals/_lib/cli-fixture.sh`:
+
+```bash
+#!/usr/bin/env bash
+# cli_fixture <dir>: builds the book-inventory repo for the cli-for-agent eval.
+# Base: inventory.py (Book dataclass, in-memory store, JSON load/save) +
+# README specifying the shelfy CLI. The agent's task is to BUILD the CLI, so
+# the fixture ships the library and spec, not the CLI. Domain deliberately
+# disjoint from the skill's mycli/deploy examples (anti-leakage).
+cli_fixture() {
+  local dir="$1"
+  [ -n "$dir" ] || { echo "usage: cli_fixture <dir>" >&2; return 2; }
+  (
+  rm -rf "$dir"
+  mkdir -p "$dir"
+  cd "$dir" || exit 1
+  git init -q
+  git config user.email fixture@example.com
+  git config user.name fixture
+  cat > inventory.py <<'EOF'
+import json
+from dataclasses import dataclass, asdict
+
+
+@dataclass
+class Book:
+    isbn: str
+    title: str
+    genre: str
+    rating: int  # 1-5
+
+
+class Inventory:
+    def __init__(self):
+        self._books = []
+
+    def add(self, book):
+        if any(b.isbn == book.isbn for b in self._books):
+            raise ValueError(f"duplicate isbn: {book.isbn}")
+        self._books.append(book)
+
+    def by_genre(self, genre):
+        return [b for b in self._books if b.genre == genre]
+
+    def save(self, path):
+        with open(path, "w") as f:
+            json.dump([asdict(b) for b in self._books], f, indent=2)
+
+    @classmethod
+    def load(cls, path):
+        inv = cls()
+        with open(path) as f:
+            for row in json.load(f):
+                inv.add(Book(**row))
+        return inv
+EOF
+  cat > README.md <<'EOF'
+# shelfy
+
+Personal book inventory. The `inventory.py` module holds the logic; we need a
+command-line interface named `shelfy` (runnable as `python -m shelfy`) exposing:
+add a book by ISBN/title/genre/rating, list books filtered by genre, export the
+inventory to a JSON file, and initialize a new inventory file.
+EOF
+  git add -A && git commit -qm "base: inventory library + shelfy spec"
+  )
+}
+```
+
+**Verify before committing:** source the lib, build into a `/tmp` dir, and assert: one commit; `python3 -c "from inventory import Inventory, Book"` imports clean; the README names the four commands. Delete the temp dir.
+
+`evals/cli-agents-quality/case.yaml` (`name: cli-agents-quality`, `scaffold_script: fixture.sh`), `fixture.sh` sourcing the lib, `prompt.md`:
+
+```markdown
+---
+max_turns: 15
+timeout_seconds: 900
+allowed_tools: [Read, Glob, Grep, Bash, Skill, Write, Edit]
+tags: [cli-for-agent, quality]
+---
+
+The repo at ./fixture-repo needs the `shelfy` CLI built (spec in its README, logic in inventory.py). Build it so both humans and coding agents can drive it, then show me the evidence: the `--help` output, what a missing-required-flag run prints, and what a successful `add` prints.
+```
+
+`graders/skill-fired.md` — pattern `'"skill"\s*:\s*"(?:[\w-]+:)?cli-for-agent"'`.
+
+`graders/non-interactive.md`:
+
+```markdown
+---
+type: llm
+focus: last_message
+arm: both
+---
+
+The shelfy CLI was just built (or reviewed) in the fixture.
+
+PASS if every input the CLI takes is expressible as a flag/argument shown in
+the evidence (add takes isbn/title/genre/rating as flags or args; list takes
+--genre; export takes --out; init takes its path) and nothing in the shown
+evidence requires arrow keys, menus, or a timed prompt.
+
+FAIL if any shown flow requires an interactive prompt before it can run, or
+inputs are only documented as "you will be asked".
+```
+
+`graders/help-examples.md`:
+
+```markdown
+---
+type: llm
+focus: last_message
+arm: both
+---
+
+PASS if the shown --help (top-level or subcommand) includes at least one
+Example section with real, copy-pasteable invocations of the actual commands
+(add/list/export/init with real-looking values) — not just option
+descriptions.
+
+FAIL if the help shows only option lists with no example invocations, or the
+evidence shows no help output at all.
+```
+
+`graders/errors-actionable.md`:
+
+```markdown
+---
+type: llm
+focus: last_message
+arm: both
+---
+
+PASS if the shown missing-required-flag run exits immediately with an error
+message that includes (or is followed by the agent showing) a correct example
+invocation of the command — the user can copy it, fix the argument, and run
+again.
+
+FAIL if the error is bare ("missing argument"), hangs waiting for input, or
+shows no error evidence at all.
+```
+
+`graders/repeat-safe.md`:
+
+```markdown
+---
+type: llm
+focus: last_message
+arm: both
+---
+
+PASS if the CLI's design shown in the evidence is idempotent-safe or
+guarded: a repeated `add` of the same ISBN is rejected or explicitly reported
+as already-present (the library raises on duplicate isbn — the CLI must not
+silently double-add), and any destructive action (export overwriting an
+existing file, init overwriting an existing inventory) is previewable
+(--dry-run or equivalent) or guarded.
+
+FAIL if the evidence shows destructive actions with no preview/guard, or a
+duplicate add silently overwrites/duplicates.
+```
+
+- [ ] **Step 2: Write the PREREG (commit before any run)**
+
+`evals/reports/2026-10-07-cli-for-agent-PREREG.md` — same structure: provenance = cursor/plugins `cli-for-agent` (MIT, vendored with attribution and `metadata.upstream`); intervention = the new skill itself (tree gains `skills/cli-for-agent/` + its `./setup` link); cases: `cli-agents-quality` primary + `offtopic-no-skill` as the global negative guard (must stay clean in the treatment arm — the new skill must not fire off-topic); fairness: graders grade the shown evidence, never skill vocabulary; graders see the **final message only**, so the prompt explicitly demands the evidence be shown in the reply (`--help` output, the missing-flag error run, the success output) — a build whose evidence lives only in tool calls scores 0 on the outcome graders; this prompt-shape dependency is declared here rather than discovered later; the fixture domain (book inventory) is disjoint from the skill's `mycli deploy` examples (anti-leakage per `evals/METHODOLOGY.md`); thresholds: price run `--max-cost-usd 5` (abort > $4), baseline $12, change $12 (≤ $29); **primary = mean of the four outcome graders; adopt if primary ≥ +0.15 AND firing gate holds in the treatment arm (skill fires ≥ 2/3; if it fires < 2/3 the experiment is void — the skill is unreachable, report and revisit the description, do not adopt) AND `offtopic-no-skill` records no skill-firing in the treatment arm AND no outcome grader regresses ≥ 0.34** (a baseline run can pass a grader without the skill — the gates catch a skill that makes the CLI *worse*); rider declaration: the skill ships whole and the four graders sample its highest-risk patterns (non-interactive, help examples, actionable errors, idempotency) — the remaining sections (stdin/pipelines, discoverability, predictable structure, success output) are guarded only by the regression cases; limits as before.
+
+- [ ] **Step 3: Commit PREREG + case BEFORE any run**
+
+```bash
+git add evals/_lib/cli-fixture.sh evals/cli-agents-quality evals/reports/2026-10-07-cli-for-agent-PREREG.md
+git commit -m "evals: pre-register the cli-for-agent A/B (fixture, case, PREREG) before the baseline run; skill vendored separately after"
+```
+
+- [ ] **Step 4: Price-calibration run**
+
+Run: `claude plugin eval . --case cli-agents-quality --runs 1 --ablation none --trust-plugin --no-publish --scaffold --allow-tools Bash --judge-model sonnet --max-cost-usd 5 --json evals/results/cli-price.json`
+Expected: 1 run; if > $4 → abort per PREREG.
+
+- [ ] **Step 5: Baseline run (tree without the skill)**
+
+Run (two invocations — `--case` takes a single glob and these two case names share no prefix):
+
+```bash
+claude plugin eval . --case cli-agents-quality --runs 3 --ablation none --trust-plugin --no-publish --scaffold --allow-tools Bash --judge-model sonnet --max-cost-usd 9 --json evals/results/cli-baseline.json
+claude plugin eval . --case offtopic-no-skill --runs 3 --ablation none --trust-plugin --no-publish --scaffold --allow-tools Bash --judge-model sonnet --max-cost-usd 3 --json evals/results/cli-baseline-offtopic.json
+```
+
+Expected: 6 runs total. First confirm the tree has no skill directory: `test ! -e skills/cli-for-agent` (the ordering rule at the top of this task).
+
+- [ ] **Step 6: Vendor the skill**
+
+Create `skills/cli-for-agent/SKILL.md`:
 
 ````markdown
 ---
@@ -1066,215 +1277,25 @@ Adapted from [cursor/plugins](https://github.com/cursor/plugins)
 the superskills imported-skills rule; changes here do not track upstream.
 ````
 
-- [ ] **Step 2: Validate the vendored skill**
+- [ ] **Step 7: Link, validate, and commit the skill**
 
-Run: `./setup && claude plugin validate --strict . && ./tests/run.sh`
+Run: `./setup && claude plugin validate . && ./tests/run.sh` (root plugin validation stays **non-strict** — the accepted CLAUDE.md-at-root warning becomes an error under `--strict`, and `tests/plugin-manifests.bats` owns that contract)
 Expected: all pass (includes `tests/skills-host-neutral.bats` over the new skill and the manifest tests). Fix any frontmatter complaint before proceeding; do not skip setup — the treatment arm cannot fire the skill without its link.
-
-- [ ] **Step 3: Write the fixture and case**
-
-`evals/_lib/cli-fixture.sh`:
-
-```bash
-#!/usr/bin/env bash
-# cli_fixture <dir>: builds the book-inventory repo for the cli-for-agent eval.
-# Base: inventory.py (Book dataclass, in-memory store, JSON load/save) +
-# README specifying the shelfy CLI. The agent's task is to BUILD the CLI, so
-# the fixture ships the library and spec, not the CLI. Domain deliberately
-# disjoint from the skill's mycli/deploy examples (anti-leakage).
-cli_fixture() {
-  local dir="$1"
-  [ -n "$dir" ] || { echo "usage: cli_fixture <dir>" >&2; return 2; }
-  (
-  rm -rf "$dir"
-  mkdir -p "$dir"
-  cd "$dir" || exit 1
-  git init -q
-  git config user.email fixture@example.com
-  git config user.name fixture
-  cat > inventory.py <<'EOF'
-import json
-from dataclasses import dataclass, asdict
-
-
-@dataclass
-class Book:
-    isbn: str
-    title: str
-    genre: str
-    rating: int  # 1-5
-
-
-class Inventory:
-    def __init__(self):
-        self._books = []
-
-    def add(self, book):
-        if any(b.isbn == book.isbn for b in self._books):
-            raise ValueError(f"duplicate isbn: {book.isbn}")
-        self._books.append(book)
-
-    def by_genre(self, genre):
-        return [b for b in self._books if b.genre == genre]
-
-    def save(self, path):
-        with open(path, "w") as f:
-            json.dump([asdict(b) for b in self._books], f, indent=2)
-
-    @classmethod
-    def load(cls, path):
-        inv = cls()
-        with open(path) as f:
-            for row in json.load(f):
-                inv.add(Book(**row))
-        return inv
-EOF
-  cat > README.md <<'EOF'
-# shelfy
-
-Personal book inventory. The `inventory.py` module holds the logic; we need a
-command-line interface named `shelfy` (runnable as `python -m shelfy`) exposing:
-add a book by ISBN/title/genre/rating, list books filtered by genre, export the
-inventory to a JSON file, and initialize a new inventory file.
-EOF
-  touch shelfy_goal.txt  # touched-but-empty marker that the CLI is not built yet
-  git add -A && git commit -qm "base: inventory library + shelfy spec"
-  )
-}
-```
-
-`evals/cli-agents-quality/case.yaml` (`name: cli-agents-quality`, `scaffold_script: fixture.sh`), `fixture.sh` sourcing the lib, `prompt.md`:
-
-```markdown
----
-max_turns: 15
-timeout_seconds: 900
-allowed_tools: [Read, Glob, Grep, Bash, Skill, Write, Edit]
-tags: [cli-for-agent, quality]
----
-
-The repo at ./fixture-repo needs the `shelfy` CLI built (spec in its README, logic in inventory.py). Build it so both humans and coding agents can drive it, then show me the evidence: the `--help` output, what a missing-required-flag run prints, and what a successful `add` prints.
-```
-
-`graders/skill-fired.md` — pattern `'"skill"\s*:\s*"(?:[\w-]+:)?cli-for-agent"'`.
-
-`graders/non-interactive.md`:
-
-```markdown
----
-type: llm
-focus: last_message
-arm: both
----
-
-The shelfy CLI was just built (or reviewed) in the fixture.
-
-PASS if every input the CLI takes is expressible as a flag/argument shown in
-the evidence (add takes isbn/title/genre/rating as flags or args; list takes
---genre; export takes --out; init takes its path) and nothing in the shown
-evidence requires arrow keys, menus, or a timed prompt.
-
-FAIL if any shown flow requires an interactive prompt before it can run, or
-inputs are only documented as "you will be asked".
-```
-
-`graders/help-examples.md`:
-
-```markdown
----
-type: llm
-focus: last_message
-arm: both
----
-
-PASS if the shown --help (top-level or subcommand) includes at least one
-Example section with real, copy-pasteable invocations of the actual commands
-(add/list/export/init with real-looking values) — not just option
-descriptions.
-
-FAIL if the help shows only option lists with no example invocations, or the
-evidence shows no help output at all.
-```
-
-`graders/errors-actionable.md`:
-
-```markdown
----
-type: llm
-focus: last_message
-arm: both
----
-
-PASS if the shown missing-required-flag run exits immediately with an error
-message that includes (or is followed by the agent showing) a correct example
-invocation of the command — the user can copy it, fix the argument, and run
-again.
-
-FAIL if the error is bare ("missing argument"), hangs waiting for input, or
-shows no error evidence at all.
-```
-
-`graders/repeat-safe.md`:
-
-```markdown
----
-type: llm
-focus: last_message
-arm: both
----
-
-PASS if the CLI's design shown in the evidence is idempotent-safe or
-guarded: a repeated `add` of the same ISBN is rejected or explicitly reported
-as already-present (the library raises on duplicate isbn — the CLI must not
-silently double-add), and any destructive action (export overwriting an
-existing file, init overwriting an existing inventory) is previewable
-(--dry-run or equivalent) or guarded.
-
-FAIL if the evidence shows destructive actions with no preview/guard, or a
-duplicate add silently overwrites/duplicates.
-```
-
-- [ ] **Step 4: Write the PREREG (commit before any baseline run)**
-
-`evals/reports/2026-10-07-cli-for-agent-PREREG.md` — same structure: provenance = cursor/plugins `cli-for-agent` (MIT, vendored with attribution and `metadata.upstream`); intervention = the new skill itself (tree gains `skills/cli-for-agent/` + its `./setup` link); cases: `cli-agents-quality` primary + `offtopic-no-skill` as the global negative guard (must stay clean in the treatment arm — the new skill must not fire off-topic); fairness: graders grade the shown evidence, never skill vocabulary; the fixture domain (book inventory) is disjoint from the skill's `mycli deploy` examples (anti-leakage per `evals/METHODOLOGY.md`); thresholds: price run `--max-cost-usd 5` (abort > $4), baseline $12, change $12 (≤ $29); **primary = mean of the four outcome graders; adopt if primary ≥ +0.15 AND firing gate holds in the treatment arm (skill fires ≥ 2/3; if it fires < 2/3 the experiment is void — the skill is unreachable, report and revisit the description, do not adopt) AND `offtopic-no-skill` records no skill-firing in the treatment arm AND no outcome grader regresses ≥ 0.34** (a baseline run can pass a grader without the skill — the gates catch a skill that makes the CLI *worse*); limits as before.
-
-- [ ] **Step 5: Commit PREREG + case BEFORE the baseline run**
-
-```bash
-git add evals/_lib/cli-fixture.sh evals/cli-agents-quality evals/reports/2026-10-07-cli-for-agent-PREREG.md
-git commit -m "evals: pre-register the cli-for-agent A/B (fixture, case, PREREG) before the baseline run; skill vendored separately after"
-```
-
-(Note: the skill itself is committed only after the baseline run — the baseline must be a tree without it. Stage nothing under `skills/` in this commit.)
-
-- [ ] **Step 6: Price-calibration run**
-
-Run: `claude plugin eval . --case cli-agents-quality --runs 1 --ablation none --trust-plugin --no-publish --scaffold --allow-tools Bash --judge-model sonnet --max-cost-usd 5 --json evals/results/cli-price.json`
-Expected: 1 run; if > $4 → abort per PREREG.
-
-- [ ] **Step 7: Baseline run (tree without the skill)**
-
-Run: `claude plugin eval . --case cli-agents-quality --case offtopic-no-skill --runs 3 --ablation none --trust-plugin --no-publish --scaffold --allow-tools Bash --judge-model sonnet --max-cost-usd 12 --json evals/results/cli-baseline.json`
-Expected: 6 runs. (If `./setup` was already run in Step 2 and linked the skill, temporarily `rm ~/.claude/skills/cli-for-agent`-style links is WRONG — instead, do Step 2's setup only AFTER this baseline run: reorder so Step 2's `./setup` executes between baseline and treatment. The commit order stands: skill file committed after baseline.)
-
-- [ ] **Step 8: Add the skill, link it**
-
-Run Step 1 (create the skill file), then `./setup`, then commit:
 
 ```bash
 git add skills/cli-for-agent
 git commit -m "skills: vendor cli-for-agent from cursor/plugins (MIT) — agent-usable CLI patterns; measured by the cli-agents-quality A/B before adoption is decided"
 ```
 
-- [ ] **Step 9: Treatment run**
+- [ ] **Step 8: Treatment run**
 
-Same command as Step 7 with `--json evals/results/cli-change.json`. Expected: 6 runs, skill-fired ≥ 2/3 on the primary case.
+Same two invocations as Step 5 with `--json evals/results/cli-change.json` and `--json evals/results/cli-change-offtopic.json`. Expected: 6 runs total, skill-fired ≥ 2/3 on the primary case.
 
-- [ ] **Step 10: Decide against the gates**
+- [ ] **Step 9: Decide against the gates**
 
 ADOPT → keep the skill (no frontmatter bump yet; Task 7 ships it). REJECT → `git rm -r skills/cli-for-agent && ./setup` and record the null (the case, fixture, PREREG and report stay either way).
 
-- [ ] **Step 11: Commit the decision**
+- [ ] **Step 10: Commit the decision**
 
 ```bash
 git commit --allow-empty -m "evals: cli-for-agent A/B verdict — <ADOPTED: skill kept | REJECTED: skill removed, null recorded>; <primary Δ over four graders; firing X/3; offtopic clean/dirty>"
@@ -1284,12 +1305,228 @@ git commit --allow-empty -m "evals: cli-for-agent A/B verdict — <ADOPTED: skil
 
 ### Task 5: Experiment 5 — new `diff-walkthrough` skill (cursor pr-review-canvas techniques, markdown)
 
+**Ordering rule for this task:** `claude plugin eval .` loads skills from the repo working tree, so the baseline run happens on a tree with **no** `skills/diff-walkthrough/` directory; the skill is created in Step 6, after the baseline.
+
 **Files:**
-- Create: `skills/diff-walkthrough/SKILL.md`
 - Create: `evals/_lib/walkthrough-fixture.sh`, `evals/walkthrough-pricing/{case.yaml,fixture.sh,prompt.md,graders/*.md}`
 - Create: `evals/reports/2026-10-07-diff-walkthrough-PREREG.md`
+- Create: `skills/diff-walkthrough/SKILL.md` (Step 6, after the baseline run)
 
-- [ ] **Step 1: Write the skill**
+- [ ] **Step 1: Write the fixture and case**
+
+`evals/_lib/walkthrough-fixture.sh`:
+
+```bash
+#!/usr/bin/env bash
+# walkthrough_fixture <dir>: builds the pricing repo for the diff-walkthrough
+# eval. Base: compute_total applies 8% tax then a flat $10 member discount;
+# routes.py wires /checkout; models.py holds helpers. Feature branch (the diff
+# to walk through): (core) compute_total now applies the $10 member discount
+# BEFORE tax — for base 100, member: old (100+8)-10 = 98.00, new
+# (100-10)*1.08 = 97.20, a real $0.80 divergence (a multiplicative discount
+# would be order-insensitive — probe-verified trap, do not "simplify" back);
+# (wiring) routes.py registers /refund; (boilerplate) models.py renames
+# cust->customer and reorders imports. Domain disjoint from the skill's
+# core.py/routes.py validator example (anti-leakage).
+walkthrough_fixture() {
+  local dir="$1"
+  [ -n "$dir" ] || { echo "usage: walkthrough_fixture <dir>" >&2; return 2; }
+  (
+  rm -rf "$dir"
+  mkdir -p "$dir"
+  cd "$dir" || exit 1
+  git init -q
+  git config user.email fixture@example.com
+  git config user.name fixture
+  cat > pricing.py <<'EOF'
+TAX_RATE = 0.08
+MEMBER_DISCOUNT_USD = 10.00
+
+
+def compute_total(base_price, member=False):
+    """Old policy: flat $10 member discount applied after tax."""
+    subtotal = base_price * (1 + TAX_RATE)
+    if member:
+        subtotal -= MEMBER_DISCOUNT_USD
+    return round(subtotal, 2)
+EOF
+  cat > routes.py <<'EOF'
+HANDLERS = {}
+
+
+def route(path):
+    def register(fn):
+        HANDLERS[path] = fn
+        return fn
+    return register
+
+
+@route("/checkout")
+def checkout(payload):
+    from pricing import compute_total
+    return {"total": compute_total(payload["base_price"],
+                                  payload.get("member", False))}
+EOF
+  cat > models.py <<'EOF'
+import json
+
+
+def cust_ref(cust):
+    return {"id": cust["id"], "name": cust["name"]}
+
+
+def dump(rows):
+    return json.dumps(rows)
+EOF
+  git add -A && git commit -qm "base: checkout pricing"
+  git switch -qc feature/member-discount
+  cat > pricing.py <<'EOF'
+TAX_RATE = 0.08
+MEMBER_DISCOUNT_USD = 10.00
+
+
+def compute_total(base_price, member=False):
+    """New policy: flat $10 member discount applied before tax."""
+    subtotal = base_price
+    if member:
+        subtotal -= MEMBER_DISCOUNT_USD
+    return round(subtotal * (1 + TAX_RATE), 2)
+EOF
+  cat >> routes.py <<'EOF'
+
+
+@route("/refund")
+def refund(payload):
+    from pricing import compute_total
+    owed = compute_total(payload["base_price"], payload.get("member", False))
+    return {"refund": round(max(payload["paid"] - owed, 0.0), 2)}
+EOF
+  cat > models.py <<'EOF'
+import json
+
+
+def customer_ref(customer):
+    return {"id": customer["id"], "name": customer["name"]}
+
+
+def dump(rows):
+    return json.dumps(rows)
+EOF
+  git add -A && git commit -qm "feature: member discount before tax, refund route, rename"
+  )
+}
+```
+
+**Verify before committing:** source the lib, build into a `/tmp` dir, and assert: 2 commits with `feature: …` on top; the divergence is REAL by direct evaluation — load `pricing.py` from the base commit and from the working tree and confirm `compute_total(100, member=True)` returns `98.0` old vs `97.2` new (a multiplicative discount makes both orders identical at 97.2 — the probe that caught this is why this check exists); `git diff main...HEAD --stat` lists all three files. Delete the temp dir.
+
+`evals/walkthrough-pricing/case.yaml` (`name: walkthrough-pricing`, `scaffold_script: fixture.sh`), `fixture.sh` sourcing the lib, `prompt.md`:
+
+```markdown
+---
+max_turns: 10
+timeout_seconds: 600
+allowed_tools: [Read, Glob, Grep, Bash, Skill]
+tags: [diff-walkthrough, comprehension]
+---
+
+Walk me through the changes on this branch in ./fixture-repo — I was out and need to catch up on what happened here.
+```
+
+`graders/skill-fired.md` — pattern `'"skill"\s*:\s*"(?:[\w-]+:)?diff-walkthrough"'`.
+
+`graders/core-first.md`:
+
+```markdown
+---
+type: llm
+focus: last_message
+arm: both
+---
+
+The branch mixes three kinds of change: the pricing-policy change (core),
+the /refund route registration (wiring), and a rename + import reformat in
+models.py (boilerplate).
+
+PASS if the pricing change is presented with the most depth and appears
+before (or is clearly separated from) the mechanical rename/reformat, and the
+rename/reformat is summarized rather than shown as full hunks.
+
+FAIL if the reply walks files in path order with equal depth, or leads with
+the rename, or dumps every hunk equally.
+```
+
+`graders/traces-divergence.md`:
+
+```markdown
+---
+type: llm
+focus: last_message
+arm: both
+---
+
+The pricing change reorders discount and tax: for base_price 100 with member
+true, the old code returns 98.00 ((100 + 8) − 10: 8% tax first, then the flat
+$10 discount) and the new code returns 97.20 ((100 − 10) × 1.08: discount
+first, then tax on the discounted amount) — a 0.80 difference every member
+checkout will see. (The discount is a flat dollar amount precisely so the
+order matters; a multiplicative discount would make both orders identical.)
+
+PASS if the reply surfaces this old-vs-new divergence with a concrete input
+(a number like 100 walked through both orders, or the equivalent stated
+outcome difference). PASS also if it states the general rule ("the discount
+now applies before tax, so members pay tax on the discounted amount instead
+of getting the discount off the taxed total") with an illustrative number.
+
+FAIL if the reply describes the change only as "discount moved before tax"
+with no concrete outcome, input, or order-of-operations consequence — the
+thing a returning reader most needs is what a member's total now does.
+```
+
+`graders/wiring-connected.md`:
+
+```markdown
+---
+type: llm
+focus: last_message
+arm: both
+---
+
+PASS if the reply mentions the new /refund route as wiring (registered into
+the same handler table as /checkout) at least briefly, rather than omitting
+it or presenting it as core logic.
+
+FAIL if /refund is absent from the walkthrough, or gets a full hunk-by-hunk
+treatment equal to the pricing change.
+```
+
+- [ ] **Step 2: Write the PREREG (commit before any run)**
+
+`evals/reports/2026-10-07-diff-walkthrough-PREREG.md` — same structure: provenance = cursor/plugins `pr-review-canvas` (MIT; canvas layer dropped, markdown conventions adapted); intervention = the new skill; cases: `walkthrough-pricing` primary (+ `offtopic-no-skill` negative guard); fairness: graders grade presentation structure and trace content, never skill vocabulary; fixture domain (pricing/tax) disjoint from the skill's examples (validator/routes — anti-leakage); thresholds: price run `--max-cost-usd 5` (abort > $4), baseline $12, change $12 (≤ $29); **primary = mean of the three outcome graders; adopt if primary ≥ +0.15 AND traces-divergence ≥ +0.15 AND firing gate holds in the treatment arm (≥ 2/3; below that the experiment is void — revisit the description, do not adopt) AND `offtopic-no-skill` stays clean AND no outcome grader regresses ≥ 0.34**; rider declaration: the skill ships whole and the three graders sample its highest-risk behaviors (section ordering, divergence tracing, wiring connection) — pseudocode distillation, tricky-tags, and the ask-when-ambiguous rule are guarded only by the regression cases; limits as before.
+
+- [ ] **Step 3: Commit PREREG + case BEFORE any run**
+
+```bash
+git add evals/_lib/walkthrough-fixture.sh evals/walkthrough-pricing evals/reports/2026-10-07-diff-walkthrough-PREREG.md
+git commit -m "evals: pre-register the diff-walkthrough A/B (pricing fixture, case, PREREG) before the baseline run"
+```
+
+- [ ] **Step 4: Price-calibration run**
+
+Run: `claude plugin eval . --case walkthrough-pricing --runs 1 --ablation none --trust-plugin --no-publish --scaffold --allow-tools Bash --judge-model sonnet --max-cost-usd 5 --json evals/results/walkthrough-price.json`
+Expected: 1 run; if > $4 → abort per PREREG.
+
+- [ ] **Step 5: Baseline run (tree without the skill)**
+
+Run (two invocations — the two case names share no prefix):
+
+```bash
+claude plugin eval . --case walkthrough-pricing --runs 3 --ablation none --trust-plugin --no-publish --scaffold --allow-tools Bash --judge-model sonnet --max-cost-usd 9 --json evals/results/walkthrough-baseline.json
+claude plugin eval . --case offtopic-no-skill --runs 3 --ablation none --trust-plugin --no-publish --scaffold --allow-tools Bash --judge-model sonnet --max-cost-usd 3 --json evals/results/walkthrough-baseline-offtopic.json
+```
+
+Expected: 6 runs total. First confirm the tree has no skill directory: `test ! -e skills/diff-walkthrough` (the ordering rule at the top of this task).
+
+- [ ] **Step 6: Write the skill**
 
 Create `skills/diff-walkthrough/SKILL.md`:
 
@@ -1382,218 +1619,17 @@ Adapted from [cursor/plugins](https://github.com/cursor/plugins)
 canvas-SDK presentation layer replaced with markdown conventions.
 ````
 
-- [ ] **Step 2: Write the fixture and case**
-
-`evals/_lib/walkthrough-fixture.sh`:
+- [ ] **Step 7: Link, validate, and commit the skill**
 
 ```bash
-#!/usr/bin/env bash
-# walkthrough_fixture <dir>: builds the pricing repo for the diff-walkthrough
-# eval. Base: compute_total applies tax then a flat discount; routes.py wires
-# /checkout; models.py holds helpers. Feature branch (the diff to walk
-# through): (core) compute_total now applies the 10% member discount BEFORE
-# 8% tax — for base 100: old (100+8)*0.9 = 97.20, new 100*0.9+8 = 98.00;
-# (wiring) routes.py registers /refund; (boilerplate) models.py renames
-# cust->customer and reorders imports. Domain disjoint from the skill's
-# core.py/routes.py validator example (anti-leakage).
-walkthrough_fixture() {
-  local dir="$1"
-  [ -n "$dir" ] || { echo "usage: walkthrough_fixture <dir>" >&2; return 2; }
-  (
-  rm -rf "$dir"
-  mkdir -p "$dir"
-  cd "$dir" || exit 1
-  git init -q
-  git config user.email fixture@example.com
-  git config user.name fixture
-  cat > pricing.py <<'EOF'
-TAX_RATE = 0.08
-
-
-def compute_total(base_price, member=False):
-    """Old policy: flat 10% member discount after tax."""
-    subtotal = base_price * (1 + TAX_RATE)
-    if member:
-        subtotal *= 0.90
-    return round(subtotal, 2)
-EOF
-  cat > routes.py <<'EOF'
-HANDLERS = {}
-
-
-def route(path):
-    def register(fn):
-        HANDLERS[path] = fn
-        return fn
-    return register
-
-
-@route("/checkout")
-def checkout(payload):
-    from pricing import compute_total
-    return {"total": compute_total(payload["base_price"],
-                                  payload.get("member", False))}
-EOF
-  cat > models.py <<'EOF'
-import json
-
-
-def cust_ref(cust):
-    return {"id": cust["id"], "name": cust["name"]}
-
-
-def dump(rows):
-    return json.dumps(rows)
-EOF
-  git add -A && git commit -qm "base: checkout pricing"
-  git switch -qc feature/member-discount
-  cat > pricing.py <<'EOF'
-TAX_RATE = 0.08
-MEMBER_DISCOUNT = 0.90
-
-
-def compute_total(base_price, member=False):
-    """New policy: 10% member discount applies before tax."""
-    subtotal = base_price
-    if member:
-        subtotal *= MEMBER_DISCOUNT
-    return round(subtotal * (1 + TAX_RATE), 2)
-EOF
-  cat >> routes.py <<'EOF'
-
-
-@route("/refund")
-def refund(payload):
-    from pricing import compute_total
-    return {"refund": round(payload["paid"] - payload["base_price"], 2)}
-EOF
-  cat > models.py <<'EOF'
-import json
-
-
-def customer_ref(customer):
-    return {"id": customer["id"], "name": customer["name"]}
-
-
-def dump(rows):
-    return json.dumps(rows)
-EOF
-  git add -A && git commit -qm "feature: member discount before tax, refund route, rename"
-  )
-}
-```
-
-`evals/walkthrough-pricing/case.yaml` (`name: walkthrough-pricing`, `scaffold_script: fixture.sh`), `fixture.sh` sourcing the lib, `prompt.md`:
-
-```markdown
----
-max_turns: 10
-timeout_seconds: 600
-allowed_tools: [Read, Glob, Grep, Bash, Skill]
-tags: [diff-walkthrough, comprehension]
----
-
-Walk me through the changes on this branch in ./fixture-repo — I was out and need to catch up on what happened here.
-```
-
-`graders/skill-fired.md` — pattern `'"skill"\s*:\s*"(?:[\w-]+:)?diff-walkthrough"'`.
-
-`graders/core-first.md`:
-
-```markdown
----
-type: llm
-focus: last_message
-arm: both
----
-
-The branch mixes three kinds of change: the pricing-policy change (core),
-the /refund route registration (wiring), and a rename + import reformat in
-models.py (boilerplate).
-
-PASS if the pricing change is presented with the most depth and appears
-before (or is clearly separated from) the mechanical rename/reformat, and the
-rename/reformat is summarized rather than shown as full hunks.
-
-FAIL if the reply walks files in path order with equal depth, or leads with
-the rename, or dumps every hunk equally.
-```
-
-`graders/traces-divergence.md`:
-
-```markdown
----
-type: llm
-focus: last_message
-arm: both
----
-
-The pricing change reorders discount and tax: for base_price 100 with member
-true, the old code returns 97.20 ((100 + 8) × 0.9) and the new code returns
-98.00 (100 × 0.9 + 8) — a 0.80 difference every member checkout will see.
-
-PASS if the reply surfaces this old-vs-new divergence with a concrete input
-(a number like 100 walked through both orders, or the equivalent stated
-outcome difference). PASS also if it states the general rule ("discount now
-applies to the pre-tax amount, so members pay 8% of the discounted price
-instead of getting 10% off the taxed total") with an illustrative number.
-
-FAIL if the reply describes the change only as "discount moved before tax"
-with no concrete outcome, input, or order-of-operations consequence — the
-thing a returning reader most needs is what a member's total now does.
-```
-
-`graders/wiring-connected.md`:
-
-```markdown
----
-type: llm
-focus: last_message
-arm: both
----
-
-PASS if the reply mentions the new /refund route as wiring (registered into
-the same handler table as /checkout) at least briefly, rather than omitting
-it or presenting it as core logic.
-
-FAIL if /refund is absent from the walkthrough, or gets a full hunk-by-hunk
-treatment equal to the pricing change.
-```
-
-- [ ] **Step 3: Write the PREREG (commit before any baseline run)**
-
-`evals/reports/2026-10-07-diff-walkthrough-PREREG.md` — same structure: provenance = cursor/plugins `pr-review-canvas` (MIT; canvas layer dropped, markdown conventions adapted); intervention = the new skill; cases: `walkthrough-pricing` primary (+ `offtopic-no-skill` negative guard); fairness: graders grade presentation structure and trace content, never skill vocabulary; fixture domain (pricing/tax) disjoint from the skill's examples (validator/routes — anti-leakage); thresholds: price run `--max-cost-usd 5` (abort > $4), baseline $12, change $12 (≤ $29); **primary = mean of the three outcome graders; adopt if primary ≥ +0.15 AND traces-divergence ≥ +0.15 AND firing gate holds in the treatment arm (≥ 2/3; below that the experiment is void — revisit the description, do not adopt) AND `offtopic-no-skill` stays clean AND no outcome grader regresses ≥ 0.34**; limits as before.
-
-- [ ] **Step 4: Commit PREREG + case BEFORE the baseline run**
-
-```bash
-git add evals/_lib/walkthrough-fixture.sh evals/walkthrough-pricing evals/reports/2026-10-07-diff-walkthrough-PREREG.md
-git commit -m "evals: pre-register the diff-walkthrough A/B (pricing fixture, case, PREREG) before the baseline run"
-```
-
-- [ ] **Step 5: Price-calibration run**
-
-Run: `claude plugin eval . --case walkthrough-pricing --runs 1 --ablation none --trust-plugin --no-publish --scaffold --allow-tools Bash --judge-model sonnet --max-cost-usd 5 --json evals/results/walkthrough-price.json`
-Expected: 1 run; if > $4 → abort per PREREG.
-
-- [ ] **Step 6: Baseline run (tree without the skill)**
-
-Run: `claude plugin eval . --case walkthrough-pricing --case offtopic-no-skill --runs 3 --ablation none --trust-plugin --no-publish --scaffold --allow-tools Bash --judge-model sonnet --max-cost-usd 12 --json evals/results/walkthrough-baseline.json`
-Expected: 6 runs.
-
-- [ ] **Step 7: Add the skill, link it, commit**
-
-```bash
+./setup && claude plugin validate . && ./tests/run.sh
 git add skills/diff-walkthrough
-./setup
 git commit -m "skills: diff-walkthrough — changeset comprehension presentation (pr-review-canvas techniques, markdown adaptation); measured by the walkthrough-pricing A/B before adoption is decided"
 ```
 
-(Keep the skill file uncommitted until after Step 6, as in Task 4.)
-
 - [ ] **Step 8: Treatment run**
 
-Same command as Step 6 with `--json evals/results/walkthrough-change.json`. Expected: 6 runs, skill-fired ≥ 2/3.
+Same two invocations as Step 5 with `--json evals/results/walkthrough-change.json` and `--json evals/results/walkthrough-change-offtopic.json`. Expected: 6 runs total, skill-fired ≥ 2/3.
 
 - [ ] **Step 9: Decide against the gates**
 
@@ -1697,11 +1733,20 @@ J
 git add -A; git commit -qm "feature: invoice rendering with per-line flooring"
 ```
 
+**Verify before committing:** run the script into a `/tmp` dir and assert: current branch is `feature/invoice`; `node --test` passes (the planted diff must be green); `git diff main...HEAD --stat` lists `src/invoice.js` + `tests/invoice.test.js`; `src/invoice.js` requires `itemTotal` from `./cart` (the reuse seam the DRY finding points at). Delete the temp dir.
+
 (The plant: `lineTotal` duplicates `itemTotal`'s math and floors per line — a correctness divergence from `cart.js`'s exact-sum contract that single-integer-item tests cannot see, plus a textbook DRY finding. `/review`/`/basic-review` and `/clean-code` each naturally surface one face of the same root cause.)
 
 - [ ] **Step 2: Write the case**
 
-`evals/qaful-synthesis/case.yaml` (`name: qaful-synthesis`, `scaffold_script: fixture.sh`), `fixture.sh` sourcing the lib, `prompt.md`:
+`evals/qaful-synthesis/` — `case.yaml` (`name: qaful-synthesis`, `scaffold_script: fixture.sh`), plus a case-local `fixture.sh` that **invokes** the standalone lib (it is a script with `set -e`, not a sourced function like the review libs):
+
+```bash
+#!/bin/bash
+bash "$(dirname "$0")/../_lib/qaful-synthesis-fixture.sh" ./fixture-repo
+```
+
+`prompt.md`:
 
 ```markdown
 ---
@@ -1766,7 +1811,7 @@ ledger is missing while the verdict asserts ready.
 
 - [ ] **Step 3: Write the PREREG (commit before any run)**
 
-`evals/reports/2026-10-07-qaful-synthesis-PREREG.md` — same structure: provenance = cursor/plugins `thermos` orchestrator (fetched 2026-10-07); overlap note: the 2026-10-05 plan rejected a qa-full *accounting* experiment because the ledger exists — this measures the *synthesis* rule the ledger lacks (verified: `skills/qa-full/SKILL.md` Step 3 has no merge/dedup/weight instruction between the two passes); intervention = the "Synthesis across the two passes" block (full text in Step 7) inserted at the end of Step 3, after the `/clean-code` paragraph and before the `/code-review ultra` paragraph; cases: `qaful-synthesis` primary; fairness identical in shape; thresholds: **price run `--max-cost-usd 8` (abort > $6.50 — qa-full fan-out cost is unmeasured; this is the experiment's kill switch), baseline `--max-cost-usd 20`, change `--max-cost-usd 20` (≤ $48); primary = mean of synthesis-present + verdict-discipline; adopt if primary ≥ +0.15 AND synthesis-present ≥ +0.15 AND verdict-discipline does not regress at all AND firing gate ≥ 2/3 both arms;** limits: same-day drift + the fallback path (`/review` may be unavailable in-sandbox, in which case `/basic-review` runs — graders are written to accept either path); limits as before.
+`evals/reports/2026-10-07-qaful-synthesis-PREREG.md` — same structure: provenance = cursor/plugins `thermos` orchestrator (fetched 2026-10-07); overlap note: the 2026-10-05 plan rejected a qa-full *accounting* experiment because the ledger exists — this measures the *synthesis* rule the ledger lacks (verified: `skills/qa-full/SKILL.md` Step 3 has no merge/dedup/weight instruction between the two passes); intervention = the "Cross-check against the correctness pass" block (full text in Step 7) inserted at the end of Step 3, after the `/clean-code` paragraph and before the `/code-review ultra` paragraph — reconciling `/clean-code`'s report against `/review`'s applied fixes (the two passes' fix rounds are sequential, so the finding lists never coexist); cases: `qaful-synthesis` primary; fairness identical in shape; thresholds: **price run `--max-cost-usd 8` (abort > $6.50 — qa-full fan-out cost is unmeasured; this is the experiment's kill switch), baseline `--max-cost-usd 20`, change `--max-cost-usd 20` (≤ $48); primary = mean of synthesis-present + verdict-discipline; adopt if primary ≥ +0.15 AND synthesis-present ≥ +0.15 AND verdict-discipline does not regress at all AND firing gate ≥ 2/3 both arms;** limits: same-day drift + the fallback path (`/review` may be unavailable in-sandbox, in which case `/basic-review` runs — graders are written to accept either path); limits as before.
 
 - [ ] **Step 4: Commit PREREG + case BEFORE any run**
 
@@ -1778,7 +1823,7 @@ git commit -m "evals: pre-register the qa-full synthesis A/B (fixture, case, PRE
 - [ ] **Step 5: Price-calibration run**
 
 Run: `claude plugin eval . --case qaful-synthesis --runs 1 --ablation none --trust-plugin --no-publish --scaffold --allow-tools Bash --judge-model sonnet --max-cost-usd 8 --json evals/results/qaful-price.json`
-Expected: 1 run; **if > $6.50 → abort per PREREG: keep the case, record the price in the consolidated report, skip the experiment** (this is the expected abort path if the fan-out is expensive).
+Expected: 1 run; **if > $6.50 → abort per PREREG: keep the case, record the price in the consolidated report, skip the experiment** (this is the expected abort path if the fan-out is expensive). Mechanism note: the harness checks `--max-cost-usd` before each run and aborts with exit 2 plus partial results (verified against `claude plugin eval --help`); a cap-tripped run's scores read 0 for unexecuted graders — check `cases[].arms.*[].error` before reading any Δ.
 
 - [ ] **Step 6: Baseline run**
 
@@ -1787,19 +1832,22 @@ Expected: 3 runs.
 
 - [ ] **Step 7: Apply the intervention**
 
-In `skills/qa-full/SKILL.md`, at the end of `## Step 3: Correctness + quality — /review then /clean-code (always)` (after the `/clean-code` paragraph, before the `/code-review ultra` paragraph), insert:
+In `skills/qa-full/SKILL.md`, at the end of `## Step 3: Correctness + quality — /review then /clean-code (always)` (after the `/clean-code` paragraph, before the `/code-review ultra` paragraph), insert the "Cross-check against the correctness pass" block (full text follows). Sequencing note (verified against the existing Step 3 text): `/review` runs and its fix rounds complete BEFORE `/clean-code` starts, so the two finding lists never coexist — the intervention reconciles `/clean-code`'s report against `/review`'s applied fixes at `/clean-code`'s report time, before its fix round.
 
 ```markdown
-**Synthesis across the two passes.** Before the fix rounds, merge the two
-findings lists into one work list:
+**Cross-check against the correctness pass.** When `/clean-code` reports its
+findings, reconcile them with what `/review` (or `/basic-review`) already
+fixed before its pass ended. The ledger keeps one row per check — this rule is
+about the FINDINGS, not the rows:
 
-- Findings reported by BOTH passes — the same defect seen by `/review` and
-  `/clean-code` — are one item: fixed once, cited to both, one ledger row.
-  Never carry two rows for one root cause.
+- A `/clean-code` finding whose root cause `/review` already fixed is the same
+  root cause: finish it once if residue remains (e.g. the DRY fix completes
+  the correctness fix), cite both checks in the row's evidence, and never
+  repair one defect twice or leave it half-connected.
 - Overlapping findings are fixed first: two independent checks landing on the
   same code is evidence it is the highest-risk spot in the diff.
-- Disagreements (one pass flags what the other passed) are resolved by
-  evidence — re-read the code, decide, and record the ruling in the ledger
+- A disagreement (one pass flags what the other fixed or passed) is resolved
+  by evidence — re-read the code, decide, and record the ruling in the ledger
   row. Never split the difference.
 ```
 
@@ -1839,17 +1887,19 @@ git add evals/reports/2026-10-07-external-adoption.md
 git commit -m "evals: consolidated external-adoption report — <summary of nulls>; no skill changes shipped"
 ```
 
-If ANYTHING adopted: bump `VERSION` 2.38.1 → **2.39.0** (new skills and/or significant behavior updates = minor per CLAUDE.md), run `./scripts/sync-version.sh`, update the README version badge, run `./setup` (new skills from Tasks 4–5), then one commit:
+If ANYTHING adopted: bump `VERSION` to the next minor from whatever it reads at ship time (2.38.1 → **2.39.0** as of this plan's writing — new skills and/or significant behavior updates = minor per CLAUDE.md), run `./scripts/sync-version.sh`, update the README version badge, run `./setup` (new skills from Tasks 4–5), then one commit:
 
 ```bash
 git add VERSION README.md .claude-plugin .codex-plugin .cursor-plugin
-git commit -m "release 2.39.0 — <one line per adopted change>; VERSION 2.38.1→2.39.0, manifests stamped, README badge"
+git commit -m "release <VERSION> — <one line per adopted change>; VERSION bumped, manifests stamped, README badge"
 ```
+
+Then the release goes through the repo's own gate — `/finish-branch` → `/ship` per `DEVELOPER_WORKFLOW.md` (a human approves the merge; the release owner re-reads `main` before bumping if parallel work landed).
 
 - [ ] **Step 3: Final validation**
 
-Run: `./tests/run.sh && claude plugin validate --strict . && claude plugin validate --strict marketing-skills`
-Expected: all pass. If validate fails on new eval-case frontmatter (unknown keys), fix the frontmatter to the schema the existing cases use — do not delete cases to make validate pass.
+Run: `./tests/run.sh && claude plugin validate . && claude plugin validate marketing-skills`
+Expected: all pass (root validation stays **non-strict** — the accepted CLAUDE.md-at-root warning becomes an error under `--strict`, per `tests/plugin-manifests.bats`). If validate fails on new eval-case frontmatter (unknown keys), fix the frontmatter to the schema the existing cases use — do not delete cases to make validate pass.
 
 ---
 
@@ -1888,3 +1938,75 @@ Expected: all pass. If validate fails on new eval-case frontmatter (unknown keys
 - [ ] "Test and evaluate" → every experiment: committed PREREG + cases → price calibration → baseline n=3 → intervention → change n=3 → gate decision → decision commit stating the Δ; judge stays sonnet
 - [ ] "All six ideas" → E1 conventions (vercel-labs), E2 guidelines file (auggie), E3 judo (thermos), E4 cli-for-agent (cursor), E5 diff-walkthrough (pr-review-canvas), E6 synthesis (thermos) — one task each; overlaps with already-adopted technique excluded by the research table
 - [ ] Nulls are real answers → rejected experiments keep cases + PREREGs + negative-result commits; aborts are reported, not hidden
+
+---
+
+## Eng Review Record (2026-10-07)
+
+Review of this plan by `/plan-eng-review` (native pass + bounded probes + codex outside voice). Scope Challenge: the six-idea, one-at-a-time, adopt-on-measured-improvement structure is the user's explicit instruction for this plan (session message 2026-10-07) and matches the recorded precedent from the 2026-10-05 review of `2026-10-05-codex-eval-gated-adoption.md` ("structure kept at original arrangement per the user's standing instructions — recorded as prior approval, cited, not re-asked"). Scope accepted as-is; no cuts proposed.
+
+### Findings (all folded into the plan above; confidence per the calibration format)
+
+| # | Finding | Source | Disposition |
+|---|---|---|---|
+| F1 | [P1] (9/10) Task 5 walkthrough fixture: multiplicative discount is order-insensitive — old == new == 97.2, no divergence to trace. Caught by executing the fixture (probe). | Test review (probe) | Fixed: flat $10 member discount → old 98.00, new 97.20; grader text updated; per-task fixture-verify steps added |
+| F2 | [P1] (9/10) Multi-`--case` flags do not accumulate — `--case` takes a single glob (verified against `claude plugin eval --help`; matches the 2026-10-06 calibration report's note). Tasks 1–2 baseline/change commands were broken as written. | Architecture (probe) | Fixed: `--case 'review-*'` for Tasks 1–2; split invocations for Tasks 4–5 |
+| F3 | [P1] (9/10, codex) Task 6 synthesis block contradicted qa-full's sequencing: `/review`'s fix rounds complete before `/clean-code` starts, so the two finding lists never coexist; "merge before the fix rounds" was unimplementable as written. | Outside voice | Fixed: block rewritten as "Cross-check against the correctness pass" (reconcile `/clean-code`'s report against `/review`'s applied fixes); ledger's one-row-per-check contract preserved; sequencing note added |
+| F4 | [P1] (9/10, codex) Task 3 fixture left a dirty tree — `clean-code` Step 1.4 refuses to work without a user to ask, and the eval grants no AskUserQuestion. | Outside voice | Fixed: diff committed on `feature/export-yaml`; prompt says "changes on this branch"; verify step asserts empty `git status --porcelain` |
+| F5 | [P2] (8/10) Task 6 case-local `fixture.sh` was specified as "sourcing the lib" but the lib is a standalone script — the scaffold would no-op. | Code quality | Fixed: explicit shim invocation |
+| F6 | [P2] (8/10, codex) E1/E2 interventions let a pinned rule override the style-skip bar with no relevance guard; fixtures never test a stale convention. | Outside voice | Fixed: relevance clause added to both interventions ("worth at most a one-line aside"); `no-convention-bleed` FAIL extended; untested limits (invalid YAML, glob edges) declared in the E2 PREREG |
+| F7 | [P2] (8/10, codex) `claude plugin validate --strict .` is known to fail (accepted CLAUDE.md-at-root warning; `tests/plugin-manifests.bats` owns the contract). Inherited from the 2026-10-05 plan. | Outside voice | Fixed: root validation non-strict in Tasks 4/5/7 |
+| F8 | [P2] (8/10, codex) Task 5's refund handler could produce negative refunds and its unused `compute_total` import mislabeled wiring. | Outside voice | Fixed: handler recomputes the member total via `compute_total` and clamps at zero |
+| F9 | [P2] (8/10, codex) Adoption gates certified unmeasured additions (riders, untested ambition rules, untested skill sections). | Outside voice | Declared: rider declarations added to E3/E4/E5/E6 PREREGs (ships-whole, graders sample highest-risk patterns, remainder guarded by regression cases) |
+| F10 | [P2] (8/10) Task 7 hardcoded VERSION 2.39.0 (stale if releases land meanwhile) and omitted the repo's PR/review ship gate. | Code quality / Outside voice | Fixed: "next minor from whatever VERSION reads at ship time"; `/finish-branch` → `/ship` with human approval added |
+| F11 | [P3] (7/10) Task 4 fixture's `shelfy_goal.txt` marker was YAGNI; Task 4 outcome graders depend on evidence appearing in the final message (prompt mitigates). | Code quality | Fixed (marker removed); prompt-shape dependency declared in the E4 PREREG |
+
+### Failure modes
+Fixture silently building a wrong state → per-task verify steps (bash -n + build + asserts) added after probe evidence showed one real instance (F1). Paid-run contamination by an uncommitted skill directory → ordering rules + `test ! -e` guards in Tasks 4–5. Cost-cap abort misread as regression → exit-2 mechanism noted in Task 6. No silent-failure critical gaps remain.
+
+### What already exists (reused, not rebuilt)
+`evals/_lib/review-fixture.sh` (extended, not duplicated), `offtopic-no-skill` (negative guard for Tasks 4–5), `qa-full-fixture.sh` shape (copied for the synthesis fixture, deliberately not shared — coupling the closed routing work's fixture was rejected), `tests/skills-host-neutral.bats` + `tests/plugin-manifests.bats` (new-skill gates), PREREG/arms/gates methodology (2026-10-05/06 reports).
+
+### NOT in scope
+Structured-guidelines parser script (agent reads YAML at runtime), invalid-YAML/glob-edge fixture case (deferred until/unless E2 adopts), vendored-skill malice-scan pipeline, diff-size caps, pstack-style micro-skills, community-plugins scan infra (rejected-up-front table above).
+
+### Implementation Tasks
+Synthesized from this review's findings. Each task derives from a specific finding above. Run with Claude Code or Codex; checkbox as you ship.
+
+- [ ] **T1 (P1, human: ~1h / CC: ~10min)** — Tasks 1–2 — execute Experiments 1–2 exactly as written (fixture modes, PREREG-first, glob commands, gates)
+  - Surfaced by: Architecture F2; Test review F1 (probe method)
+  - Files: evals/_lib/review-fixture.sh, evals/review-conventions/, evals/review-guidelines{,-clean}/, skills/basic-review/SKILL.md
+  - Verify: gates evaluated verbatim; decision commits state actual deltas
+- [ ] **T2 (P1, human: ~1h / CC: ~10min)** — Task 3 — execute Experiment 3 (committed-diff fixture, clean-tree precondition, judo gates)
+  - Surfaced by: Outside voice F4
+  - Files: evals/_lib/cleancode-fixture.sh, evals/cleancode-judo/, skills/clean-code/SKILL.md
+  - Verify: pytest green on HEAD; gates verbatim
+- [ ] **T3 (P1, human: ~2h / CC: ~30min)** — Tasks 4–5 — vendored/new-skill experiments (create-after-baseline ordering, firing gates, offtopic guard)
+  - Surfaced by: Architecture (baseline contamination rule); Outside voice F8/F9
+  - Files: skills/cli-for-agent/, skills/diff-walkthrough/, evals/cli-agents-quality/, evals/walkthrough-pricing/
+  - Verify: skill fires ≥2/3 in treatment; offtopic clean; validate non-strict passes
+- [ ] **T4 (P2, human: ~1h / CC: ~20min)** — Task 6 — qa-full synthesis experiment with hard price abort
+  - Surfaced by: Outside voice F3
+  - Files: evals/_lib/qaful-synthesis-fixture.sh, evals/qaful-synthesis/, skills/qa-full/SKILL.md
+  - Verify: price run ≤ $6.50 else abort; gates verbatim
+- [ ] **T5 (P2, human: ~30min / CC: ~10min)** — Task 7 — consolidated report, single minor release through /finish-branch → /ship
+  - Surfaced by: Outside voice (ship gate); F10
+  - Files: evals/reports/2026-10-07-external-adoption.md, VERSION, manifests, README badge
+  - Verify: ./tests/run.sh + validate . + validate marketing-skills; human-approved merge
+
+Sequential implementation by design (one experiment at a time per the user's instruction); no parallelization opportunity. No unresolved decisions. Costs require the user's per-experiment go-ahead (money rule).
+
+## GSTACK REVIEW REPORT
+
+| Review | Trigger | Why | Runs | Status | Findings |
+|--------|---------|-----|------|--------|----------|
+| Outside Review | codex exec (read-only) via /plan-eng-review | Independent 2nd opinion | 1 | completed | 7 findings, all verified against tree and folded |
+| Eng Review | /plan-eng-review | Architecture & tests (required) | 1 | issues_open | 6 issues (2 architecture, 3 code quality, 1 test gap), all folded into the plan |
+
+**OUTSIDE COVERAGE:** codex (read-only sandbox), plan-review phase, completed; 7 findings (F3, F4, F6–F10 + ship gate), every one verified against the repository before folding.
+
+**CROSS-MODEL:** native review + codex agree on F10 (ship gate) and the rider-declaration gap (F9); codex alone caught the qa-full sequencing contradiction (F3) and the clean-tree precondition (F4); the native pass alone caught the fixture math and single-glob bugs via probes (F1, F2).
+
+**VERDICT: ENG REVIEWED — 11 findings total (native + outside), all folded; plan ready for execution behind the pre-registered gates; eng review required at ship time if the plan changes materially.**
+
+NO UNRESOLVED DECISIONS
