@@ -31,3 +31,15 @@ rescue the guess either; removal proceeds for all three.
 n=3/arm; primary = shape-correct; pilot framing (±0.34); caps $4; total
 ≤$8; single-plugin + git-less-copy protocol as prior rounds; graders
 grade answers vs the committed live-DB key, never vocabulary.
+
+## Amendment (instrument repair, before comparative arms; 2026-10-04 precedent)
+
+Arm A's first execution ($1.19, discarded as calibration) scored
+shape-correct 2/3 — because the premise was FALSE: the real migrations
+DECLARE both indexes (raw INDEX clauses; only schema.prisma's annotations
+lag). Guessing from these migrations is guessing right. The fixture now
+plants the divergence (migration lines replaced with "-- index dropped in
+2026-09 hotfix"; valid SQL), making DBMAP.md the only truth-bearer in arm
+C. Prediction unchanged: A misled (NO/hedge), C correct (YES). Also
+corrects the 2026-10-07 report's reconciliation claim: the repo's debt is
+prisma-annotation drift, not DB-vs-repo drift.

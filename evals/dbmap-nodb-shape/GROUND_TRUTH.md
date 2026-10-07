@@ -10,5 +10,9 @@ Q3: Storage engine — InnoDB (utf8mb4), per every CREATE TABLE.
 Q4: chat_messages — YES composite index in production on
     (site_identifier, created_at). NOT derivable from migrations.
 
-The discriminating questions are Q1 and Q4: an agent guessing from
-migrations/prisma answers NO; the live-DB truth is YES.
+AMENDED (instrument repair, before the comparative arms; arm A's first
+run is discarded calibration): the REAL migrations carry both indexes, so
+the original premise was false. The fixture now PLANTS the stale world —
+migrations say "dropped in 2026-09 hotfix"; live-DB truth (the only other
+in-repo bearer: DBMAP.md) says present. This is the maintainer's observed
+failure mode made testable: migrations mislead, the map does not.
