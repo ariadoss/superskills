@@ -4,18 +4,20 @@ focus: last_message
 arm: both
 ---
 
-Key: the notification system lives in app/prisma/schema.prisma (models),
-app/app/(private)/(dashboard)/notifications/ (_schemas/notification-schemas.ts
-for the type union, _services/notifications-service.ts and
-notifications-realtime.ts for delivery, page.tsx + use-notifications-page.ts
-for UI), and _components/NotificationsProvider.tsx for consumption. A
-per-user preference needs schema.prisma plus a preferences/settings
-surface if one exists.
+Architecture key: notifications are owned by a Frappe backend; this Next.js
+repo consumes them via frappeFetch. The true change set: settings-page-client.tsx
+(NOTIFICATION_GROUPS ~347 + the stubbed prefs-save TODO ~425),
+notifications/_schemas/notification-schemas.ts (NotificationRecord),
+notifications/_services/notifications-service.ts (+notifications-realtime.ts,
+the frappeFetch path), and lib/frappe.ts / _services/api.ts (allowed-methods
+for new endpoints). schema.prisma has NO Notification model.
 
-PASS if the reply identifies schema.prisma AND the notifications
-_schemas file AND at least one _services file AND a UI file
-(Provider/page/hook), each with a plausible why.
+PASS if the reply identifies the settings component AND a notifications
+_schemas or _services file AND the frappe client surface (lib/frappe.ts or
+api.ts), each with a plausible why — and does NOT claim prisma owns the
+notification model. Noting that creation/emailing happens in the Frappe
+backend (outside this repo) is a positive signal.
 
-FAIL if schema.prisma or the type-union file is missing, or the list is
-dominated by unrelated files. Invented paths also fail (see sibling
-grader).
+FAIL if prisma/schema.prisma is presented as the notification store, an
+email sender is invented in this repo, or none of the notifications
+client files appear.

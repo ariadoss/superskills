@@ -59,3 +59,14 @@ the sandbox; the user's real trees are never touched by agent runs.
    (graphify-vendor/bin/graphify, PYTHONPATH-wired); hyperion360's own
    committed REPOMAP.md stays in the archive for all graphify arms
    (it is not the variable under test there; noted as ambient context).
+
+## Instrument repair (registered before any arm; 2026-10-04 precedent)
+
+The repomap-real-nav pilot ($0.59, discarded as calibration) failed BOTH
+graders on a cold run whose reply turned out to be MORE correct than the
+key: notifications are Frappe-backend-owned (frappeFetch flow; no prisma
+Notification model; prefs save is a TODO stub at settings-page-client.tsx
+~425). The original prisma-centric key would fail architecture-true
+answers. GROUND_TRUTH.md and nav-correct.md rewritten to the verified
+architecture (citations above); claiming prisma owns notifications is now
+a FAIL marker. No comparative data existed at repair time.
