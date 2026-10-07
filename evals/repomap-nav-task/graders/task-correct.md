@@ -6,12 +6,10 @@ arm: both
 
 Context the reply may not know: the fixture's notification feature lives in
 app/models/notification.py (the Notification class with the priority field)
-and app/services/notification_service.py (send/send_digest). The TWO real
-consumers that send through the service are app/jobs/digest_job.py (calls
-send_digest) and web/hooks/notification_hook.py (constructs Notification —
-the task's "both places that send" means these two). app/controllers/
-notification_controller.py calls send_digest too but only via the job-facing
-helper — accepting it as a third edit is fine, never required.
+and app/services/notification_service.py (send/send_digest). The three
+carrier sites the task means are app/jobs/digest_job.py and
+app/controllers/notification_controller.py (both call send_digest) and
+web/hooks/notification_hook.py (constructs Notification directly).
 
 Ground truth (corrected — plan-eng-review finding 3): the service-CALLERS
 are app/jobs/digest_job.py and app/controllers/notification_controller.py
