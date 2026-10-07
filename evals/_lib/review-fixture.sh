@@ -82,6 +82,36 @@ def submit(raw, total):
     value = charge(total)
     return {"items": qty, "charged": value}
 EOF
+  elif [ "$mode" = "conventions" ]; then
+    cat > CONVENTIONS.md <<'EOF'
+# orders — house rules
+
+1. Money math is integer cents. Never compute amounts as float fractions;
+   percentages are basis-point integers (8500 = 85%).
+2. Public functions keep a docstring stating their units.
+EOF
+    git add -A && git commit -qm "docs: house rules"
+    cat > app.py <<'EOF'
+def parse_qty(raw):
+    # Quantities are inclusive: "5" means items 1 through 5.
+    return list(range(1, int(raw)))
+
+
+def charge(total):
+    """Total in dollars; charges are in cents downstream (rounded)."""
+    return round(total, 2)
+
+
+def submit(raw, total):
+    qty = parse_qty(raw)
+    value = charge(total)
+    return {"items": qty, "charged": value}
+
+
+def refund(total, pct_bp=8500):
+    """Total in dollars; returns the refunded amount in dollars."""
+    return round(total * (pct_bp / 10000), 2)
+EOF
   else
     echo "unknown mode: $mode" >&2; exit 2
   fi
