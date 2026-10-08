@@ -1,4 +1,4 @@
-# Superskills `v2.41.1`
+# Superskills `v2.42.0`
 
 Curated AI skills pack for Claude Code, ZCode, OpenCode, Codex CLI, DSH (DeepSeek Harness), Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Integrates [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team; an opt-in pack) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
@@ -113,6 +113,8 @@ selection across every supported tool.
 | `/debug` | Systematic Debugging: 4-phase root cause analysis |
 | `/daily-qa` | Daily evidence-grounded sweep: recent commits, CI failures, dep drift, perf regressions, untested paths; auto-runs `/defense` (basic OWASP) + scoped `/db-optimize` |
 | `/clean-code` | KISS/DRY/SOLID/YAGNI cleanup of the branch diff: audits, applies the smallest safe refactor per finding under green tests, one commit each; quality only |
+| `/cli-for-agent` | Design or review CLIs so coding agents can run them reliably: non-interactive flags first, layered --help with copy-pasteable examples, fail-fast errors carrying a correct invocation, idempotency, --dry-run/--yes |
+| `/diff-walkthrough` | Present a changeset for comprehension: core logic first, wiring condensed, boilerplate summarized; pseudocode for dense hunks, old-vs-new traces on surprising changes |
 | `/basic-review` | Read-only correctness review (correctness, security, reliability, contract risk) with `file:line` findings; the fallback `/qa-full` and `/daily-qa` use when gstack's `/review` is unavailable |
 | `/qa-full` | Per-feature QA pipeline: audit → fix → verify across the full fan-out (tests, correctness, security, DB, perf, browser QA, design, a11y, coverage) on the branch diff; fixes what it finds, re-verifies, then emits a pass/fail ship-readiness verdict |
 | `/worktrees` | Git Worktrees: isolated parallel development |
