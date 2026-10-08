@@ -327,11 +327,15 @@ unauthenticated while working fine. When the preflight says `not_authed` but
 
    ```bash
    source ~/.claude/skills/gstack/bin/gstack-codex-probe 2>/dev/null
-   if ! command -v _gstack_codex_timeout_wrapper >/dev/null 2>&1; then
+   if ! command -v _gstack_codex_timeout_wrapper >/dev/null 2>&1 \
+      || ! command -v _gstack_codex_select_model >/dev/null 2>&1; then
      echo "CODEX_PROBE: broken_install (gstack-codex-probe helper not found)"
-   else
+   elif _gstack_codex_select_model exec; then
+     # gstack's own resolver: GSTACK_CODEX_MODEL, then the model in config.toml,
+     # then gstack's default, so the probe tests the model the passes will use.
+     echo "CODEX_MODEL: $_GSTACK_CODEX_SEL ($_GSTACK_CODEX_SEL_SRC)"
      _gstack_codex_timeout_wrapper 120 codex exec -s read-only \
-       -c "model=\"${GSTACK_CODEX_MODEL:-gpt-6-astra}\"" "Reply with exactly: PONG" < /dev/null
+       -c "model=\"$_GSTACK_CODEX_SEL\"" "Reply with exactly: PONG" < /dev/null
    fi
    ```
 
@@ -339,8 +343,9 @@ unauthenticated while working fine. When the preflight says `not_authed` but
    provider and model. `CODEX_PROBE: broken_install`, or exit code 126/127 ⇒
    treat it as `broken_install` (gstack's branch: reinstall advice, no model
    advice). Any other error, timeout or text ⇒ `model_unusable`: skip the
-   passes, tell the user to set `GSTACK_CODEX_MODEL` to a deployment their
-   provider serves.
+   passes, tell the user to set `GSTACK_CODEX_MODEL` (or `model` in config.toml)
+   to a deployment their provider serves. A `CODEX_MODEL: invalid` line from the
+   resolver means the same: no call was made.
 
 Record the probe command, model and result in the ledger either way.
 
