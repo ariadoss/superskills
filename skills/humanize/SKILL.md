@@ -64,7 +64,9 @@ python3 "$TOOLKIT/userfacing.py" extract  <path>   # the copy only, same line nu
 | `source` (generators) | `.go .rs .php .py .rb .js .ts .java .kt .swift .cs` and the like, **only** when the file visibly renders pages or writes files (HTML in strings, `WriteFile`, `render_template`, `res.send`, `echo`, ...) | string literals of four or more words in sentence shape; comments, docstrings, log/print/panic/raise text, SQL and imports are excluded; PHP also scans the HTML outside `<?php ?>` |
 
 Extraction is conservative by design: short labels and one-word strings are
-not scanned from code. A code file with no output signal is `none`.
+not scanned from code. A code file with no output signal is `none`. Symlinks
+and files over 512KB are never read and are not reported; strings assigned to
+a prompt or instruction name are never copy.
 
 **Markdown and plain text** (`markdown`, `text`) run the whole workflow below.
 **Every other type** must never go through `normalize.py`: it would corrupt

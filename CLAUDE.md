@@ -174,7 +174,8 @@ write. Code logic, comments, log text, prompts, agent instructions
 trees are out. Modified non-README files are not gated, and deletions never
 gate. A push carrying flagged text is blocked until `/humanize` cleans it
 (`HUMANIZE_PREPUSH=0` is the bypass for deliberately-held wording); a file
-the gate could not scan is named on stderr as `scan skipped`. Skill bodies
+the gate could not scan is named on stderr as `scan skipped`. Symlinks
+and files over 512KB are never read (and not reported). Skill bodies
 are how agents speak to agents (register is the product; wording is often
 the exact bytes an eval adopted: humanize only deliberately and
 surgically), so they stay out of the gate. As a habit, run `/humanize` over

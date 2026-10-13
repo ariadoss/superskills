@@ -48,6 +48,8 @@ DENY_NAME_RES = [re.compile(p, re.I) for p in (
     # prompt files (prompt.md, system_prompt.txt, x.prompt.md), not guides ABOUT prompts
     r"^(system[-_]?)?prompts?\.[a-z0-9]+$", r"\.prompt\.[a-z0-9]+$",
     r"^(license|licence|copying|notice)(\.|$)",
+    # agent-to-agent bridge notes written by /handoff and /quota-resilience
+    r"^handoff-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f-]{20,}|\d{8}t\d{6}z-\d+)\.md$", r"^quota-resume\.md$",
     r"\.min\.", r"\.lock$", r"\.d\.ts$", r"\.config\.", r"\.generated\.", r"_generated\.",
     r"\.pb\.go$", r"_test\.(go|py|rs|rb|exs?)$", r"\.(test|spec)\.[cm]?[jt]sx?$",
     r"^test_.*\.py$", r"_spec\.rb$", r"^(requirements|constraints)[\w.-]*\.txt$",
@@ -495,6 +497,17 @@ _LOG_CLI = re.compile(_LOG_BASE + r"|\b(?:print|println|printf|die|exit)\b\s*[!(
 _LOG_PHP = re.compile(_LOG_BASE + r"|\b(?:die|exit)\b\s*\(", re.I)
 _IMPORT_LINE = re.compile(r"^\s*(import|from|use|require|include|package|#include|extern)\b")
 _PROMPT_CTX = re.compile(r"\b\w*(?:prompt|instruction|system_?message|system_?msg)\w*\s*[:=(,]", re.I)
+_SYSTEM_ROLE = re.compile(r"""["']?role["']?\s*[:=]\s*["']system["']""", re.I)
+_LOOKBEHIND = 300  # bound the text examined before a string so one huge line stays linear
+
+
+def _prompt_opener(raw: str, ls: int, i: int) -> bool:
+    """True when this string begins its line right after a prompt assignment's opener
+    (SYSTEM_PROMPT = ( / prompts = [ / "system": {)."""
+    if raw[ls:i].strip():
+        return False
+    prev = _prev_code_line(raw, ls)
+    return bool(prev) and prev[-1] in "([{=,:" and bool(_PROMPT_CTX.search(prev) or _SYSTEM_ROLE.search(prev))
 
 
 def _prev_code_line(raw: str, ls: int) -> str:
@@ -533,15 +546,15 @@ def _scan_strings(raw: str, ext: str):
             i = j
             ls = raw.rfind("\n", 0, j) + 1
             continue
-        before = raw[ls:i]
+        before = raw[max(ls, i - _LOOKBEHIND):i]
         if ext == ".py" and raw.startswith(('"""', "'''"), i):
             q = raw[i:i + 3]
             j = raw.find(q, i + 3)
             j = n if j < 0 else j
             prev = _prev_code_line(raw, ls)
-            docstring = before.strip() == "" and (not prev or prev.endswith(":"))
+            docstring = not raw[ls:i].strip() and (not prev or prev.endswith(":"))
             if not docstring:
-                out.append((line, raw[i + 3:j], before))
+                out.append((line, raw[i + 3:j], before, raw[ls:ls + 40], _prompt_opener(raw, ls, i)))
             line += raw.count("\n", i, j)
             i = min(n, j + 3)
             ls = raw.rfind("\n", 0, i) + 1
@@ -555,7 +568,7 @@ def _scan_strings(raw: str, ext: str):
             nl = raw.find("\n", i)
             em = re.compile(r"^[ \t]*%s\b" % re.escape(m.group(2)), re.M).search(raw, nl + 1)
             j = em.start() if em else n
-            out.append((line + 1, raw[nl + 1:j], before))
+            out.append((line + 1, raw[nl + 1:j], before, raw[ls:ls + 40], False))
             line += raw.count("\n", i, j)
             i = j
             ls = raw.rfind("\n", 0, j) + 1
@@ -566,7 +579,7 @@ def _scan_strings(raw: str, ext: str):
                 close = '"' + rm.group(1)
                 j = raw.find(close, i + len(rm.group()))
                 j = n if j < 0 else j
-                out.append((line, raw[i + len(rm.group()):j], before))
+                out.append((line, raw[i + len(rm.group()):j], before, raw[ls:ls + 40], _prompt_opener(raw, ls, i)))
                 line += raw.count("\n", i, j)
                 i = min(n, j + len(close))
                 ls = raw.rfind("\n", 0, i) + 1
@@ -591,7 +604,7 @@ def _scan_strings(raw: str, ext: str):
             if j >= n:
                 i += 1
                 continue
-            out.append((line, raw[i + 1:j], before))
+            out.append((line, raw[i + 1:j], before, raw[ls:ls + 40], _prompt_opener(raw, ls, i)))
             line += raw.count("\n", i, j)
             i = j + 1
             ls = raw.rfind("\n", 0, i) + 1
@@ -603,8 +616,9 @@ def _scan_strings(raw: str, ext: str):
 def _code_copy(raw: str, ext: str) -> list:
     log = _LOG_PHP if ext == ".php" else _LOG_CLI
     found = []
-    for lineno, content, before in _scan_strings(raw, ext):
-        if log.search(before) or _IMPORT_LINE.match(before) or _PROMPT_CTX.search(before):
+    for lineno, content, before, head, opener in _scan_strings(raw, ext):
+        if (opener or log.search(before) or _IMPORT_LINE.match(head)
+                or _PROMPT_CTX.search(before) or _SYSTEM_ROLE.search(before)):
             continue
         for k, piece in enumerate(content.split("\n")):
             t = _fragment(piece)

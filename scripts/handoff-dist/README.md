@@ -13,8 +13,9 @@ reconstructing it.
   `/handoff`, once per trigger, when this session's context window reaches
   90% (`HANDOFF_USAGE_THRESHOLD`), the account's 5-hour usage window reaches
   90% (`HANDOFF_FIVE_HOUR_THRESHOLD`), or the weekly window reaches 95%
-  (`HANDOFF_WEEKLY_THRESHOLD`). It never fires before a session's first
-  assistant reply. Standalone wiring:
+  (`HANDOFF_WEEKLY_THRESHOLD`). It waits until a session has three
+  assistant replies, and the context trigger fires again on the next climb
+  after context drops (a compact). Standalone wiring:
   copy `hooks/handoff-trigger-hook.sh` somewhere stable, add to your
   Claude Code hooks config:
 

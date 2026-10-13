@@ -986,3 +986,46 @@ T
   run uf classify prompt.md
   [ "$output" = "none" ]
 }
+
+@test "userfacing: 'echo' counts only in PHP, and an html tag in a comment is not an output signal" {
+  cd "$BATS_TEST_TMPDIR"
+  printf '%s\n' 'import sys' 'label = "please echo this back to the caller"' 'print(label)' > echo.py
+  run uf classify echo.py
+  [ "$output" = "none" ]
+  printf '%s\n' '// render <p>Hello there</p> later' 'package main' 'var X = 1' > c.go
+  run uf classify c.go
+  [ "$output" = "none" ]
+  printf '%s\n' '<?php' 'echo "<p>Welcome to our fast and simple platform.</p>";' > e.php
+  run uf classify e.php
+  [ "$output" = "source" ]
+}
+
+@test "userfacing: a single very long line of strings cannot stall the scanner" {
+  cd "$BATS_TEST_TMPDIR"
+  python3 -c "print('res.send(1);' + 'var a=\"x y\";' * 30000)" > long.js
+  run timeout 20 python3 "$TK/userfacing.py" extract long.js
+  [ "$status" -eq 0 ]
+}
+
+@test "userfacing: a parenthesised multi-line prompt and a role/system message are not copy" {
+  cd "$BATS_TEST_TMPDIR"
+  cat > p.py <<'PY'
+SYSTEM_PROMPT = (
+    "You are a helpful assistant that always answers questions politely."
+)
+msgs = [{"role": "system", "content": "You are a careful reviewer who explains every change."}]
+open("out/a.html", "w").write("<p>Welcome to our documentation for everyone.</p>")
+PY
+  run uf extract p.py
+  printf '%s\n' "$output" | grep -q "Welcome to our documentation for everyone."
+  ! printf '%s\n' "$output" | grep -q "helpful assistant\|careful reviewer" || false
+}
+
+@test "userfacing: agent handoff and resume notes are records, not copy; a handoff guide is" {
+  for path in handoff-20261013T010203Z-4242.md handoff-844e2be8-cfed-4b7c-9b9f-34508a76af88.md QUOTA-RESUME.md; do
+    run uf classify "$path"
+    [ "$output" = "none" ] || { echo "$path -> $output"; return 1; }
+  done
+  run uf classify docs/handoff-guide.md
+  [ "$output" = "markdown" ]
+}

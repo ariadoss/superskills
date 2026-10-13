@@ -64,7 +64,15 @@ if [ -f "$rl_cache" ]; then
   while IFS=$'\t' read -r key pct resets; do
     [ -n "$key" ] || continue
     marker="$CACHE_DIR/handoff-notified-$session_id-$key"
-    [ -f "$marker" ] && [ "$(cat "$marker" 2>/dev/null)" = "$resets" ] && continue
+    # The marker holds the window's reset epoch. The producer can wobble it by a second
+    # or two between refreshes; only a real rollover (hours later) re-arms.
+    if [ -f "$marker" ] && [ -r "$marker" ]; then
+      seen="$(cat "$marker" 2>/dev/null)"
+      if [[ "$seen" =~ ^[0-9]+$ ]]; then
+        diff=$(( resets > seen ? resets - seen : seen - resets ))
+        [ "$diff" -lt 600 ] && continue
+      fi
+    fi
     case "$key" in
       five_hour) label="the 5-hour usage window is at ${pct}% (threshold ${five_threshold}%)" ;;
       *)         label="the weekly usage window is at ${pct}% (threshold ${week_threshold}%)" ;;
@@ -77,7 +85,7 @@ if [ -f "$rl_cache" ]; then
     | select(type == "object"
              and (.resets_at | type) == "number" and .resets_at > now
              and (.used_percentage | type) == "number" and .used_percentage >= $t)
-    | "\($k)\t\(.used_percentage)\t\(.resets_at / 60 | floor)"' "$rl_cache" 2>/dev/null)
+    | "\($k)\t\(.used_percentage)\t\(.resets_at | floor)"' "$rl_cache" 2>/dev/null)
 fi
 
 [ "${#triggers[@]}" -gt 0 ] || exit 0
@@ -86,7 +94,7 @@ fi
 # make its first prompts write a note: little has been done yet. grep stops at the
 # MIN_ASSISTANT_TURNS-th reply. An unreadable transcript is not evidence of a fresh session.
 if [ -n "$transcript" ] && [ -f "$transcript" ]; then
-  turns="$(grep -m "$MIN_ASSISTANT_TURNS" -c '"type":"assistant"' "$transcript" 2>/dev/null || true)"
+  turns="$(grep -m "$MIN_ASSISTANT_TURNS" -cE '"type": ?"assistant"' "$transcript" 2>/dev/null || true)"
   [ "${turns:-0}" -ge "$MIN_ASSISTANT_TURNS" ] || exit 0
 fi
 

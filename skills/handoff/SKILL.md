@@ -39,8 +39,9 @@ export ships an ignore rule for standalone users).
   the account's 5-hour window at `HANDOFF_FIVE_HOUR_THRESHOLD` (default 90%),
   or the weekly window at `HANDOFF_WEEKLY_THRESHOLD` (default 95%). It reads
   the numbers the superskills statusline publishes (`./setup --statusline`);
-  without that statusline only manual invocation works. It never fires
-  before the session's first assistant reply. The nudge supplies
+  without that statusline only manual invocation works. It waits
+  until the session has three assistant replies, and the context trigger fires
+  again on the next climb after context drops (a compact). The nudge supplies
   `transcript_path` and `session_id`. Use them.
 
 ## Step 1 — the session reference

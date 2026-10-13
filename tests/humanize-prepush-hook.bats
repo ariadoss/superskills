@@ -236,3 +236,13 @@ run_cmd() {  # run_cmd <cwd> <command string>
   run run_cmd "$WORK" 'git push origin main'
   echo "$output" | grep -q "scan skipped: docs-latin1.md"
 }
+
+@test "real push forms are all gated: separators, env prefixes, absolute git, quoted -C, newlines" {
+  commit_md README.md "$SLOP_LINE"
+  for cmd in 'git push;' 'git push&&echo done' 'FOO=1 git push' 'sudo git push origin main' \
+             '/usr/bin/git push' 'git -C "my dir" push' $'git status\ngit push' \
+             'if true; then git push; fi' 'git push --force-with-lease'; do
+    run run_cmd "$WORK" "$cmd"
+    echo "$output" | grep -q '"decision": "block"' || { echo "not gated: $cmd"; return 1; }
+  done
+}

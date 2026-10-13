@@ -25,7 +25,10 @@ cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/dev/null)"
 [ -n "$cmd" ] || exit 0
 # A real push: `git [opts] push` at the start of a command or after ; & | ( — not a
 # commit message or echo that merely mentions it.
-push_re='(^|[;&|(])[[:space:]]*(command[[:space:]]+)?git([[:space:]]+-[^[:space:]]+([[:space:]]+[^-[:space:]][^[:space:]]*)?)*[[:space:]]+push([[:space:]]|$)'
+cmd="${cmd//$'\n'/;}"   # a newline separates commands like ;
+# Optional wrappers: env assignments (FOO=1), env/sudo/time/exec/command/nohup, an absolute git
+# path; option args may be quoted ("my dir"). Followed by push and a word boundary.
+push_re='(^|[;&|(]|[[:space:]]then[[:space:]]|[[:space:]]do[[:space:]])[[:space:]]*(([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*|env|sudo|time|exec|command|nohup)[[:space:]]+)*(/[^[:space:]]*/)?git([[:space:]]+-[^[:space:]]+([[:space:]]+("[^"]*"|\x27[^\x27]*\x27|[^-[:space:]][^[:space:]]*))?)*[[:space:]]+push([[:space:];&)]|$)'
 [[ "$cmd" =~ $push_re ]] || exit 0
 [ "${HUMANIZE_PREPUSH:-1}" = "0" ] && exit 0
 
@@ -58,7 +61,11 @@ add() { files="${files:+$files$'\n'}$1"; }
 user_facing() {
   local kind
   kind="$(python3 "$USERFACING" classify "$1" 2>/dev/null)" || kind=""
-  [ -n "$kind" ] && [ "$kind" != "none" ]
+  if [ -z "$kind" ]; then
+    echo "humanize pre-push gate: scan skipped: $1 (could not classify it)" >&2
+    return 1
+  fi
+  [ "$kind" != "none" ]
 }
 while IFS=$'\t' read -r st p1 p2 _; do
   [ -n "${st:-}" ] || continue

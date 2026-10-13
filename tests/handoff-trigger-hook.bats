@@ -248,3 +248,25 @@ rate_limits() { # five_hour_pct seven_day_pct [resets_in_seconds]
   [ -n "$output" ]
   [ "$(cat "$victim")" = "keep" ]
 }
+
+@test "a one-second wobble in resets_at does not re-nudge the same window" {
+  r=$(( $(date +%s) + 3600 ))
+  mk() { printf '{"rate_limits":{"five_hour":{"used_percentage":95,"resets_at":%d}}}' "$1" > "$CACHE_HOME/claude-statusline/rate-limits.json"; }
+  mk "$r"
+  run invoke
+  [ -n "$output" ]
+  mk "$(( r + 1 ))"
+  run invoke
+  [ -z "$output" ]
+  mk "$(( r + 3600 ))"
+  run invoke
+  [ -n "$output" ]
+}
+
+@test "spaced transcript JSON still counts assistant replies" {
+  rate_limits 99 10
+  printf '%s\n' '{"type": "assistant"}' '{"type": "assistant"}' '{"type": "assistant"}' > "$BATS_TEST_TMPDIR/sp.jsonl"
+  STDIN_JSON="{\"session_id\":\"abc\",\"transcript_path\":\"$BATS_TEST_TMPDIR/sp.jsonl\"}"
+  run invoke
+  [ -n "$output" ]
+}
