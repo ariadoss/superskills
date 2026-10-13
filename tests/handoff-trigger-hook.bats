@@ -270,3 +270,25 @@ rate_limits() { # five_hour_pct seven_day_pct [resets_in_seconds]
   run invoke
   [ -n "$output" ]
 }
+
+@test "empty or malformed stdin is a silent allow" {
+  run bash -c "printf '' | XDG_CACHE_HOME='$CACHE_HOME' bash '$HOOK'"
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+  run bash -c "printf 'not json' | XDG_CACHE_HOME='$CACHE_HOME' bash '$HOOK'"
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+}
+
+@test "a transcript that cannot be read fails open: a high reading still nudges" {
+  printf '{"used_percentage":95}' > "$CACHE"
+  STDIN_JSON='{"session_id":"abc","transcript_path":"/definitely/not/here.jsonl"}'
+  run invoke
+  [ -n "$output" ]
+}
+
+@test "the cache directory is required: a missing one is a silent allow" {
+  run bash -c "printf '%s' '$STDIN_JSON' | XDG_CACHE_HOME='$BATS_TEST_TMPDIR/no-such' bash '$HOOK'"
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+}

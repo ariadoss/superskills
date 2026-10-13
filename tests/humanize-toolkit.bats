@@ -1029,3 +1029,139 @@ PY
   run uf classify docs/handoff-guide.md
   [ "$output" = "markdown" ]
 }
+
+@test "userfacing: gettext continuation lines and plural forms are copy, the empty header is not" {
+  cd "$BATS_TEST_TMPDIR"; mkdir -p locales
+  cat > locales/app.po <<'PO'
+msgid ""
+msgstr ""
+"Project-Id-Version: demo\n"
+
+msgid ""
+"Save your work before you leave "
+"this page."
+msgstr[0] "Guarde su trabajo antes de salir de esta pagina."
+PO
+  run uf extract locales/app.po
+  printf '%s\n' "$output" | grep -q "Save your work before you leave"
+  printf '%s\n' "$output" | grep -q "this page."
+  printf '%s\n' "$output" | grep -q "Guarde su trabajo"
+}
+
+@test "userfacing: yaml, ios strings and arb locale values are copy; numbers, booleans and keys are not" {
+  cd "$BATS_TEST_TMPDIR"; mkdir -p config/locales i18n
+  printf '%s\n' 'en:' '  hero:' '    title: Ship your product faster than ever' '    count: 42' '    on: true' '    cta: "Start your free trial today"' > config/locales/en.yml
+  run uf extract config/locales/en.yml
+  printf '%s\n' "$output" | grep -q "Ship your product faster than ever"
+  printf '%s\n' "$output" | grep -q "Start your free trial today"
+  ! printf '%s\n' "$output" | grep -qx "42\|true\|hero\|title" || false
+  printf '%s\n' '/* note */' '"welcome" = "Welcome back to your dashboard";' > i18n/Localizable.strings
+  run uf extract i18n/Localizable.strings
+  printf '%s\n' "$output" | grep -q "Welcome back to your dashboard"
+  ! printf '%s\n' "$output" | grep -q "welcome\b" || false
+  printf '%s\n' '{' '  "@@locale": "en",' '  "greeting": "Hello and welcome to the app"' '}' > i18n/app_en.arb
+  run uf extract i18n/app_en.arb
+  printf '%s\n' "$output" | grep -q "Hello and welcome to the app"
+}
+
+@test "userfacing: locale-named json outside a locale folder is copy; package.json is not" {
+  cd "$BATS_TEST_TMPDIR"
+  printf '%s\n' '{' '  "title": "Build the future with us today"' '}' > en.json
+  run uf classify en.json
+  [ "$output" = "locale" ]
+  run uf classify messages.fr.json
+  [ "$output" = "locale" ]
+  run uf classify package.json
+  [ "$output" = "none" ]
+}
+
+@test "userfacing: rust raw strings, php heredocs and ruby heredocs yield copy; their comments do not" {
+  cd "$BATS_TEST_TMPDIR"
+  cat > r.rs <<'RS'
+// delve into the tapestry of generated pages here
+fn main() {
+    let page = r##"<p>Our docs cover every step of the setup.</p>"##;
+    std::fs::write("out.html", page).unwrap();
+}
+RS
+  run uf extract r.rs
+  printf '%s\n' "$output" | grep -q "Our docs cover every step of the setup."
+  ! printf '%s\n' "$output" | grep -qi "tapestry" || false
+  cat > h.php <<'PHP'
+<?php
+// delve tapestry comment
+$html = <<<HTML
+<h1>Pricing that stays simple as you grow</h1>
+HTML;
+echo $html;
+PHP
+  run uf extract h.php
+  printf '%s\n' "$output" | grep -q "Pricing that stays simple as you grow"
+  ! printf '%s\n' "$output" | grep -qi "tapestry" || false
+  cat > h.rb <<'RB'
+# delve tapestry comment
+html = <<~HTML
+  <p>Every plan includes unlimited projects and users.</p>
+HTML
+File.write("out.html", html)
+RB
+  run uf extract h.rb
+  printf '%s\n' "$output" | grep -q "Every plan includes unlimited projects and users."
+  ! printf '%s\n' "$output" | grep -qi "tapestry" || false
+}
+
+@test "userfacing: svelte braces, astro frontmatter and a bare multi-line jsx text node" {
+  cd "$BATS_TEST_TMPDIR"
+  printf '%s\n' '<script>let name = "delve into tapestry";</script>' '<h1>Hello {name}, welcome to the studio</h1>' '{#if open}' '<p>The studio is open every day.</p>' '{/if}' > a.svelte
+  run uf extract a.svelte
+  printf '%s\n' "$output" | grep -q "welcome to the studio"
+  printf '%s\n' "$output" | grep -q "The studio is open every day."
+  ! printf '%s\n' "$output" | grep -qi "tapestry\|name}" || false
+  printf '%s\n' '---' 'const t = "delve into tapestry";' '---' '<h2>Built for teams that ship every week</h2>' > a.astro
+  run uf extract a.astro
+  printf '%s\n' "$output" | grep -q "Built for teams that ship every week"
+  ! printf '%s\n' "$output" | grep -qi "tapestry" || false
+  cat > m.tsx <<'TSX'
+export const A = () => (
+  <section>
+    <p>
+      Teams that plan together ship together every single week.
+    </p>
+  </section>
+);
+TSX
+  run uf extract m.tsx
+  printf '%s\n' "$output" | grep -q "Teams that plan together ship together every single week."
+}
+
+@test "userfacing: mdx imports and html comments are dropped, rst text keeps prose" {
+  cd "$BATS_TEST_TMPDIR"
+  printf '%s\n' "import Chart from './chart'" '<!-- delve internal note -->' 'The chart below shows weekly active teams.' > d.mdx
+  run uf extract d.mdx
+  printf '%s\n' "$output" | grep -q "weekly active teams"
+  ! printf '%s\n' "$output" | grep -qi "delve\|import Chart" || false
+  printf '%s\n' 'Usage' '=====' 'Run the installer and follow the prompts.' > u.rst
+  run uf classify u.rst
+  [ "$output" = "text" ]
+  run uf extract u.rst
+  printf '%s\n' "$output" | grep -q "Run the installer and follow the prompts."
+}
+
+@test "userfacing: absolute paths are judged by their place inside the repo, not by ancestors" {
+  d="$BATS_TEST_TMPDIR/build/test/proj"; mkdir -p "$d/docs"
+  git -C "$d" init -q
+  printf 'Plain prose lives in this guide for readers.\n' > "$d/docs/guide.md"
+  run uf classify "$d/docs/guide.md"
+  [ "$output" = "markdown" ]
+  mkdir -p "$d/node_modules/pkg"; printf 'x\n' > "$d/node_modules/pkg/README.md"
+  run uf classify "$d/node_modules/pkg/README.md"
+  [ "$output" = "none" ]
+}
+
+@test "userfacing: test and generated code names are out even when they render html" {
+  for path in pkg/render_test.go web/page.spec.ts app/test_views.py types/api.d.ts \
+              vite.config.ts proto/service.pb.go src/Widget.generated.tsx; do
+    run uf classify "$path"
+    [ "$output" = "none" ] || { echo "$path -> $output"; return 1; }
+  done
+}

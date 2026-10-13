@@ -102,9 +102,13 @@ def repo_relative(path: str) -> str:
         cwd = os.getcwd()
     except OSError:
         cwd = None
+    # Compare real paths: /var/... and /private/var/... name one directory on macOS.
+    path = os.path.join(os.path.realpath(os.path.dirname(path)), os.path.basename(path))
     for base in (cwd, _git_toplevel(path)):
-        if base and os.path.commonpath([base, path]) == base:
-            return os.path.relpath(path, base)
+        if base:
+            base = os.path.realpath(base)
+            if os.path.commonpath([base, path]) == base:
+                return os.path.relpath(path, base)
     return path
 
 
