@@ -35,10 +35,10 @@ week_threshold="$(threshold_of HANDOFF_WEEKLY_THRESHOLD 95)"
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/claude-statusline"
 [ -d "$CACHE_DIR" ] && [ -O "$CACHE_DIR" ] || exit 0
 
-# Each firing trigger is "<marker-suffix>|<marker-value>|<reason>". Context
-# fires once per session; an account window re-arms when it rolls over (its
-# marker stores the window's resets_at).
-triggers=()
+# Firing triggers, as parallel arrays: marker suffix, marker value, human reason.
+# Context fires once per session (re-arms after a compact); an account window
+# re-arms when it rolls over (its marker stores the window's resets_at).
+t_suffix=(); t_value=(); t_label=()
 
 ctx_cache="$CACHE_DIR/context-$session_id.json"
 ctx_marker="$CACHE_DIR/handoff-notified-$session_id"
@@ -53,7 +53,8 @@ if [ -f "$ctx_cache" ]; then
   if [ "$reading" = "0" ] && [ "$armed" = 0 ]; then
     rm -f "$ctx_marker"   # context fell back (compact): re-arm for the next climb
   elif [ "${reading%% *}" = "1" ] && [ "$armed" = 1 ]; then
-    triggers+=("|notified|this session's context window is at ${reading#* }% (threshold ${ctx_threshold}%)")
+    t_suffix+=(""); t_value+=("notified")
+    t_label+=("this session's context window is at ${reading#* }% (threshold ${ctx_threshold}%)")
   fi
 fi
 
@@ -77,7 +78,7 @@ if [ -f "$rl_cache" ]; then
       five_hour) label="the 5-hour usage window is at ${pct}% (threshold ${five_threshold}%)" ;;
       *)         label="the weekly usage window is at ${pct}% (threshold ${week_threshold}%)" ;;
     esac
-    triggers+=("-$key|$resets|$label")
+    t_suffix+=("-$key"); t_value+=("$resets"); t_label+=("$label")
   done < <(jq -r --argjson f "$five_threshold" --argjson w "$week_threshold" '
     .rate_limits as $r
     | [["five_hour", $f], ["seven_day", $w]][] as [$k, $t]
@@ -88,7 +89,7 @@ if [ -f "$rl_cache" ]; then
     | "\($k)\t\(.used_percentage)\t\(.resets_at | floor)"' "$rl_cache" 2>/dev/null)
 fi
 
-[ "${#triggers[@]}" -gt 0 ] || exit 0
+[ "${#t_suffix[@]}" -gt 0 ] || exit 0
 
 # An account window that was already high when a brand-new session started must not
 # make its first prompts write a note: little has been done yet. grep stops at the
@@ -99,9 +100,9 @@ if [ -n "$transcript" ] && [ -f "$transcript" ]; then
 fi
 
 reasons=""
-for t in "${triggers[@]}"; do
-  suffix="${t%%|*}"; rest="${t#*|}"; value="${rest%%|*}"; label="${rest#*|}"
-  reasons="${reasons:+$reasons; }$label"
+for ((k = 0; k < ${#t_suffix[@]}; k++)); do
+  suffix="${t_suffix[$k]}"; value="${t_value[$k]}"
+  reasons="${reasons:+$reasons; }${t_label[$k]}"
   # temp file (noclobber) then rename: a planted symlink at the marker path is replaced,
   # never written through.
   marker="$CACHE_DIR/handoff-notified-$session_id$suffix"
