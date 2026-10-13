@@ -3,11 +3,12 @@
 #
 # Design notes, because the obvious implementations are all slower or wrong:
 #
-# ONE SUBPROCESS. Claude Code debounces statusline updates at 300ms and cancels
+# ONE PARSING SUBPROCESS. Claude Code debounces statusline updates at 300ms and cancels
 # an in-flight script when a new update arrives, so every fork costs. A single
 # jq call does all parsing, the cache merge, the clock arithmetic and the
-# rendering, then prints the line and the new cache as two records. The only
-# other process is one `mv`, and only when a window actually changed: no
+# rendering, then prints the line and cache records. The only
+# other processes are `mv` calls when an account window or this session's
+# context percentage actually changed: no
 # awk (context % is a documented field), no date (jq has `now`), no stat
 # (freshness comes from `resets_at`, not mtime), no tr, no sleep, no lock, and no
 # subshell for umask (it is set once below).
@@ -53,6 +54,7 @@ use_color=1
 
 read -r -d '' JQ <<'JQPROG'
 now as $now
+| (.session_id // null) as $sid
 | def esc: if $color == 1 then "\u001b[" else "" end;
 def sgr($c): if $color == 1 then esc + $c + "m" else "" end;
 def dim: sgr("2");
@@ -154,7 +156,11 @@ def windows: if type == "object" and (.rate_limits | type) == "object" then .rat
 # never saw rate_limits cannot blank a good cache.
 ( def keep($k; $w): if $w == null then empty else {($k): ($w | {used_percentage, resets_at})} end;
   { rate_limits: ([keep("five_hour"; $w5), keep("seven_day"; $w7), keep("spend_limit"; $ws)] | add // {}) }
-  | if (.rate_limits | length) == 0 then empty else tojson end )
+  | if (.rate_limits | length) == 0 then "" else tojson end )
+,
+(if ($sid | type) == "string" and ($sid | test("^[A-Za-z0-9_-]+$"))
+    and ($ctx | type) == "number"
+ then "\($sid)\t\($ctx)" else empty end)
 JQPROG
 
 if ! command -v jq >/dev/null 2>&1; then
@@ -165,9 +171,13 @@ fi
 # jq supplies its own clock via `now`, so not even date/1 forks here.
 out=$(jq -r --argjson color "$use_color" --arg cachetext "$cache_text" "$JQ" 2>/dev/null) || out=""
 
-# Line 1 is the statusline, line 2 (when present) is the cache to persist.
+# Line 1 is the statusline, line 2 is the account cache (possibly empty),
+# and line 3, when present, is this session's context reading.
 line=${out%%$'\n'*}
-rest=${out#*$'\n'}
+remaining=${out#*$'\n'}
+rest=${remaining%%$'\n'*}
+context_record=""
+[[ "$remaining" == *$'\n'* ]] && context_record=${remaining#*$'\n'}
 
 if [ -z "$line" ]; then
   printf 'ctx --\n'
@@ -182,7 +192,9 @@ printf '%s\n' "$line"
 # Skip the write when nothing changed: once any window is live, every render
 # would otherwise rename a byte-identical file, one mv fork each time. $(<file)
 # drops trailing newlines and jq emits none, so the comparison is exact.
-if [ "$use_cache" = 1 ] && [ -n "$rest" ] && [ "$rest" != "$out" ] && [ "$rest" != "$cache_text" ]; then
+persist_cache() {
+  local file="$1" content="$2" old="$3" tmp
+  [ -n "$content" ] && [ "$content" != "$old" ] || return 0
   # [ -d ] is a builtin; skip the mkdir fork on every render after the first.
   if [ -d "$CACHE_DIR" ] || mkdir -p "$CACHE_DIR" 2>/dev/null; then
     # $RANDOM is a builtin, so the name costs no fork and cannot be predicted;
@@ -191,13 +203,34 @@ if [ "$use_cache" = 1 ] && [ -n "$rest" ] && [ "$rest" != "$out" ] && [ "$rest" 
     # through. A refused write skips this render's persist; rm -f on a symlink
     # removes the link, never its target. The final `mv` renames over the cache
     # entry itself, so a symlink planted there is replaced, not followed.
-    tmp="$CACHE_FILE.$$.$RANDOM.tmp"
+    tmp="$file.$$.$RANDOM.tmp"
     set -C
-    if printf '%s\n' "$rest" 2>/dev/null > "$tmp"; then
-      mv -f "$tmp" "$CACHE_FILE" 2>/dev/null || rm -f "$tmp" 2>/dev/null
+    if printf '%s\n' "$content" 2>/dev/null > "$tmp"; then
+      mv -f "$tmp" "$file" 2>/dev/null || rm -f "$tmp" 2>/dev/null
     else
       rm -f "$tmp" 2>/dev/null
     fi
     set +C
   fi
+}
+
+if [ "$use_cache" = 1 ] && [[ "$out" == *$'\n'* ]]; then
+  persist_cache "$CACHE_FILE" "$rest" "$cache_text"
+fi
+
+# The prompt hook has no context-window field, so publish this session's latest
+# statusline reading under its own key. Never let an input session id become a
+# path component without checking it first.
+if [ "$use_cache" = 1 ] && [ -n "$context_record" ]; then
+  session_id=${context_record%%$'\t'*}
+  context_pct=${context_record#*$'\t'}
+  case "$session_id" in
+    ''|*[!a-zA-Z0-9_-]*) ;;
+    *)
+      context_file="$CACHE_DIR/context-$session_id.json"
+      old_context=""
+      [ -f "$context_file" ] && [ -r "$context_file" ] && old_context=$(<"$context_file")
+      persist_cache "$context_file" "{\"used_percentage\":$context_pct}" "$old_context"
+      ;;
+  esac
 fi

@@ -143,3 +143,42 @@ setup() {
   echo "$output" | grep -q "current thread id: thread-123"
   ! echo "$output" | grep -q "caution: newest rollout" || false
 }
+
+@test "handoff file: hook-supplied HANDOFF_SESSION_ID names a per-session file" {
+  run env -i HOME="$HOME_FIX" CLAUDECODE=1 HANDOFF_SESSION_ID=abc-123 bash "$REF"
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -qx "handoff file: handoff-abc-123.md"
+}
+
+@test "handoff file: Claude Code's own session id env var is used when no hook id" {
+  run env -i HOME="$HOME_FIX" CLAUDECODE=1 CLAUDE_CODE_SESSION_ID=844e2be8-cfed bash "$REF"
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -qx "handoff file: handoff-844e2be8-cfed.md"
+}
+
+@test "handoff file: codex thread id names the file" {
+  run env -i HOME="$HOME_FIX" CODEX_THREAD_ID=thread-9 bash "$REF"
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -qx "handoff file: handoff-thread-9.md"
+}
+
+@test "handoff file: two sessions never share a name" {
+  a="$(env -i HOME="$HOME_FIX" CLAUDECODE=1 CLAUDE_CODE_SESSION_ID=aaa bash "$REF" | grep '^handoff file:')"
+  b="$(env -i HOME="$HOME_FIX" CLAUDECODE=1 CLAUDE_CODE_SESSION_ID=bbb bash "$REF" | grep '^handoff file:')"
+  [ -n "$a" ]
+  [ -n "$b" ]
+  [ "$a" != "$b" ]
+}
+
+@test "handoff file: no session id falls back to a unique timestamped name, never bare handoff.md" {
+  run env -i HOME="$HOME_FIX" bash "$REF"
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -Eq '^handoff file: handoff-[0-9]{8}T[0-9]{6}Z-[0-9]+\.md$'
+}
+
+@test "handoff file: an id with path characters is sanitized, never a path" {
+  run env -i HOME="$HOME_FIX" CLAUDECODE=1 HANDOFF_SESSION_ID='../../etc/x y' bash "$REF"
+  [ "$status" -eq 0 ]
+  line="$(echo "$output" | grep '^handoff file:')"
+  echo "$line" | grep -Eq '^handoff file: handoff-[A-Za-z0-9_-]+\.md$' || false
+}

@@ -48,9 +48,10 @@ Hard rules, in order:
      state, never from a diff it has to reverse-engineer.
    - Do not start new work to "round out" a commit.
 3. **Write the resume note** — `QUOTA-RESUME.md` at the repo root, committed
-   with the salvage. If `handoff.md` exists (written by `/handoff` before the
-   stop), fold its content into this note and delete the file — one bridge,
-   not two. Required sections:
+   with the salvage. If this session's `handoff-<session-id>.md` (or a `handoff-*.md` the
+   work clearly belongs to) exists (written by `/handoff` before the
+   stop), fold its content into this note and delete that file — one bridge,
+   not two. Leave other sessions' handoff files alone. Required sections:
    - **Goal** — one line: the task's definition of done.
    - **Done** — bullets with commit hashes.
    - **In flight** — file:line, what exists, what is missing.

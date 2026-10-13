@@ -152,7 +152,7 @@ J"
 }
 
 @test "the temp file name is not predictable from the PID alone" {
-  run grep -c 'tmp="$CACHE_FILE.$$.$RANDOM.tmp"' "$SL"
+  run grep -c 'tmp="$file.$$.$RANDOM.tmp"' "$SL"
   [ "$output" = "1" ] || { echo "temp name lost its random component"; return 1; }
 }
 
@@ -248,4 +248,26 @@ J"
   run bash -c "'$SL' <<< '{\"context_window\":{\"used_percentage\":5},\"rate_limits\":[1]}'"
   [ "$status" -eq 0 ] || false
   [[ "$output" == *"ctx 5%"* ]] || { echo "$output"; return 1; }
+}
+
+@test "publishes context percentage for this session independently of rate limits" {
+  bash -c "'$SL' < <(echo '$(payload 99 7800)')" >/dev/null
+  ctx="$XDG_CACHE_HOME/claude-statusline/context-s1.json"
+  [ -f "$ctx" ]
+  jq -e '.used_percentage == 23' "$ctx" >/dev/null
+  [ ! -e "$XDG_CACHE_HOME/claude-statusline/context-s2.json" ]
+}
+
+@test "context cache updates after a context reset" {
+  bash -c "'$SL' < <(echo '$(payload)')" >/dev/null
+  ctx="$XDG_CACHE_HOME/claude-statusline/context-s1.json"
+  printf '%s' '{"session_id":"s1","context_window":{"used_percentage":3}}' | bash "$SL" >/dev/null
+  jq -e '.used_percentage == 3' "$ctx" >/dev/null
+}
+
+@test "statusline does not publish context without a safe session id or percentage" {
+  printf '%s' '{"session_id":"../bad","context_window":{"used_percentage":99}}' | bash "$SL" >/dev/null
+  printf '%s' '{"session_id":"s2"}' | bash "$SL" >/dev/null
+  [ ! -e "$XDG_CACHE_HOME/claude-statusline/context-s2.json" ]
+  [ ! -e "$XDG_CACHE_HOME/bad.json" ]
 }

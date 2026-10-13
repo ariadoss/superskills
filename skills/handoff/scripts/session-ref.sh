@@ -10,7 +10,8 @@
 #   Claude Code: CLAUDECODE            Codex: CODEX_THREAD_ID | CODEX_SANDBOX
 #   OpenCode:    OPENCODE              anything else: unknown
 # Hook-provided override: HANDOFF_SESSION_FILE (absolute path) wins over
-# discovery in both harnesses that have files.
+# discovery in both harnesses that have files. HANDOFF_SESSION_ID names the
+# per-session note (handoff-<id>.md).
 set -u
 HOME_DIR="${HOME:-$PWD}"
 MAX_AGE_MIN=360   # transcripts older than this are not this session
@@ -28,6 +29,18 @@ newest_within() {
 }
 
 emit() { printf '%s\n' "$*"; }
+
+# One note per session, so parallel sessions in the same repo never overwrite
+# each other. Id preference: hook-supplied > the harness's own session id >
+# a UTC timestamp + pid (unique per invocation; a guessed or discovered id
+# could belong to a sibling session and recreate the collision).
+sid="${HANDOFF_SESSION_ID:-}"
+[ -n "$sid" ] || [ -z "${CLAUDECODE:-}" ] || sid="${CLAUDE_CODE_SESSION_ID:-}"
+[ -n "$sid" ] || sid="${CODEX_THREAD_ID:-}"
+sid="$(printf '%s' "$sid" | tr -c 'A-Za-z0-9_-' '-' | cut -c1-80)"
+sid="${sid#"${sid%%[!-]*}"}"
+[ -n "$sid" ] || sid="$(date -u +%Y%m%dT%H%M%SZ)-$$"
+emit "handoff file: handoff-$sid.md"
 
 # --- Claude Code ---------------------------------------------------------
 if [ -n "${CLAUDECODE:-}" ]; then
@@ -97,11 +110,11 @@ fi
 # --- OpenCode ---------------------------------------------------------------
 if [ -n "${OPENCODE:-}" ]; then
   emit "resume: opencode run -c \"<prompt>\"   (continue the most recent session)"
-  emit "note: no stable on-disk session path is published; handoff.md is the bridge"
+  emit "note: no stable on-disk session path is published; the handoff note is the bridge"
   exit 0
 fi
 
 # --- Unknown / minimal harness --------------------------------------------
 emit "harness: unrecognized — no verified headless resume path (do not guess one)"
-emit "handoff.md is the only bridge: the successor session must rebuild state from it and git"
+emit "the handoff note is the only bridge: the successor session must rebuild state from it and git"
 exit 0
