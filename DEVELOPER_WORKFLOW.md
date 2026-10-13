@@ -259,7 +259,7 @@ Each agent works independently and spawns subagents. Exponentially faster than p
 > ```
 >
 > It reuses `/daily-qa`'s trigger matrix but is branch-scoped, present-human
-> (so it actually runs the interactive checks `/daily-qa` only recommends: `/qa`, `/web-perf`, `/design-review`, dynamic `/a11y`, `/humanize` on changed prose), and it is an
+> (so it actually runs the interactive checks `/daily-qa` only recommends: `/qa`, `/web-perf`, `/design-review`, dynamic `/a11y`, `/humanize` on changed user-facing docs), and it is an
 > **audit → fix → verify pipeline**, not a report: each triggered check runs,
 > the pipeline fixes what it found (one atomic commit per fix, never a push),
 > then re-runs the check and the test suite to prove the fix. CRITICAL/HIGH
@@ -277,7 +277,7 @@ Each agent works independently and spawns subagents. Exponentially faster than p
 
 | Command | Role |
 |---------|------|
-| `/qa-full` | Per-feature QA pipeline: audit → fix → verify. Full fan-out (tests, `/review` + `/clean-code`, `/defense`, `/db-optimize`, `/web-perf`, `/qa`, `/design-review`, `/a11y`, `/test-coverage`, `/humanize` warnings-tier on changed prose, `/eval` ask-first on AI-behavior file diffs) on the branch diff, fixes what it finds, re-verifies, → pass/fail ship-readiness verdict, with an **accounting ledger** that blocks if a triggered check wasn't run, was left unfixed, or wasn't explicitly skipped-with-reason. Run before `/finish-branch` and `/ship` |
+| `/qa-full` | Per-feature QA pipeline: audit → fix → verify. Full fan-out (tests, `/review` + `/clean-code`, `/defense`, `/db-optimize`, `/web-perf`, `/qa`, `/design-review`, `/a11y`, `/test-coverage`, `/humanize` warnings-tier on changed user-facing docs, `/eval` ask-first on AI-behavior file diffs) on the branch diff, fixes what it finds, re-verifies, → pass/fail ship-readiness verdict, with an **accounting ledger** that blocks if a triggered check wasn't run, was left unfixed, or wasn't explicitly skipped-with-reason. Run before `/finish-branch` and `/ship` |
 | `/ship` | Sync tests, automate CI/CD, and submit the PR |
 | `/land-and-deploy` | Merge, deploy, and verify production |
 
@@ -305,7 +305,7 @@ Per-branch pipeline (6 steps above)        Background cadence (daily)
 
 | Command | Role |
 |---------|------|
-| `/daily-qa` | Daily evidence-grounded sweep: CI → commits → deps → perf → coverage. The commit bug scan is powered by `/code-review` (local tier, auto-run); also always auto-runs `/defense` (basic OWASP on changed files) and `/db-optimize` when DB/ORM/SQL changed; recommends `/web-perf` when frontend files changed, `/humanize` when prose files changed, and `/eval` when AI-behavior files changed (prompts, skill or agent instructions, LLM/RAG config). Recommends heavier follow-ups (`/code-review ultra`, `/pentest`, `/qa`, `/debug`, `/perf-profile`, `/verify`) with exact commands, never auto-runs them. Output: dated report under `daily-qa-reports/`. |
+| `/daily-qa` | Daily evidence-grounded sweep: CI → commits → deps → perf → coverage. The commit bug scan is powered by `/code-review` (local tier, auto-run); also always auto-runs `/defense` (basic OWASP on changed files) and `/db-optimize` when DB/ORM/SQL changed; recommends `/web-perf` when frontend files changed, `/humanize` when user-facing docs changed, and `/eval` when AI-behavior files changed (prompts, skill or agent instructions, LLM/RAG config). Recommends heavier follow-ups (`/code-review ultra`, `/pentest`, `/qa`, `/debug`, `/perf-profile`, `/verify`) with exact commands, never auto-runs them. Output: dated report under `daily-qa-reports/`. |
 
 **Run it daily. Two options:**
 

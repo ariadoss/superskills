@@ -104,7 +104,7 @@ The plugin `version` is driven by the repo's `VERSION` file via
 watch. The `./setup` install above remains the way to get a chosen pack
 selection across every supported tool.
 
-## Skills (44)
+## Skills (46)
 
 ### Dev Methodology (from [superpowers](https://github.com/obra/superpowers))
 | Command | Description |
@@ -165,8 +165,8 @@ selection across every supported tool.
 | `/article` | Extract clean text from web articles |
 | `/kb-advisor` | Search and synthesize from your knowledge bases |
 | `/content-writer` | Content creation backed by knowledge base research |
-| `/humanize` | Strip AI slop from prose, keep the voice. Deterministic scan + surgical edits the agent applies itself |
-| `/handoff` | Write a handoff.md for the session that resumes this work: in-progress state, exact next steps, this session's reference. Manual or auto-triggered at ≥90% usage |
+| `/humanize` | Clean text real users read, in any language or stack: READMEs and docs, blog posts, HTML and template engines, locale strings, UI copy, and the pages Go/Rust/PHP/Python/Node generators write. Code, comments, log text, prompts, and agent instructions are out of scope |
+| `/handoff` | Write a per-session handoff-<session-id>.md for the session that resumes this work: in-progress state, exact next steps, this session's reference. Manual or auto-triggered at 90% of the context window, 90% of the 5-hour usage window, or 95% of the weekly window |
 
 ### Testing
 | Command | Description |
@@ -329,8 +329,7 @@ points at the checkout, `/superskills-upgrade` updates the statusline too.
 Needs `bash` and `jq` 1.6 or newer (`brew install jq`, `apt install jq`); macOS
 and Linux. Set `NO_COLOR=1` for plain output, `STATUSLINE_DEBUG=1` to surface stderr.
 
-It renders in **17ms** steady state (100 renders, same payload), because a
-statusline is on a hot path: Claude Code debounces updates at 300ms and cancels
+The statusline is on a hot path: Claude Code debounces updates at 300ms and cancels
 an in-flight script when a new update arrives. One `jq` call does all parsing, the
 cache merge, the clock arithmetic and the rendering. No `awk` (context % is a
 documented field), no `date` (jq has `now`), no `stat`, `tr`, `sleep`, or lock.
@@ -339,9 +338,9 @@ documented field), no `date` (jq has `now`), no `stat`, `tr`, `sleep`, or lock.
 each window at its `resets_at`, so the last-seen windows are cached under
 `${XDG_CACHE_HOME:-~/.cache}/claude-statusline/` (mode 600) and re-shown until they
 expire. Staleness is decided by `resets_at` rather than a high-water mark: within a
-window usage only climbs, and a changed `resets_at` means a new window. Tested in
-`tests/statusline.bats` (22 cases, mostly absence, corruption and hostile-input
-paths) and `tests/install-statusline.bats` (the installer).
+window usage can rise or fall. The statusline also publishes this session's
+context percentage for the `/handoff` hook. Tested in `tests/statusline.bats`
+and `tests/install-statusline.bats`.
 
 ### Publishing the standalone `humanize` repo
 
