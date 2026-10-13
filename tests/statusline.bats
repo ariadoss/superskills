@@ -269,5 +269,6 @@ J"
   printf '%s' '{"session_id":"../bad","context_window":{"used_percentage":99}}' | bash "$SL" >/dev/null
   printf '%s' '{"session_id":"s2"}' | bash "$SL" >/dev/null
   [ ! -e "$XDG_CACHE_HOME/claude-statusline/context-s2.json" ]
-  [ ! -e "$XDG_CACHE_HOME/bad.json" ]
+  # the unsanitized id would have produced context-../bad.json inside the cache dir
+  [ -z "$(ls "$XDG_CACHE_HOME/claude-statusline" 2>/dev/null | grep '^context-')" ]
 }

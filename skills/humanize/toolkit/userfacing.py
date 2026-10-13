@@ -30,13 +30,14 @@ GENERATED_DIRS = {
     "coverage", "__pycache__", ".git", ".next", ".nuxt", ".svelte-kit", ".output", ".turbo",
     ".cache", "_site", ".venv", "venv", "site-packages", "pods", "carthage", ".gradle",
     ".terraform", ".dart_tool", "deriveddata", ".idea", ".vscode", "generated", "__generated__",
-    "migrations",
+    "migrations", "htmlcov", "storybook-static", "playwright-report", ".docusaurus",
+    ".nyc_output", "test-results",
 }
 # Agent instructions, prompts and tests: not copy, except a README that explains them.
 INSTRUCTION_DIRS = {
-    "evals", "eval", "tests", "test", "__tests__", "spec", "specs", "fixtures", "__fixtures__",
+    "evals", "eval", "tests", "test", "__tests__", "fixtures", "__fixtures__",
     "__mocks__", "mocks", "prompts", "prompt", "skills", "marketing-skills", "design-skills",
-    "agents", "commands", ".claude", ".codex", ".cursor", ".github",
+    "agents", ".claude", ".codex", ".cursor", ".github",
 }
 DENY_NAMES = {
     "skill.md", "claude.md", "agents.md", "gemini.md", ".cursorrules", "package-lock.json",
@@ -44,7 +45,10 @@ DENY_NAMES = {
     "gemfile.lock", "conftest.py", "robots.txt", "cmakelists.txt",
 }
 DENY_NAME_RES = [re.compile(p, re.I) for p in (
-    r"prompt", r"\.min\.", r"\.lock$", r"\.d\.ts$", r"\.config\.", r"\.generated\.", r"_generated\.",
+    # prompt files (prompt.md, system_prompt.txt, x.prompt.md), not guides ABOUT prompts
+    r"^(system[-_]?)?prompts?\.[a-z0-9]+$", r"\.prompt\.[a-z0-9]+$",
+    r"^(license|licence|copying|notice)(\.|$)",
+    r"\.min\.", r"\.lock$", r"\.d\.ts$", r"\.config\.", r"\.generated\.", r"_generated\.",
     r"\.pb\.go$", r"_test\.(go|py|rs|rb|exs?)$", r"\.(test|spec)\.[cm]?[jt]sx?$",
     r"^test_.*\.py$", r"_spec\.rb$", r"^(requirements|constraints)[\w.-]*\.txt$",
 )] + [re.compile(r"[a-z0-9]Test\.(php|java|kt|cs)$")]
@@ -79,9 +83,10 @@ OUTPUT_SIGNAL = re.compile(r"""
   | \bos\.(?:Create|WriteFile)\b | \bFile::create\b | \bfs::write\b | \bFiles\.write\b
   | \bopen\s*\([^)]*['"][wa]b?\+?['"]
   | \bres\.(?:send|render|write|end)\b | \bresponse\.(?:write|send|html)\b | \bw\.Write\b
-  | \bfmt\.Fprint\w*\(\s*w\b | \btemplate\.(?:Execute|Must|New|ParseFiles|ParseGlob)\b | \becho\b
-""", re.X | re.I)
+  | \bfmt\.Fprint\w*\(\s*w\b | \btemplate\.(?:Execute|Must|New|ParseFiles|ParseGlob)\b
+""", re.X)
 _CODE_TEMPLATE = re.compile(r"\.(js|css|json|rb|ya?ml|sh|csv|svg|sql)\.(erb|ejs|j2|jinja2?|tmpl|tpl|hbs|liquid|twig)$")
+MAX_BYTES = 512_000  # a user-facing page beyond this is data or a bundle, and scanning it must stay bounded
 MIN_LITERAL_WORDS = 4
 _SQL = re.compile(r"^\s*(select|insert|update|delete|create|alter|drop|with|order|group|where|from|on|and|or|set|values|join|left|inner|limit|having|union)\b\s+\w", re.I)
 
@@ -92,7 +97,11 @@ def repo_relative(path: str) -> str:
     file's git toplevel; anything else is used as given."""
     if not os.path.isabs(path):
         return path
-    for base in (os.getcwd(), _git_toplevel(path)):
+    try:
+        cwd = os.getcwd()
+    except OSError:
+        cwd = None
+    for base in (cwd, _git_toplevel(path)):
         if base and os.path.commonpath([base, path]) == base:
             return os.path.relpath(path, base)
     return path
@@ -132,12 +141,18 @@ def classify(path: str, raw=None) -> str:
         return "locale"
     if kind:
         return kind
-    if ext in CODE_EXTS and raw is not None and OUTPUT_SIGNAL.search(raw):
+    if ext in CODE_EXTS and raw is not None and _renders_output(raw, ext):
         return "source"
     return "none"
 
 
 def classify_file(path: str) -> str:
+    """classify() plus the on-disk guards: symlinks and oversized files are never copy."""
+    try:
+        if os.path.islink(path) or os.path.getsize(path) > MAX_BYTES:
+            return "none"
+    except OSError:
+        pass
     kind = classify(path)
     if kind != "none" or os.path.splitext(path)[1].lower() not in CODE_EXTS:
         return kind
@@ -146,6 +161,15 @@ def classify_file(path: str) -> str:
             return classify(path, fh.read())
     except (OSError, UnicodeDecodeError):
         return "none"
+
+
+def _renders_output(raw: str, ext: str) -> bool:
+    """Output signals count only in code, never in comments, and `echo` only in PHP."""
+    prefixes = ("#",) if ext in (".py", ".rb") else ("//", "/*", "*", "#") if ext == ".php" else ("//", "/*", "*")
+    code = "\n".join(l for l in raw.split("\n") if not l.lstrip().startswith(prefixes))
+    if OUTPUT_SIGNAL.search(code):
+        return True
+    return ext == ".php" and re.search(r"\becho\b", code) is not None
 
 
 # ---- shared helpers -------------------------------------------------------------------
@@ -281,23 +305,48 @@ class _Copy(HTMLParser):
                 self.found.append((start + k, piece.strip()))
 
 
-# Comments and embedded code blocks: dropped whole.
-_TEMPLATE_DROP = re.compile(
-    r"\{\{!--.*?--\}\}|\{\{--.*?--\}\}|\{#.*?#\}|@php.*?@endphp"
-    r"|\{%-?\s*comment\s*-?%\}.*?\{%-?\s*endcomment\s*-?%\}"
-    r"|\{%-?\s*(?:schema|javascript|stylesheet|style|raw)\s*-?%\}.*?\{%-?\s*end(?:schema|javascript|stylesheet|style|raw)\s*-?%\}",
-    re.S)
+# Comments and embedded code blocks: dropped whole. Each alternative is bounded and only
+# applied when its closer exists in the file, so an unterminated opener cannot scan to EOF
+# once per occurrence.
+_DROP_ALTS = (
+    ("--}}", r"\{\{!--.{0,20000}?--\}\}"),
+    ("--}}", r"\{\{--.{0,20000}?--\}\}"),
+    ("#}", r"\{#.{0,20000}?#\}"),
+    ("@endphp", r"@php.{0,20000}?@endphp"),
+    ("endcomment", r"\{%-?\s*comment\s*-?%\}.{0,20000}?\{%-?\s*endcomment\s*-?%\}"),
+    ("endschema", r"\{%-?\s*schema\s*-?%\}.{0,20000}?\{%-?\s*endschema\s*-?%\}"),
+    ("endjavascript", r"\{%-?\s*javascript\s*-?%\}.{0,20000}?\{%-?\s*endjavascript\s*-?%\}"),
+    ("endstylesheet", r"\{%-?\s*stylesheet\s*-?%\}.{0,20000}?\{%-?\s*endstylesheet\s*-?%\}"),
+    ("endstyle", r"\{%-?\s*style\s*-?%\}.{0,20000}?\{%-?\s*endstyle\s*-?%\}"),
+    ("endraw", r"\{%-?\s*raw\s*-?%\}.{0,20000}?\{%-?\s*endraw\s*-?%\}"),
+)
 # Output and logic tags: dropped, but a sentence-like quoted string inside (a translation
 # call such as {{ __('Welcome back') }}) is copy and kept.
-_TEMPLATE_TAG = re.compile(
-    r"\{\{\{.*?\}\}\}|\{\{.*?\}\}|\{%.*?%\}|\{!!.*?!!\}|<%.*?%>|<\?.*?\?>"
-    r"|(?m:^[ \t]*@\w+(?:\(.*\))?[ \t]*$)", re.S)
+_TAG_ALTS = (
+    ("}}}", r"\{\{\{.{0,2000}?\}\}\}"),
+    ("}}", r"\{\{.{0,2000}?\}\}"),
+    ("%}", r"\{%.{0,2000}?%\}"),
+    ("!!}", r"\{!!.{0,2000}?!!\}"),
+    ("%>", r"<%.{0,2000}?%>"),
+    ("?>", r"<\?.{0,2000}?\?>"),
+)
+_DIRECTIVE = r"(?m:^[ \t]*@\w+(?:\([^\n]*\))?[ \t]*$)"
+
+
+def _compile_for(raw: str, alts, extra=None):
+    parts = [p for closer, p in alts if closer in raw]
+    if extra:
+        parts.append(extra)
+    return re.compile("|".join(parts), re.S) if parts else None
+
+
 _QUOTED = re.compile(r"\"((?:[^\"\\\n]|\\.)*)\"|'((?:[^'\\\n]|\\.)*)'")
 
 
 def _template_text(raw: str):
     """(source with template syntax blanked but newlines kept, [(lineno, translated string)])."""
-    stripped = _TEMPLATE_DROP.sub(lambda m: _blank(m.group()), raw)
+    drop = _compile_for(raw, _DROP_ALTS)
+    stripped = drop.sub(lambda m: _blank(m.group()), raw) if drop else raw
     found = []
 
     def keep(m):
@@ -308,7 +357,8 @@ def _template_text(raw: str):
                 found.append((line + m.group().count("\n", 0, q.start()), t))
         return _blank(m.group())
 
-    return _TEMPLATE_TAG.sub(keep, stripped), found
+    tags = _compile_for(stripped, _TAG_ALTS, _DIRECTIVE)
+    return (tags.sub(keep, stripped) if tags else stripped), found
 
 
 def extract_html(raw: str, braces: bool = False) -> list:
@@ -444,17 +494,32 @@ _LOG_BASE = (r"\b(?:log|logger|logging|console|slog|zap|logrus|tracing|syslog)\b
 _LOG_CLI = re.compile(_LOG_BASE + r"|\b(?:print|println|printf|die|exit)\b\s*[!(]?", re.I)
 _LOG_PHP = re.compile(_LOG_BASE + r"|\b(?:die|exit)\b\s*\(", re.I)
 _IMPORT_LINE = re.compile(r"^\s*(import|from|use|require|include|package|#include|extern)\b")
+_PROMPT_CTX = re.compile(r"\b\w*(?:prompt|instruction|system_?message|system_?msg)\w*\s*[:=(,]", re.I)
+
+
+def _prev_code_line(raw: str, ls: int) -> str:
+    """The nearest earlier line that is neither blank nor a # comment ('' at file start)."""
+    end = ls
+    while end > 0:
+        start = raw.rfind("\n", 0, end - 1) + 1
+        text = raw[start:end].strip()
+        if text and not text.startswith("#"):
+            return text
+        end = start
+    return ""
 
 
 def _scan_strings(raw: str, ext: str):
     """[(start_line, content, text_before_on_its_line)] for string literals outside comments."""
     n, i, line, out = len(raw), 0, 1, []
+    ls = 0  # start offset of the current line, maintained incrementally
     c_like, hash_c = ext in _C_LIKE, ext in _HASH
     while i < n:
         ch = raw[i]
         if ch == "\n":
             line += 1
             i += 1
+            ls = i
             continue
         two = raw[i:i + 2]
         if (c_like and two == "//") or (hash_c and ch == "#"):
@@ -466,19 +531,20 @@ def _scan_strings(raw: str, ext: str):
             j = n if j < 0 else j + 2
             line += raw.count("\n", i, j)
             i = j
+            ls = raw.rfind("\n", 0, j) + 1
             continue
-        ls = raw.rfind("\n", 0, i) + 1
         before = raw[ls:i]
         if ext == ".py" and raw.startswith(('"""', "'''"), i):
             q = raw[i:i + 3]
             j = raw.find(q, i + 3)
             j = n if j < 0 else j
-            code_before = [l for l in raw[:ls].split("\n") if l.strip() and not l.strip().startswith("#")]
-            docstring = before.strip() == "" and (not code_before or code_before[-1].rstrip().endswith(":"))
+            prev = _prev_code_line(raw, ls)
+            docstring = before.strip() == "" and (not prev or prev.endswith(":"))
             if not docstring:
                 out.append((line, raw[i + 3:j], before))
             line += raw.count("\n", i, j)
             i = min(n, j + 3)
+            ls = raw.rfind("\n", 0, i) + 1
             continue
         m = None
         if ext == ".php" and two == "<<":
@@ -492,6 +558,7 @@ def _scan_strings(raw: str, ext: str):
             out.append((line + 1, raw[nl + 1:j], before))
             line += raw.count("\n", i, j)
             i = j
+            ls = raw.rfind("\n", 0, j) + 1
             continue
         if ext == ".rs" and ch == "r" and (i == 0 or not (raw[i - 1].isalnum() or raw[i - 1] == "_")):
             rm = re.match(r'r(#*)"', raw[i:i + 40])
@@ -502,6 +569,7 @@ def _scan_strings(raw: str, ext: str):
                 out.append((line, raw[i + len(rm.group()):j], before))
                 line += raw.count("\n", i, j)
                 i = min(n, j + len(close))
+                ls = raw.rfind("\n", 0, i) + 1
                 continue
         if ch in "\"'`":
             if ch == "`" and ext not in _BACKTICK:
@@ -526,6 +594,7 @@ def _scan_strings(raw: str, ext: str):
             out.append((line, raw[i + 1:j], before))
             line += raw.count("\n", i, j)
             i = j + 1
+            ls = raw.rfind("\n", 0, i) + 1
             continue
         i += 1
     return out
@@ -535,7 +604,7 @@ def _code_copy(raw: str, ext: str) -> list:
     log = _LOG_PHP if ext == ".php" else _LOG_CLI
     found = []
     for lineno, content, before in _scan_strings(raw, ext):
-        if log.search(before) or _IMPORT_LINE.match(before):
+        if log.search(before) or _IMPORT_LINE.match(before) or _PROMPT_CTX.search(before):
             continue
         for k, piece in enumerate(content.split("\n")):
             t = _fragment(piece)

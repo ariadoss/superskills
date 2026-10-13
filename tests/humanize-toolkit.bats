@@ -937,3 +937,52 @@ T
   printf '%s\n' "$output" | grep -q "Hello and welcome to the docs."
   ! printf '%s\n' "$output" | grep -q "Comprehensive\|ORDER BY" || false
 }
+
+@test "userfacing: unterminated template openers cannot stall extraction" {
+  cd "$BATS_TEST_TMPDIR"
+  python3 -c "print('{{ x\n' * 20000, end='')" > many.liquid
+  python3 -c "print('{%- comment %}\n' * 20000, end='')" > many2.liquid
+  run timeout 10 python3 "$TK/userfacing.py" extract many.liquid
+  [ "$status" -eq 0 ]
+  run timeout 10 python3 "$TK/userfacing.py" extract many2.liquid
+  [ "$status" -eq 0 ]
+}
+
+@test "userfacing: oversized files and symlinks are never scanned" {
+  cd "$BATS_TEST_TMPDIR"
+  head -c 700000 /dev/zero | tr '\0' 'a' > big.md
+  run uf classify big.md
+  [ "$output" = "none" ]
+  printf 'Real prose lives here.\n' > real.md
+  ln -s real.md link.md
+  run uf classify link.md
+  [ "$output" = "none" ]
+  run uf extract link.md
+  [ "$status" -eq 1 ]
+}
+
+@test "userfacing: prompts inside code and a stray 'echo' do not make a code file copy" {
+  cd "$BATS_TEST_TMPDIR"
+  printf '%s\n' '# we echo the results to the console' 'SYSTEM_PROMPT = "You are a helpful assistant that rewrites documentation."' 'def f():' '    return 1' > cli.py
+  run uf classify cli.py
+  [ "$output" = "none" ]
+  printf '%s\n' 'SYSTEM_PROMPT = "You are a helpful assistant that rewrites documentation."' 'open("out/a.html", "w").write("<p>Welcome to our documentation for everyone.</p>")' > gen.py
+  run uf extract gen.py
+  printf '%s\n' "$output" | grep -q "Welcome to our documentation for everyone."
+  ! printf '%s\n' "$output" | grep -q "helpful assistant" || false
+}
+
+@test "userfacing: generated report trees, license boilerplate and prompt-named guides are classified correctly" {
+  for path in htmlcov/index.html storybook-static/index.html playwright-report/index.html LICENSE.txt NOTICE.md COPYING; do
+    run uf classify "$path"
+    [ "$output" = "none" ] || { echo "$path -> $output (want none)"; return 1; }
+  done
+  for path in prompting-guide.md how-to-write-a-good-prompt.md docs/commands/install.md docs/specs/overview.md; do
+    run uf classify "$path"
+    [ "$output" = "markdown" ] || { echo "$path -> $output (want markdown)"; return 1; }
+  done
+  run uf classify prompts/system.md
+  [ "$output" = "none" ]
+  run uf classify prompt.md
+  [ "$output" = "none" ]
+}

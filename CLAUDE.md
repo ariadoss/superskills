@@ -163,16 +163,20 @@ Read DEVELOPER_WORKFLOW.md to understand how to use superskills commands togethe
 
 ## Prose quality before push
 
-Two push surfaces are gated by the PreToolUse hook
-(`scripts/humanize-prepush-hook.sh`): the repo-root `README.md` when
-MODIFIED, and any NEWLY-CREATED `.md` outside the skill packs (new docs
-are human-facing by default). Modified internal records are not gated;
-renames count by destination; deletions never gate. A push carrying
-flagged text is blocked until `/humanize` cleans it
-(`HUMANIZE_PREPUSH=0` is the bypass for deliberately-held wording).
-Everything else is deliberately OUT of the gate: skill bodies are how
-agents speak to agents (register is the product; wording is often the
-exact bytes an eval adopted — humanize only deliberately and surgically),
-and internal docs, reports, and plans are working records. As a habit,
-run `/humanize` over human-facing prose you author (READMEs, public docs)
-before it ships; never batch-rewrite the excluded categories.
+The PreToolUse hook (`scripts/humanize-prepush-hook.sh`) gates `git push`
+on two sets: any README that is MODIFIED, and any NEWLY-CREATED (or renamed
+or copied) user-facing file of any supported type. What counts as
+user-facing is decided in one place, `skills/humanize/toolkit/userfacing.py`:
+documentation and blog posts, HTML and template engines, locale files,
+component text, and the pages that Go, Rust, PHP, Python or Node generators
+write. Code logic, comments, log text, prompts, agent instructions
+(`SKILL.md`, `CLAUDE.md`, `AGENTS.md`), tests, and vendored or generated
+trees are out. Modified non-README files are not gated, and deletions never
+gate. A push carrying flagged text is blocked until `/humanize` cleans it
+(`HUMANIZE_PREPUSH=0` is the bypass for deliberately-held wording); a file
+the gate could not scan is named on stderr as `scan skipped`. Skill bodies
+are how agents speak to agents (register is the product; wording is often
+the exact bytes an eval adopted: humanize only deliberately and
+surgically), so they stay out of the gate. As a habit, run `/humanize` over
+human-facing prose you author (READMEs, public docs) before it ships; never
+batch-rewrite the excluded categories.

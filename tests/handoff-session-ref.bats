@@ -182,3 +182,22 @@ setup() {
   line="$(echo "$output" | grep '^handoff file:')"
   echo "$line" | grep -Eq '^handoff file: handoff-[A-Za-z0-9_-]+\.md$' || false
 }
+
+@test "handoff file: hook id beats the harness id, and the harness id needs CLAUDECODE" {
+  run env -i HOME="$HOME_FIX" CLAUDECODE=1 HANDOFF_SESSION_ID=a CLAUDE_CODE_SESSION_ID=b bash "$REF"
+  echo "$output" | grep -qx "handoff file: handoff-a.md"
+  run env -i HOME="$HOME_FIX" CLAUDE_CODE_SESSION_ID=b bash "$REF"
+  echo "$output" | grep -Eq '^handoff file: handoff-[0-9]{8}T[0-9]{6}Z-[0-9]+\.md$'
+}
+
+@test "claude code: a transcript name with shell metacharacters is sanitized in the resume command" {
+  f="$HOME_FIX/ev;touch pwned.jsonl"; printf '{}' > "$f"
+  run env -i HOME="$HOME_FIX" CLAUDECODE=1 HANDOFF_SESSION_FILE="$f" bash "$REF"
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q 'claude --resume ev-touch-pwned '
+  ! echo "$output" | grep '^resume:' | grep -q ';' || false
+}
+
+@test "gitignore: only the repo-root per-session note is ignored, not docs named handoff-*.md" {
+  grep -qx '/handoff-\*.md' "$REPO_ROOT/.gitignore"
+}

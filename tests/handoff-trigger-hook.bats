@@ -63,7 +63,11 @@ rate_limits() { # five_hour_pct seven_day_pct [resets_in_seconds]
   STDIN_JSON="{\"session_id\":\"abc\",\"transcript_path\":\"$BATS_TEST_TMPDIR/fresh.jsonl\"}"
   run invoke
   [ -z "$output" ]
-  printf '%s\n' '{"type":"assistant","message":"done"}' >> "$BATS_TEST_TMPDIR/fresh.jsonl"
+  # a session with only a couple of replies has nothing worth a handoff note yet
+  printf '%s\n' '{"type":"assistant","message":"one"}' '{"type":"assistant","message":"two"}' >> "$BATS_TEST_TMPDIR/fresh.jsonl"
+  run invoke
+  [ -z "$output" ]
+  printf '%s\n' '{"type":"assistant","message":"three"}' >> "$BATS_TEST_TMPDIR/fresh.jsonl"
   run invoke
   [ -n "$output" ]
 }
@@ -139,6 +143,9 @@ rate_limits() { # five_hour_pct seven_day_pct [resets_in_seconds]
 }
 
 @test "invalid session id cannot escape the cache directory" {
+  # Without the id guard, context-../../elsewhere.json resolves to claude-statusline/elsewhere.json.
+  mkdir -p "$CACHE_HOME/claude-statusline/context-.."
+  printf '{"used_percentage":99}' > "$CACHE_HOME/claude-statusline/elsewhere.json"
   STDIN_JSON='{"session_id":"../../elsewhere","transcript_path":"/t/p.jsonl"}'
   run invoke
   [ "$status" -eq 0 ]
@@ -183,4 +190,61 @@ rate_limits() { # five_hour_pct seven_day_pct [resets_in_seconds]
   render 90 95
   run invoke
   echo "$output" | jq -e '.hookSpecificOutput.additionalContext | test("weekly")' >/dev/null
+}
+
+@test "fractional percentages compare as numbers (context and account)" {
+  printf '{"used_percentage":90.4}' > "$CACHE"
+  run invoke
+  [ -n "$output" ]
+  rm -f "$CACHE_HOME"/claude-statusline/handoff-notified-*
+  rm -f "$CACHE"
+  rate_limits 89.9 10
+  run invoke
+  [ -z "$output" ]
+  rate_limits 90.1 10
+  run invoke
+  [ -n "$output" ]
+}
+
+@test "weekly threshold can be overridden" {
+  rate_limits 10 60
+  run bash -c "printf '%s' '$STDIN_JSON' | XDG_CACHE_HOME='$CACHE_HOME' HANDOFF_WEEKLY_THRESHOLD=50 bash '$HOOK'"
+  echo "$output" | jq -e '.hookSpecificOutput.additionalContext | test("weekly")' >/dev/null
+}
+
+@test "both account windows firing in one prompt are reported together" {
+  rate_limits 95 97
+  run invoke
+  echo "$output" | jq -e '.hookSpecificOutput.additionalContext | test("5-hour") and test("weekly")' >/dev/null
+}
+
+@test "a malformed threshold such as 1.2.3 warns and the other triggers still fire" {
+  rate_limits 99 10
+  printf '{"used_percentage":95}' > "$CACHE"
+  run bash -c "printf '%s' '$STDIN_JSON' | XDG_CACHE_HOME='$CACHE_HOME' HANDOFF_USAGE_THRESHOLD=1.2.3 bash '$HOOK' 2>&1"
+  echo "$output" | grep -q "HANDOFF_USAGE_THRESHOLD not numeric"
+  echo "$output" | grep -q "5-hour usage window"
+}
+
+@test "the context trigger re-arms after context drops (compact) and fires again on the next climb" {
+  printf '{"used_percentage":95}' > "$CACHE"
+  run invoke
+  [ -n "$output" ]
+  run invoke
+  [ -z "$output" ]
+  printf '{"used_percentage":20}' > "$CACHE"
+  run invoke
+  [ -z "$output" ]
+  printf '{"used_percentage":93}' > "$CACHE"
+  run invoke
+  [ -n "$output" ]
+}
+
+@test "a marker path that is a planted symlink is never written through" {
+  victim="$BATS_TEST_TMPDIR/victim.txt"; printf 'keep' > "$victim"
+  ln -s "$victim" "$CACHE_HOME/claude-statusline/handoff-notified-abc"
+  printf '{"used_percentage":95}' > "$CACHE"
+  run invoke
+  [ -n "$output" ]
+  [ "$(cat "$victim")" = "keep" ]
 }

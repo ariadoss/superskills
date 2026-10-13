@@ -70,7 +70,8 @@ if [ -n "${CLAUDECODE:-}" ]; then
     fi
   fi
   if [ -n "$file" ] && [ -f "$file" ]; then
-    sid="$(basename "$file" .jsonl)"
+    sid="$(basename "$file" .jsonl | tr -c 'A-Za-z0-9_-' '-')"
+    sid="${sid%-}"   # tr turned the dropped trailing newline into one dash
     [ -n "$caution" ] && emit "caution: $caution"
     emit "session file: $file"
     emit "resume: claude --resume $sid -p \"<prompt>\""

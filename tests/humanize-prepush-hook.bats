@@ -163,16 +163,10 @@ SLOP_LINE="He took a deep breath and began. She nodded, a ghost of a smile playi
   commit_md src/util.ts "const s = \"$SLOP_LINE\";"
   commit_md prompts/system.md "$SLOP_LINE"
   commit_md skills/x/SKILL.md "$SLOP_LINE"
+  commit_md AGENTS.md "$SLOP_LINE"
+  commit_md CLAUDE.md "$SLOP_LINE"
+  commit_md evals/example/prompt.md "$SLOP_LINE"
   commit_md package.json "{\"description\": \"$SLOP_LINE\"}"
-  run run_hook "$WORK"
-  [ "$status" -eq 0 ]
-  [ -z "$output" ]
-}
-
-@test "new internal prompts and agent instructions do not trigger the prose gate" {
-  for f in evals/example/prompt.md docs/internal/prompt.md prompts/system.md AGENTS.md CLAUDE.md skills/x/SKILL.md; do
-    commit_md "$f" "I couldn't help but smile. He took a deep breath and began. She nodded, a ghost of a smile playing at her lips."
-  done
   run run_hook "$WORK"
   [ "$status" -eq 0 ]
   [ -z "$output" ]
@@ -211,4 +205,34 @@ SLOP
   run run_hook "$WORK"
   [ "$status" -eq 0 ]
   [ -z "$(echo "$output" | jq -r '.decision // empty')" ]
+}
+
+run_cmd() {  # run_cmd <cwd> <command string>
+  local cwd="$1" cmd="$2"
+  (cd "$cwd" && jq -n --arg c "$cmd" '{tool_name:"Bash",tool_input:{command:$c}}' | HUMANIZE_PREPUSH=1 bash "$HOOK" 2>&1)
+}
+
+@test "a command that merely mentions git push does not run the gate" {
+  commit_md README.md "$SLOP_LINE"
+  run run_cmd "$WORK" 'git commit -m "document the git push hook"'
+  [ -z "$output" ]
+  run run_cmd "$WORK" 'echo git push'
+  [ -z "$output" ]
+  run run_cmd "$WORK" 'cd sub && git push origin main'
+  echo "$output" | grep -q '"decision": "block"'
+}
+
+@test "a symlink added as a doc is not read" {
+  secret="$BATS_TEST_TMPDIR/secret.txt"; printf '%s\n' "$SLOP_LINE" > "$secret"
+  ln -s "$secret" "$WORK/linked.md"
+  git -C "$WORK" add linked.md && git -C "$WORK" commit -qm "link"
+  run run_hook "$WORK"
+  [ -z "$output" ]
+}
+
+@test "an extractor that cannot read a file says so instead of looking green" {
+  printf 'caf\xe9 au lait is a lovely thing to write about today.\n' > "$WORK/docs-latin1.md"
+  git -C "$WORK" add docs-latin1.md && git -C "$WORK" commit -qm "latin1"
+  run run_cmd "$WORK" 'git push origin main'
+  echo "$output" | grep -q "scan skipped: docs-latin1.md"
 }

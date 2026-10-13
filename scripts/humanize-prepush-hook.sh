@@ -16,12 +16,17 @@ set -u
 input="$(cat 2>/dev/null || true)"
 [ -n "$input" ] || exit 0
 
-cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/dev/null)"
-[ -n "$cmd" ] || exit 0
-case "$cmd" in
-  *git[[:space:]]push*) : ;;
+# Cheap rejection before the jq fork: this hook sees every Bash tool call.
+case "$input" in
+  *git*push*) : ;;
   *) exit 0 ;;
 esac
+cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/dev/null)"
+[ -n "$cmd" ] || exit 0
+# A real push: `git [opts] push` at the start of a command or after ; & | ( — not a
+# commit message or echo that merely mentions it.
+push_re='(^|[;&|(])[[:space:]]*(command[[:space:]]+)?git([[:space:]]+-[^[:space:]]+([[:space:]]+[^-[:space:]][^[:space:]]*)?)*[[:space:]]+push([[:space:]]|$)'
+[[ "$cmd" =~ $push_re ]] || exit 0
 [ "${HUMANIZE_PREPUSH:-1}" = "0" ] && exit 0
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -32,7 +37,7 @@ USERFACING="$ROOT/skills/humanize/toolkit/userfacing.py"
 [ -f "$SCANNER" ] && [ -f "$USERFACING" ] || exit 0
 command -v python3 >/dev/null 2>&1 || exit 0
 
-# The .md files this push would carry that the remote has not seen.
+# The user-facing files this push would carry that the remote has not seen.
 # Try the push upstream first, then the default remote branch; a repo with
 # neither has nothing pending — allow.
 branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
@@ -48,7 +53,13 @@ status="$( { git -c core.quotePath=false diff --name-status @{push}..HEAD 2>/dev
 [ -n "$status" ] || exit 0
 files=""
 add() { files="${files:+$files$'\n'}$1"; }
-user_facing() { [ "$(python3 "$USERFACING" classify "$1" 2>/dev/null)" != "none" ]; }
+# classify prints a type or "none"; a crash prints nothing, which must never read as
+# "in scope" (the later extract would fail and the file would pass unscanned, silently).
+user_facing() {
+  local kind
+  kind="$(python3 "$USERFACING" classify "$1" 2>/dev/null)" || kind=""
+  [ -n "$kind" ] && [ "$kind" != "none" ]
+}
 while IFS=$'\t' read -r st p1 p2 _; do
   [ -n "${st:-}" ] || continue
   path="${p2:-$p1}"
@@ -79,11 +90,13 @@ EXEMPT_FLAG=""
 report=""
 n=0
 while IFS= read -r f; do
-  [ -f "$f" ] || continue
+  [ -f "$f" ] && [ ! -L "$f" ] || continue
   n=$((n + 1))
   t="$tmpdir/${n}_$(printf '%s' "${f//\//_}")"
-  python3 "$USERFACING" extract "$f" > "$t" 2>/dev/null || continue
-  r="$(python3 "$SCANNER" "$t" $EXEMPT_FLAG 2>/dev/null)" || continue
+  python3 "$USERFACING" extract "$f" > "$t" 2>/dev/null \
+    || { echo "humanize pre-push gate: scan skipped: $f (could not extract its text)" >&2; continue; }
+  r="$(python3 "$SCANNER" "$t" $EXEMPT_FLAG 2>/dev/null)" \
+    || { echo "humanize pre-push gate: scan skipped: $f (scanner failed)" >&2; continue; }
   report="${report:+$report
 }$f
 $r"
