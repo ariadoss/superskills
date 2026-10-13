@@ -402,10 +402,13 @@ For a deeper hunt after HIGH/CRITICAL, recommend `/pentest` (§7c).
 
 Doc-heavy commits land from every branch, and merged prose is exactly what the
 per-branch pipelines never re-check. Recommend `/humanize` when commits in the
-window added or modified prose files (`**/*.md`, `**/*.mdx`), excluding
-changelogs, vendored/mirrored trees, and generated files (that wording is
-deliberate or upstream's). It edits, not just reports, and rewrites voice, so
-it never auto-runs unattended.
+window added or modified user-facing copy: documentation, help prose,
+marketing pages, locale strings, or visible UI text (any file type
+`skills/humanize/toolkit/userfacing.py classify <path>` does not call
+`none`). Internal prompts, agent instructions, plans, and code comments are out of scope.
+Also exclude changelogs, vendored/mirrored trees, and generated files (that
+wording is deliberate or upstream's). It edits, not just reports, and rewrites
+voice, so it never auto-runs unattended.
 
 Include the list of changed prose files so the user can scope the pass, and
 state it as a suggestion with the files as context: e.g. _"Run `/humanize` on

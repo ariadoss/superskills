@@ -112,7 +112,7 @@ SLOP
   [ -z "$output" ]
 }
 
-@test "a NEW .md outside skills is gated at creation" {
+@test "a new user-facing doc is gated at creation" {
   mkdir -p "$WORK/docs"
   cat > "$WORK/docs/getting-started.md" <<'SLOP'
 He took a deep breath and began. She nodded, a ghost of a smile playing at her lips.
@@ -122,6 +122,60 @@ SLOP
   run run_hook "$WORK"
   [ "$status" -eq 0 ]
   echo "$output" | jq -e '.decision == "block"' >/dev/null
+}
+
+SLOP_LINE="He took a deep breath and began. She nodded, a ghost of a smile playing at her lips. The room seemed to hold its breath."
+
+@test "a new marketing page (html) with slop in visible text is gated" {
+  commit_md site/landing.html "<html><body><p>$SLOP_LINE</p></body></html>"
+  run run_hook "$WORK"
+  [ "$status" -eq 0 ]
+  echo "$output" | jq -e '.decision == "block"' >/dev/null
+}
+
+@test "a new content-collection markdown and mdx page is gated outside docs/" {
+  commit_md content/blog/launch.md "$SLOP_LINE"
+  commit_md site/pages/pricing.mdx "$SLOP_LINE"
+  run run_hook "$WORK"
+  [ "$status" -eq 0 ]
+  echo "$output" | jq -e '.decision == "block"' >/dev/null
+  echo "$output" | jq -e '.reason | contains("content/blog/launch.md") and contains("site/pages/pricing.mdx")' >/dev/null
+}
+
+@test "a new component with slop in a visible string is gated; the same slop in a comment is not" {
+  commit_md src/Hero.tsx "export const Hero = () => <p>$SLOP_LINE</p>;"
+  run run_hook "$WORK"
+  echo "$output" | jq -e '.decision == "block"' >/dev/null
+  git -C "$WORK" reset -q --hard HEAD~1
+  commit_md src/Quiet.tsx "// $SLOP_LINE" "export const Quiet = () => null;"
+  run run_hook "$WORK"
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+}
+
+@test "a new locale file with slop in a string value is gated" {
+  commit_md locales/en.json "{" "  \"hero\": \"$SLOP_LINE\"" "}"
+  run run_hook "$WORK"
+  echo "$output" | jq -e '.decision == "block"' >/dev/null
+}
+
+@test "new code, prompts and agent instruction files never gate, even carrying slop" {
+  commit_md src/util.ts "const s = \"$SLOP_LINE\";"
+  commit_md prompts/system.md "$SLOP_LINE"
+  commit_md skills/x/SKILL.md "$SLOP_LINE"
+  commit_md package.json "{\"description\": \"$SLOP_LINE\"}"
+  run run_hook "$WORK"
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+}
+
+@test "new internal prompts and agent instructions do not trigger the prose gate" {
+  for f in evals/example/prompt.md docs/internal/prompt.md prompts/system.md AGENTS.md CLAUDE.md skills/x/SKILL.md; do
+    commit_md "$f" "I couldn't help but smile. He took a deep breath and began. She nodded, a ghost of a smile playing at her lips."
+  done
+  run run_hook "$WORK"
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
 }
 
 @test "a MODIFIED internal doc (not the README) is not gated" {

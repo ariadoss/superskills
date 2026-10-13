@@ -545,8 +545,14 @@ helpers without tests are warnings.
 
 ## Step 9b: Prose quality pipeline — `/humanize` (auto-run if triggered)
 
-**Trigger:** the diff adds or modifies prose files (`*.md`, `*.mdx`).
-Markdown only, never code comments; NOT-TRIGGERED when no prose changed.
+**Trigger:** the diff adds or modifies user-facing copy: documentation, help
+prose, marketing pages, locale strings, or visible UI text, in any file type
+`python3 skills/humanize/toolkit/userfacing.py classify <path>` does not call
+`none`. NOT-TRIGGERED when no user-facing copy changed.
+Internal prompts, agent instructions, plans, and code comments are out of scope.
+Run the
+Markdown normalizer only on `markdown`/`text` files; other types get the scan
+on the extraction and surgical in-place edits (see `/humanize`).
 
 **Scope rules:**
 

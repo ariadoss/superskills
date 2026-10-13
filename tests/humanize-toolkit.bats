@@ -112,7 +112,7 @@ setup() {
   # must be spaCy or NLTK: grep -o'ing for just those two used to drop any other
   # third-party import on the floor instead of failing on it.
   imports="$(grep -hE '^[[:space:]]*(import|from) ' "$TK"/*.py | sed -E 's/^[[:space:]]+//' \
-    | grep -vE '^(import|from) (re|sys|json|statistics|subprocess|math|os|argparse|collections|pathlib|__future__|typing|unicodedata|itertools|functools|textwrap|string|tempfile|shutil|bisect|mla_format|textio|emdash_fix|eq_bench_slop_index)([. ]|$)')"
+    | grep -vE '^(import|from) (re|sys|json|statistics|subprocess|math|os|argparse|collections|pathlib|__future__|typing|unicodedata|itertools|functools|textwrap|string|tempfile|shutil|bisect|html|mla_format|textio|emdash_fix|eq_bench_slop_index)([. ]|$)')"
   run bash -c "printf '%s\n' \"\$1\" | grep -vE '^(import|from) (spacy|nltk)([. ]|$)' | grep -c ." _ "$imports"
   [ "$output" = "0" ] || { echo "undocumented non-stdlib imports: $(printf '%s\n' "$imports" | grep -vE '(spacy|nltk)')"; return 1; }
   run bash -c "printf '%s\n' \"\$1\" | grep -oE '(spacy|nltk)' | sort -u | tr '\n' ' '" _ "$imports"
@@ -669,4 +669,271 @@ norm() { python3 "$TK/normalize.py" "$1" "$1.out" >/dev/null 2>&1 && cat "$1.out
   printf -- '- item text\n    carries on -- here\n' > "$BATS_TEST_TMPDIR/lc.md"
   run python3 "$TK/mla_format.py" "$BATS_TEST_TMPDIR/lc.md"
   [[ "$output" == *"    carries on—here"* ]] || { echo "$output"; return 1; }
+}
+
+# ---- userfacing.py: which files are user-facing copy, and what text in them is ----
+
+uf() { python3 "$TK/userfacing.py" "$@"; }
+
+@test "userfacing: classifies docs, marketing copy, locale strings and UI components as in scope" {
+  for pair in README.md:markdown docs/guide.mdx:markdown content/blog/post.md:markdown \
+              site/landing.html:html pages/pricing.txt:text locales/en.json:locale \
+              src/i18n/en.yaml:locale src/Hero.tsx:source components/Card.vue:source; do
+    path="${pair%%:*}"; want="${pair##*:}"
+    run uf classify "$path"
+    [ "$status" -eq 0 ]
+    [ "$output" = "$want" ] || { echo "$path -> $output (want $want)"; return 1; }
+  done
+}
+
+@test "userfacing: code, prompts, agent instructions, plans, tests and vendored trees are out of scope" {
+  for path in package.json tsconfig.json src/util.ts src/main.py app/server.go Cargo.toml go.sum \
+              prompts/system.md evals/case/prompt.md skills/x/SKILL.md CLAUDE.md AGENTS.md \
+              tests/fixtures/a.md node_modules/pkg/README.md vendor/lib/README.md target/doc/index.html \
+              dist/index.html static/app.min.js .humanize-exempt.txt pkg/server_test.go web/app.spec.ts; do
+    run uf classify "$path"
+    [ "$status" -eq 0 ]
+    [ "$output" = "none" ] || { echo "$path -> $output (want none)"; return 1; }
+  done
+}
+
+@test "userfacing: markdown extraction drops code blocks, inline code, link targets and front matter, keeping line numbers" {
+  cd "$BATS_TEST_TMPDIR"; f="doc.md"
+  printf '%s\n' '---' 'layout: post' '---' 'Intro with `code()` and [a link](https://example.com/x).' '' '```sh' 'rm -rf delve' '```' 'Last prose line.' > "$f"
+  run uf extract "$f"
+  [ "$status" -eq 0 ]
+  [ "$(printf '%s\n' "$output" | wc -l | tr -d ' ')" -eq 9 ]
+  [ "$(printf '%s\n' "$output" | sed -n 4p)" = "Intro with  and [a link]." ]
+  [ -z "$(printf '%s\n' "$output" | sed -n 7p)" ]
+  [ "$(printf '%s\n' "$output" | sed -n 9p)" = "Last prose line." ]
+  [ -z "$(printf '%s\n' "$output" | sed -n 2p)" ]
+}
+
+@test "userfacing: html extraction keeps visible text and alt/placeholder, drops script, style, code, comments" {
+  cd "$BATS_TEST_TMPDIR"; f="p.html"
+  cat > "$f" <<'HTML'
+<html><head><style>.a { color: red }</style><script>var x = "delve into it";</script></head>
+<body>
+<!-- delve internal comment -->
+<h1>Ship faster</h1>
+<p>Our tapestry of features
+ helps teams.</p>
+<img src="a.png" alt="A tidy dashboard overview">
+<pre><code>delve --deep</code></pre>
+</body></html>
+HTML
+  run uf extract "$f"
+  [ "$status" -eq 0 ]
+  printf '%s\n' "$output" | grep -q "Ship faster"
+  printf '%s\n' "$output" | grep -q "tapestry of features"
+  printf '%s\n' "$output" | grep -q "A tidy dashboard overview"
+  ! printf '%s\n' "$output" | grep -q "delve" || false
+  ! printf '%s\n' "$output" | grep -q "color: red" || false
+  # the h1 stays on its own source line (line 4)
+  [ "$(printf '%s\n' "$output" | sed -n 4p)" = "Ship faster" ]
+}
+
+@test "userfacing: locale json keeps string values only" {
+  cd "$BATS_TEST_TMPDIR"; d="locales"; mkdir -p "$d"
+  printf '%s\n' '{' '  "hero.title": "Unlock your potential today",' '  "count": 3,' '  "nested": {' '    "cta": "Start your free trial now"' '  }' '}' > "$d/en.json"
+  run uf extract "$d/en.json"
+  [ "$status" -eq 0 ]
+  printf '%s\n' "$output" | grep -q "Unlock your potential today"
+  printf '%s\n' "$output" | grep -q "Start your free trial now"
+  ! printf '%s\n' "$output" | grep -q "hero.title" || false
+  ! printf '%s\n' "$output" | grep -q "^3" || false
+}
+
+@test "userfacing: component source keeps JSX text and sentence-like literals, drops comments, classes, logs and imports" {
+  cd "$BATS_TEST_TMPDIR"; f="Hero.tsx"
+  cat > "$f" <<'TSX'
+import { Button } from "./components/button-with-a-long-name";
+// delve into the tapestry of this comment here please
+/* a block comment mentioning the rich tapestry of things */
+export function Hero() {
+  console.log("Rendering the hero section now for debugging");
+  return (
+    <div className="flex items-center justify-between px-4 py-2">
+      <h1>Build your site in minutes</h1>
+      <Button label="Start your free trial today" />
+      <p>{t("short")}</p>
+    </div>
+  );
+}
+TSX
+  run uf extract "$f"
+  [ "$status" -eq 0 ]
+  printf '%s\n' "$output" | grep -q "Build your site in minutes"
+  printf '%s\n' "$output" | grep -q "Start your free trial today"
+  ! printf '%s\n' "$output" | grep -qi "tapestry" || false
+  ! printf '%s\n' "$output" | grep -q "flex items-center" || false
+  ! printf '%s\n' "$output" | grep -q "Rendering the hero" || false
+  ! printf '%s\n' "$output" | grep -q "button-with-a-long-name" || false
+}
+
+@test "userfacing: extract on an out-of-scope file exits 1 with no output" {
+  cd "$BATS_TEST_TMPDIR"; f="util.ts"; printf 'const a = "one two three four five";\n' > "$f"
+  run uf extract "$f"
+  [ "$status" -eq 1 ]
+  [ -z "$output" ]
+}
+
+@test "userfacing: READMEs and markdown docs are always user-facing, even under test or plan folders" {
+  for path in README.md tests/README.md evals/README.md docs/plans/q3.md docs/internal/arch.md \
+              NOTES.md TODO.md CHANGELOG.md CONTRIBUTING.md _posts/2026-01-01-hello.md; do
+    run uf classify "$path"
+    [ "$output" = "markdown" ] || { echo "$path -> $output"; return 1; }
+  done
+  run uf classify node_modules/pkg/README.md
+  [ "$output" = "none" ]
+}
+
+@test "userfacing: template engines of every ecosystem classify as template" {
+  for path in resources/views/home.blade.php templates/base.twig app/views/home.html.erb \
+              layouts/index.gohtml emails/welcome.njk themes/x/sections/hero.liquid views/page.hbs \
+              templates/index.jinja2 views/page.ejs web/index.tmpl; do
+    run uf classify "$path"
+    [ "$output" = "template" ] || { echo "$path -> $output"; return 1; }
+  done
+}
+
+@test "userfacing: front matter keeps copy fields (title, description) and blanks the rest" {
+  cd "$BATS_TEST_TMPDIR"
+  printf '%s\n' '---' 'layout: post' 'title: "Why we rewrote our billing engine"' 'tags: [a, b]' 'description: How we cut invoice errors in half.' '---' 'Body text here.' > post.md
+  run uf extract post.md
+  [ "$(printf '%s\n' "$output" | sed -n 3p)" = "Why we rewrote our billing engine" ]
+  [ "$(printf '%s\n' "$output" | sed -n 5p)" = "How we cut invoice errors in half." ]
+  [ -z "$(printf '%s\n' "$output" | sed -n 2p)" ]
+  [ -z "$(printf '%s\n' "$output" | sed -n 4p)" ]
+  printf '%s\n' '+++' 'title = "Launch week recap"' 'weight = 3' '+++' 'Hugo body.' > hugo.md
+  run uf extract hugo.md
+  [ "$(printf '%s\n' "$output" | sed -n 2p)" = "Launch week recap" ]
+  [ -z "$(printf '%s\n' "$output" | sed -n 3p)" ]
+}
+
+@test "userfacing: template extraction blanks tags and comments but keeps text and translated strings" {
+  cd "$BATS_TEST_TMPDIR"
+  cat > home.blade.php <<'T'
+@extends('layouts.app')
+{{-- delve internal note about the layout --}}
+<h1>{{ __('Welcome back to your dashboard') }}</h1>
+@if($user->isAdmin())
+<p>Manage your team and billing in one place.</p>
+@endif
+{% comment %} a tapestry of notes {% endcomment %}
+<p class="x">{{ $user->name }}</p>
+T
+  run uf extract home.blade.php
+  [ "$status" -eq 0 ]
+  printf '%s\n' "$output" | grep -q "Welcome back to your dashboard"
+  printf '%s\n' "$output" | grep -q "Manage your team and billing in one place."
+  ! printf '%s\n' "$output" | grep -qi "tapestry\|delve\|isAdmin\|user->name" || false
+  [ "$(printf '%s\n' "$output" | sed -n 3p)" = "Welcome back to your dashboard" ]
+  [ "$(printf '%s\n' "$output" | sed -n 5p)" = "Manage your team and billing in one place." ]
+}
+
+@test "userfacing: php keeps html outside the tags and echoed copy, drops comments and error logs" {
+  cd "$BATS_TEST_TMPDIR"; mkdir -p site
+  cat > site/index.php <<'T'
+<?php
+// delve into the tapestry of this internal comment
+$title = "Home";
+error_log("Something went wrong while saving the data");
+echo "<p>Welcome to our fast and simple platform.</p>";
+?>
+<section><h2>Pricing that scales with you</h2></section>
+T
+  run uf classify site/index.php
+  [ "$output" = "source" ]
+  run uf extract site/index.php
+  printf '%s\n' "$output" | grep -q "Welcome to our fast and simple platform."
+  printf '%s\n' "$output" | grep -q "Pricing that scales with you"
+  ! printf '%s\n' "$output" | grep -qi "tapestry\|Something went wrong" || false
+}
+
+@test "userfacing: generator code in go, rust, python and node keeps rendered copy only" {
+  cd "$BATS_TEST_TMPDIR"; mkdir -p gen
+  cat > gen/main.go <<'T'
+package main
+
+// delve comment about the tapestry
+func main() {
+	log.Printf("Starting the static site generator now")
+	page := `<html><body><h1>Documentation for the whole team</h1></body></html>`
+	os.WriteFile("out/index.html", []byte(page), 0644)
+}
+T
+  cat > gen/build.rs <<'T'
+/// delve doc comment about the tapestry
+fn main() {
+    println!("Building the site for production use");
+    let page = r#"<h1>Guides and tutorials for everyone</h1>"#;
+    std::fs::write("out/index.html", page).unwrap();
+}
+T
+  cat > gen/build.py <<'T'
+"""Docstring about the tapestry of the build."""
+import sys
+
+# delve comment
+def build():
+    print("Writing the pages to disk right now")
+    with open("out/index.html", "w") as f:
+        f.write("<p>Our team ships quickly and reliably.</p>")
+T
+  cat > gen/server.js <<'T'
+// delve comment tapestry
+app.get("/", (req, res) => {
+  console.log("Server is handling the home request now");
+  res.send("<h1>Welcome to the status dashboard</h1>");
+});
+T
+  for f in gen/main.go:"Documentation for the whole team" gen/build.rs:"Guides and tutorials for everyone" \
+           gen/build.py:"Our team ships quickly and reliably." gen/server.js:"Welcome to the status dashboard"; do
+    path="${f%%:*}"; want="${f#*:}"
+    run uf classify "$path"
+    [ "$output" = "source" ] || { echo "$path classify -> $output"; return 1; }
+    run uf extract "$path"
+    printf '%s\n' "$output" | grep -q "$want" || { echo "$path missing: $want"; return 1; }
+    ! printf '%s\n' "$output" | grep -qi "tapestry\|Starting the\|Building the\|Writing the pages\|handling the home" || { echo "$path leaked"; return 1; }
+  done
+}
+
+@test "userfacing: code without any output signal stays out of scope even with sentence-like strings" {
+  cd "$BATS_TEST_TMPDIR"
+  printf '%s\n' 'package util' 'var Default = "This is a fairly long default configuration value."' > util.go
+  run uf classify util.go
+  [ "$output" = "none" ]
+}
+
+@test "userfacing: gettext po, properties and strings files keep message text only" {
+  cd "$BATS_TEST_TMPDIR"; mkdir -p locales
+  printf '%s\n' '# translator note delve' 'msgid "Save your changes before leaving"' 'msgstr "Guarde sus cambios antes de salir"' > locales/app.po
+  run uf extract locales/app.po
+  printf '%s\n' "$output" | grep -q "Save your changes before leaving"
+  ! printf '%s\n' "$output" | grep -q "translator note" || false
+  printf '%s\n' '# comment' 'hero.title=Ship your product faster than ever' 'count=3' > locales/messages.properties
+  run uf extract locales/messages.properties
+  printf '%s\n' "$output" | grep -q "Ship your product faster than ever"
+  ! printf '%s\n' "$output" | grep -q "hero.title" || false
+}
+
+@test "userfacing: liquid style/schema blocks and code templates (.js.erb) are not copy" {
+  cd "$BATS_TEST_TMPDIR"
+  printf '%s\n' '{% style %}' '.section { padding: 4px; }' '{% endstyle %}' '<h2>Gentle on your skin</h2>' '{% schema %}' '{"name": "Hero banner"}' '{% endschema %}' > hero.liquid
+  run uf extract hero.liquid
+  printf '%s\n' "$output" | grep -q "Gentle on your skin"
+  ! printf '%s\n' "$output" | grep -q "padding\|Hero banner" || false
+  run uf classify app/views/tags/show.js.erb
+  [ "$output" = "none" ]
+  run uf classify app/views/tags/show.html.erb
+  [ "$output" = "template" ]
+}
+
+@test "userfacing: python module docstrings after a shebang and sql fragments are not copy" {
+  cd "$BATS_TEST_TMPDIR"
+  printf '%s\n' '#!/usr/bin/env python3' '"""Comprehensive performance analysis and optimization tool."""' 'import sys' 'q = "ORDER BY j.title ASC LIMIT 10"' 'open("out/a.html", "w").write("<p>Hello and welcome to the docs.</p>")' > tool.py
+  run uf extract tool.py
+  printf '%s\n' "$output" | grep -q "Hello and welcome to the docs."
+  ! printf '%s\n' "$output" | grep -q "Comprehensive\|ORDER BY" || false
 }

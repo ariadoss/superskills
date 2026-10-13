@@ -2,6 +2,11 @@
 
 Strip AI slop out of prose **without flattening the author's voice**.
 
+Use it for reader-facing documentation, help content, and visible UI copy.
+Internal prompts, agent instructions, plans, and code comments are out of scope.
+For UI strings in source files, edit the visible strings directly; the Markdown
+normalizer and scanner must not run on source code.
+
 Deterministic em-dash and spacing fixes, a ~45-check slop scan with line numbers,
 then surgical subtractive edits that an agent following [`SKILL.md`](SKILL.md)
 applies itself, gated by a re-scan.
@@ -59,6 +64,24 @@ python3 toolkit/slop_report.py draft_humanized.md [--exempt terms.txt]
 
 # 3. edit the flagged spans, subtractively, then re-scan as a gate
 ```
+
+Not only Markdown. `userfacing.py` decides what counts as user-facing copy and
+pulls out just that text, with the source file's line numbers, so the same scan
+works on a landing page, a locale file, or a component:
+
+```bash
+python3 toolkit/userfacing.py classify site/pricing.html   # markdown | text | html | template | locale | source | none
+python3 toolkit/userfacing.py extract  site/pricing.html > copy.txt
+python3 toolkit/slop_report.py copy.txt
+```
+
+It covers READMEs and docs, blog posts, HTML, template engines (Blade, ERB,
+Twig, Liquid, Jinja, Handlebars, Go templates), locale files (`json`, `yaml`,
+`po`, `properties`), components (`jsx`, `tsx`, `vue`, `svelte`, `astro`), and the
+copy that Go, Rust, PHP, Python, Node, TypeScript, Ruby and Java generators write
+into pages and files. Code logic, comments, log text, prompts, agent
+instructions, tests and vendored trees classify as `none` and are never scanned. Only Markdown and text go
+through `normalize.py`; other types are edited in place at the flagged spans.
 
 `--exempt` takes an allowlist, one token per line, for product names and terms of art
 so the scan leaves legitimate vocabulary alone. See
