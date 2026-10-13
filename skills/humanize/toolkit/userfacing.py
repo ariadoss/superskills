@@ -55,7 +55,6 @@ DENY_NAME_RES = [re.compile(p, re.I) for p in (
     r"^test_.*\.py$", r"_spec\.rb$", r"^(requirements|constraints)[\w.-]*\.txt$",
 )] + [re.compile(r"[a-z0-9]Test\.(php|java|kt|cs)$")]
 
-README_EXTS = (".md", ".mdx", ".markdown", ".txt", ".rst", ".adoc")
 TEMPLATE_SUFFIXES = (
     ".blade.php", ".html.erb", ".html.tmpl", ".phtml", ".gohtml", ".gotmpl", ".tmpl", ".tpl",
     ".njk", ".nunjucks", ".liquid", ".hbs", ".handlebars", ".mustache", ".ejs", ".erb",
@@ -127,7 +126,7 @@ def classify(path: str, raw=None) -> str:
         return "none"
     if name.startswith(".") or name in DENY_NAMES or any(r.search(p.name) for r in DENY_NAME_RES):
         return "none"
-    if name.startswith("readme") and name.endswith(README_EXTS):
+    if name.startswith("readme") and BY_EXT.get(p.suffix.lower()) in ("markdown", "text"):
         return BY_EXT[p.suffix.lower()]
     if any(d in INSTRUCTION_DIRS for d in dirs):
         return "none"
