@@ -642,8 +642,7 @@ def extract_php(raw: str) -> list:
 
 # ---- dispatch + cli -------------------------------------------------------------------
 
-def extract(path: str, raw: str):
-    kind = classify(path, raw)
+def extract(path: str, raw: str, kind: str):
     ext = os.path.splitext(path)[1].lower()
     if kind == "markdown":
         return extract_markdown(raw, ext == ".mdx")
@@ -670,7 +669,8 @@ def main(argv) -> int:
     if cmd == "classify":
         print(classify_file(path))
         return 0
-    if classify_file(path) == "none":
+    kind = classify_file(path)
+    if kind == "none":
         return 1
     try:
         with open(path, encoding="utf-8") as fh:
@@ -678,7 +678,7 @@ def main(argv) -> int:
     except (OSError, UnicodeDecodeError) as e:
         print(f"userfacing.py: cannot read {path}: {e}", file=sys.stderr)
         return 2
-    print("\n".join(extract(path, raw)))
+    print("\n".join(extract(path, raw, kind)))
     return 0
 
 
