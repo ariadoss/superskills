@@ -8,8 +8,8 @@ reconstructing it.
 
 ## Two trigger modes
 
-- **Manual** — invoke `/handoff` whenever you want a handoff note.
-- **Automatic** — a `UserPromptSubmit` hook nudges the agent to run
+- **Manual**: invoke `/handoff` whenever you want a handoff note.
+- **Automatic**: a `UserPromptSubmit` hook nudges the agent to run
   `/handoff`, once per trigger, when this session's context window reaches
   90% (`HANDOFF_USAGE_THRESHOLD`), the account's 5-hour usage window reaches
   90% (`HANDOFF_FIVE_HOUR_THRESHOLD`), or the weekly window reaches 95%
