@@ -1,4 +1,4 @@
-# Superskills `v2.44.0`
+# Superskills `v2.45.0`
 
 Curated AI skills pack for Claude Code, ZCode, OpenCode, Codex CLI, DSH (DeepSeek Harness), Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Integrates [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team; an opt-in pack) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
@@ -18,31 +18,44 @@ Setup will:
 - Install gstack (Garry Tan's virtual engineering team skills) when the `gstack` pack is selected (off by default; an existing gstack install is left as-is either way). A real clone is the goal: the clone is retried with backoff, a broken partial install is moved aside, and if the network is down the vendored snapshot goes in as a stopgap that every later `./setup` run (including `/superskills-upgrade` and the post-merge hook) tries to promote to a real clone
 - Install `bun` if needed (only when gstack is being installed; required by gstack's browser tool)
 - Prompt you to connect knowledge base repos (optional)
-- Check for optional dependencies (clearwing, ffuf)
+- Check for optional dependencies (clearwing, ffuf; Shannon, the autonomous web-app pentester, is vendored in-repo at `vendor/shannon` — nothing to install)
 - Auto-detect and install into: **Claude Code**, **ZCode**, **OpenCode**, **Codex CLI**, **DSH (DeepSeek Harness)**, **Continue.dev**, **Augment Code**, **Windsurf**
 - Offer to add the developer workflow guide to each detected harness's instruction file (`~/.claude/CLAUDE.md`, plus `~/.zcode/AGENTS.md`, `~/.codex/AGENTS.md`, `~/.dsh/AGENTS.md` when that harness is installed)
 
 ### Packs: choose what gets installed
 
-Every skill belongs to a pack. `./setup` installs the **coding pack by
-default** (35 skills: 27 in-repo + 8 via gstack when a clone exists, the
-spec → plan → TDD → QA → ship workflow plus every check `/qa-full` can
-trigger: security (`/defense`, `/iac-scan`, `/pentest`, `/fuzz`, `/cso`),
-performance (`/db-optimize`, `/web-perf`, `/perf-profile`), browser/design QA
-(`/playwright`, `/a11y`, `/design-review`), evaluation (`/eval`) and the gstack review loop
-(`/review`, `/qa`)) so your harness's always-on context stays small.
+Every skill belongs to exactly one pack. `./setup` installs the **coding pack
+by default** (29 skills: 21 in-repo + 8 via gstack when a clone exists) — the
+domain-agnostic spec → plan → TDD → QA → ship spine. Domain skills live in
+add-on packs (`security`, `data`, `web`, `content`, `startup`): `/qa-full`
+runs its security, DB, and frontend checks when those packs are installed and
+records a designed skip with the exact command when they aren't.
 Skill *descriptions* load on every turn; only a triggered skill's body does. So every extra pack is a real per-token cost in every session. The coding
 pack is always on: no pack list excludes it.
 
 | Pack | Contents |
 |------|----------|
-| `coding` (default, always on) | `/write-plan`, `/tdd`, `/qa-full`, `/debug`, `/verify`, … |
-| `core` | the rest of the core skills (`/cache-strategy`, `/pentest`, …) |
+| `coding` (default, always on) | The general spine: `/write-plan`, `/executing-plans`, `/subagent-driven-development`, `/worktrees`, `/tdd`, `/test-coverage`, `/debug`, `/verify`, `/clean-code`, `/basic-review`, `/diff-walkthrough`, `/qa-full`, `/finish-branch`, `/eval`, `/daily-qa`, `/quota-resilience`, `/handoff`, `/humanize`, `/cli-for-agent`, `/superskills-doctor`, `/superskills-upgrade`, plus the eight gstack skills the QA gate executes through (`/review`, `/qa`, `/cso`, `/design-review`, `/ship`, `/plan-eng-review`, `/browse`, `/setup-browser-cookies`) |
+| `security` | `/defense`, `/iac-scan`, `/pentest`, `/fuzz` — arms `/qa-full`'s security checks |
+| `data` | `/dbmap` (plus its `-auto-on`/`-auto-off` toggles), `/db-optimize`, `/cache-strategy` — arms the DB checks |
+| `web` | `/web-perf`, `/perf-profile`, `/a11y`, `/playwright` — arms the frontend-perf and browser QA checks |
+| `content` | `/tapestry`, `/youtube`, `/article`, `/kb-advisor`, `/content-writer` |
+| `startup` | `/validate-idea`, `/pricing`, `/minimalist-review` |
+| `core` | legacy alias: every skill in the `skills/` tree (all six packs above) |
 | `design` | the 36 design skills (UX, typography, SwiftUI, Vercel) |
 | `marketing` | the 174 marketing skills (SEO, content, pages, ads) |
 | `media` | the video-editing subtree |
 | `gstack` | installs/promotes gstack itself and links **every** gstack skill; without it only the eight coding-pack gstack skills stay linked. The /qa-full closure (`/review`, `/qa`, `/cso`, `/design-review`, `/ship`, `/plan-eng-review`) plus the browse toolchain those checks execute through (`/browse`, `/setup-browser-cookies`). The rest of a pre-existing clone's links are pruned, the clone is never touched. Note: a roster skill's end-of-flow suggestions may still name gstack-pack skills (e.g. `/plan-design-review`). They resolve from the clone or are designed skips, but aren't one-keystroke available without this pack |
 | `all` | everything (pre-packs behavior) |
+
+The domain add-ons are the slot where finer-grained packs land as the tree
+grows — a future `mobile` or `desktop` pack for platform-specific coding
+skills would sit beside `security` and `web` without touching the default.
+
+**Upgrading from ≤ 2.44.0:** the security/data/web skills moved out of the
+default coding pack into add-ons. Keep them with
+`./setup --packs coding,security,data,web` (add `content,startup` as needed);
+`core` still selects the whole `skills/` tree.
 
 Every full `./setup` run persists the effective selection to
 `~/.superskills/packs.conf` and prunes this checkout's now-deselected installs
@@ -137,7 +150,7 @@ selection across every supported tool.
 ### Security
 | Command | Description |
 |---------|-------------|
-| `/pentest` | Authorized security testing — in-harness pipeline by default (tiered hunt → adversarial verification → variant loop → patch oracle, on the session's model); with clearwing installed, its full pipeline can run agent-driven on the session via the bundled bridge (no provider spend — session tokens only) or its MCP network machinery; provider-driven runs bill its LLM provider, ask-first |
+| `/pentest` | Authorized security testing — in-harness pipeline by default (tiered hunt → adversarial verification → variant loop → patch oracle, on the session's model); with clearwing installed, its full pipeline can run agent-driven on the session via the bundled bridge (no provider spend — session tokens only) or its MCP network machinery; against a live authorized web app, vendored Shannon attacks it agent-driven on the session (Mode 5 — PoC-proven findings only); provider-driven runs bill its LLM provider, ask-first |
 | `/fuzz` | Web fuzzing via [ffuf](https://github.com/ffuf/ffuf) |
 | `/defense` | Defense-in-depth: OWASP Top 10, secrets, auth, encryption |
 | `/iac-scan` | Infrastructure-as-Code security scan: Dockerfiles, Terraform, Kubernetes/Helm, CI/CD workflows |
@@ -216,6 +229,7 @@ Your overlay repo can:
 ## Optional Dependencies
 
 - `uv tool install clearwing`: for `/pentest`'s clearwing integration: its pipeline runs agent-driven on the session via the bundled bridge (provider-free), its network machinery via MCP, and only provider-driven runs need `clearwing setup` (bills its LLM provider; ask-first)
+- Shannon needs no install: vendored and pinned at `vendor/shannon` (`/pentest` Mode 5 drives it with the calling session as its model; refreshes are deliberate via `scripts/sync-shannon.sh`)
 - `brew install ffuf`: for `/fuzz` (web fuzzing)
 - Playwright: for `/playwright` (`npm install -D @playwright/test`)
 
@@ -429,6 +443,7 @@ Skills curated from:
 - [slavingia/skills](https://github.com/slavingia/skills): startup methodology
 - [tapestry-skills](https://github.com/michalparkola/tapestry-skills-for-claude-code): content extraction
 - [clearwing](https://github.com/Lazarus-AI/clearwing): security scanning
+- [KeygraphHQ/shannon](https://github.com/KeygraphHQ/shannon): autonomous web-app pentesting (vendored and pinned, AGPL-3.0; see `vendor/shannon/UPSTREAM`)
 - [ffuf](https://github.com/ffuf/ffuf): web fuzzing
 - [kostja94/marketing-skills](https://github.com/kostja94/marketing-skills): 172 marketing skills
 - [wondelai/skills](https://github.com/wondelai/skills): UX heuristics, Hook Model, Design Sprint

@@ -11,6 +11,8 @@
 
 ## Core Skills
 
+Core skills split across the default `coding` pack and the `security`, `data`, `web`, `content`, and `startup` add-on packs — the README's [packs table](README.md#packs-choose-what-gets-installed) maps every skill to its pack.
+
 ### Dev Methodology
 
 | Command | Description |
@@ -48,7 +50,7 @@
 
 | Command | Description |
 |---------|-------------|
-| `/pentest` | Authorized security testing — in-harness pipeline by default; clearwing optional: agent-driven on the session via the bundled bridge (no provider spend; session tokens only), MCP network machinery, or provider-driven runs (billed, ask-first) |
+| `/pentest` | Authorized security testing — in-harness pipeline by default; clearwing optional: agent-driven on the session via the bundled bridge (no provider spend; session tokens only), MCP network machinery, or provider-driven runs (billed, ask-first); against a live authorized web app, vendored Shannon (Mode 5) attacks it agent-driven on the session and keeps only PoC-proven findings |
 | `/fuzz` | Web fuzzing via ffuf |
 | `/defense` | Defense-in-depth: OWASP Top 10, secrets, auth, encryption |
 | `/iac-scan` | Infrastructure-as-Code security scan: Dockerfiles, docker-compose, Terraform, Kubernetes/Helm, CI/CD workflows; flags root containers, open ingress, wildcard IAM, exposed secrets |

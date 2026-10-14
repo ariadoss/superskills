@@ -21,8 +21,10 @@ Usage: ./setup [options]
   --no-knowledge         skip knowledge-base prompts and clones
   --extend-from <path>   overlay repo to extend from
   --packs <list>         comma list of packs: coding (always included; listed
-                         by default), core, design, marketing, media, gstack,
-                         all. Persisted for upgrades.
+                         by default) plus the domain add-ons security, data,
+                         web, content, startup; core (legacy: the whole
+                         skills/ tree), design, marketing, media, gstack, all.
+                         Persisted for upgrades.
   --list-skills          print the resolved source paths of the selected skills
                          and exit (read-only: installs nothing, saves nothing)
   --persist-only         save the --packs selection and exit (installs nothing)
@@ -836,6 +838,11 @@ else
   pack_category_included design && log "  includes design-skills: UX, frontend engineering, animation, Swift/iOS, Vercel"
   log "  packs: ${SS_PACKS:-coding} (change with ./setup --packs)"
 fi
+pack_category_included security && log "  includes security pack: /defense /iac-scan /pentest /fuzz"
+pack_category_included data && log "  includes data pack: /dbmap (+ auto toggles) /db-optimize /cache-strategy"
+pack_category_included web && log "  includes web pack: /web-perf /perf-profile /a11y /playwright"
+pack_category_included content && log "  includes content pack: /tapestry /youtube /article /kb-advisor /content-writer"
+pack_category_included startup && log "  includes startup pack: /validate-idea /pricing /minimalist-review"
 if [ -f "$KB_CONF" ] && [ -s "$KB_CONF" ]; then
   kb_count=$(grep -c '.' "$KB_CONF" 2>/dev/null || echo 0)
   log "  $kb_count knowledge base(s) configured"

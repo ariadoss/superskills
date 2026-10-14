@@ -13,14 +13,25 @@
 #
 # SS_PACKS is a comma-separated list of pack names held in
 # ~/.superskills/packs.conf as plain text — the value is parsed, never sourced.
-# Packs: coding (default), core, design, marketing, media, gstack, all.
+# Packs: coding (default, the always-on general spine), the domain add-ons
+# security / data / web / content / startup (granular carvings of the skills/
+# tree: opt-in, composable with coding), core (legacy alias that still selects
+# the whole skills/ tree), design, marketing, media, gstack, all.
 # skill_selected answers for one skill: setup's per-tool linkers and the
 # output adapters consult it; gstack links by name with a category hint.
 
-# The coding pack's roster, in two parts: the names this repo serves from
-# skills/, and the gstack-served names the coding pack claims (closure note
-# below).
-PACK_CODING_REPO="write-plan dbmap worktrees tdd debug verify eval quota-resilience handoff test-coverage qa-full finish-branch daily-qa superskills-doctor superskills-upgrade clean-code basic-review humanize defense db-optimize web-perf a11y playwright iac-scan pentest fuzz perf-profile"
+# The skills/ tree's categorization — six constants, one pack per skill, no
+# overlaps (tests/profiles.bats pins the partition against the tree). The
+# coding spine is the domain-agnostic workflow (spec/plan → TDD → QA → ship
+# plus self-maintenance); the five add-ons are domain slices a general install
+# shouldn't pay per-token context for. The coding pack also claims a gstack
+# slice by name (closure note below).
+PACK_CODING_REPO="write-plan worktrees tdd debug verify eval quota-resilience handoff test-coverage qa-full finish-branch daily-qa superskills-doctor superskills-upgrade clean-code basic-review humanize cli-for-agent executing-plans subagent-driven-development diff-walkthrough"
+PACK_SECURITY="defense iac-scan pentest fuzz"
+PACK_DATA="dbmap dbmap-auto-on dbmap-auto-off db-optimize cache-strategy"
+PACK_WEB="web-perf perf-profile a11y playwright"
+PACK_CONTENT="tapestry youtube article kb-advisor content-writer"
+PACK_STARTUP="validate-idea pricing minimalist-review"
 # The gstack slice is the /qa-full closure, not every gstack skill: its four
 # gstack checks (review, qa, cso, design-review), the /ship hand-off the gate
 # names as its successor, plan-eng-review (the /write-plan chain), and the
@@ -66,7 +77,7 @@ packs_validate() {
   IFS=',' read -r -a list <<<"$input" || return 1
   for pack in "${list[@]}"; do
     case "$pack" in
-      coding|core|design|marketing|media|gstack|all) : ;;
+      coding|core|security|data|web|content|startup|design|marketing|media|gstack|all) : ;;
       *) echo "invalid pack: $pack" >&2; return 1 ;;
     esac
   done
@@ -92,20 +103,20 @@ pack_category_included() {
 # a gstack-installed skill passes its own category, so the same predicate
 # drives gstack links by name).
 # Contract: `all` includes every tree. For every other selection the coding
-# roster is UNCONDITIONAL — a roster name is selected whenever its tree is
-# walked, whatever SS_PACKS says, because coding is the always-on base of the
-# product: listing `coding` in --packs is accepted but decorative, and no pack
-# list excludes it. Every non-roster skill is selected exactly when its
-# category is listed in SS_PACKS. A roster name is claimable from the tree
-# that serves it: the skills/ tree for every name, plus gstack for exactly
-# the PACK_CODING_GSTACK names — a gstack skill whose name matches a
-# repo-roster entry is deselected, so the walk order can never let upstream
+# spine and its gstack slice are UNCONDITIONAL — those names are selected
+# whenever their tree is walked, whatever SS_PACKS says, because coding is the
+# always-on base of the product: listing `coding` in --packs is accepted but
+# decorative, and no pack list excludes it. A skills/ name owned by a domain
+# add-on (security/data/web/content/startup) is selected exactly when that
+# pack, legacy `core`, or `all` is listed. A packed name is claimable from the
+# tree that serves it: the skills/ tree for every name, plus gstack for
+# exactly the PACK_CODING_GSTACK names — a gstack skill whose name matches a
+# packed repo entry is deselected, so the walk order can never let upstream
 # gstack shadow a repo skill.
 skill_selected() {
-  local name="$1" category="$2" roster word
-  roster=0
-  packs_category_of "$name" >/dev/null && roster=1
-  if [ "$roster" -eq 1 ]; then
+  local name="$1" category="$2" pack word
+  pack="$(packs_category_of "$name" 2>/dev/null)" || pack=""
+  if [ -n "$pack" ]; then
     case "$category" in
       design) [ "$name" = "design-review" ] && return 0 ;;
       gstack)
@@ -113,7 +124,19 @@ skill_selected() {
           [ "$word" = "$name" ] && return 0
         done
         return 1 ;;
-      coding|core) return 0 ;;
+      coding|core)
+        # The coding spine and the gstack slice it claims are unconditional
+        # (coding is the always-on base: listing it is decorative and no pack
+        # list excludes it). Every other pack is an opt-in add-on, selected
+        # exactly when itself, legacy core, or all is listed — so a pre-add-on
+        # `core` selection keeps the whole skills/ tree it always had.
+        case "$pack" in
+          coding|gstack) return 0 ;;
+          *)
+            pack_category_included "$pack" && return 0
+            pack_category_included core && return 0
+            return 1 ;;
+        esac ;;
       *) return 1 ;;
     esac
   fi
@@ -134,12 +157,31 @@ gstack_pack_action() {
 }
 
 # packs_category_of <name> — echo the pack category owning <name>; exit 1 when
-# no pack claims it. Only the coding roster resolves by name; every other tree
-# walks under its category.
+# no pack claims it. Every skills/ tree name resolves by NAME to exactly one
+# of the six constants (coding spine or a domain add-on), and the gstack
+# slice's names resolve to gstack so upstream cannot shadow a repo skill.
 packs_category_of() {
   local name="$1" word
-  for word in $PACK_CODING; do
-    [ "$word" = "$name" ] && { printf 'core\n'; return 0; }
+  for word in $PACK_CODING_REPO; do
+    [ "$word" = "$name" ] && { printf 'coding\n'; return 0; }
+  done
+  for word in $PACK_SECURITY; do
+    [ "$word" = "$name" ] && { printf 'security\n'; return 0; }
+  done
+  for word in $PACK_DATA; do
+    [ "$word" = "$name" ] && { printf 'data\n'; return 0; }
+  done
+  for word in $PACK_WEB; do
+    [ "$word" = "$name" ] && { printf 'web\n'; return 0; }
+  done
+  for word in $PACK_CONTENT; do
+    [ "$word" = "$name" ] && { printf 'content\n'; return 0; }
+  done
+  for word in $PACK_STARTUP; do
+    [ "$word" = "$name" ] && { printf 'startup\n'; return 0; }
+  done
+  for word in $PACK_CODING_GSTACK; do
+    [ "$word" = "$name" ] && { printf 'gstack\n'; return 0; }
   done
   return 1
 }

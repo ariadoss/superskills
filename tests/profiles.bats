@@ -52,7 +52,7 @@ setup() {
     skill_selected "$name" gstack || false
   done
   skill_selected design-review design
-  [ "$count" -eq 35 ] || false
+  [ "$count" -eq 29 ] || false
   run skill_selected cache-strategy core
   [ "$status" -eq 1 ] || false
   run skill_selected retro gstack
@@ -93,6 +93,59 @@ setup() {
   skill_selected tdd core
   run skill_selected cache-strategy core
   [ "$status" -eq 1 ] || false
+}
+
+@test "granular add-on packs own their skills and stay opt-in under coding" {
+  # security / data / web / content / startup are domain add-ons carving up
+  # what the old core catch-all and the coding roster used to hold: a
+  # coding-only install links none of them, their own pack links them, and
+  # legacy core (and all) still keep the whole skills/ tree.
+  SS_PACKS=coding
+  run skill_selected defense core
+  [ "$status" -eq 1 ] || false
+  run skill_selected dbmap core
+  [ "$status" -eq 1 ] || false
+  run skill_selected web-perf core
+  [ "$status" -eq 1 ] || false
+  run skill_selected tapestry core
+  [ "$status" -eq 1 ] || false
+  run skill_selected validate-idea core
+  [ "$status" -eq 1 ] || false
+  SS_PACKS=coding,security
+  skill_selected defense core
+  run skill_selected pentest core
+  [ "$status" -eq 0 ] || false
+  run skill_selected dbmap core
+  [ "$status" -eq 1 ] || false
+  SS_PACKS=coding,security,data,web,content,startup
+  skill_selected defense core
+  skill_selected dbmap core
+  skill_selected dbmap-auto-on core
+  skill_selected cache-strategy core
+  skill_selected web-perf core
+  skill_selected perf-profile core
+  skill_selected tapestry core
+  skill_selected validate-idea core
+  SS_PACKS=core
+  skill_selected defense core
+  skill_selected dbmap core
+  SS_PACKS=all
+  skill_selected defense core
+}
+
+@test "every skills/ tree skill is categorized under exactly one pack" {
+  # The six constants are the single categorization of the skills/ tree (the
+  # "handoff incident" class of bug: a skill in the tree that no pack claims
+  # silently never links). Every frontmatter name must be claimed exactly
+  # once — a duplicate across constants would make membership ambiguous, a
+  # missing entry leaves the skill unselectable outside core/all.
+  local names union dup
+  names="$(find "$REPO_ROOT/skills" -mindepth 1 -maxdepth 1 -type d ! -name node_modules \
+    -exec sh -c 'sed -n "s/^name:[[:space:]]*//p" "$1/SKILL.md"' _ {} \; | sed 's/[[:space:]]*$//' | sort)"
+  union="$(printf '%s\n' $PACK_CODING_REPO $PACK_SECURITY $PACK_DATA $PACK_WEB $PACK_CONTENT $PACK_STARTUP | sort)"
+  dup="$(printf '%s\n' $PACK_CODING_REPO $PACK_SECURITY $PACK_DATA $PACK_WEB $PACK_CONTENT $PACK_STARTUP | sort | uniq -d)"
+  [ -z "$dup" ] || false
+  [ "$union" = "$names" ] || false
 }
 
 @test "gstack_pack_action ensures only when the gstack pack is selected" {
