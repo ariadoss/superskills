@@ -152,15 +152,10 @@ Each feature is scoped end-to-end on its own isolated branch. Nothing touches th
 
 | Command | Role |
 |---------|------|
-| `/specify` | Turn a natural language description into a structured feature spec |
-| `/clarify` | Identify gaps and ambiguities in the spec before planning |
 | `/write-plan` | Generate a detailed implementation plan from the spec: TDD tasks, DRY/SOLID/YAGNI principles, a required Test Plan & Verification section + coverage target; auto-chains to `/plan-eng-review` to double-check and emit the Test Plan Artifact |
-| `/analyze` | Verify consistency across spec, plan, and tasks so nothing conflicts |
 | `/autoplan` | Run automated CEO, design, and eng review chain on the plan |
 | `/plan-eng-review` | Architecture, data flow, and test planning review |
-| `/repomap` | Generate a structural map of the codebase so agents understand context |
 | `/dbmap` | Map the database schema so agents work with accurate data models |
-| `/graphify` | Turn any folder into a queryable knowledge graph so agents and engineers can navigate complex codebases |
 
 ### 2. Launch 10+ agents in parallel (one per branch)
 
@@ -169,7 +164,6 @@ Each agent works independently and spawns subagents. Exponentially faster than p
 | Command | Role |
 |---------|------|
 | `/worktrees` | Create isolated git worktrees so each agent works on its own branch without interfering with others |
-| `/repomap-auto-on` | Automatically keep the codebase map updated as each agent makes changes |
 | `/dbmap-auto-on` | Automatically regenerate DBMAP.md after migration commands run, so agents always see the live schema |
 | `/pair-agent` | Coordinate multiple AI agents sharing browser and context across workspaces |
 
@@ -195,7 +189,6 @@ Each agent works independently and spawns subagents. Exponentially faster than p
 |---------|------|
 | `/tdd` | Enforce Red-Green-Refactor so tests are written before code, not as an afterthought |
 | `/test-coverage` | After the feature lands, find complex business logic, edge/corner cases, and past regressions left untested: write and apply the missing unit/integration/e2e tests, enforcing Google's Testing on the Toilet best practices (see `skills/test-coverage/rules/` for the full checklist) |
-| `/checklist` | Generate a custom quality checklist for the specific feature being built |
 | `/playwright` | Run end-to-end tests with Playwright, automate UI verification |
 | `/qa` | Browser-based testing and bug fixing using real Chromium |
 | `/browse` | Direct Chromium browser control for manual-style automated QA |

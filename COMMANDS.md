@@ -53,15 +53,6 @@
 | `/defense` | Defense-in-depth: OWASP Top 10, secrets, auth, encryption |
 | `/iac-scan` | Infrastructure-as-Code security scan: Dockerfiles, docker-compose, Terraform, Kubernetes/Helm, CI/CD workflows; flags root containers, open ingress, wildcard IAM, exposed secrets |
 
-### Spec Workflow
-
-| Command | Description |
-|---------|-------------|
-| `/specify` | Create or update the feature specification from a natural language description |
-| `/clarify` | Identify underspecified areas by asking up to 5 targeted clarification questions |
-| `/analyze` | Cross-artifact consistency checking across spec.md, plan.md, and tasks.md |
-| `/checklist` | Generate a custom quality checklist for the current feature |
-
 ### Startup
 
 | Command | Description |
@@ -117,7 +108,7 @@
 | `/plan-eng-review` | Engineering architecture review: locks in data flow, testing strategy, and execution plan | `/write-plan` (both produce implementation plans; gstack is interactive review of an existing plan, superskills generates from scratch) |
 | `/plan-design-review` | Designer's eye plan review: rates design dimensions 0–10 before implementation | `/design-audit` (design-skills) (audit vs. pre-implementation review) |
 | `/plan-devex-review` | Developer experience plan review: evaluates DX personas and integration surfaces | — |
-| `/autoplan` | Automated pipeline: runs CEO → design → eng → DX review chain with auto-decisions | `/analyze` (both check cross-artifact consistency; gstack runs full review chain, superskills checks spec/plan/tasks) |
+| `/autoplan` | Automated pipeline: runs CEO → design → eng → DX review chain with auto-decisions | — |
 | `/plan-tune` | Self-tuning question sensitivity for gstack reviews based on developer psychographic | — |
 | `/spec` | Turn vague intent into a precise, executable spec in five phases | `/write-plan` (**upstream of it**: spec pins down *what*; write-plan produces the *how* with TDD tasks) |
 

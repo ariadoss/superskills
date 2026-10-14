@@ -1,8 +1,8 @@
-# Superskills `v2.43.0`
+# Superskills `v2.44.0`
 
 Curated AI skills pack for Claude Code, ZCode, OpenCode, Codex CLI, DSH (DeepSeek Harness), Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Integrates [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team; an opt-in pack) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
-48 core skills + 54 gstack skills + 174 marketing skills + 36 design skills, selected by [packs](#packs-choose-what-gets-installed). gstack is vendored in this repo so its skills are available even if the upstream repo is removed.
+44 core skills + 54 gstack skills + 174 marketing skills + 36 design skills, selected by [packs](#packs-choose-what-gets-installed). gstack is vendored in this repo so its skills are available even if the upstream repo is removed.
 
 > **[Full command reference →](COMMANDS.md)**: all skills with descriptions and overlap notes
 > **[10x+ Engineering Workflow →](DEVELOPER_WORKFLOW.md)**: run 10+ parallel AI agents, each with a full quality pipeline ([full write-up](https://hyperion360.com/blog/parallel-ai-agents-engineering-workflow/))
@@ -25,7 +25,7 @@ Setup will:
 ### Packs: choose what gets installed
 
 Every skill belongs to a pack. `./setup` installs the **coding pack by
-default** (39 skills: 31 in-repo + 8 via gstack when a clone exists, the
+default** (35 skills: 27 in-repo + 8 via gstack when a clone exists, the
 spec → plan → TDD → QA → ship workflow plus every check `/qa-full` can
 trigger: security (`/defense`, `/iac-scan`, `/pentest`, `/fuzz`, `/cso`),
 performance (`/db-optimize`, `/web-perf`, `/perf-profile`), browser/design QA
@@ -36,7 +36,7 @@ pack is always on: no pack list excludes it.
 
 | Pack | Contents |
 |------|----------|
-| `coding` (default, always on) | `/specify`, `/write-plan`, `/tdd`, `/qa-full`, `/debug`, `/verify`, … |
+| `coding` (default, always on) | `/write-plan`, `/tdd`, `/qa-full`, `/debug`, `/verify`, … |
 | `core` | the rest of the core skills (`/cache-strategy`, `/pentest`, …) |
 | `design` | the 36 design skills (UX, typography, SwiftUI, Vercel) |
 | `marketing` | the 174 marketing skills (SEO, content, pages, ads) |
@@ -141,14 +141,6 @@ selection across every supported tool.
 | `/fuzz` | Web fuzzing via [ffuf](https://github.com/ffuf/ffuf) |
 | `/defense` | Defense-in-depth: OWASP Top 10, secrets, auth, encryption |
 | `/iac-scan` | Infrastructure-as-Code security scan: Dockerfiles, Terraform, Kubernetes/Helm, CI/CD workflows |
-
-### Spec Workflow (from [BB-Skills](https://github.com/buildbetter-app/BB-Skills))
-| Command | Description |
-|---------|-------------|
-| `/specify` | Requirements and user story definition |
-| `/clarify` | Pre-planning underspecification resolution |
-| `/analyze` | Cross-artifact consistency checking |
-| `/checklist` | Quality checklist generation |
 
 ### Startup (from [slavingia/skills](https://github.com/slavingia/skills))
 | Command | Description |
@@ -434,7 +426,6 @@ Written by [Danilo Stern-Sapad](https://danilosapad.com):
 Skills curated from:
 - [garrytan/gstack](https://github.com/garrytan/gstack): virtual engineering team (QA, review, ship, security, planning, browser automation)
 - [obra/superpowers](https://github.com/obra/superpowers): TDD, debugging, worktrees, planning
-- [buildbetter-app/BB-Skills](https://github.com/buildbetter-app/BB-Skills): spec workflow
 - [slavingia/skills](https://github.com/slavingia/skills): startup methodology
 - [tapestry-skills](https://github.com/michalparkola/tapestry-skills-for-claude-code): content extraction
 - [clearwing](https://github.com/Lazarus-AI/clearwing): security scanning
