@@ -1,8 +1,8 @@
-# Superskills `v2.44.0`
+# Superskills `v2.45.0`
 
 Curated AI skills pack for Claude Code, ZCode, OpenCode, Codex CLI, DSH (DeepSeek Harness), Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Integrates [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team; an opt-in pack) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
-44 core skills + 54 gstack skills + 174 marketing skills + 36 design skills, selected by [packs](#packs-choose-what-gets-installed). gstack is vendored in this repo so its skills are available even if the upstream repo is removed.
+41 core skills + 54 gstack skills + 174 marketing skills + 36 design skills, selected by [packs](#packs-choose-what-gets-installed). gstack is vendored in this repo so its skills are available even if the upstream repo is removed.
 
 > **[Full command reference →](COMMANDS.md)**: all skills with descriptions and overlap notes
 > **[10x+ Engineering Workflow →](DEVELOPER_WORKFLOW.md)**: run 10+ parallel AI agents, each with a full quality pipeline ([full write-up](https://hyperion360.com/blog/parallel-ai-agents-engineering-workflow/))
@@ -18,31 +18,42 @@ Setup will:
 - Install gstack (Garry Tan's virtual engineering team skills) when the `gstack` pack is selected (off by default; an existing gstack install is left as-is either way). A real clone is the goal: the clone is retried with backoff, a broken partial install is moved aside, and if the network is down the vendored snapshot goes in as a stopgap that every later `./setup` run (including `/superskills-upgrade` and the post-merge hook) tries to promote to a real clone
 - Install `bun` if needed (only when gstack is being installed; required by gstack's browser tool)
 - Prompt you to connect knowledge base repos (optional)
-- Check for optional dependencies (clearwing, ffuf)
+- Check for optional dependencies (clearwing, ffuf; Shannon, the autonomous web-app pentester, is vendored in-repo at `vendor/shannon` — nothing to install)
 - Auto-detect and install into: **Claude Code**, **ZCode**, **OpenCode**, **Codex CLI**, **DSH (DeepSeek Harness)**, **Continue.dev**, **Augment Code**, **Windsurf**
 - Offer to add the developer workflow guide to each detected harness's instruction file (`~/.claude/CLAUDE.md`, plus `~/.zcode/AGENTS.md`, `~/.codex/AGENTS.md`, `~/.dsh/AGENTS.md` when that harness is installed)
 
 ### Packs: choose what gets installed
 
-Every skill belongs to a pack. `./setup` installs the **coding pack by
-default** (35 skills: 27 in-repo + 8 via gstack when a clone exists, the
-spec → plan → TDD → QA → ship workflow plus every check `/qa-full` can
-trigger: security (`/defense`, `/iac-scan`, `/pentest`, `/fuzz`, `/cso`),
-performance (`/db-optimize`, `/web-perf`, `/perf-profile`), browser/design QA
-(`/playwright`, `/a11y`, `/design-review`), evaluation (`/eval`) and the gstack review loop
-(`/review`, `/qa`)) so your harness's always-on context stays small.
+Every skill belongs to exactly one pack. `./setup` installs the **coding pack
+by default** (41 skills: 33 in-repo + 8 via gstack when a clone exists) — the
+spec → plan → TDD → QA → ship spine **plus the security, database, and
+web/QA skills**, because most builds are web apps and a default install with
+`/qa-full`'s domain checks disarmed would be a trap, not a smaller install.
+The genuinely optional packs stay opt-in: `content` and `startup` (and, as
+the tree grows, platform add-ons like `desktop` or `mobile`).
 Skill *descriptions* load on every turn; only a triggered skill's body does. So every extra pack is a real per-token cost in every session. The coding
 pack is always on: no pack list excludes it.
 
 | Pack | Contents |
 |------|----------|
-| `coding` (default, always on) | `/write-plan`, `/tdd`, `/qa-full`, `/debug`, `/verify`, … |
-| `core` | the rest of the core skills (`/cache-strategy`, `/pentest`, …) |
+| `coding` (default, always on) | The workflow spine — `/write-plan`, `/executing-plans`, `/subagent-driven-development`, `/worktrees`, `/tdd`, `/test-coverage`, `/debug`, `/verify`, `/clean-code`, `/basic-review`, `/diff-walkthrough`, `/qa-full`, `/finish-branch`, `/eval`, `/daily-qa`, `/quota-resilience`, `/handoff`, `/humanize`, `/cli-for-agent`, `/superskills-doctor`, `/superskills-upgrade` — plus the security skills (`/defense`, `/iac-scan`, `/pentest`, `/fuzz`), the database skills (`/dbmap`, `/dbmap-auto-off`, `/db-optimize`, `/cache-strategy`), the web/QA skills (`/web-perf`, `/perf-profile`, `/a11y`, `/playwright`), and the eight gstack skills the QA gate executes through (`/review`, `/qa`, `/cso`, `/design-review`, `/ship`, `/plan-eng-review`, `/browse`, `/setup-browser-cookies`) |
+| `content` | `/tapestry`, `/youtube`, `/article`, `/kb-advisor`, `/content-writer` |
+| `startup` | `/validate-idea`, `/pricing`, `/minimalist-review` |
+| `core` | legacy alias: every skill in the `skills/` tree (coding + content + startup) |
 | `design` | the 36 design skills (UX, typography, SwiftUI, Vercel) |
 | `marketing` | the 174 marketing skills (SEO, content, pages, ads) |
 | `media` | the video-editing subtree |
 | `gstack` | installs/promotes gstack itself and links **every** gstack skill; without it only the eight coding-pack gstack skills stay linked. The /qa-full closure (`/review`, `/qa`, `/cso`, `/design-review`, `/ship`, `/plan-eng-review`) plus the browse toolchain those checks execute through (`/browse`, `/setup-browser-cookies`). The rest of a pre-existing clone's links are pruned, the clone is never touched. Note: a roster skill's end-of-flow suggestions may still name gstack-pack skills (e.g. `/plan-design-review`). They resolve from the clone or are designed skips, but aren't one-keystroke available without this pack |
 | `all` | everything (pre-packs behavior) |
+
+The optional packs are the slot where finer-grained packs land as the tree
+grows — a future `desktop` or `mobile` pack for platform-specific coding
+skills would sit beside `content` and `startup` without touching the default.
+
+**Upgrading from ≤ 2.44.0:** the coding pack gains the skills that used to
+sit in the `core` catch-all (`/executing-plans`, `/subagent-driven-development`,
+`/diff-walkthrough`, `/cli-for-agent`, `/cache-strategy`, `/dbmap-auto-off`);
+a persisted `packs=core` selection still selects the whole `skills/` tree.
 
 Every full `./setup` run persists the effective selection to
 `~/.superskills/packs.conf` and prunes this checkout's now-deselected installs
@@ -137,7 +148,7 @@ selection across every supported tool.
 ### Security
 | Command | Description |
 |---------|-------------|
-| `/pentest` | Authorized security testing — in-harness pipeline by default (tiered hunt → adversarial verification → variant loop → patch oracle, on the session's model); with clearwing installed, its full pipeline can run agent-driven on the session via the bundled bridge (no provider spend — session tokens only) or its MCP network machinery; provider-driven runs bill its LLM provider, ask-first |
+| `/pentest` | Authorized security testing — in-harness pipeline by default (tiered hunt → adversarial verification → variant loop → patch oracle, on the session's model); with clearwing installed, its full pipeline can run agent-driven on the session via the bundled bridge (no provider spend — session tokens only) or its MCP network machinery; against a live authorized web app, vendored Shannon attacks it agent-driven on the session (Mode 5 — PoC-proven findings only); provider-driven runs bill its LLM provider, ask-first |
 | `/fuzz` | Web fuzzing via [ffuf](https://github.com/ffuf/ffuf) |
 | `/defense` | Defense-in-depth: OWASP Top 10, secrets, auth, encryption |
 | `/iac-scan` | Infrastructure-as-Code security scan: Dockerfiles, Terraform, Kubernetes/Helm, CI/CD workflows |
@@ -170,8 +181,7 @@ selection across every supported tool.
 ### Database Schema Map (from [ariadoss/dbmap](https://github.com/ariadoss/dbmap))
 | Command | Description |
 |---------|-------------|
-| `/dbmap` | Generate database schema map (DBMAP.md) |
-| `/dbmap-auto-on` | Auto-regenerate DBMAP.md after migration commands run |
+| `/dbmap` | Generate database schema map (DBMAP.md); its final step offers to enable automatic regeneration after migration commands (writes `.dbmap-auto`) |
 | `/dbmap-auto-off` | Disable automatic database schema map updates |
 
 ### Superskills itself
@@ -216,6 +226,7 @@ Your overlay repo can:
 ## Optional Dependencies
 
 - `uv tool install clearwing`: for `/pentest`'s clearwing integration: its pipeline runs agent-driven on the session via the bundled bridge (provider-free), its network machinery via MCP, and only provider-driven runs need `clearwing setup` (bills its LLM provider; ask-first)
+- Shannon needs no install: vendored and pinned at `vendor/shannon` (`/pentest` Mode 5 drives it with the calling session as its model; refreshes are deliberate via `scripts/sync-shannon.sh`)
 - `brew install ffuf`: for `/fuzz` (web fuzzing)
 - Playwright: for `/playwright` (`npm install -D @playwright/test`)
 
@@ -418,7 +429,7 @@ From [kostja94/marketing-skills](https://github.com/kostja94/marketing-skills), 
 ## Credits
 
 Written by [Danilo Stern-Sapad](https://danilosapad.com):
-- [`/dbmap`](https://github.com/ariadoss/dbmap) and its auto-on/off toggles (also a standalone repo). `/repomap` was removed in 2.39.0: five eval-gated experiments (2026-10) measured no agent-context utility for static repo maps against tool-using agents; the tool itself lives on in the standalone repo.
+- [`/dbmap`](https://github.com/ariadoss/dbmap) and its auto-off toggle (also a standalone repo; `/dbmap-auto-on` was folded into `/dbmap`'s final step in 2.45.0). `/repomap` was removed in 2.39.0: five eval-gated experiments (2026-10) measured no agent-context utility for static repo maps against tool-using agents; the tool itself lives on in the standalone repo.
 - [`/humanize`](https://github.com/ariadoss/humanize) (also a standalone repo)
 - `/qa-full`, `/daily-qa`, `/clean-code`, `/test-coverage`, `/a11y`, `/iac-scan`, `/db-optimize`, `/perf-profile`, `/cache-strategy`, `/superskills-doctor`, `/superskills-upgrade`
 - the statusline (`scripts/statusline.sh`)
@@ -429,6 +440,7 @@ Skills curated from:
 - [slavingia/skills](https://github.com/slavingia/skills): startup methodology
 - [tapestry-skills](https://github.com/michalparkola/tapestry-skills-for-claude-code): content extraction
 - [clearwing](https://github.com/Lazarus-AI/clearwing): security scanning
+- [KeygraphHQ/shannon](https://github.com/KeygraphHQ/shannon): autonomous web-app pentesting (vendored and pinned, AGPL-3.0; see `vendor/shannon/UPSTREAM`)
 - [ffuf](https://github.com/ffuf/ffuf): web fuzzing
 - [kostja94/marketing-skills](https://github.com/kostja94/marketing-skills): 172 marketing skills
 - [wondelai/skills](https://github.com/wondelai/skills): UX heuristics, Hook Model, Design Sprint
