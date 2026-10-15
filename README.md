@@ -117,7 +117,7 @@ The plugin `version` is driven by the repo's `VERSION` file via
 watch. The `./setup` install above remains the way to get a chosen pack
 selection across every supported tool.
 
-## Skills (46)
+## Skills (42)
 
 ### Dev Methodology (from [superpowers](https://github.com/obra/superpowers))
 | Command | Description |
