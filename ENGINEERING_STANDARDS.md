@@ -94,6 +94,17 @@ the agent, so every skill fails safe the same way. Adapted from Spotify's
 - **Scripts over prose pipelines.** Multi-step shell logic lives in a tested
   script under `scripts/` that the skill calls with named flags; the skill never
   asks the agent to assemble the pipeline from a description.
+- **The frontmatter `name` equals the directory name.** Clients match a
+  skill on either identifier, and Claude Code's plugin loader names a
+  plugin skill by its *directory* basename while slash invocation keys on
+  the frontmatter name — a mismatch is drift that shadows or mis-routes.
+  Enforced mechanically by `scripts/lint-skills.sh`
+  (`tests/skills-lint.bats`).
+- **When a skill must win a selection contest, say so in the description.**
+  If the agent would otherwise reach for a default (a built-in tool, a
+  neighbouring skill), the `description` redirects explicitly: "Use this
+  instead of X to get Y." A description that only describes never wins the
+  contest.
 - **Decide skill vs script by whether judgement is needed.** Before adding a
   capability, ask which half it belongs to. Needs to weigh context, adapt to the
   project, or ask the user a question? That is a skill. Same input always gives
