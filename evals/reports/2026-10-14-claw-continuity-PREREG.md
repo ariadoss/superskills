@@ -76,3 +76,16 @@ before runs.
   report. A null is a real answer.
 - Stated limit: n=3; same-day drift between the sequential arms is an
   uncontrolled small confound (precedent: 2026-10-06 calibration report).
+
+## Addendum — instrument repair (registered 2026-10-15, before any arm run)
+
+The price-calibration run ($0.24, under the $5 gate) surfaced an instrument
+defect, not a null: `handoff-rewrite/prompt.md` omitted `Skill` from
+`allowed_tools`, so the agent could not invoke the handoff skill at all —
+the run's own evidence says "I wrote the note by hand because the /handoff
+skill was denied in this mode". The firing-power gate (handoff ≥ 2/3 both
+arms) could therefore never pass on a working intervention. Repair (same
+class as the 2026-10-07 judo E3b repair, registered before the measured
+runs): add `Skill` to the case's allowed_tools, matching
+`quota-resume-direct` and `verify-todolist`. No grader text or threshold
+changed. The price run itself is debug evidence, not a measured arm.

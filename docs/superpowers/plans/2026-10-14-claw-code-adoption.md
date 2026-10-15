@@ -703,7 +703,7 @@ handoff_rewrite_fixture
 ---
 max_turns: 12
 timeout_seconds: 480
-allowed_tools: [Read, Glob, Grep, Bash, Write]
+allowed_tools: [Read, Glob, Grep, Skill, Bash, Write]
 tags: [handoff, rewrite]
 ---
 
