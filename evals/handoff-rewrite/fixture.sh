@@ -90,7 +90,10 @@ if __name__ == "__main__":
     print("flat ok")
     print("express ok")
 PY
-  git add -A
+  # Stage only the code: the handoff note stays UNTRACKED, exactly as a
+  # real session's note would be (the skill's own contract: "uncommitted
+  # by design"), and rates.py below lands as unstaged half-work.
+  git add src/calc.py tests/test_calc.py
   git commit -qm "express tier: free over 10 items"
 
   # unstaged half-work: still genuinely in flight

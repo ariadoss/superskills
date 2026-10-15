@@ -55,6 +55,15 @@ _make_skill_at() { # <dir> <name> [description] — absolute
   [[ "$out" != *"$FIX/alpha/SKILL.md"* ]] || false
 }
 
+@test "dup-names: a triple emits for 2nd and 3rd, first stays canonical" {
+  _make_skill alpha alpha "a"
+  _make_skill beta alpha "b"
+  _make_skill gamma alpha "c"
+  out="$(printf '%s\n%s\n%s\n' "$FIX/alpha/SKILL.md" "$FIX/beta/SKILL.md" "$FIX/gamma/SKILL.md" | lint_dup_names)" || false
+  [ "$(printf '%s\n' "$out" | grep -c 'duplicate-name:')" -eq 2 ] || false
+  [[ "$out" != *"$FIX/alpha/SKILL.md"* ]] || false
+}
+
 @test "dup-names: unique names emit nothing" {
   _make_skill alpha alpha "a"
   _make_skill beta beta "b"

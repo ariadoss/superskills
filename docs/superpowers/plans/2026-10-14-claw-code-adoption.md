@@ -154,6 +154,15 @@ _make_skill_at() { # <dir> <name> [description] — absolute
   [[ "$out" != *"$FIX/alpha/SKILL.md"* ]] || false
 }
 
+@test "dup-names: a triple emits for 2nd and 3rd, first stays canonical" {
+  _make_skill alpha alpha "a"
+  _make_skill beta alpha "b"
+  _make_skill gamma alpha "c"
+  out="$(printf '%s\n%s\n%s\n' "$FIX/alpha/SKILL.md" "$FIX/beta/SKILL.md" "$FIX/gamma/SKILL.md" | lint_dup_names)" || false
+  [ "$(printf '%s\n' "$out" | grep -c 'duplicate-name:')" -eq 2 ] || false
+  [[ "$out" != *"$FIX/alpha/SKILL.md"* ]] || false
+}
+
 @test "dup-names: unique names emit nothing" {
   _make_skill alpha alpha "a"
   _make_skill beta beta "b"
@@ -375,7 +384,7 @@ echo "skills-lint: clean (skills, design-skills, marketing-skills)"
 - [ ] **Step 5: Run the tests to verify they pass**
 
 ```bash
-bats tests/skills-lint.bats     # expected: 12/12 pass
+bats tests/skills-lint.bats     # expected: 13/13 pass
 ```
 
 - [ ] **Step 6: Full suite still green**
@@ -1224,7 +1233,7 @@ The optional full-suite release eval (`claude plugin eval .` whole-suite with ba
 
 ## Test Plan & Verification
 
-**Coverage target:** every new lint predicate and runner path has a bats test (clean + each finding kind + marketing policy + live-repo assertion = 12 tests); every new eval case has graders covering its primary plus every companion dimension and an unscored skill-fired indicator; every SKILL.md edit is gated by the PREREG primaries. No new public shell surface without a test (hard gate 2).
+**Coverage target:** every new lint predicate and runner path has a bats test (clean + each finding kind + marketing policy + live-repo assertion = 13 tests); every new eval case has graders covering its primary plus every companion dimension and an unscored skill-fired indicator; every SKILL.md edit is gated by the PREREG primaries. No new public shell surface without a test (hard gate 2).
 
 **Critical paths (must pass before ship):**
 - `bash scripts/lint-skills.sh` on this repo → exit 0, `skills-lint: clean` (the name==dirname convention stated in ENGINEERING_STANDARDS is enforced here).
@@ -1245,7 +1254,7 @@ The optional full-suite release eval (`claude plugin eval .` whole-suite with ba
 - Existing eval cases (`handoff-exec-*`, `quota-*`) are untouched historical instruments; the new cases are additive.
 
 **Verification commands:**
-- Unit: `bats tests/skills-lint.bats` — expected: 11/11 pass.
+- Unit: `bats tests/skills-lint.bats` — expected: 13/13 pass.
 - Suite: `./tests/run.sh` — expected: all pass at every checkpoint above.
 - Lint: `bash scripts/lint-skills.sh` — expected: `skills-lint: clean`.
 - Evals (approval-gated): the exact `claude plugin eval` commands in Tasks 6/8; verdict arithmetic in the Task 9 report.
