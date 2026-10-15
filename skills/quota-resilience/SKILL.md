@@ -51,7 +51,11 @@ Hard rules, in order:
    with the salvage. If this session's `handoff-<session-id>.md` (or a `handoff-*.md` the
    work clearly belongs to) exists (written by `/handoff` before the
    stop), fold its content into this note and delete that file — one bridge,
-   not two. Leave other sessions' handoff files alone. Required sections:
+   not two. Leave other sessions' handoff files alone. Fold flat — merge
+   the handoff's sections into the matching sections of this note (its
+   Done into Done, its Next steps into Next steps); never paste it under a
+   "previous note" heading: a note folded N hops deep that way nests N
+   levels and buries current state. Required sections:
    - **Goal** — one line: the task's definition of done.
    - **Done** — bullets with commit hashes.
    - **In flight** — file:line, what exists, what is missing.
@@ -126,16 +130,20 @@ Hard rules, in order:
 
 ## Phase 2 — resuming after the stop
 
-1. Read `QUOTA-RESUME.md` first, before exploring the repo or re-deriving
+1. Resume directly: continue with the note's first Next step without
+   acknowledging the note, recapping it, or prefacing the continuation —
+   "I've read the note" is a wasted turn. The note is compressed context
+   to act on, not a message to answer.
+2. Read `QUOTA-RESUME.md` first, before exploring the repo or re-deriving
    state. It is the authority on where the last session stopped.
-2. Re-verify the cheapest way: run the note's Verify command before
+3. Re-verify the cheapest way: run the note's Verify command before
    building on the claimed state.
-3. Work the Next steps in order. On goal met + verification passing:
+4. Work the Next steps in order. On goal met + verification passing:
    **delete the note** (its existence means "interrupted"), commit the
    deletion, and remove any resume-scheduler artifacts you or the previous
    session created (LaunchAgent plist, systemd unit, crontab line, wrapper
    script and log).
-4. A new limit hit mid-resume → Phase 1 again, updating the existing note
+5. A new limit hit mid-resume → Phase 1 again, updating the existing note
    rather than adding a second.
 
 ## Boundaries
