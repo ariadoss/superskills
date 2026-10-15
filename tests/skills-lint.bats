@@ -71,6 +71,20 @@ _make_skill_at() { # <dir> <name> [description] — absolute
   [ -z "$out" ] || false
 }
 
+@test "missing-names: marketing skill with no name line is flagged" {
+  _make_skill alpha alpha "does alpha things"
+  rm "$FIX/alpha/SKILL.md"
+  printf -- '---\ndescription: d\n---\n\nbody\n' > "$FIX/alpha/SKILL.md"
+  out="$(printf '%s\n' "$FIX/alpha/SKILL.md" | lint_missing_names)" || false
+  [[ "$out" == "missing-name: $FIX/alpha/SKILL.md: "* ]] || false
+}
+
+@test "missing-names: present name line emits nothing" {
+  _make_skill alpha alpha "does alpha things"
+  out="$(printf '%s\n' "$FIX/alpha/SKILL.md" | lint_missing_names)" || false
+  [ -z "$out" ] || false
+}
+
 @test "descriptions: missing description is flagged" {
   _make_skill alpha alpha ""
   out="$(printf '%s\n' "$FIX/alpha/SKILL.md" | lint_descriptions)" || false

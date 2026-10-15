@@ -58,6 +58,22 @@ lint_dup_names() {
   return 0
 }
 
+# lint_missing_names — SKILL.md paths on stdin; every skill needs a literal
+# frontmatter `name:` line. For flat trees lint_name_dir already covers this
+# (its missing-name kind); this predicate serves the marketing tree, where
+# the batch parsers' directory-name fallback would otherwise silently stand
+# in for a missing name (codex outside-review finding, 2026-10-15).
+lint_missing_names() {
+  local path
+  while IFS= read -r path; do
+    if ! grep -q -m1 '^name:' "$path" 2>/dev/null; then
+      _lint_emit missing-name "$path" "no frontmatter name line" \
+        "add 'name: <slug>' — the shim tree and duplicate check key on it"
+    fi
+  done
+  return 0
+}
+
 # lint_descriptions — SKILL.md paths on stdin; every skill needs a usable
 # description line (trigger routing keys on it).
 lint_descriptions() {

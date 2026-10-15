@@ -83,3 +83,44 @@ instruments (cases + PREREG + this report). Rejected/reverted: the
 quota-resilience and verify/finish-branch skill edits. R1 (two-PR
 arrangement) resolved moot: the spend decision landed inside this branch's
 lifetime, so one release carries everything.
+
+## Addendum — outside-voice re-review folded (2026-10-15)
+
+The codex adversarial pass that died on a transport error before execution
+was re-run against the executed state (gpt-6-sol, read-only) and completed.
+Five findings, adjudicated:
+
+1. **[High, PRE-EXISTING on the 2.45.0 base — not this branch]** qa-full
+   triggers /defense, /db-optimize, /playwright, which the granular pack
+   taxonomy moved out of the default coding pack. Recorded for the
+   maintainer: the designed-skip path qa-full needs for unavailable skills
+   is an AI-behavior edit and cannot be responsibly measured under the
+   current weekly usage limit; it belongs to the pack-taxonomy round.
+2. **[High, calibration caveat folded into the handoff verdict]** the
+   self-contained companion failed 0/3 in BOTH arms. The pre-registered
+   gate (companions may not regress) was applied mechanically and the
+   adoption stands, but the primary Δ +0.167 is one grader-pass in six
+   judgments on an instrument whose companion judge may be over-strict.
+   Treat the adoption as thin-positive, not established; the per-grader
+   table above was the honest record all along.
+3. **[Medium, verdict relabel]** the quota-resilience outcome is better
+   described as REJECTED-BY-GATE ON AN INVALID INSTRUMENT than as a
+   measured behavior rejection: the grader cannot observe the construct.
+   Substantively unmeasured; the revert is the conservative disposition
+   either way.
+4. **[Medium, PRE-EXISTING on the 2.45.0 base]** the root Claude/Codex
+   plugin manifests expose the whole skills/ tree while ./setup's coding
+   pack links a subset — different skill sets by install method. Also the
+   pack-taxonomy round's to fix.
+5. **[Medium, FIXED in this branch]** the lint passed marketing skills
+   with no frontmatter `name:` line (the parsers' dirname fallback stood
+   in silently). `lint_missing_names` added, wired for the marketing tree,
+   15 bats tests green, smoke-verified.
+
+Codex recommendation ("patch the release and rerun valid behavior evals
+before treating verdicts as settled"): partially adopted — the patchable
+item (5) is fixed; re-running behavior evals is blocked until the weekly
+limit resets (Oct 19); items 1 and 4 are not this branch's defects. The
+handoff adoption is not walked back post-hoc (thresholds were committed
+before the runs; overriding them after seeing results is the review smell
+the PREREG exists to prevent) — the thinness is now stated in the record.

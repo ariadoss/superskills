@@ -48,8 +48,9 @@ lint_name_dir "$TARGET/design-skills" >> "$TMP/findings"
 lint_dup_names    < "$TMP/flat.paths" >> "$TMP/findings"
 lint_descriptions < "$TMP/flat.paths" >> "$TMP/findings"
 [ -s "$TMP/mkt.paths" ] && {
-  lint_dup_names    < "$TMP/mkt.paths" >> "$TMP/findings"
-  lint_descriptions < "$TMP/mkt.paths" >> "$TMP/findings"
+  lint_missing_names < "$TMP/mkt.paths" >> "$TMP/findings"
+  lint_dup_names     < "$TMP/mkt.paths" >> "$TMP/findings"
+  lint_descriptions  < "$TMP/mkt.paths" >> "$TMP/findings"
 }
 
 if [ -s "$TMP/findings" ]; then
