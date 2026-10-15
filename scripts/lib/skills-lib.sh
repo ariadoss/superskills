@@ -181,27 +181,17 @@ gstack_pack_action() {
 # of the six constants (coding spine or a domain add-on), and the gstack
 # slice's names resolve to gstack so upstream cannot shadow a repo skill.
 packs_category_of() {
-  local name="$1" word
-  for word in $PACK_CODING_REPO; do
-    [ "$word" = "$name" ] && { printf 'coding\n'; return 0; }
-  done
-  for word in $PACK_SECURITY; do
-    [ "$word" = "$name" ] && { printf 'security\n'; return 0; }
-  done
-  for word in $PACK_DATA; do
-    [ "$word" = "$name" ] && { printf 'data\n'; return 0; }
-  done
-  for word in $PACK_WEB; do
-    [ "$word" = "$name" ] && { printf 'web\n'; return 0; }
-  done
-  for word in $PACK_CONTENT; do
-    [ "$word" = "$name" ] && { printf 'content\n'; return 0; }
-  done
-  for word in $PACK_STARTUP; do
-    [ "$word" = "$name" ] && { printf 'startup\n'; return 0; }
-  done
-  for word in $PACK_CODING_GSTACK; do
-    [ "$word" = "$name" ] && { printf 'gstack\n'; return 0; }
+  local name="$1" spec pack roster
+  # One loop over label:roster pairs — order-preserving, so the first pack
+  # claiming a name wins exactly as the seven copy-pasted loops did.
+  for spec in "coding:$PACK_CODING_REPO" "security:$PACK_SECURITY" \
+      "data:$PACK_DATA" "web:$PACK_WEB" "content:$PACK_CONTENT" \
+      "startup:$PACK_STARTUP" "gstack:$PACK_CODING_GSTACK"; do
+    pack="${spec%%:*}"
+    roster="${spec#*:}"
+    case " $roster " in
+      *" $name "*) printf '%s\n' "$pack"; return 0 ;;
+    esac
   done
   return 1
 }
