@@ -4,7 +4,8 @@
 # Policy (owned here, not in the lib): skills/ and design-skills/ are flat
 # trees where name==dir is an invariant; marketing-skills/ is nested by
 # design and named by frontmatter via the generated shim tree, so it gets
-# duplicate-name and description checks only. The generated
+# missing-name, duplicate-name and description checks (the flat-tree
+# name==dir rule does not apply there). The generated
 # marketing-skills/plugin-skills/ shim tree and vendored environments are
 # excluded (marketing_skill_files already prunes them). Read-only: findings
 # name their fix, nothing is edited.
@@ -39,7 +40,7 @@ flat_paths > "$TMP/flat.paths"
 # A failed marketing walk must surface, not silently narrow coverage: a
 # newline in the root path is the one guarded error, and it is a finding here.
 if ! marketing_skill_files "$TARGET/marketing-skills" > "$TMP/mkt.paths"; then
-  echo "lint-skills: marketing walk failed — duplicate/description checks for marketing-skills did not run" >&2
+  echo "lint-skills: marketing walk failed — missing-name/duplicate/description checks for marketing-skills did not run" >&2
   exit 2
 fi
 

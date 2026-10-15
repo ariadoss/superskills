@@ -2,3 +2,9 @@ schema_version: "1.1"
 name: quota-resume-direct
 context:
   scaffold_script: fixture.sh
+  # KNOWN LIMITATION (2026-10-15 verdict, evals/reports/2026-10-14-claw-continuity.md):
+  # the primary grader resumes-directly uses focus: last_message and cannot
+  # observe the opening-of-turn construct it scores — instrument-invalid.
+  # Do not gate any adoption on this case until the grader is rewritten with
+  # first-message focus or transcript-level grading; a whole-suite run will
+  # otherwise spend judge money re-scoring a known-meaningless primary.

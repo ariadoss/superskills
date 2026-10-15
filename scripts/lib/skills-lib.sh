@@ -227,8 +227,9 @@ selected_source_paths() {
 # The pack category a SKILL.md belongs to, by its tree. The marketing walk's
 # media subtree (content/video-editing) answers to the media pack, everything
 # else under marketing-skills to marketing, design-skills to design, and the
-# skills/ tree to core (a roster name upgrades it to coding at the
-# skill_selected call sites). One mapping shared by setup's link gates, the
+# skills/ tree to core (skill_selected resolves packed names by name alone,
+# so the coding/core label is interchangeable for skills/ walks). One
+# mapping shared by setup's link gates, the
 # --list-skills walk and the deselected-prune.
 pack_category_for_path() {
   local skill_md="$1" marketing_dir="${2:-}" rel

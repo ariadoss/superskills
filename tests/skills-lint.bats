@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 # skills-lint — the skill-tree lint checks (name/dir drift, duplicate
 # frontmatter names, missing descriptions), hermetic over fixture trees,
-# plus the runner's clean/dirty paths and the live-repo assertion.
+# plus the runner's clean/dirty/error paths and the live-repo assertion.
 
 setup() {
   REPO_ROOT="$(dirname "$BATS_TEST_DIRNAME")"
@@ -130,6 +130,31 @@ _make_skill_at() { # <dir> <name> [description] — absolute
   run bash "$REPO_ROOT/scripts/lint-skills.sh" "$ROOT"
   [ "$status" -eq 1 ] || false
   [[ "$output" == *"duplicate-name:"* ]] || false
+}
+
+@test "runner: marketing skill without a description is flagged (positive pin of the description check)" {
+  mkdir -p "$ROOT/marketing-skills/seo/one" "$ROOT/marketing-skills/seo/two"
+  _make_skill_at "$ROOT/marketing-skills/seo/one" one "has a description"
+  mkdir -p "$ROOT/marketing-skills/seo/two"
+  printf -- '---\nname: two\n---\n\nbody\n' > "$ROOT/marketing-skills/seo/two/SKILL.md"
+  run bash "$REPO_ROOT/scripts/lint-skills.sh" "$ROOT"
+  [ "$status" -eq 1 ] || false
+  [[ "$output" == *"missing-description: $ROOT/marketing-skills/seo/two/SKILL.md: "* ]] || false
+}
+
+@test "runner: a newline in the target root fails the marketing walk loudly (exit 2)" {
+  BAD="$BATS_TEST_TMPDIR/bad"$'\n'"root"
+  mkdir -p "$BAD/skills/alpha"
+  _make_skill_at "$BAD/skills/alpha" alpha "does alpha"
+  run bash "$REPO_ROOT/scripts/lint-skills.sh" "$BAD"
+  [ "$status" -eq 2 ] || false
+  [[ "$output" == *"marketing walk failed"* ]] || false
+}
+
+@test "runner: a nonexistent target root exits 2 with the guard line" {
+  run bash "$REPO_ROOT/scripts/lint-skills.sh" "$BATS_TEST_TMPDIR/does-not-exist"
+  [ "$status" -eq 2 ] || false
+  [[ "$output" == *"cannot enter"* ]] || false
 }
 
 @test "the repo's own skill trees lint clean" {

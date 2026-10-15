@@ -202,6 +202,11 @@ setup() {
   [ "$status" -eq 1 ] || false
   run packs_validate "coding,design"
   [ "$status" -eq 0 ] || false
+  # The documented upgrade path (README: ./setup --packs coding,security,data,web)
+  # dies at validation if a domain add-on name is ever dropped from the case
+  # pattern — pin every accepted name so that regression cannot pass silently.
+  run packs_validate "coding,security,data,web,content,startup"
+  [ "$status" -eq 0 ] || false
 }
 
 @test "packs_save collapses any selection containing all to exactly all" {
