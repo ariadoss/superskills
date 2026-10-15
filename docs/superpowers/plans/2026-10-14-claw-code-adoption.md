@@ -666,7 +666,7 @@ def test_flat():
     assert shipping([1]) == 4.99
 
 def test_express():
-    assert shipping([11]) == 0.00
+    assert shipping([1] * 11) == 0.00
 
 if __name__ == "__main__":
     test_flat()
