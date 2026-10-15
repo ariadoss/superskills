@@ -115,6 +115,20 @@ build on work already done, and must not duplicate finished work. Target
 Facts only. Commit hashes, file:line anchors, exact commands. No padding,
 no speculation. If `$ARGUMENTS` carries a user note, fold it into Context.
 
+**Updating this session's note rewrites it flat — never appends, never
+nests.** A re-run does not add a second copy of the model on top of the old
+note, and never carries the prior note forward inside a "previous handoff"
+or "state before this update" block: a note rewritten N times that way
+nests N levels deep and grows by roughly depth × overhead per rewrite, and
+the successor must dig through archaeology to find current state. Replace
+each section in place with what is true now.
+
+**Superseded state does not travel.** The note carries the current state of
+every path, not its history: a file read that precedes your latest write to
+the same file is obsolete and never appears in Context; an item that was
+In flight and has since landed moves to Done (with its hash) and leaves In
+flight.
+
 ## Step 3 — composition
 
 - On the quota hard stop, `/quota-resilience` folds this file into
