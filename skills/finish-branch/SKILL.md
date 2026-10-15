@@ -37,6 +37,12 @@ Stop. Don't proceed to Step 2.
 
 **If tests pass:** Continue to Step 2.
 
+**Also check the task list for a verification item.** If a todo list drove
+this branch and every item is complete, confirm the list actually contains
+a verification step (a test run, a build, a check) and that it ran — a
+list finished with no verification item is not verified: name the gap, add
+the item, run it, then continue to Step 2.
+
 ### Step 2: Determine Base Branch
 
 ```bash
@@ -186,6 +192,7 @@ git worktree remove <worktree-path>
 
 **Always:**
 - Verify tests before offering options
+- Check a completed task list carried a verification item that ran
 - Present exactly 4 options
 - Get typed confirmation for Option 4
 - Clean up worktree for Options 1 & 4 only
