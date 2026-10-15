@@ -193,10 +193,12 @@ setup() {
 }
 
 @test "packs_migrate_legacy folds security,data,web into a legacy selection once, passes others through" {
+  # Direct call: command substitution would run the function in a subshell
+  # and discard the SS_PACKS mutation the assertions exist to check.
   SS_PACKS="coding"
-  out="$(packs_migrate_legacy 2>&1)" || false
+  packs_migrate_legacy 2>"$BATS_TEST_TMPDIR/mig.err"
   [ "$SS_PACKS" = "coding,security,data,web" ] || false
-  [[ "$out" == *"were added so this upgrade keeps the skills you already had"* ]] || false
+  grep -q "were added so this upgrade keeps the skills you already had" "$BATS_TEST_TMPDIR/mig.err" || false
   SS_PACKS="coding,design"
   packs_migrate_legacy 2>/dev/null
   [ "$SS_PACKS" = "coding,design,security,data,web" ] || false
