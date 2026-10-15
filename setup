@@ -104,8 +104,9 @@ fi
 # upgrade (a plain `git pull` runs ./setup -q through the post-merge hook).
 # packs_migrate_legacy folds the add-ons in once and says so on stderr, which
 # -q does not suppress; wanting the smaller default is then an explicit,
-# loud ./setup --packs coding decision.
-packs_migrate_legacy
+# loud ./setup --packs coding decision — which is exactly why the migration
+# must never fire on a --packs run: an explicit choice is not legacy.
+[ "$PACKS_GIVEN" -eq 1 ] || packs_migrate_legacy
 packs_save "${SS_PACKS:-coding}"
 
 # ── Banner ─────────────────────────────────────────────────────────────────────

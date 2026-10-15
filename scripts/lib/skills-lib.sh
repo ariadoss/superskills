@@ -181,17 +181,20 @@ gstack_pack_action() {
 # of the six constants (coding spine or a domain add-on), and the gstack
 # slice's names resolve to gstack so upstream cannot shadow a repo skill.
 packs_category_of() {
-  local name="$1" spec pack roster
+  local name="$1" spec pack roster word
   # One loop over label:roster pairs — order-preserving, so the first pack
   # claiming a name wins exactly as the seven copy-pasted loops did.
+  # Membership is string equality, never a glob: names come from skill
+  # frontmatter, and interpolating one into a case pattern would let a
+  # `*`-bearing name match any roster.
   for spec in "coding:$PACK_CODING_REPO" "security:$PACK_SECURITY" \
       "data:$PACK_DATA" "web:$PACK_WEB" "content:$PACK_CONTENT" \
       "startup:$PACK_STARTUP" "gstack:$PACK_CODING_GSTACK"; do
     pack="${spec%%:*}"
     roster="${spec#*:}"
-    case " $roster " in
-      *" $name "*) printf '%s\n' "$pack"; return 0 ;;
-    esac
+    for word in $roster; do
+      [ "$word" = "$name" ] && { printf '%s\n' "$pack"; return 0; }
+    done
   done
   return 1
 }

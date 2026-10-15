@@ -192,6 +192,16 @@ setup() {
   [ "$SS_PACKS" = "coding" ] || false
 }
 
+@test "packs_category_of resolves by string equality, never glob-matching" {
+  # A frontmatter name is untrusted input; if it were interpolated into a
+  # case pattern, a `*`-bearing name would match any roster and bucket the
+  # skill into the wrong pack.
+  run packs_category_of '*'
+  [ "$status" -eq 1 ] || false
+  run packs_category_of 'defen*'
+  [ "$status" -eq 1 ] || false
+}
+
 @test "packs_migrate_legacy folds security,data,web into a legacy selection once, passes others through" {
   # Direct call: command substitution would run the function in a subshell
   # and discard the SS_PACKS mutation the assertions exist to check.

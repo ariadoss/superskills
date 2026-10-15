@@ -112,6 +112,15 @@ setup() {
   [ ! -f "$HOME/.superskills/packs.conf" ] || false
 }
 
+@test "the legacy-pack migration never fires on an explicit --packs choice" {
+  # Wiring pin (this file's established pattern for setup-internal guards):
+  # `./setup --packs coding` is the documented opt-out of the 2.46.0 legacy
+  # migration — the migration call must be guarded by PACKS_GIVEN, or the
+  # opt-out command would silently re-add security,data,web.
+  run grep -c '\[ "\$PACKS_GIVEN" -eq 1 \] || packs_migrate_legacy' "$REPO_ROOT/setup"
+  [ "$output" -eq 1 ] || false
+}
+
 @test "--packs with an empty value exits 2" {
   run bash "$REPO_ROOT/setup" --packs= --list-skills
   [ "$status" -eq 2 ] || false
