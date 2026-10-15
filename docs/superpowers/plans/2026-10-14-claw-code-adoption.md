@@ -323,7 +323,11 @@ set -u
 # arbitrary target root); the trees walked come from the TARGET.
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 TARGET="${1:-$(cd "$SCRIPT_DIR/.." && pwd)}"
-cd "$TARGET" || { echo "lint-skills: cannot enter $TARGET" >&2; exit 2; }
+# Findings always name ABSOLUTE paths — a finding about an arbitrary root
+# must be unambiguous about which checkout it names (implementation
+# amendment, 2026-14-10: the original runner cd'd to the target and emitted
+# relative paths, failing its own test 9).
+[ -d "$TARGET" ] || { echo "lint-skills: cannot enter $TARGET" >&2; exit 2; }
 
 # shellcheck source=lib/skills-lib.sh
 . "$SCRIPT_DIR/lib/skills-lib.sh"
@@ -335,7 +339,7 @@ trap 'rm -rf "$TMP"' EXIT
 
 flat_paths() {
   local f d
-  for f in skills/*/SKILL.md design-skills/*/SKILL.md; do
+  for f in "$TARGET"/skills/*/SKILL.md "$TARGET"/design-skills/*/SKILL.md; do
     [ -f "$f" ] || continue
     d="$(basename "$(dirname "$f")")"
     [ "$d" = "node_modules" ] && continue
@@ -346,13 +350,13 @@ flat_paths() {
 flat_paths > "$TMP/flat.paths"
 # A failed marketing walk must surface, not silently narrow coverage: a
 # newline in the root path is the one guarded error, and it is a finding here.
-if ! marketing_skill_files marketing-skills > "$TMP/mkt.paths"; then
+if ! marketing_skill_files "$TARGET/marketing-skills" > "$TMP/mkt.paths"; then
   echo "lint-skills: marketing walk failed — duplicate/description checks for marketing-skills did not run" >&2
   exit 2
 fi
 
-lint_name_dir skills            >> "$TMP/findings"
-lint_name_dir design-skills     >> "$TMP/findings"
+lint_name_dir "$TARGET/skills"        >> "$TMP/findings"
+lint_name_dir "$TARGET/design-skills" >> "$TMP/findings"
 lint_dup_names    < "$TMP/flat.paths" >> "$TMP/findings"
 lint_descriptions < "$TMP/flat.paths" >> "$TMP/findings"
 [ -s "$TMP/mkt.paths" ] && {
