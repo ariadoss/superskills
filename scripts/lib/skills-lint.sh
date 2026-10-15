@@ -17,15 +17,15 @@ _lint_emit() {
   printf '%s: %s: %s — %s\n' "$1" "$2" "$3" "$4"
 }
 
-# lint_name_dir <tree_root> — flat skill tree (skills/, design-skills/):
-# the frontmatter name must equal the directory basename. Clients match
-# skills on either identifier and Claude Code's plugin loader names a
-# plugin skill by its directory basename, so a mismatch is drift that
-# shadows or mis-routes.
+# lint_name_dir — SKILL.md paths on stdin (flat trees: skills/,
+# design-skills/): the frontmatter name must equal the directory basename.
+# Clients match skills on either identifier and Claude Code's plugin loader
+# names a plugin skill by its directory basename, so a mismatch is drift
+# that shadows or mis-routes. Stdin-driven like its siblings so the runner
+# walks each tree exactly once (one path list feeds every predicate).
 lint_name_dir() {
-  local root="${1%/}" skill_md dir name
-  for skill_md in "$root"/*/SKILL.md; do
-    [ -f "$skill_md" ] || continue
+  local skill_md dir name
+  while IFS= read -r skill_md; do
     dir="$(basename "$(dirname "$skill_md")")"
     [ "$dir" = "node_modules" ] && continue
     name="$(skill_name_from "$skill_md" "")"

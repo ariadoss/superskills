@@ -44,8 +44,7 @@ if ! marketing_skill_files "$TARGET/marketing-skills" > "$TMP/mkt.paths"; then
   exit 2
 fi
 
-lint_name_dir "$TARGET/skills"        >> "$TMP/findings"
-lint_name_dir "$TARGET/design-skills" >> "$TMP/findings"
+lint_name_dir     < "$TMP/flat.paths" >> "$TMP/findings"
 lint_dup_names    < "$TMP/flat.paths" >> "$TMP/findings"
 lint_descriptions < "$TMP/flat.paths" >> "$TMP/findings"
 [ -s "$TMP/mkt.paths" ] && {

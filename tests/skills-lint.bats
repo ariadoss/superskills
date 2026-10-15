@@ -30,20 +30,20 @@ _make_skill_at() { # <dir> <name> [description] — absolute
 @test "name-dir: clean flat tree emits nothing" {
   _make_skill alpha alpha "does alpha things"
   _make_skill beta beta "does beta things"
-  out="$(lint_name_dir "$FIX")" || false
+  out="$(printf '%s\n%s\n' "$FIX/alpha/SKILL.md" "$FIX/beta/SKILL.md" | lint_name_dir)" || false
   [ -z "$out" ] || false
 }
 
 @test "name-dir: frontmatter name differing from directory is drift with remediation" {
   _make_skill alpha alpha-x "does alpha things"
-  out="$(lint_name_dir "$FIX")" || false
+  out="$(printf '%s\n' "$FIX/alpha/SKILL.md" | lint_name_dir)" || false
   [[ "$out" == "name-dir-drift: $FIX/alpha/SKILL.md: frontmatter name \"alpha-x\" ≠ directory \"alpha\" — "* ]] || false
 }
 
 @test "name-dir: missing frontmatter name gets its own kind" {
   mkdir -p "$FIX/alpha"
   printf -- '---\ndescription: d\n---\n\nbody\n' > "$FIX/alpha/SKILL.md"
-  out="$(lint_name_dir "$FIX")" || false
+  out="$(printf '%s\n' "$FIX/alpha/SKILL.md" | lint_name_dir)" || false
   [[ "$out" == "missing-name: $FIX/alpha/SKILL.md: no frontmatter name — "* ]] || false
 }
 
