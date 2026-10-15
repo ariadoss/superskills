@@ -60,6 +60,26 @@ packs_load() {
   return 0
 }
 
+# packs_migrate_legacy — one-time upgrade bridge for selections saved before
+# the granular packs (2.46.0). A legacy selection names no add-on pack, so the
+# pack partition would treat security/data/web skills as deselected and the
+# prune would remove them from an existing install — silently, because a
+# plain `git pull` runs ./setup -q through the post-merge hook. Fold the
+# three add-ons a pre-granular default actually had, once; the notice goes to
+# stderr, which -q does not suppress. `all`, `core` and any selection already
+# naming an add-on pass through unchanged. Mutates SS_PACKS only
+# (tests/profiles.bats pins each shape).
+packs_migrate_legacy() {
+  case ",${SS_PACKS:-coding}," in
+    *,security,*|*,data,*|*,web,*|*,content,*|*,startup,*|*,all,*|*,core,*) return 0 ;;
+  esac
+  SS_PACKS="${SS_PACKS:-coding},security,data,web"
+  echo "superskills: your saved pack selection predates the granular packs;" >&2
+  echo "superskills: security, data and web were added so this upgrade keeps the skills you already had." >&2
+  echo "superskills: want the smaller default instead? Run: ./setup --packs coding" >&2
+  return 0
+}
+
 packs_save() {
   local packs="$1" conf
   case ",$packs," in *,all,*) packs="all" ;; esac

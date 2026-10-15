@@ -192,6 +192,22 @@ setup() {
   [ "$SS_PACKS" = "coding" ] || false
 }
 
+@test "packs_migrate_legacy folds security,data,web into a legacy selection once, passes others through" {
+  SS_PACKS="coding"
+  out="$(packs_migrate_legacy 2>&1)" || false
+  [ "$SS_PACKS" = "coding,security,data,web" ] || false
+  [[ "$out" == *"were added so this upgrade keeps the skills you already had"* ]] || false
+  SS_PACKS="coding,design"
+  packs_migrate_legacy 2>/dev/null
+  [ "$SS_PACKS" = "coding,design,security,data,web" ] || false
+  # Already granular, or whole-tree selections: unchanged, silent.
+  for kept in "coding,security" "coding,data" "all" "core"; do
+    SS_PACKS="$kept"
+    packs_migrate_legacy 2>/dev/null
+    [ "$SS_PACKS" = "$kept" ] || false
+  done
+}
+
 @test "packs_validate rejects unknown, empty and duplicate-empty lists before any mutation" {
   run packs_validate "coding,bogus"
   [ "$status" -eq 1 ] || false

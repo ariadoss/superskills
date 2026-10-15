@@ -98,6 +98,14 @@ fi
 # the given list, a plain run stamps the loaded (default: coding) selection so
 # the doctor can tell a packs-era install from a pre-packs one and the
 # deselected prune below knows what this checkout owns.
+#
+# Legacy-conf migration (2.46.0): a selection saved before the granular packs
+# would silently prune security/data/web skills from an existing install on
+# upgrade (a plain `git pull` runs ./setup -q through the post-merge hook).
+# packs_migrate_legacy folds the add-ons in once and says so on stderr, which
+# -q does not suppress; wanting the smaller default is then an explicit,
+# loud ./setup --packs coding decision.
+packs_migrate_legacy
 packs_save "${SS_PACKS:-coding}"
 
 # ── Banner ─────────────────────────────────────────────────────────────────────
