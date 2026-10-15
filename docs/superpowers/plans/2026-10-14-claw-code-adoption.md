@@ -325,7 +325,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 TARGET="${1:-$(cd "$SCRIPT_DIR/.." && pwd)}"
 # Findings always name ABSOLUTE paths — a finding about an arbitrary root
 # must be unambiguous about which checkout it names (implementation
-# amendment, 2026-14-10: the original runner cd'd to the target and emitted
+# amendment, 2026-10-14: the original runner cd'd to the target and emitted
 # relative paths, failing its own test 9).
 [ -d "$TARGET" ] || { echo "lint-skills: cannot enter $TARGET" >&2; exit 2; }
 
