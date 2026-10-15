@@ -51,6 +51,7 @@ Skip any step = lying, not verifying
 | Bug fixed | Test original symptom: passes | Code changed, assumed fixed |
 | Regression test works | Red-green cycle verified | Test passes once |
 | Agent completed | VCS diff shows changes | Agent reports "success" |
+| Task list complete | List contains a verification item, and it ran (fresh) | All items checked off |
 | Requirements met | Line-by-line checklist | Tests passing |
 
 ## Red Flags - STOP
@@ -107,6 +108,13 @@ Skip any step = lying, not verifying
 ```
 ✅ Agent reports success → Check VCS diff → Verify changes → Report actual state
 ❌ Trust agent report
+```
+
+**Task lists (the completion nudge):**
+```
+✅ All todos done → the list carries a verify item AND it ran in this session → claim
+✅ 3+ items all done, none mentions verifying → name the gap, add the item, run it
+❌ "Every todo is checked off, so the work is verified"
 ```
 
 ## Why This Matters
