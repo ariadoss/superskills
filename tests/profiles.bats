@@ -202,9 +202,21 @@ setup() {
   [ "$status" -eq 1 ] || false
 }
 
-@test "packs_migrate_legacy folds security,data,web into a legacy selection once, passes others through" {
+@test "packs_migrate_legacy folds add-ons into a LOADED LEGACY selection only" {
   # Direct call: command substitution would run the function in a subshell
   # and discard the SS_PACKS mutation the assertions exist to check.
+  # The gates: only a selection loaded from a conf that predates the
+  # granular era migrates — fresh defaults and granular-era saves never do.
+  unset SS_PACKS_FROM_CONF SS_PACKS_GRANULAR
+  SS_PACKS="coding"
+  packs_migrate_legacy 2>/dev/null
+  [ "$SS_PACKS" = "coding" ] || false
+  SS_PACKS_FROM_CONF=1
+  SS_PACKS_GRANULAR=1
+  SS_PACKS="coding"
+  packs_migrate_legacy 2>/dev/null
+  [ "$SS_PACKS" = "coding" ] || false
+  unset SS_PACKS_GRANULAR
   SS_PACKS="coding"
   packs_migrate_legacy 2>"$BATS_TEST_TMPDIR/mig.err"
   [ "$SS_PACKS" = "coding,security,data,web" ] || false
@@ -212,12 +224,27 @@ setup() {
   SS_PACKS="coding,design"
   packs_migrate_legacy 2>/dev/null
   [ "$SS_PACKS" = "coding,design,security,data,web" ] || false
-  # Already granular, or whole-tree selections: unchanged, silent.
+  # A legacy selection already naming an add-on, or whole-tree: unchanged.
   for kept in "coding,security" "coding,data" "all" "core"; do
     SS_PACKS="$kept"
     packs_migrate_legacy 2>/dev/null
     [ "$SS_PACKS" = "$kept" ] || false
   done
+}
+
+@test "packs_save stamps the granular marker and packs_load reads it back" {
+  run packs_save "coding"
+  [ "$status" -eq 0 ] || false
+  grep -q '^granular=1$' "$SS_PACKS_CONF" || false
+  unset SS_PACKS SS_PACKS_FROM_CONF SS_PACKS_GRANULAR
+  packs_load
+  [ "$SS_PACKS" = "coding" ] || false
+  [ "${SS_PACKS_FROM_CONF:-0}" -eq 1 ] || false
+  [ "${SS_PACKS_GRANULAR:-0}" -eq 1 ] || false
+  # The documented opt-out endures: a saved granular-era coding selection
+  # survives a plain ./setup (and the post-merge hook's ./setup -q) unmigrated.
+  packs_migrate_legacy 2>/dev/null
+  [ "$SS_PACKS" = "coding" ] || false
 }
 
 @test "packs_validate rejects unknown, empty and duplicate-empty lists before any mutation" {

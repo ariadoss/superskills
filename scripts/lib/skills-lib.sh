@@ -52,10 +52,16 @@ packs_load() {
   local conf line
   conf="$(packs_conf_path)"
   [ -f "$conf" ] || { SS_PACKS="coding"; return 0; }
+  SS_PACKS_FROM_CONF=1
   while IFS= read -r line || [ -n "$line" ]; do
     # Only a packs= line speaks; anything else (a stray note, a typo) is
-    # ignored so a hand-edit cannot silently reset the selection.
-    case "$line" in packs=*) SS_PACKS="${line#packs=}" ;; esac
+    # ignored so a hand-edit cannot silently reset the selection. The
+    # granular=1 marker is the one other line read: it distinguishes a
+    # selection saved in the granular-pack era from a legacy one.
+    case "$line" in
+      packs=*) SS_PACKS="${line#packs=}" ;;
+      granular=1) SS_PACKS_GRANULAR=1 ;;
+    esac
   done < "$conf"
   return 0
 }
@@ -70,6 +76,14 @@ packs_load() {
 # naming an add-on pass through unchanged. Mutates SS_PACKS only
 # (tests/profiles.bats pins each shape).
 packs_migrate_legacy() {
+  # Only a selection LOADED from a conf that predates the granular era:
+  # a fresh install (no conf: SS_PACKS_FROM_CONF unset) must keep the
+  # documented 29-skill default, and a granular-era save (marker present,
+  # stamped by packs_save since 2.46.0) is an explicit choice — re-folding
+  # it would defeat the documented ./setup --packs coding opt-out on every
+  # post-merge ./setup -q.
+  [ "${SS_PACKS_FROM_CONF:-0}" -eq 1 ] || return 0
+  [ "${SS_PACKS_GRANULAR:-0}" -eq 1 ] && return 0
   case ",${SS_PACKS:-coding}," in
     *,security,*|*,data,*|*,web,*|*,content,*|*,startup,*|*,all,*|*,core,*) return 0 ;;
   esac
@@ -85,7 +99,7 @@ packs_save() {
   case ",$packs," in *,all,*) packs="all" ;; esac
   conf="$(packs_conf_path)"
   mkdir -p "$(dirname "$conf")"
-  printf '# superskills pack selection — parsed by setup, never sourced\npacks=%s\n' "$packs" > "$conf"
+  printf '# superskills pack selection — parsed by setup, never sourced\npacks=%s\ngranular=1\n' "$packs" > "$conf"
 }
 
 packs_validate() {
