@@ -27,9 +27,10 @@ Setup will:
 Every skill belongs to exactly one pack. `./setup` installs the **coding pack
 by default** (29 skills: 21 in-repo + 8 via gstack when a clone exists) — the
 domain-agnostic spec → plan → TDD → QA → ship spine. Domain skills live in
-add-on packs (`security`, `data`, `web`, `content`, `startup`): `/qa-full`
-runs its security, DB, and frontend checks when those packs are installed and
-records a designed skip with the exact command when they aren't.
+add-on packs (`security`, `data`, `web`, `content`, `startup`): `/qa-full`'s
+security, DB and frontend checks need their packs installed — a coding-only
+install should add `security,data,web` (the 2.46.0 upgrade folds them into a
+legacy selection automatically) before relying on the ship gate.
 Skill *descriptions* load on every turn; only a triggered skill's body does. So every extra pack is a real per-token cost in every session. The coding
 pack is always on: no pack list excludes it.
 
