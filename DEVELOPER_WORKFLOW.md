@@ -182,6 +182,15 @@ Each agent works independently and spawns subagents. Exponentially faster than p
 > 2. **Latency**: run heavy delegations in the background; keep synchronous calls for quick, scoped questions
 > 3. **Debuggability**: every delegation leaves a durable record (ledger entry, report file), not just chat scrollback
 > 4. **Over-delegation**: enforce this rule in the orchestrator's own instructions, where the delegation decision is made
+>
+> **The delegation prompt itself is one contract sentence.** Whatever else
+> the brief carries, it opens with the full contract — scope limit, tool
+> limit, interaction ban, output shape: *"Work only on the delegated task,
+> use only the tools available to you, do not ask the user questions, and
+> finish with a concise result."* And when the orchestrator tracks parallel
+> work as a todo list, multiple `in_progress` items are the intended
+> semantics for parallel lanes — not a violation of single-item focus.
+> (Both patterns recorded from the claw-code harness study, 2026-10-14.)
 
 ### 3. Each agent runs the full quality pipeline simultaneously
 
