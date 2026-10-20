@@ -92,8 +92,16 @@ EOF
 # multi-file push would otherwise gate just its first file.
 tmpdir="$(mktemp -d 2>/dev/null)" || exit 0
 trap '[ -n "$tmpdir" ] && rm -rf "$tmpdir"' EXIT
-EXEMPT_FLAG=""
-[ -f "$ROOT/.humanize-exempt.txt" ] && EXEMPT_FLAG="--exempt $ROOT/.humanize-exempt.txt"
+# Keep the package's vocabulary, and add the current project's reviewed terms.
+# Project terms stay in that repository, so one game's feature names do not
+# suppress findings in unrelated projects. An array preserves paths with spaces.
+EXEMPT_ARGS=()
+for exempt_file in "$ROOT/.humanize-exempt.txt" "${TOP:-$ROOT}/.humanize-exempt.txt"; do
+  [ -f "$exempt_file" ] || continue
+  cat "$exempt_file" >> "$tmpdir/exempt.txt"
+  printf '\n' >> "$tmpdir/exempt.txt"
+done
+[ -f "$tmpdir/exempt.txt" ] && EXEMPT_ARGS=(--exempt "$tmpdir/exempt.txt")
 report=""
 n=0
 while IFS= read -r f; do
@@ -102,7 +110,7 @@ while IFS= read -r f; do
   t="$tmpdir/${n}_$(printf '%s' "${f//\//_}")"
   python3 "$USERFACING" extract "$f" > "$t" 2>/dev/null \
     || { echo "humanize pre-push gate: scan skipped: $f (could not extract its text)" >&2; continue; }
-  r="$(python3 "$SCANNER" "$t" $EXEMPT_FLAG 2>/dev/null)" \
+  r="$(python3 "$SCANNER" "$t" "${EXEMPT_ARGS[@]}" 2>/dev/null)" \
     || { echo "humanize pre-push gate: scan skipped: $f (scanner failed)" >&2; continue; }
   report="${report:+$report
 }$f

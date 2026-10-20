@@ -98,6 +98,20 @@ setup() {
   [[ "$output" != *"[tapestry]"* ]] || false
 }
 
+@test "reviewed vocabulary is excluded from the gate score as well as the findings" {
+  printf 'The Incantation Lab opens at noon.\n' > "$BATS_TEST_TMPDIR/product.txt"
+  printf 'incantation\n' > "$BATS_TEST_TMPDIR/terms.txt"
+  run python3 "$TK/slop_report.py" "$BATS_TEST_TMPDIR/product.txt" --exempt "$BATS_TEST_TMPDIR/terms.txt"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"EQ-BENCH SLOP WORDS: none"* ]] || false
+  [[ "$output" == *"slop_index = 0.0  [word 0, bigram 0, trigram 0]"* ]] || false
+}
+
+@test "exempt score keeps word counts and does not join neighboring phrase tokens" {
+  run python3 -B -c 'import sys; sys.path.insert(0, sys.argv[1]); import eq_bench_slop_index as e; e.tokenize = lambda text: text.lower().split(); e.load_slop_set = lambda path: {"incantation"} if path == e.SLOP_UNIGRAMS else {"deep breath"}; r = e.slop_index_new("deep incantation breath", exempt={"incantation"}); assert r["slop_index"] == 0 and r["total_words"] == 3, r; assert e.slop_index_new("incantation")["word_hits"] == 1' "$TK"
+  [ "$status" -eq 0 ]
+}
+
 @test "every non-stdlib import is an optional, documented dependency" {
   # This test previously scanned only column-0 imports and passed while
   # emdash_fix.py imported spaCy INSIDE a function — a false pass that hid a
