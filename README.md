@@ -1,8 +1,8 @@
-# Superskills `v2.47.0`
+# Superskills `v2.45.0`
 
 Curated AI skills pack for Claude Code, ZCode, OpenCode, Codex CLI, DSH (DeepSeek Harness), Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Integrates [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team; an opt-in pack) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
-44 core skills + 54 gstack skills + 174 marketing skills + 36 design skills, selected by [packs](#packs-choose-what-gets-installed). gstack is vendored in this repo so its skills are available even if the upstream repo is removed.
+41 core skills + 54 gstack skills + 174 marketing skills + 36 design skills, selected by [packs](#packs-choose-what-gets-installed). gstack is vendored in this repo so its skills are available even if the upstream repo is removed.
 
 > **[Full command reference →](COMMANDS.md)**: all skills with descriptions and overlap notes
 > **[10x+ Engineering Workflow →](DEVELOPER_WORKFLOW.md)**: run 10+ parallel AI agents, each with a full quality pipeline ([full write-up](https://hyperion360.com/blog/parallel-ai-agents-engineering-workflow/))
@@ -25,38 +25,35 @@ Setup will:
 ### Packs: choose what gets installed
 
 Every skill belongs to exactly one pack. `./setup` installs the **coding pack
-by default** (29 skills: 21 in-repo + 8 via gstack when a clone exists) — the
-domain-agnostic spec → plan → TDD → QA → ship spine. Domain skills live in
-add-on packs (`security`, `data`, `web`, `content`, `startup`): `/qa-full`'s
-security, DB and frontend checks need their packs installed — a coding-only
-install should add `security,data,web` (the 2.46.0 upgrade folds them into a
-legacy selection automatically) before relying on the ship gate.
+by default** (41 skills: 33 in-repo + 8 via gstack when a clone exists) — the
+spec → plan → TDD → QA → ship spine **plus the security, database, and
+web/QA skills**, because most builds are web apps and a default install with
+`/qa-full`'s domain checks disarmed would be a trap, not a smaller install.
+The genuinely optional packs stay opt-in: `content` and `startup` (and, as
+the tree grows, platform add-ons like `desktop` or `mobile`).
 Skill *descriptions* load on every turn; only a triggered skill's body does. So every extra pack is a real per-token cost in every session. The coding
 pack is always on: no pack list excludes it.
 
 | Pack | Contents |
 |------|----------|
-| `coding` (default, always on) | The general spine: `/write-plan`, `/executing-plans`, `/subagent-driven-development`, `/worktrees`, `/tdd`, `/test-coverage`, `/debug`, `/verify`, `/clean-code`, `/basic-review`, `/diff-walkthrough`, `/qa-full`, `/finish-branch`, `/eval`, `/daily-qa`, `/quota-resilience`, `/handoff`, `/humanize`, `/cli-for-agent`, `/superskills-doctor`, `/superskills-upgrade`, plus the eight gstack skills the QA gate executes through (`/review`, `/qa`, `/cso`, `/design-review`, `/ship`, `/plan-eng-review`, `/browse`, `/setup-browser-cookies`) |
-| `security` | `/defense`, `/iac-scan`, `/pentest`, `/fuzz` — arms `/qa-full`'s security checks |
-| `data` | `/dbmap` (plus its `-auto-on`/`-auto-off` toggles), `/db-optimize`, `/cache-strategy` — arms the DB checks |
-| `web` | `/web-perf`, `/perf-profile`, `/a11y`, `/playwright` — arms the frontend-perf and browser QA checks |
+| `coding` (default, always on) | The workflow spine — `/write-plan`, `/executing-plans`, `/subagent-driven-development`, `/worktrees`, `/tdd`, `/test-coverage`, `/debug`, `/verify`, `/clean-code`, `/basic-review`, `/diff-walkthrough`, `/qa-full`, `/finish-branch`, `/eval`, `/daily-qa`, `/quota-resilience`, `/handoff`, `/humanize`, `/cli-for-agent`, `/superskills-doctor`, `/superskills-upgrade` — plus the security skills (`/defense`, `/iac-scan`, `/pentest`, `/fuzz`), the database skills (`/dbmap`, `/dbmap-auto-off`, `/db-optimize`, `/cache-strategy`), the web/QA skills (`/web-perf`, `/perf-profile`, `/a11y`, `/playwright`), and the eight gstack skills the QA gate executes through (`/review`, `/qa`, `/cso`, `/design-review`, `/ship`, `/plan-eng-review`, `/browse`, `/setup-browser-cookies`) |
 | `content` | `/tapestry`, `/youtube`, `/article`, `/kb-advisor`, `/content-writer` |
 | `startup` | `/validate-idea`, `/pricing`, `/minimalist-review` |
-| `core` | legacy alias: every skill in the `skills/` tree (all six packs above) |
+| `core` | legacy alias: every skill in the `skills/` tree (coding + content + startup) |
 | `design` | the 36 design skills (UX, typography, SwiftUI, Vercel) |
 | `marketing` | the 174 marketing skills (SEO, content, pages, ads) |
 | `media` | the video-editing subtree |
 | `gstack` | installs/promotes gstack itself and links **every** gstack skill; without it only the eight coding-pack gstack skills stay linked. The /qa-full closure (`/review`, `/qa`, `/cso`, `/design-review`, `/ship`, `/plan-eng-review`) plus the browse toolchain those checks execute through (`/browse`, `/setup-browser-cookies`). The rest of a pre-existing clone's links are pruned, the clone is never touched. Note: a roster skill's end-of-flow suggestions may still name gstack-pack skills (e.g. `/plan-design-review`). They resolve from the clone or are designed skips, but aren't one-keystroke available without this pack |
 | `all` | everything (pre-packs behavior) |
 
-The domain add-ons are the slot where finer-grained packs land as the tree
-grows — a future `mobile` or `desktop` pack for platform-specific coding
-skills would sit beside `security` and `web` without touching the default.
+The optional packs are the slot where finer-grained packs land as the tree
+grows — a future `desktop` or `mobile` pack for platform-specific coding
+skills would sit beside `content` and `startup` without touching the default.
 
-**Upgrading from ≤ 2.44.0:** the security/data/web skills moved out of the
-default coding pack into add-ons. Keep them with
-`./setup --packs coding,security,data,web` (add `content,startup` as needed);
-`core` still selects the whole `skills/` tree.
+**Upgrading from ≤ 2.44.0:** the coding pack gains the skills that used to
+sit in the `core` catch-all (`/executing-plans`, `/subagent-driven-development`,
+`/diff-walkthrough`, `/cli-for-agent`, `/cache-strategy`, `/dbmap-auto-off`);
+a persisted `packs=core` selection still selects the whole `skills/` tree.
 
 Every full `./setup` run persists the effective selection to
 `~/.superskills/packs.conf` and prunes this checkout's now-deselected installs
@@ -118,7 +115,7 @@ The plugin `version` is driven by the repo's `VERSION` file via
 watch. The `./setup` install above remains the way to get a chosen pack
 selection across every supported tool.
 
-## Skills (42)
+## Skills (46)
 
 ### Dev Methodology (from [superpowers](https://github.com/obra/superpowers))
 | Command | Description |
@@ -184,8 +181,7 @@ selection across every supported tool.
 ### Database Schema Map (from [ariadoss/dbmap](https://github.com/ariadoss/dbmap))
 | Command | Description |
 |---------|-------------|
-| `/dbmap` | Generate database schema map (DBMAP.md) |
-| `/dbmap-auto-on` | Auto-regenerate DBMAP.md after migration commands run |
+| `/dbmap` | Generate database schema map (DBMAP.md); its final step offers to enable automatic regeneration after migration commands (writes `.dbmap-auto`) |
 | `/dbmap-auto-off` | Disable automatic database schema map updates |
 
 ### Superskills itself
@@ -433,7 +429,7 @@ From [kostja94/marketing-skills](https://github.com/kostja94/marketing-skills), 
 ## Credits
 
 Written by [Danilo Stern-Sapad](https://danilosapad.com):
-- [`/dbmap`](https://github.com/ariadoss/dbmap) and its auto-on/off toggles (also a standalone repo). `/repomap` was removed in 2.39.0: five eval-gated experiments (2026-10) measured no agent-context utility for static repo maps against tool-using agents; the tool itself lives on in the standalone repo.
+- [`/dbmap`](https://github.com/ariadoss/dbmap) and its auto-off toggle (also a standalone repo; `/dbmap-auto-on` was folded into `/dbmap`'s final step in 2.45.0). `/repomap` was removed in 2.39.0: five eval-gated experiments (2026-10) measured no agent-context utility for static repo maps against tool-using agents; the tool itself lives on in the standalone repo.
 - [`/humanize`](https://github.com/ariadoss/humanize) (also a standalone repo)
 - `/qa-full`, `/daily-qa`, `/clean-code`, `/test-coverage`, `/a11y`, `/iac-scan`, `/db-optimize`, `/perf-profile`, `/cache-strategy`, `/superskills-doctor`, `/superskills-upgrade`
 - the statusline (`scripts/statusline.sh`)

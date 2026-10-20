@@ -13,23 +13,24 @@
 #
 # SS_PACKS is a comma-separated list of pack names held in
 # ~/.superskills/packs.conf as plain text — the value is parsed, never sourced.
-# Packs: coding (default, the always-on general spine), the domain add-ons
-# security / data / web / content / startup (granular carvings of the skills/
-# tree: opt-in, composable with coding), core (legacy alias that still selects
-# the whole skills/ tree), design, marketing, media, gstack, all.
+# Packs: coding (default, the always-on base — the general workflow spine plus
+# the security/database/web skills every web-app build needs), the opt-in
+# add-ons content / startup, core (legacy alias that still selects the whole
+# skills/ tree), design, marketing, media, gstack, all.
 # skill_selected answers for one skill: setup's per-tool linkers and the
 # output adapters consult it; gstack links by name with a category hint.
 
-# The skills/ tree's categorization — six constants, one pack per skill, no
+# The skills/ tree's categorization — three constants, one pack per skill, no
 # overlaps (tests/profiles.bats pins the partition against the tree). The
-# coding spine is the domain-agnostic workflow (spec/plan → TDD → QA → ship
-# plus self-maintenance); the five add-ons are domain slices a general install
-# shouldn't pay per-token context for. The coding pack also claims a gstack
-# slice by name (closure note below).
-PACK_CODING_REPO="write-plan worktrees tdd debug verify eval quota-resilience handoff test-coverage qa-full finish-branch daily-qa superskills-doctor superskills-upgrade clean-code basic-review humanize cli-for-agent executing-plans subagent-driven-development diff-walkthrough"
-PACK_SECURITY="defense iac-scan pentest fuzz"
-PACK_DATA="dbmap dbmap-auto-on dbmap-auto-off db-optimize cache-strategy"
-PACK_WEB="web-perf perf-profile a11y playwright"
+# coding pack is the default web-app workflow: the domain-agnostic spine
+# (plan → TDD → QA → ship, self-maintenance) plus the security, database and
+# web/QA skills most builds touch — those aren't optional (demoting them
+# behind an opt-in would quietly disarm /qa-full for a default install).
+# content and startup are the genuinely optional add-ons (zero invocations
+# across the maintainer's logged sessions; a future desktop or mobile pack
+# lands beside them). The coding pack also claims a gstack slice by name
+# (closure note below).
+PACK_CODING_REPO="write-plan worktrees tdd debug verify eval quota-resilience handoff test-coverage qa-full finish-branch daily-qa superskills-doctor superskills-upgrade clean-code basic-review humanize cli-for-agent executing-plans subagent-driven-development diff-walkthrough defense iac-scan pentest fuzz dbmap dbmap-auto-off db-optimize cache-strategy web-perf perf-profile a11y playwright"
 PACK_CONTENT="tapestry youtube article kb-advisor content-writer"
 PACK_STARTUP="validate-idea pricing minimalist-review"
 # The gstack slice is the /qa-full closure, not every gstack skill: its four
@@ -49,48 +50,23 @@ packs_conf_path() {
 }
 
 packs_load() {
-  local conf line
+  local conf line pack filtered=""
   conf="$(packs_conf_path)"
   [ -f "$conf" ] || { SS_PACKS="coding"; return 0; }
-  SS_PACKS_FROM_CONF=1
   while IFS= read -r line || [ -n "$line" ]; do
     # Only a packs= line speaks; anything else (a stray note, a typo) is
-    # ignored so a hand-edit cannot silently reset the selection. The
-    # granular=1 marker is the one other line read: it distinguishes a
-    # selection saved in the granular-pack era from a legacy one.
-    case "$line" in
-      packs=*) SS_PACKS="${line#packs=}" ;;
-      granular=1) SS_PACKS_GRANULAR=1 ;;
-    esac
+    # ignored so a hand-edit cannot silently reset the selection.
+    case "$line" in packs=*) SS_PACKS="${line#packs=}" ;; esac
   done < "$conf"
-  return 0
-}
-
-# packs_migrate_legacy — one-time upgrade bridge for selections saved before
-# the granular packs (2.46.0). A legacy selection names no add-on pack, so the
-# pack partition would treat security/data/web skills as deselected and the
-# prune would remove them from an existing install — silently, because a
-# plain `git pull` runs ./setup -q through the post-merge hook. Fold the
-# three add-ons a pre-granular default actually had, once; the notice goes to
-# stderr, which -q does not suppress. `all`, `core` and any selection already
-# naming an add-on pass through unchanged. Mutates SS_PACKS only
-# (tests/profiles.bats pins each shape).
-packs_migrate_legacy() {
-  # Only a selection LOADED from a conf that predates the granular era:
-  # a fresh install (no conf: SS_PACKS_FROM_CONF unset) must keep the
-  # documented 29-skill default, and a granular-era save (marker present,
-  # stamped by packs_save since 2.46.0) is an explicit choice — re-folding
-  # it would defeat the documented ./setup --packs coding opt-out on every
-  # post-merge ./setup -q.
-  [ "${SS_PACKS_FROM_CONF:-0}" -eq 1 ] || return 0
-  [ "${SS_PACKS_GRANULAR:-0}" -eq 1 ] && return 0
-  case ",${SS_PACKS:-coding}," in
-    *,security,*|*,data,*|*,web,*|*,content,*|*,startup,*|*,all,*|*,core,*) return 0 ;;
-  esac
-  SS_PACKS="${SS_PACKS:-coding},security,data,web"
-  echo "superskills: your saved pack selection predates the granular packs;" >&2
-  echo "superskills: security, data and web were added so this upgrade keeps the skills you already had." >&2
-  echo "superskills: want the smaller default instead? Run: ./setup --packs coding" >&2
+  # Migration: security/data/web were absorbed into coding in 2.45.0 (they
+  # were never optional — a default install needs /qa-full's domain checks
+  # armed). Drop them from a persisted selection instead of failing the run;
+  # the next packs_save writes the healed list back.
+  IFS=',' read -r -a _absorbed_list <<<"$SS_PACKS" || true
+  for pack in "${_absorbed_list[@]}"; do
+    case "$pack" in security|data|web) ;; *) filtered="${filtered:+$filtered,}$pack" ;; esac
+  done
+  SS_PACKS="${filtered:-coding}"
   return 0
 }
 
@@ -99,7 +75,7 @@ packs_save() {
   case ",$packs," in *,all,*) packs="all" ;; esac
   conf="$(packs_conf_path)"
   mkdir -p "$(dirname "$conf")"
-  printf '# superskills pack selection — parsed by setup, never sourced\npacks=%s\ngranular=1\n' "$packs" > "$conf"
+  printf '# superskills pack selection — parsed by setup, never sourced\npacks=%s\n' "$packs" > "$conf"
 }
 
 packs_validate() {
@@ -111,7 +87,8 @@ packs_validate() {
   IFS=',' read -r -a list <<<"$input" || return 1
   for pack in "${list[@]}"; do
     case "$pack" in
-      coding|core|security|data|web|content|startup|design|marketing|media|gstack|all) : ;;
+      coding|core|content|startup|design|marketing|media|gstack|all) : ;;
+      security|data|web) echo "invalid pack: $pack (absorbed into coding in 2.45.0 — just remove it)" >&2; return 1 ;;
       *) echo "invalid pack: $pack" >&2; return 1 ;;
     esac
   done
@@ -140,8 +117,8 @@ pack_category_included() {
 # spine and its gstack slice are UNCONDITIONAL — those names are selected
 # whenever their tree is walked, whatever SS_PACKS says, because coding is the
 # always-on base of the product: listing `coding` in --packs is accepted but
-# decorative, and no pack list excludes it. A skills/ name owned by a domain
-# add-on (security/data/web/content/startup) is selected exactly when that
+# decorative, and no pack list excludes it. A skills/ name owned by an opt-in
+# add-on (content/startup) is selected exactly when that
 # pack, legacy `core`, or `all` is listed. A packed name is claimable from the
 # tree that serves it: the skills/ tree for every name, plus gstack for
 # exactly the PACK_CODING_GSTACK names — a gstack skill whose name matches a
@@ -159,11 +136,11 @@ skill_selected() {
         done
         return 1 ;;
       coding|core)
-        # The coding spine and the gstack slice it claims are unconditional
-        # (coding is the always-on base: listing it is decorative and no pack
-        # list excludes it). Every other pack is an opt-in add-on, selected
-        # exactly when itself, legacy core, or all is listed — so a pre-add-on
-        # `core` selection keeps the whole skills/ tree it always had.
+        # The coding base and the gstack slice it claims are unconditional
+        # (coding is the always-on default: listing it is decorative and no
+        # pack list excludes it). An opt-in add-on is selected exactly when
+        # itself, legacy core, or all is listed — so a pre-add-on `core`
+        # selection keeps the whole skills/ tree it always had.
         case "$pack" in
           coding|gstack) return 0 ;;
           *)
@@ -192,23 +169,21 @@ gstack_pack_action() {
 
 # packs_category_of <name> — echo the pack category owning <name>; exit 1 when
 # no pack claims it. Every skills/ tree name resolves by NAME to exactly one
-# of the six constants (coding spine or a domain add-on), and the gstack
+# of the three constants (coding base or an opt-in add-on), and the gstack
 # slice's names resolve to gstack so upstream cannot shadow a repo skill.
 packs_category_of() {
-  local name="$1" spec pack roster word
-  # One loop over label:roster pairs — order-preserving, so the first pack
-  # claiming a name wins exactly as the seven copy-pasted loops did.
-  # Membership is string equality, never a glob: names come from skill
-  # frontmatter, and interpolating one into a case pattern would let a
-  # `*`-bearing name match any roster.
-  for spec in "coding:$PACK_CODING_REPO" "security:$PACK_SECURITY" \
-      "data:$PACK_DATA" "web:$PACK_WEB" "content:$PACK_CONTENT" \
-      "startup:$PACK_STARTUP" "gstack:$PACK_CODING_GSTACK"; do
-    pack="${spec%%:*}"
-    roster="${spec#*:}"
-    for word in $roster; do
-      [ "$word" = "$name" ] && { printf '%s\n' "$pack"; return 0; }
-    done
+  local name="$1" word
+  for word in $PACK_CODING_REPO; do
+    [ "$word" = "$name" ] && { printf 'coding\n'; return 0; }
+  done
+  for word in $PACK_CONTENT; do
+    [ "$word" = "$name" ] && { printf 'content\n'; return 0; }
+  done
+  for word in $PACK_STARTUP; do
+    [ "$word" = "$name" ] && { printf 'startup\n'; return 0; }
+  done
+  for word in $PACK_CODING_GSTACK; do
+    [ "$word" = "$name" ] && { printf 'gstack\n'; return 0; }
   done
   return 1
 }
@@ -254,9 +229,8 @@ selected_source_paths() {
 # The pack category a SKILL.md belongs to, by its tree. The marketing walk's
 # media subtree (content/video-editing) answers to the media pack, everything
 # else under marketing-skills to marketing, design-skills to design, and the
-# skills/ tree to core (skill_selected resolves packed names by name alone,
-# so the coding/core label is interchangeable for skills/ walks). One
-# mapping shared by setup's link gates, the
+# skills/ tree to core (a roster name upgrades it to coding at the
+# skill_selected call sites). One mapping shared by setup's link gates, the
 # --list-skills walk and the deselected-prune.
 pack_category_for_path() {
   local skill_md="$1" marketing_dir="${2:-}" rel

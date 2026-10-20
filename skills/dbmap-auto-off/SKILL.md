@@ -12,4 +12,4 @@ Run this command:
 rm -f .dbmap-auto
 ```
 
-Confirm that auto-updating is now disabled. The DBMAP.md file is kept as-is — the user can still manually update it with `/dbmap`.
+Confirm that auto-updating is now disabled. The DBMAP.md file is kept as-is — the user can still manually update it with `/dbmap` (whose final step offers to re-enable auto-updates).

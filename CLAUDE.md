@@ -90,15 +90,15 @@ Two patterns are valid. Pick the one that matches the skill's runtime needs:
 
 Never reference an external repo as a live dependency without one of these two backups in place. Record the upstream URL in the skill's frontmatter (e.g. `metadata.upstream: https://...`) so the source is traceable.
 
-### dbmap/repomap are canonical here; their public repo is an export
+### dbmap is canonical here; its public repo is an export
 
-The `dbmap`, `repomap`, `dbmap-auto-on`, `dbmap-auto-off`, `repomap-auto-on`, and `repomap-auto-off` skills are the single source of truth for the public [ariadoss/repomap](https://github.com/ariadoss/repomap) repo (the old pull direction is retired). After changing any of the six skills, regenerate and publish the standalone tree:
+The `dbmap` and `dbmap-auto-off` skills are the single source of truth for the public [ariadoss/dbmap](https://github.com/ariadoss/dbmap) repo (the old pull direction is retired; `/dbmap-auto-on` was folded into `/dbmap`'s final step in 2.45.0). After changing either skill, regenerate and publish the standalone tree:
 
 ```bash
-./scripts/export-repomap.sh            # -> dist/repomap (git-ignored)
+./scripts/export-dbmap.sh              # -> dist/dbmap (git-ignored)
 ```
 
-The export is a pure copy: each `skills/<name>/SKILL.md` lands as `<name>.md`, byte-identical, frontmatter and all, and owns only those six paths. The public repo's README, LICENSE, `setup`, `requirements.txt`, and Python sources live in that checkout and are edited there via PR. `tests/export-repomap.bats` asserts byte-identity. Never edit the six `<name>.md` files in the public repo directly; the next export would silently overwrite them.
+The export is a pure copy: each `skills/<name>/SKILL.md` lands as `<name>.md`, byte-identical, frontmatter and all. It owns only those two paths plus the retired `dbmap-auto-on.md`, which it removes from existing checkouts. The public repo's README, LICENSE, `setup`, `requirements.txt`, and Python sources live in that checkout and are edited there via PR. `tests/export-dbmap.bats` asserts byte-identity. Never edit the `<name>.md` files in the public repo directly; the next export would silently overwrite them.
 
 ### Keeping the `vendor/gstack` snapshot current
 

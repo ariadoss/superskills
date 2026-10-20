@@ -21,10 +21,11 @@ Usage: ./setup [options]
   --no-knowledge         skip knowledge-base prompts and clones
   --extend-from <path>   overlay repo to extend from
   --packs <list>         comma list of packs: coding (always included; listed
-                         by default) plus the domain add-ons security, data,
-                         web, content, startup; core (legacy: the whole
-                         skills/ tree), design, marketing, media, gstack, all.
-                         Persisted for upgrades.
+                         by default — the workflow spine plus the security,
+                         database and web skills), opt-in add-ons content,
+                         startup; core (legacy: the whole skills/ tree),
+                         design, marketing, media, gstack, all. Persisted for
+                         upgrades.
   --list-skills          print the resolved source paths of the selected skills
                          and exit (read-only: installs nothing, saves nothing)
   --persist-only         save the --packs selection and exit (installs nothing)
@@ -98,16 +99,6 @@ fi
 # the given list, a plain run stamps the loaded (default: coding) selection so
 # the doctor can tell a packs-era install from a pre-packs one and the
 # deselected prune below knows what this checkout owns.
-#
-# Legacy-conf migration (2.46.0): a selection saved before the granular packs
-# would silently prune security/data/web skills from an existing install on
-# upgrade (a plain `git pull` runs ./setup -q through the post-merge hook).
-# packs_migrate_legacy folds the add-ons in once and says so on stderr, which
-# -q does not suppress; wanting the smaller default is then an explicit,
-# loud ./setup --packs coding decision. The function self-gates on the
-# conf's granular marker (skills-lib); the PACKS_GIVEN guard is belt-and-
-# braces: an explicit choice is never legacy, in this run or the next.
-[ "$PACKS_GIVEN" -eq 1 ] || packs_migrate_legacy
 packs_save "${SS_PACKS:-coding}"
 
 # ── Banner ─────────────────────────────────────────────────────────────────────
@@ -848,14 +839,8 @@ else
   pack_category_included design && log "  includes design-skills: UX, frontend engineering, animation, Swift/iOS, Vercel"
   log "  packs: ${SS_PACKS:-coding} (change with ./setup --packs)"
 fi
-# Rosters come from the constants (skills-lib), never a second hand-typed
-# list: tests/profiles.bats pins the constants to the tree, so a skill that
-# moves packs cannot leave this summary advertising the old one.
-pack_category_included security && log "  includes security pack: $(for w in $PACK_SECURITY; do printf '/%s ' "$w"; done | sed 's/ $//')"
-pack_category_included data && log "  includes data pack: $(for w in $PACK_DATA; do printf '/%s ' "$w"; done | sed 's/ $//')"
-pack_category_included web && log "  includes web pack: $(for w in $PACK_WEB; do printf '/%s ' "$w"; done | sed 's/ $//')"
-pack_category_included content && log "  includes content pack: $(for w in $PACK_CONTENT; do printf '/%s ' "$w"; done | sed 's/ $//')"
-pack_category_included startup && log "  includes startup pack: $(for w in $PACK_STARTUP; do printf '/%s ' "$w"; done | sed 's/ $//')"
+pack_category_included content && log "  includes content pack: /tapestry /youtube /article /kb-advisor /content-writer"
+pack_category_included startup && log "  includes startup pack: /validate-idea /pricing /minimalist-review"
 if [ -f "$KB_CONF" ] && [ -s "$KB_CONF" ]; then
   kb_count=$(grep -c '.' "$KB_CONF" 2>/dev/null || echo 0)
   log "  $kb_count knowledge base(s) configured"

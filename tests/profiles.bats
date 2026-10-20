@@ -52,8 +52,8 @@ setup() {
     skill_selected "$name" gstack || false
   done
   skill_selected design-review design
-  [ "$count" -eq 29 ] || false
-  run skill_selected cache-strategy core
+  [ "$count" -eq 41 ] || false
+  run skill_selected tapestry core
   [ "$status" -eq 1 ] || false
   run skill_selected retro gstack
   [ "$status" -eq 1 ] || false
@@ -91,50 +91,80 @@ setup() {
   # coding is decorative.
   SS_PACKS=design
   skill_selected tdd core
-  run skill_selected cache-strategy core
+  run skill_selected tapestry core
   [ "$status" -eq 1 ] || false
 }
 
-@test "granular add-on packs own their skills and stay opt-in under coding" {
-  # security / data / web / content / startup are domain add-ons carving up
-  # what the old core catch-all and the coding roster used to hold: a
-  # coding-only install links none of them, their own pack links them, and
-  # legacy core (and all) still keep the whole skills/ tree.
+@test "security/data/web skills are unconditional under coding; content/startup stay opt-in" {
+  # The security, database and web skills are part of the default workflow —
+  # most builds are web apps, and demoting them behind an opt-in would
+  # quietly disarm /qa-full's domain checks for a default install. content
+  # and startup are the genuinely optional add-ons (plus the slot where a
+  # future desktop/mobile pack lands); legacy core (and all) still select
+  # the whole skills/ tree.
   SS_PACKS=coding
-  run skill_selected defense core
-  [ "$status" -eq 1 ] || false
-  run skill_selected dbmap core
-  [ "$status" -eq 1 ] || false
-  run skill_selected web-perf core
-  [ "$status" -eq 1 ] || false
+  skill_selected defense core
+  skill_selected pentest core
+  skill_selected dbmap core
+  skill_selected db-optimize core
+  skill_selected web-perf core
+  skill_selected a11y core
   run skill_selected tapestry core
   [ "$status" -eq 1 ] || false
   run skill_selected validate-idea core
   [ "$status" -eq 1 ] || false
-  SS_PACKS=coding,security
-  skill_selected defense core
-  run skill_selected pentest core
+  SS_PACKS=coding,content
+  skill_selected tapestry core
+  run skill_selected content-writer core
   [ "$status" -eq 0 ] || false
-  run skill_selected dbmap core
+  run skill_selected validate-idea core
   [ "$status" -eq 1 ] || false
-  SS_PACKS=coding,security,data,web,content,startup
-  skill_selected defense core
-  skill_selected dbmap core
-  skill_selected dbmap-auto-on core
-  skill_selected cache-strategy core
-  skill_selected web-perf core
-  skill_selected perf-profile core
+  SS_PACKS=startup
+  skill_selected validate-idea core
+  run skill_selected tapestry core
+  [ "$status" -eq 1 ] || false
+  SS_PACKS=core
   skill_selected tapestry core
   skill_selected validate-idea core
-  SS_PACKS=core
-  skill_selected defense core
-  skill_selected dbmap core
   SS_PACKS=all
   skill_selected defense core
+  skill_selected tapestry core
+}
+
+@test "packs_load heals selections naming the packs absorbed into coding" {
+  # security/data/web were absorbed in 2.45.0; a persisted selection that
+  # still names them must load (not die in packs_validate) with the dead
+  # names dropped, and an emptied list falls back to coding.
+  printf 'packs=coding,security,data,web\n' > "$SS_PACKS_CONF"
+  SS_PACKS=""
+  packs_load
+  [ "$SS_PACKS" = "coding" ] || false
+  printf 'packs=security,web,content\n' > "$SS_PACKS_CONF"
+  SS_PACKS=""
+  packs_load
+  [ "$SS_PACKS" = "content" ] || false
+  printf 'packs=all\n' > "$SS_PACKS_CONF"
+  SS_PACKS=""
+  packs_load
+  [ "$SS_PACKS" = "all" ] || false
+}
+
+@test "packs_validate names the absorption for security/data/web inputs" {
+  run packs_validate "coding,security"
+  [ "$status" -eq 1 ] || false
+  [[ "$output" == *"absorbed into coding"* ]] || false
+  run packs_validate "coding,data"
+  [ "$status" -eq 1 ] || false
+  [[ "$output" == *"absorbed into coding"* ]] || false
+  run packs_validate "coding,web"
+  [ "$status" -eq 1 ] || false
+  [[ "$output" == *"absorbed into coding"* ]] || false
+  run packs_validate "coding,content,startup"
+  [ "$status" -eq 0 ] || false
 }
 
 @test "every skills/ tree skill is categorized under exactly one pack" {
-  # The six constants are the single categorization of the skills/ tree (the
+  # The three constants are the single categorization of the skills/ tree (the
   # "handoff incident" class of bug: a skill in the tree that no pack claims
   # silently never links). Every frontmatter name must be claimed exactly
   # once — a duplicate across constants would make membership ambiguous, a
@@ -142,8 +172,8 @@ setup() {
   local names union dup
   names="$(find "$REPO_ROOT/skills" -mindepth 1 -maxdepth 1 -type d ! -name node_modules \
     -exec sh -c 'sed -n "s/^name:[[:space:]]*//p" "$1/SKILL.md"' _ {} \; | sed 's/[[:space:]]*$//' | sort)"
-  union="$(printf '%s\n' $PACK_CODING_REPO $PACK_SECURITY $PACK_DATA $PACK_WEB $PACK_CONTENT $PACK_STARTUP | sort)"
-  dup="$(printf '%s\n' $PACK_CODING_REPO $PACK_SECURITY $PACK_DATA $PACK_WEB $PACK_CONTENT $PACK_STARTUP | sort | uniq -d)"
+  union="$(printf '%s\n' $PACK_CODING_REPO $PACK_CONTENT $PACK_STARTUP | sort)"
+  dup="$(printf '%s\n' $PACK_CODING_REPO $PACK_CONTENT $PACK_STARTUP | sort | uniq -d)"
   [ -z "$dup" ] || false
   [ "$union" = "$names" ] || false
 }
@@ -165,7 +195,7 @@ setup() {
   run skill_selected copywriting marketing
   [ "$status" -eq 1 ] || false
   SS_PACKS=coding,core,gstack
-  skill_selected cache-strategy core
+  skill_selected tapestry core
   skill_selected review gstack
   run skill_selected typography design
   [ "$status" -eq 1 ] || false
@@ -192,61 +222,6 @@ setup() {
   [ "$SS_PACKS" = "coding" ] || false
 }
 
-@test "packs_category_of resolves by string equality, never glob-matching" {
-  # A frontmatter name is untrusted input; if it were interpolated into a
-  # case pattern, a `*`-bearing name would match any roster and bucket the
-  # skill into the wrong pack.
-  run packs_category_of '*'
-  [ "$status" -eq 1 ] || false
-  run packs_category_of 'defen*'
-  [ "$status" -eq 1 ] || false
-}
-
-@test "packs_migrate_legacy folds add-ons into a LOADED LEGACY selection only" {
-  # Direct call: command substitution would run the function in a subshell
-  # and discard the SS_PACKS mutation the assertions exist to check.
-  # The gates: only a selection loaded from a conf that predates the
-  # granular era migrates — fresh defaults and granular-era saves never do.
-  unset SS_PACKS_FROM_CONF SS_PACKS_GRANULAR
-  SS_PACKS="coding"
-  packs_migrate_legacy 2>/dev/null
-  [ "$SS_PACKS" = "coding" ] || false
-  SS_PACKS_FROM_CONF=1
-  SS_PACKS_GRANULAR=1
-  SS_PACKS="coding"
-  packs_migrate_legacy 2>/dev/null
-  [ "$SS_PACKS" = "coding" ] || false
-  unset SS_PACKS_GRANULAR
-  SS_PACKS="coding"
-  packs_migrate_legacy 2>"$BATS_TEST_TMPDIR/mig.err"
-  [ "$SS_PACKS" = "coding,security,data,web" ] || false
-  grep -q "were added so this upgrade keeps the skills you already had" "$BATS_TEST_TMPDIR/mig.err" || false
-  SS_PACKS="coding,design"
-  packs_migrate_legacy 2>/dev/null
-  [ "$SS_PACKS" = "coding,design,security,data,web" ] || false
-  # A legacy selection already naming an add-on, or whole-tree: unchanged.
-  for kept in "coding,security" "coding,data" "all" "core"; do
-    SS_PACKS="$kept"
-    packs_migrate_legacy 2>/dev/null
-    [ "$SS_PACKS" = "$kept" ] || false
-  done
-}
-
-@test "packs_save stamps the granular marker and packs_load reads it back" {
-  run packs_save "coding"
-  [ "$status" -eq 0 ] || false
-  grep -q '^granular=1$' "$SS_PACKS_CONF" || false
-  unset SS_PACKS SS_PACKS_FROM_CONF SS_PACKS_GRANULAR
-  packs_load
-  [ "$SS_PACKS" = "coding" ] || false
-  [ "${SS_PACKS_FROM_CONF:-0}" -eq 1 ] || false
-  [ "${SS_PACKS_GRANULAR:-0}" -eq 1 ] || false
-  # The documented opt-out endures: a saved granular-era coding selection
-  # survives a plain ./setup (and the post-merge hook's ./setup -q) unmigrated.
-  packs_migrate_legacy 2>/dev/null
-  [ "$SS_PACKS" = "coding" ] || false
-}
-
 @test "packs_validate rejects unknown, empty and duplicate-empty lists before any mutation" {
   run packs_validate "coding,bogus"
   [ "$status" -eq 1 ] || false
@@ -257,11 +232,6 @@ setup() {
   [ "$status" -eq 1 ] || false
   run packs_validate "coding,design"
   [ "$status" -eq 0 ] || false
-  # The documented upgrade path (README: ./setup --packs coding,security,data,web)
-  # dies at validation if a domain add-on name is ever dropped from the case
-  # pattern — pin every accepted name so that regression cannot pass silently.
-  run packs_validate "coding,security,data,web,content,startup"
-  [ "$status" -eq 0 ] || false
 }
 
 @test "packs_save collapses any selection containing all to exactly all" {
@@ -270,18 +240,18 @@ setup() {
 }
 
 @test "selected_source_paths resolves only selected skills' SKILL.md paths, read-only" {
-  mkdir -p "$FIX/skills/tdd" "$FIX/skills/cache-strategy" "$FIX/design-skills/typography"
+  mkdir -p "$FIX/skills/tdd" "$FIX/skills/tapestry" "$FIX/design-skills/typography"
   printf '%s\n' '---' 'name: tdd' '---' 'body' > "$FIX/skills/tdd/SKILL.md"
-  printf '%s\n' '---' 'name: cache-strategy' '---' 'body' > "$FIX/skills/cache-strategy/SKILL.md"
+  printf '%s\n' '---' 'name: tapestry' '---' 'body' > "$FIX/skills/tapestry/SKILL.md"
   printf '%s\n' '---' 'name: typography' '---' 'body' > "$FIX/design-skills/typography/SKILL.md"
   run selected_source_paths "$FIX/skills" "$FIX/design-skills" ""
   [ "$status" -eq 0 ] || false
   [ "$(printf '%s\n' "$output" | grep -c 'skills/tdd/SKILL.md')" -eq 1 ] || false
-  [[ "$output" != *"cache-strategy"* ]] || false
+  [[ "$output" != *"tapestry"* ]] || false
   [[ "$output" != *"typography"* ]] || false
   SS_PACKS=all
   run selected_source_paths "$FIX/skills" "$FIX/design-skills" ""
-  [[ "$output" == *"cache-strategy"* ]] || false
+  [[ "$output" == *"tapestry"* ]] || false
   [[ "$output" == *"typography"* ]] || false
 }
 
@@ -338,24 +308,24 @@ setup() {
 
 @test "prune_deselected_skills removes deselected owned installs, keeps selected and foreign" {
   SRC="$FIX/src"; TGT="$FIX/tgt"
-  mkdir -p "$SRC/skills/tdd" "$SRC/skills/cache-strategy" "$SRC/design-skills/typography"
+  mkdir -p "$SRC/skills/tdd" "$SRC/skills/tapestry" "$SRC/design-skills/typography"
   printf '%s\n' '---' 'name: tdd' '---' > "$SRC/skills/tdd/SKILL.md"
-  printf '%s\n' '---' 'name: cache-strategy' '---' > "$SRC/skills/cache-strategy/SKILL.md"
+  printf '%s\n' '---' 'name: tapestry' '---' > "$SRC/skills/tapestry/SKILL.md"
   printf '%s\n' '---' 'name: typography' '---' > "$SRC/design-skills/typography/SKILL.md"
   link_skill_into "$TGT" "$SRC/skills/tdd/SKILL.md" "tdd" >/dev/null
-  link_skill_into "$TGT" "$SRC/skills/cache-strategy/SKILL.md" "cache-strategy" >/dev/null
+  link_skill_into "$TGT" "$SRC/skills/tapestry/SKILL.md" "tapestry" >/dev/null
   link_skill_into "$TGT" "$SRC/design-skills/typography/SKILL.md" "typography" >/dev/null
   mkdir -p "$TGT/gstack" && ln -s /etc/hostname "$TGT/gstack/SKILL.md"
   run prune_deselected_skills "$TGT" "$SRC"
   [ "$status" -eq 0 ] || false
-  [ ! -e "$TGT/cache-strategy" ] || false
+  [ ! -e "$TGT/tapestry" ] || false
   [ ! -e "$TGT/typography" ] || false
   [ -L "$TGT/tdd/SKILL.md" ] || false
   [ -d "$TGT/gstack" ] || false
   SS_PACKS=all
-  link_skill_into "$TGT" "$SRC/skills/cache-strategy/SKILL.md" "cache-strategy" >/dev/null
+  link_skill_into "$TGT" "$SRC/skills/tapestry/SKILL.md" "tapestry" >/dev/null
   run prune_deselected_skills "$TGT" "$SRC"
-  [ -L "$TGT/cache-strategy/SKILL.md" ] || false
+  [ -L "$TGT/tapestry/SKILL.md" ] || false
 }
 
 @test "prune_deselected_skills maps the marketing media subtree onto the media pack" {
