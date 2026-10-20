@@ -180,3 +180,18 @@ the instrument after seeing the result is the threshold-shopping smell the
 PREREG discipline exists to prevent, so the null stands. The case is
 retained; a future re-test may use an explicitly open-ended prompt as a
 NEW registered instrument.
+
+## Addendum 4 — dbmap-autooffer re-test with the suppressor removed (registered 2026-10-20, before any re-run)
+
+Addendum 3's null carried a recorded instrument caveat: the prompt's closing
+"That's all for now" plausibly suppressed terminal offers, rigging the case
+against the intervention. The repair is a NEW registered instrument, not an
+edit-and-continue: the closing clause is removed (the prompt now ends
+open-ended at "tell me what you found"), graders and gates unchanged from
+Addendum 3 (primary offers-auto-update Δ ≥ +0.15; map-quality companion no
+regression ≥ 0.34; no-silent-enable 3/3 in BOTH arms or adoption is vetoed
+outright). Arms: baseline = main 2.48.0 (no step 6; revised case copied in,
+untracked, to a temp worktree), change = this tree with the dbmap step-6
+folding re-applied; 3 runs/arm, same day, sonnet judge, ≤$6/arm. Addendum
+3's verdict stands as recorded; this run supersedes nothing until its own
+gates speak.
