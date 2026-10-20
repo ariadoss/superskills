@@ -112,13 +112,14 @@ setup() {
   [ ! -f "$HOME/.superskills/packs.conf" ] || false
 }
 
-@test "the legacy-pack migration never fires on an explicit --packs choice" {
-  # Wiring pin (this file's established pattern for setup-internal guards):
-  # `./setup --packs coding` is the documented opt-out of the 2.46.0 legacy
-  # migration — the migration call must be guarded by PACKS_GIVEN, or the
-  # opt-out command would silently re-add security,data,web.
-  run grep -c '\[ "\$PACKS_GIVEN" -eq 1 \] || packs_migrate_legacy' "$REPO_ROOT/setup"
-  [ "$output" -eq 1 ] || false
+@test "absorbed pack names are rejected with the healing pointer, never silently accepted" {
+  # 2.48.0 contract: security/data/web are PART of the coding pack. A --packs
+  # run naming one fails loudly with the pointer to just remove it; a LOADED
+  # conf naming one is healed by packs_load (profiles.bats pins that).
+  run bash "$REPO_ROOT/setup" --packs coding,security --list-skills
+  [ "$status" -eq 2 ] || false
+  [[ "$output" == *"absorbed into coding"* ]] || false
+  [ ! -f "$HOME/.superskills/packs.conf" ] || false
 }
 
 @test "--packs with an empty value exits 2" {
@@ -132,7 +133,9 @@ setup() {
   [ "$status" -eq 0 ] || false
   [[ "$output" == *"/skills/tdd/SKILL.md"* ]] || false
   [[ "$output" == *"/skills/qa-full/SKILL.md"* ]] || false
-  [[ "$output" != *"/skills/cache-strategy/SKILL.md"* ]] || false
+  [[ "$output" == *"/skills/cache-strategy/SKILL.md"* ]] || false
+  [[ "$output" == *"/skills/defense/SKILL.md"* ]] || false
+  [[ "$output" != *"/skills/article/SKILL.md"* ]] || false
   [ ! -f "$HOME/.superskills/packs.conf" ] || false
 }
 
@@ -141,7 +144,8 @@ setup() {
   [ "$status" -eq 0 ] || false
   [[ "$output" == *"/skills/tdd/SKILL.md"* ]] || false
   [[ "$output" == *"/design-skills/ux-designer/SKILL.md"* ]] || false
-  [[ "$output" != *"/skills/cache-strategy/SKILL.md"* ]] || false
+  [[ "$output" == *"/skills/cache-strategy/SKILL.md"* ]] || false
+  [[ "$output" != *"/skills/article/SKILL.md"* ]] || false
   [[ "$output" != *"marketing-skills/"* ]] || false
   [ ! -f "$HOME/.superskills/packs.conf" ] || false
 }
