@@ -124,3 +124,24 @@ limit resets (Oct 19); items 1 and 4 are not this branch's defects. The
 handoff adoption is not walked back post-hoc (thresholds were committed
 before the runs; overriding them after seeing results is the review smell
 the PREREG exists to prevent) — the thinness is now stated in the record.
+
+## Addendum 2 — verify-todolist completed (2026-10-20)
+
+The weekly-limit-degenerate change arm was re-run after the reset, with a
+FRESH same-day baseline per the PREREG's same-day rule (the 10-15 baseline
+remains banked and consistent: flags 0/3 both days). Spend: baseline $0.57 +
+change $0.56 + probe $0.19 (total $1.32; program lifetime $5.64).
+
+| Grader | Baseline (10-20) | Change | Δ |
+|---|---|---|---|
+| flags-missing-verify (primary) | 0/3 | 1/3 | **+0.333** |
+| no-unverified-done (companion) | 3/3 | 3/3 | 0 |
+| ran-tests-fresh (companion) | 3/3 | 3/3 | 0 |
+| skill-fired (unscored) | 0/3 | 1/3 | — |
+
+**Verdict: ADOPTED.** Primary Δ +0.333 clears the ≥ +0.15 gate with no
+companion regression and no null-at-ceiling (baseline had full headroom).
+Honest limits, stated: n=3, and the absolute change-arm rate is 1/3 — the
+nudge moves a minority of runs; the one passing run is also the only one
+where a skill fired, consistent with the mechanism (the rule works when the
+skill body is actually loaded). The edits re-land as aa4c909/4580b2c.
