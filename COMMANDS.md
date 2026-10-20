@@ -88,7 +88,7 @@ Core skills live in the default `coding` pack; `content` and `startup` are the o
 | `/dbmap` | Generate a database schema map (DBMAP.md); its final step offers to enable automatic regeneration after migration commands run (Rails, Django, Alembic, Prisma, Knex, Sequelize, Goose, Dbmate, Flyway, Liquibase, TypeORM, Drizzle — writes `.dbmap-auto`) |
 | `/dbmap-auto-off` | Disable automatic database schema map updates |
 
-Historical: `/repomap` (+ its auto toggles) and `/graphify` were removed in 2.39.0 — five eval-gated experiments measured no agent-context utility for static maps against tool-using agents; the repomap tool lives on in the standalone [ariadoss/repomap](https://github.com/ariadoss/repomap) repo. `/dbmap-auto-on` was folded into `/dbmap`'s final step in 2.45.0.
+Historical: `/repomap` (+ its auto toggles) and `/graphify` were removed in 2.39.0 — five eval-gated experiments measured no agent-context utility for static maps against tool-using agents; the repomap tool lives on in the standalone [ariadoss/repomap](https://github.com/ariadoss/repomap) repo.
 
 ---
 

@@ -37,11 +37,9 @@ The rules live in two files; this page only points at them so they are defined o
 - **A new skill is invisible until `./setup` runs.** Run it before you push.
 - **Imported skills are vendored.** No live dependency on an external repo without an
   in-tree copy (or `vendor/` snapshot) and `metadata.upstream` in the frontmatter.
-- **Public skill repos are exports.** The dbmap skill (with its auto-off
-  toggle; the auto-on command was folded into `/dbmap`'s final step in 2.45.0)
-  is canonical here; `scripts/export-dbmap.sh` pushes it to
-  ariadoss/dbmap before a release (and owns only its `<name>.md` paths plus
-  the retired `dbmap-auto-on.md` it scrubs;
+- **Public skill repos are exports.** The dbmap skill (and its auto-update
+  toggles) is canonical here; `scripts/export-dbmap.sh` pushes it to
+  ariadoss/dbmap before a release (and owns only its three `<name>.md` paths;
   the rest of that repo is edited there via PR), exactly as
   `scripts/export-humanize.sh` does for `/humanize` and `scripts/export-eval.sh`
   for `/eval`. `scripts/sync-gstack.sh` remains

@@ -1,21 +1,20 @@
 #!/usr/bin/env bats
 # Tests for scripts/export-dbmap.sh — regenerating the public
-# ariadoss/dbmap repo's two slash-command markdown files (dbmap + auto-off).
+# ariadoss/dbmap repo's three slash-command markdown files (dbmap + toggles).
 #
 # The invariant worth protecting is that the export is a PURE COPY of
 # skills/<name>/SKILL.md as <name>.md. A rewriting export is the thing that
 # drifts: a sed that half-applies yields a file that no longer matches the
 # skill the plugin actually ships. So the central test here compares every
 # exported file byte-for-byte against its source. The second invariant: the
-# export owns only its paths (plus the retired dbmap-auto-on.md it scrubs),
-# so a real git checkout of the public repo survives a re-export with .git,
-# README, LICENSE, and code intact.
+# export owns only its three paths, so a real git checkout of the public repo
+# survives a re-export with .git, README, LICENSE, and code intact.
 
 setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
   EXPORT="$REPO_ROOT/scripts/export-dbmap.sh"
   OUT="$BATS_TEST_TMPDIR/out"
-  SKILLS=(dbmap dbmap-auto-off)
+  SKILLS=(dbmap dbmap-auto-on dbmap-auto-off)
 }
 
 # fake_repo <dir> — a minimal source repo holding just what the export reads.
@@ -32,7 +31,7 @@ fake_repo() {
   done
 }
 
-@test "exports the skills as <name>.md at the repo root" {
+@test "exports the three skills as <name>.md at the repo root" {
   run bash "$EXPORT" "$OUT"
   [ "$status" -eq 0 ]
   for n in "${SKILLS[@]}"; do
@@ -68,10 +67,8 @@ fake_repo() {
   echo "standalone readme" > "$OUT/README.md"
   cp "$REPO_ROOT/LICENSE" "$OUT/LICENSE"
   echo "local note" > "$OUT/NOTES.local.md"
-  # A path it DOES own SHOULD be replaced, and a retired command's file
-  # SHOULD be scrubbed, so assert both.
+  # A path it DOES own (one of the three) SHOULD be replaced, so assert both.
   echo stale > "$OUT/dbmap.md"
-  echo folded > "$OUT/dbmap-auto-on.md"
   bash "$EXPORT" "$OUT" >/dev/null
   [ "$(cat "$OUT/.git/HEAD")" = "marker" ] || { echo ".git was clobbered"; return 1; }
   [ "$(cat "$OUT/README.md")" = "standalone readme" ] || { echo "README was clobbered"; return 1; }
@@ -82,22 +79,15 @@ fake_repo() {
 
 @test "fails loudly when a skill is missing rather than exporting a partial repo" {
   fake="$BATS_TEST_TMPDIR/fakerepo"
-  mkdir -p "$fake/scripts/lib" "$fake/skills/dbmap" "$fake/skills/dbmap"
+  mkdir -p "$fake/scripts/lib" "$fake/skills/dbmap" "$fake/skills/dbmap-auto-on"
   cp "$EXPORT" "$fake/scripts/"
   cp "$REPO_ROOT/scripts/lib/export-lib.sh" "$fake/scripts/lib/"
   printf 'divergent content\n' > "$fake/skills/dbmap/SKILL.md"
+  printf 'divergent content\n' > "$fake/skills/dbmap-auto-on/SKILL.md"
   run bash "$fake/scripts/export-dbmap.sh" "$BATS_TEST_TMPDIR/out2"
   [ "$status" -ne 0 ] || { echo "exported despite a missing skill"; return 1; }
   [[ "$output" == *"no skill at"* ]] || false
-  [ ! -e "$BATS_TEST_TMPDIR/out2/dbmap.md" ] || { echo "partial export was written"; return 1; }
-}
-
-@test "scrubs the retired dbmap-auto-on.md from an existing export" {
-  bash "$EXPORT" "$OUT" >/dev/null
-  echo folded > "$OUT/dbmap-auto-on.md"
-  bash "$EXPORT" "$OUT" >/dev/null
-  [ ! -e "$OUT/dbmap-auto-on.md" ] || { echo "retired command file survived"; return 1; }
-  [ -f "$OUT/dbmap.md" ] || false
+  [ ! -e "$BATS_TEST_TMPDIR/out2/dbmap-auto-on.md" ] || { echo "partial export was written"; return 1; }
 }
 
 @test "refuses an output directory that overlaps the source tree" {

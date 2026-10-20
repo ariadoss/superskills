@@ -108,25 +108,3 @@ X issues found across Y tables. Z are foreign key indexes (high priority), W are
 If no issues are found, write: `## Index Analysis — No issues found. All foreign keys are indexed and no missing indexes detected.`
 
 Ask the user: "Want me to generate and apply these index migrations now?"
-
-### 6. Offer automatic updates (default on)
-DBMAP.md is only useful while it tracks the live schema, so ending a run with
-a static map is half a job. After DBMAP.md is written (and the index analysis
-appended), check for `.dbmap-auto` in the project root:
-
-- **If `.dbmap-auto` exists:** auto-update is already enabled — remind the
-  user DBMAP.md will regenerate after each migration command runs, and stop.
-- **If it doesn't:** offer to enable it now (the default; require an explicit
-  no to skip). To enable:
-  1. Run `"${REPOMAP_HOME:-$HOME/claude-dbmap-command}/scripts/run.sh" dbmap --list`
-     and have the user confirm one of the detected connections, or ask for a
-     DSN directly.
-  2. Write the confirmed DSN to `.dbmap-auto` (it contains credentials).
-  3. Ensure `.dbmap-auto` is gitignored:
-     `touch .gitignore && grep -qxF '.dbmap-auto' .gitignore || printf '\n.dbmap-auto\n' >> .gitignore`
-
-  The hook fires PostToolUse on Bash and matches common migration commands
-  (Rails `db:migrate`, Django `manage.py migrate`, Alembic, Prisma, Knex,
-  Sequelize, Goose, Dbmate, Flyway, Liquibase, TypeORM, Drizzle). Editing a
-  migration file triggers nothing — the schema hasn't changed until a
-  migration actually runs. To disable later: `/dbmap-auto-off`.
