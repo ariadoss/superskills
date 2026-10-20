@@ -182,6 +182,7 @@ selection across every supported tool.
 | Command | Description |
 |---------|-------------|
 | `/dbmap` | Generate database schema map (DBMAP.md); its final step offers to enable automatic regeneration after migration commands (writes `.dbmap-auto`) |
+| `/dbmap-auto-on` | Auto-regenerate DBMAP.md after migration commands run |
 | `/dbmap-auto-off` | Disable automatic database schema map updates |
 
 ### Superskills itself
