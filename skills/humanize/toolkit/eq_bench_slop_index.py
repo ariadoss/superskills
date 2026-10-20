@@ -70,8 +70,9 @@ def tokenize(text: str) -> list[str]:
         return re.findall(r"\b\w+\b", lower)
 
 
-def slop_index_new(text: str) -> dict:
-    """Replication of core.metrics.calculate_slop_index_new (current EQ-bench formula)."""
+def slop_index_new(text: str, exempt: set | None = None) -> dict:
+    """EQ-bench formula, optionally omitting reviewed vocabulary from hits."""
+    exempt = exempt or set()
     words = load_slop_set(SLOP_UNIGRAMS)
     bigrams = load_slop_set(SLOP_BIGRAMS)
     trigrams = load_slop_set(SLOP_TRIGRAMS)
@@ -87,18 +88,18 @@ def slop_index_new(text: str) -> dict:
             "total_words": 0,
         }
 
-    word_hits = sum(1 for t in tokens if t in words)
+    word_hits = sum(1 for t in tokens if t in words and t not in exempt)
 
     bigram_hits = 0
     if bigrams and len(tokens) >= 2:
         for a, b in zip(tokens, tokens[1:]):
-            if f"{a} {b}" in bigrams:
+            if f"{a} {b}" in bigrams and not ({a, b} & exempt):
                 bigram_hits += 1
 
     trigram_hits = 0
     if trigrams and len(tokens) >= 3:
         for a, b, c in zip(tokens, tokens[1:], tokens[2:]):
-            if f"{a} {b} {c}" in trigrams:
+            if f"{a} {b} {c}" in trigrams and not ({a, b, c} & exempt):
                 trigram_hits += 1
 
     score = word_hits + 2 * bigram_hits + 8 * trigram_hits
@@ -111,7 +112,7 @@ def slop_index_new(text: str) -> dict:
     }
 
 
-def slop_index_legacy(text: str, n_slop_words: int = 600) -> float:
+def slop_index_legacy(text: str, n_slop_words: int = 600, exempt: set | None = None) -> float:
     """Replication of core.metrics.calculate_slop_index (legacy formula)."""
     if not SLOP_PHRASE_PROBS.exists():
         return 0.0
@@ -132,6 +133,8 @@ def slop_index_legacy(text: str, n_slop_words: int = 600) -> float:
         return 0.0
     score = 0.0
     for word, weight in selected.items():
+        if exempt and set(word.split()) & exempt:
+            continue
         score += weight * len(re.findall(r"\b" + re.escape(word) + r"\b", text))
     return round(score / total_words * 1000, 4)
 

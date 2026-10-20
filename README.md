@@ -1,4 +1,4 @@
-# Superskills `v2.43.0`
+# Superskills `v2.43.1`
 
 Curated AI skills pack for Claude Code, ZCode, OpenCode, Codex CLI, DSH (DeepSeek Harness), Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Integrates [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team; an opt-in pack) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
@@ -343,6 +343,11 @@ context percentage for the `/handoff` hook. Tested in `tests/statusline.bats`
 and `tests/install-statusline.bats`.
 
 ### Publishing the standalone `humanize` repo
+
+The prose pre-push check reads `.humanize-exempt.txt` from your Git repository
+root as well as the package vocabulary. List reviewed product names or literal
+domain terms one per line. These exemptions affect both reported word findings
+and the numeric score; other prose findings still block a push.
 
 `/humanize` is maintained here and published as a separate repo
 ([`ariadoss/humanize`](https://github.com/ariadoss/humanize)) by export:

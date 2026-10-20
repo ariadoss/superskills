@@ -50,6 +50,38 @@ run_hook() {  # run_hook <cwd> — feeds a git-push JSON payload on stdin
   [ -z "$(echo "$output" | jq -r '.decision // empty')" ]
 }
 
+@test "project vocabulary exemptions apply from a nested working directory" {
+  commit_md README.md "The Incantation Lab now shows its opening time in your time zone."
+  commit_md .humanize-exempt.txt "incantation"
+  mkdir -p "$WORK/nested folder"
+  run run_hook "$WORK/nested folder"
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+}
+
+@test "project vocabulary exemptions preserve unrelated prose findings" {
+  commit_md README.md "The Incantation Lab opens at noon. He took a deep breath and began."
+  commit_md .humanize-exempt.txt "incantation"
+  run run_hook "$WORK"
+  [ "$status" -eq 0 ]
+  echo "$output" | jq -e '.decision == "block"' >/dev/null
+}
+
+@test "product vocabulary remains checked in projects without an exemption" {
+  commit_md README.md "The Incantation Lab now shows its opening time in your time zone."
+  run run_hook "$WORK"
+  [ "$status" -eq 0 ]
+  echo "$output" | jq -e '.decision == "block"' >/dev/null
+}
+
+@test "project vocabulary supplements the existing package vocabulary" {
+  commit_md README.md "The Incantation Lab uses tapestry for this example."
+  commit_md .humanize-exempt.txt "incantation"
+  run run_hook "$WORK"
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+}
+
 @test "allows a push with no markdown changes" {
   commit_md src/app.py "print('hi')"
   run run_hook "$WORK"

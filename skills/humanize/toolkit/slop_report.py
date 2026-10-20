@@ -35,7 +35,7 @@ from pathlib import Path
 sys.dont_write_bytecode = True
 if str(Path(__file__).resolve().parent) not in sys.path:
     sys.path.insert(0, str(Path(__file__).resolve().parent))
-from eq_bench_slop_index import SLOP_BIGRAMS, SLOP_TRIGRAMS, SLOP_UNIGRAMS, load_slop_set
+from eq_bench_slop_index import SLOP_BIGRAMS, SLOP_TRIGRAMS, SLOP_UNIGRAMS, load_slop_set, slop_index_new, slop_index_legacy
 from textio import read_prose
 
 HERE = Path(__file__).resolve().parent
@@ -202,6 +202,13 @@ def main():
         r = subprocess.run([sys.executable, str(HERE / "eq_bench_slop_index.py"), str(path), "--legacy"],
                            capture_output=True, text=True, timeout=60)
         d = json.loads(r.stdout)
+        # Keep the standalone scorer's default metrics unchanged. In a reviewed
+        # report, the headline gate and the word findings must use the same
+        # exemptions. Keep tokens in place so phrase adjacency and denominators
+        # still describe the original prose.
+        if _EXEMPT:
+            d.update(slop_index_new(raw, exempt=_EXEMPT))
+            d['legacy_slop_index'] = slop_index_legacy(raw, exempt=_EXEMPT)
         print(f"slop_index = {d['slop_index']:.1f}  [word {d['word_hits']}, bigram {d['bigram_hits']}, trigram {d['trigram_hits']}]"
               f"   |   legacy_slop_index = {d.get('legacy_slop_index', float('nan')):.1f}  (phrase-probability formula)")
         print(f"complexity_index = {d.get('complexity_index', float('nan')):.1f}  (FK grade {d.get('flesch_kincaid_grade', float('nan')):.1f}; vocab-maxxing if high)")
