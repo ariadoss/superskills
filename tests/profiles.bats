@@ -222,6 +222,13 @@ setup() {
   [ "$SS_PACKS" = "coding" ] || false
 }
 
+@test "packs_category_of resolves by string equality, never glob-matching" {
+  run packs_category_of '*'
+  [ "$status" -eq 1 ] || false
+  run packs_category_of 'defen*'
+  [ "$status" -eq 1 ] || false
+}
+
 @test "packs_validate rejects unknown, empty and duplicate-empty lists before any mutation" {
   run packs_validate "coding,bogus"
   [ "$status" -eq 1 ] || false
