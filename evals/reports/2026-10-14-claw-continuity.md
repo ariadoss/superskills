@@ -195,3 +195,25 @@ untracked, to a temp worktree), change = this tree with the dbmap step-6
 folding re-applied; 3 runs/arm, same day, sonnet judge, ≤$6/arm. Addendum
 3's verdict stands as recorded; this run supersedes nothing until its own
 gates speak.
+
+## Addendum 5 — dbmap-autooffer re-test verdict: ADOPTED (2026-10-20)
+
+Registered as Addendum 4 (prompt suppressor removed) before any re-run.
+Baseline = main 2.48.0; change = step-6 folding re-applied; 3 runs/arm,
+same day, sonnet judge, no judge failures. Spend $0.80 + $0.80 = $1.60
+(program lifetime $8.69).
+
+| Grader | Baseline | Change | Δ |
+|---|---|---|---|
+| offers-auto-update (primary) | 0/3 | **3/3** | **+1.000** |
+| map-quality (companion) | 3/3 | 3/3 | 0 |
+| no-silent-enable (companion) | 3/3 | 3/3 | 0 |
+
+Gates: primary Δ +1.000 ≥ +0.15 ✓; companions no regression ✓;
+no-silent-enable 3/3 both arms ✓ (the offer is a question; no silent
+credential writes in any run). **ADOPTED** — the full folding package lands:
+dbmap gains step 6, dbmap-auto-on is deleted, auto-off cross-references the
+folding, export-dbmap owns two paths and scrubs the retired dbmap-auto-on.md,
+docs and counts updated. Addendum 3's null stands as recorded history: the
+instrument was rigged by its own prompt, which is why both the null AND this
+re-test are in the record.

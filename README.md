@@ -2,7 +2,7 @@
 
 Curated AI skills pack for Claude Code, ZCode, OpenCode, Codex CLI, DSH (DeepSeek Harness), Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Integrates [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team; an opt-in pack) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
-42 core skills + 54 gstack skills + 174 marketing skills + 36 design skills, selected by [packs](#packs-choose-what-gets-installed). gstack is vendored in this repo so its skills are available even if the upstream repo is removed.
+41 core skills + 54 gstack skills + 174 marketing skills + 36 design skills, selected by [packs](#packs-choose-what-gets-installed). gstack is vendored in this repo so its skills are available even if the upstream repo is removed.
 
 > **[Full command reference →](COMMANDS.md)**: all skills with descriptions and overlap notes
 > **[10x+ Engineering Workflow →](DEVELOPER_WORKFLOW.md)**: run 10+ parallel AI agents, each with a full quality pipeline ([full write-up](https://hyperion360.com/blog/parallel-ai-agents-engineering-workflow/))
@@ -115,7 +115,7 @@ The plugin `version` is driven by the repo's `VERSION` file via
 watch. The `./setup` install above remains the way to get a chosen pack
 selection across every supported tool.
 
-## Skills (42)
+## Skills (41)
 
 ### Dev Methodology (from [superpowers](https://github.com/obra/superpowers))
 | Command | Description |
@@ -182,7 +182,6 @@ selection across every supported tool.
 | Command | Description |
 |---------|-------------|
 | `/dbmap` | Generate database schema map (DBMAP.md); its final step offers to enable automatic regeneration after migration commands (writes `.dbmap-auto`) |
-| `/dbmap-auto-on` | Auto-regenerate DBMAP.md after migration commands run |
 | `/dbmap-auto-off` | Disable automatic database schema map updates |
 
 ### Superskills itself
@@ -430,7 +429,7 @@ From [kostja94/marketing-skills](https://github.com/kostja94/marketing-skills), 
 ## Credits
 
 Written by [Danilo Stern-Sapad](https://danilosapad.com):
-- [`/dbmap`](https://github.com/ariadoss/dbmap) and its auto-on/auto-off toggles (also a standalone repo). `/repomap` was removed in 2.39.0: five eval-gated experiments (2026-10) measured no agent-context utility for static repo maps against tool-using agents; the tool itself lives on in the standalone repo.
+- [`/dbmap`](https://github.com/ariadoss/dbmap) and its auto-off toggle (also a standalone repo; `/dbmap-auto-on` was folded into `/dbmap`'s final step in 2.49.0). `/repomap` was removed in 2.39.0: five eval-gated experiments (2026-10) measured no agent-context utility for static repo maps against tool-using agents; the tool itself lives on in the standalone repo.
 - [`/humanize`](https://github.com/ariadoss/humanize) (also a standalone repo)
 - `/qa-full`, `/daily-qa`, `/clean-code`, `/test-coverage`, `/a11y`, `/iac-scan`, `/db-optimize`, `/perf-profile`, `/cache-strategy`, `/superskills-doctor`, `/superskills-upgrade`
 - the statusline (`scripts/statusline.sh`)

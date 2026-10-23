@@ -30,7 +30,7 @@
 # across the maintainer's logged sessions; a future desktop or mobile pack
 # lands beside them). The coding pack also claims a gstack slice by name
 # (closure note below).
-PACK_CODING_REPO="write-plan worktrees tdd debug verify eval quota-resilience handoff test-coverage qa-full finish-branch daily-qa superskills-doctor superskills-upgrade clean-code basic-review humanize cli-for-agent executing-plans subagent-driven-development diff-walkthrough defense iac-scan pentest fuzz dbmap dbmap-auto-on dbmap-auto-off db-optimize cache-strategy web-perf perf-profile a11y playwright"
+PACK_CODING_REPO="write-plan worktrees tdd debug verify eval quota-resilience handoff test-coverage qa-full finish-branch daily-qa superskills-doctor superskills-upgrade clean-code basic-review humanize cli-for-agent executing-plans subagent-driven-development diff-walkthrough defense iac-scan pentest fuzz dbmap dbmap-auto-off db-optimize cache-strategy web-perf perf-profile a11y playwright"
 PACK_CONTENT="tapestry youtube article kb-advisor content-writer"
 PACK_STARTUP="validate-idea pricing minimalist-review"
 # The gstack slice is the /qa-full closure, not every gstack skill: its four

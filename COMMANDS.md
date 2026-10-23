@@ -564,4 +564,4 @@ Historical: `/repomap` (+ its auto toggles) and `/graphify` were removed in 2.39
 |---------|-------------|
 | `/seo-audit` | Run an SEO audit, technical SEO audit, or site health check |
 | `/seo-strategy` | Plan SEO strategy, prioritize SEO work, and understand the SEO workflow |
-| `/website-structure` | Plan website structure and decide which pages to build |
+| `/website-structure` | Plan website structure and decide which pages to build | `/dbmap-auto-on` was folded into `/dbmap`'s final step in 2.49.0.

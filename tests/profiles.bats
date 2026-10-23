@@ -52,7 +52,7 @@ setup() {
     skill_selected "$name" gstack || false
   done
   skill_selected design-review design
-  [ "$count" -eq 42 ] || false
+  [ "$count" -eq 41 ] || false
   run skill_selected tapestry core
   [ "$status" -eq 1 ] || false
   run skill_selected retro gstack
