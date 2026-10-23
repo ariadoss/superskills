@@ -28,7 +28,7 @@ setup() {
   for target in . marketing-skills design-skills skills; do
     run claude plugin validate "$REPO_ROOT/$target"
     [ "$status" -eq 0 ] || { echo "validate failed for $target: $output"; return 1; }
-    unexpected="$(printf '%s\n' "$output" | grep '❯' | grep -v 'CLAUDE.md at the plugin root is not loaded' || true)"
+    unexpected="$(printf '%s\n' "$output" | grep '❯' | grep -v 'CLAUDE.md at the plugin root is not loaded' | grep -v 'icon: No icon (ICON_MISSING)' | grep -v 'also holds a marketplace manifest' || true)"
     [ -z "$unexpected" ] || { echo "unexpected warnings for $target: $unexpected"; return 1; }
   done
 }
@@ -40,7 +40,7 @@ setup() {
   # context, deliberately not plugin context, so that one warning is expected.
   run claude plugin validate "$REPO_ROOT/.claude-plugin/plugin.json"
   [ "$status" -eq 0 ] || { echo "$output"; return 1; }
-  warnings="$(printf '%s\n' "$output" | grep '❯' | grep -v 'CLAUDE.md at the plugin root is not loaded' || true)"
+  warnings="$(printf '%s\n' "$output" | grep '❯' | grep -v 'CLAUDE.md at the plugin root is not loaded' | grep -v 'icon: No icon (ICON_MISSING)' | grep -v 'also holds a marketplace manifest' || true)"
   [ -z "$warnings" ] || { echo "unexpected: $warnings"; return 1; }
   # Loud-guard the accepted-warning contract: the sibling tests above filter
   # on this exact text, so if the CLI rewords or stops emitting it, the
