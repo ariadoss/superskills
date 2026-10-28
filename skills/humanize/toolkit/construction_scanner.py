@@ -104,6 +104,10 @@ MAGIC_ADVERB_PATTERN = re.compile(
 # ---------------------------------------------------------------------------
 # Pattern 8: Negative parallelism (humanize.md Tell #14 / ai-slop Layer 6)
 # "Not because X, but because Y" / "It's not X, it's Y" / "Not by X, but by Y"
+# Also the sentence-final appositive contrast "X, not Y."
+# ("An open question, not a verdict.") — the AI-verdict tell. The appositive
+# arm requires sentence-final punctuation right after the noun so substantive
+# mid-sentence contrasts ("cell research, not studies of people") stay free.
 # EQ-bench weights this at 25% of slop score. Any instance is a flag.
 # ---------------------------------------------------------------------------
 NEG_PARALLEL_PATTERN = re.compile(
@@ -111,7 +115,8 @@ NEG_PARALLEL_PATTERN = re.compile(
     r"\bnot because\b.{1,100}\bbut because\b"
     r"|\bit'?s not\b.{1,100}\bit'?s\b"
     r"|\bnot by\b.{1,100}\bbut by\b"
-    r"|\bnot to\b.{1,100}\bbut to\b"
+    r"|\bnot to\b.{1,100}\but to\b"
+    r"|,\s*\b(?:not|never)\b\s+(?:a|an|the|his|her|their|our|your|its|this|that|just|merely|simply|about|even|always)?\s*[a-z][a-z-]+\s*[.!?]"
     r")",
     re.IGNORECASE,
 )
