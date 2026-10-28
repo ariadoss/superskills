@@ -1486,3 +1486,61 @@ for phrase in ['Read that again.', 'That is the real win.', 'That distinction ma
         assert editorial_patterns(marker + phrase + marker), (phrase, marker)
 PY
 }
+
+@test "review phrases preserve repeated opening quotes in multiline dialogue and unmatched contractions" {
+  python3 - "$TK" <<'PY'
+import sys
+sys.dont_write_bytecode = True
+sys.path.insert(0, sys.argv[1])
+from slop_report import rhetorical_scaffolding
+
+for opening, closing in [('“', '”'), ('‘', '’')]:
+    text = f'{opening}The guard waited.\n\n{opening}Imagine this: he came back.{closing}\n\nImagine this: the gate is open.'
+    assert [hit[0] for hit in rhetorical_scaffolding(text)] == [5], text
+# An apostrophe inside a contraction cannot become a closing quotation just
+# because a bounded search treats its position as the end of the input.
+for text in ["‘An unfinished quote.\nImagine this: we’re ready.",
+             "'An unfinished quote.\nImagine this: we're ready."]:
+    assert [hit[0] for hit in rhetorical_scaffolding(text)] == [2], text
+PY
+}
+
+@test "review phrases finish on a document full of unmatched opening quotes" {
+  python3 - "$TK" <<'PY'
+import subprocess
+import sys
+
+code = """import sys
+sys.dont_write_bytecode = True
+sys.path.insert(0, sys.argv[1])
+from slop_report import rhetorical_scaffolding, editorial_patterns
+for quote in ['“', '‘']:
+    text = quote * 170000
+    assert not rhetorical_scaffolding(text)
+    assert not editorial_patterns(text)
+"""
+# The old quadratic matcher takes tens of seconds; the repaired scan has a
+# large margin. This deadline prevents a parser regression hanging the suite.
+subprocess.run([sys.executable, '-c', code, sys.argv[1]], check=True, timeout=8)
+PY
+}
+
+@test "editorial contrast whitespace cannot cross paragraph or Markdown block boundaries" {
+  python3 - "$TK" <<'PY'
+import sys
+sys.dont_write_bytecode = True
+sys.path.insert(0, sys.argv[1])
+from slop_report import editorial_patterns
+
+for text in [
+    'This is not\n## Complete\nbut it starts.',
+    'The system is not\n\nready but it starts.',
+    'Not\n- only text but images.',
+    'This\n\nis not storage. It is retrieval.',
+    'Not only text but\n\nalso images.',
+]:
+    assert not editorial_patterns(text), text
+for text in ['Not\nonly text but images.', 'Not only text but\nalso images.']:
+    assert editorial_patterns(text), text
+PY
+}

@@ -26,7 +26,9 @@ def main():
             path.write_text(case['text'] + '\n')
             run = subprocess.run([sys.executable, str(args.toolkit / 'slop_report.py'), str(path)],
                                  capture_output=True, text=True, timeout=30)
-            if run.returncode or 'scorer unavailable' in run.stdout:
+            unavailable = re.search(r'^(?:slop_index: \(scorer unavailable:'
+                                    r'|    \(construction_scanner unavailable:)', run.stdout, re.M)
+            if run.returncode or unavailable:
                 raise RuntimeError(f"{case['id']}: scanner failed: {run.stderr or run.stdout}")
             section = re.search(r'^— ' + re.escape(args.section) + r'[^\n]*\n(?:    [^\n]*\n)*', run.stdout, re.M)
             flagged = bool(section and not section.group(0).splitlines()[0].endswith(': none'))

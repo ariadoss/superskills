@@ -147,7 +147,35 @@ _RHETORICAL_SETUP = re.compile(
     r"|(?:here['’]s|here is)\s+the thing\s*[:.!?—]"
     r"|(?:let['’]s|let us)\s+be honest\s*[:,.!?—]"
     r"|let that sink in\s*[.!?](?=\s|$))", re.I)
-_QUOTED = re.compile(r'''"[^"]*"|“[^”]*”|(?<!\w)'(?:[^']|'(?=\w))*'(?!\w)|‘(?:[^’]|’(?=\w))*’(?!\w)''')
+_QUOTE_RULES = [(re.compile(span), re.compile(closer)) for span, closer in [
+    (r'"[^"]*"', r'"'),
+    (r'“[^”]*”', r'”'),
+    (r"(?<!\w)'(?:[^']|'(?=\w))*'(?!\w)", r"'(?!\w)"),
+    (r"‘(?:[^’]|’(?=\w))*’(?!\w)", r"’(?!\w)"),
+]]
+
+
+def _mask_quotations(text):
+    """Preserve multiline dialogue without rescanning an unclosed suffix."""
+    # A paragraph may repeat its opening quote, so don't forbid openers inside
+    # a span. Bound searches at the last eligible closer instead. Check single
+    # quote closers against the full text so contractions remain apostrophes.
+    limits = [max((m.end() for m in closer.finditer(text)), default=0)
+              for _, closer in _QUOTE_RULES]
+    matches = [rule.search(text, 0, limit) for (rule, _), limit in zip(_QUOTE_RULES, limits)]
+    parts = []
+    cursor = 0
+    while any(match is not None for match in matches):
+        # min is stable: ties retain the original alternation's rule order.
+        match = min((m for m in matches if m is not None), key=lambda m: m.start())
+        parts.extend([text[cursor:match.start()], '\ufffc' + '\n' * match.group().count('\n')])
+        cursor = match.end()
+        for i, pending in enumerate(matches):
+            if pending is not None and pending.start() < cursor:
+                matches[i] = _QUOTE_RULES[i][0].search(text, cursor, limits[i])
+    return ''.join(parts) + text[cursor:]
+
+
 _BLOCK_START = re.compile(r"^ {0,3}(?:#{1,6}(?:\s|$)|[-+*]\s|\d{1,9}[.)]\s|[`~]{3,}|(?:[-*_]\s*){3,}$)")
 
 # Selected shapes from blader/humanizer; provenance and MIT notice in NOTICE.md.
@@ -169,13 +197,16 @@ _EDITORIAL_OPENERS = re.compile(
     r"|as an ai\s+(?:language\s+)?model\b)", re.I)
 # Bound each side to a short clause and never cross a paragraph or intervening
 # sentence; otherwise an unrelated later "but" would manufacture a contrast.
-_CONTRAST_CLAUSE = (r"(?:(?!\n(?:[ \t]*\n|" + _BLOCK_START.pattern[1:] +
-                    r"))[^.!?\ufffc]){1,120}?")
+_CONTRAST_BOUNDARY = r"\n(?:[ \t]*\n|" + _BLOCK_START.pattern[1:] + r")"
+_CONTRAST_CLAUSE = rf"(?:(?!{_CONTRAST_BOUNDARY})[^.!?\ufffc]){{1,120}}?"
+_CONTRAST_SPACE = rf"(?:(?!{_CONTRAST_BOUNDARY})\s)+"
 _EDITORIAL_CONTRAST = re.compile(
-    r"\b(?P<setup>not\s+" + _CONTRAST_CLAUSE + r"\bbut\s+(?:also\s+)?"
-    r"|(?:(?:this|it)\s+(?:is not|isn['’]t)|it['’]s not)\s+" + _CONTRAST_CLAUSE +
+    rf"\b(?P<setup>not{_CONTRAST_SPACE}{_CONTRAST_CLAUSE}\bbut{_CONTRAST_SPACE}"
+    rf"(?:also{_CONTRAST_SPACE})?"
+    rf"|(?:(?:this|it){_CONTRAST_SPACE}(?:is{_CONTRAST_SPACE}not|isn['’]t)"
+    rf"|it['’]s{_CONTRAST_SPACE}not){_CONTRAST_SPACE}{_CONTRAST_CLAUSE}"
     r"[.;][ \t]*(?:\n[ \t]*)?"
-    r"(?:it['’]s|this is|it is)\s+)", re.I | re.M)
+    rf"(?:it['’]s|(?:this|it){_CONTRAST_SPACE}is){_CONTRAST_SPACE})", re.I | re.M)
 
 
 def _review_hits(raw: str, patterns):
@@ -205,7 +236,7 @@ def _review_hits(raw: str, patterns):
         if is_code or quoted_line or in_quote:
             lines[i] = ''
     prose = '\n'.join(lines)
-    prose = _QUOTED.sub(lambda m: '\ufffc' + '\n' * m.group(0).count('\n'), prose)
+    prose = _mask_quotations(prose)
     hits = []
     for pattern in patterns:
         for match in pattern.finditer(prose):
