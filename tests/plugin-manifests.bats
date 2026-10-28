@@ -19,17 +19,14 @@ setup() {
   done
 }
 
-@test "claude plugin validate accepts the marketplace, both plugin dirs and every core skill (only the accepted CLAUDE.md-at-root warning)" {
+@test "claude plugin validate accepts the marketplace and plugin dirs under the established warning policy" {
   command -v claude >/dev/null 2>&1 || skip "claude CLI not installed"
-  # CLAUDE.md at the plugin root is contributor context, deliberately not
-  # plugin context (see the sibling test below); current CLI versions surface
-  # that one warning on the marketplace path too and --strict turns it into
-  # an error. Validate without --strict and accept exactly that warning.
+  # Read structured warnings: human-readable output gives informational notes
+  # the same bullet marker. Keep the existing CLAUDE.md and ICON_MISSING exceptions.
   for target in . marketing-skills design-skills skills; do
-    run claude plugin validate "$REPO_ROOT/$target"
+    run claude plugin validate "$REPO_ROOT/$target" --json
     [ "$status" -eq 0 ] || { echo "validate failed for $target: $output"; return 1; }
-    unexpected="$(printf '%s\n' "$output" | grep '❯' | grep -v 'CLAUDE.md at the plugin root is not loaded' | grep -v 'icon: No icon (ICON_MISSING)' | grep -v 'also holds a marketplace manifest' || true)"
-    [ -z "$unexpected" ] || { echo "unexpected warnings for $target: $unexpected"; return 1; }
+    printf '%s\n' "$output" | python3 "$REPO_ROOT/tests/plugin-validation-report.py" || return 1
   done
 }
 
@@ -38,10 +35,9 @@ setup() {
   # Validating the repo directory only reaches marketplace.json; the manifest
   # file must be validated directly. CLAUDE.md at the root is contributor
   # context, deliberately not plugin context, so that one warning is expected.
-  run claude plugin validate "$REPO_ROOT/.claude-plugin/plugin.json"
+  run claude plugin validate "$REPO_ROOT/.claude-plugin/plugin.json" --json
   [ "$status" -eq 0 ] || { echo "$output"; return 1; }
-  warnings="$(printf '%s\n' "$output" | grep '❯' | grep -v 'CLAUDE.md at the plugin root is not loaded' | grep -v 'icon: No icon (ICON_MISSING)' | grep -v 'also holds a marketplace manifest' || true)"
-  [ -z "$warnings" ] || { echo "unexpected: $warnings"; return 1; }
+  printf '%s\n' "$output" | python3 "$REPO_ROOT/tests/plugin-validation-report.py" || return 1
   # Loud-guard the accepted-warning contract: the sibling tests above filter
   # on this exact text, so if the CLI rewords or stops emitting it, the
   # filters would pass vacuously. Fail here instead, and a human decides
