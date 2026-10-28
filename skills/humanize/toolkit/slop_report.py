@@ -26,6 +26,7 @@ import re
 import statistics
 import subprocess
 import sys
+from bisect import bisect_left, bisect_right
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -147,36 +148,54 @@ _RHETORICAL_SETUP = re.compile(
     r"|(?:here['’]s|here is)\s+the thing\s*[:.!?—]"
     r"|(?:let['’]s|let us)\s+be honest\s*[:,.!?—]"
     r"|let that sink in\s*[.!?](?=\s|$))", re.I)
-_QUOTE_RULES = [(re.compile(span), re.compile(closer)) for span, closer in [
-    (r'"[^"]*"', r'"'),
-    (r'“[^”]*”', r'”'),
-    (r"(?<!\w)'(?:[^']|'(?=\w))*'(?!\w)", r"'(?!\w)"),
-    (r"‘(?:[^’]|’(?=\w))*’(?!\w)", r"’(?!\w)"),
+# Straight apostrophes in decades and common elisions are not speech openers.
+# An immediately closed word ('em') remains a quotation. Leading elisions in
+# single-quoted speech and malformed quotations still need editorial judgment.
+_ELISION = r"(?:[0-9]{2}s|em|tis|twas|cause|til|round|bout)\b(?!')"
+_QUOTE_RULES = [(re.compile(opener, re.I), re.compile(closer)) for opener, closer in [
+    (r'"', r'"'),
+    (r'“', r'”'),
+    (rf"(?<!\w)'(?!{_ELISION})", r"'(?!\w)"),
+    (r'‘', r"’(?!\w)"),
 ]]
+_PARAGRAPH_QUOTE = re.compile(r'(?:\A|\n[ \t]*\n)[ \t]*(")(?=\S)')
 
 
 def _mask_quotations(text):
-    """Preserve multiline dialogue without rescanning an unclosed suffix."""
-    # A paragraph may repeat its opening quote, so don't forbid openers inside
-    # a span. Bound searches at the last eligible closer instead. Check single
-    # quote closers against the full text so contractions remain apostrophes.
-    limits = [max((m.end() for m in closer.finditer(text)), default=0)
-              for _, closer in _QUOTE_RULES]
-    matches = [rule.search(text, 0, limit) for (rule, _), limit in zip(_QUOTE_RULES, limits)]
+    """Mask complete spans with bounded searches, including repeated openers."""
+    repeated = {match.start(1) for match in _PARAGRAPH_QUOTE.finditer(text)}
+    positions = []
+    for i, (opener, closer) in enumerate(_QUOTE_RULES):
+        opens = [match.start() for match in opener.finditer(text)]
+        closes = [match.start() for match in closer.finditer(text)
+                  if i != 0 or match.start() not in repeated]
+        positions.append((opens, closes))
+
+    def next_span(rule, cursor):
+        opens, closes = positions[rule]
+        opening = bisect_left(opens, cursor)
+        if opening == len(opens):
+            return None
+        start = opens[opening]
+        closing = bisect_right(closes, start)
+        return (start, closes[closing] + 1) if closing < len(closes) else None
+
+    matches = [next_span(i, 0) for i in range(len(positions))]
     parts = []
     cursor = 0
     while any(match is not None for match in matches):
-        # min is stable: ties retain the original alternation's rule order.
-        match = min((m for m in matches if m is not None), key=lambda m: m.start())
-        parts.extend([text[cursor:match.start()], '\ufffc' + '\n' * match.group().count('\n')])
-        cursor = match.end()
+        # Stable ties retain the original alternation's rule order. A quote
+        # opened before another quote style owns that entire enclosing span.
+        start, end = min((m for m in matches if m is not None), key=lambda m: m[0])
+        parts.extend([text[cursor:start], '\ufffc' + '\n' * text[start:end].count('\n')])
+        cursor = end
         for i, pending in enumerate(matches):
-            if pending is not None and pending.start() < cursor:
-                matches[i] = _QUOTE_RULES[i][0].search(text, cursor, limits[i])
+            if pending is not None and pending[0] < cursor:
+                matches[i] = next_span(i, cursor)
     return ''.join(parts) + text[cursor:]
 
 
-_BLOCK_START = re.compile(r"^ {0,3}(?:#{1,6}(?:\s|$)|[-+*]\s|\d{1,9}[.)]\s|[`~]{3,}|(?:[-*_]\s*){3,}$)")
+_BLOCK_START = re.compile(r"^ {0,3}(?:#{1,6}(?:\s|$)|[-+*]\s|\d{1,9}[.)]\s|[`~]{3,}|(?:[-*_]\s*){3,}$|[=-]+[ \t]*$|\|)")
 
 # Selected shapes from blader/humanizer; provenance and MIT notice in NOTICE.md.
 # A match needs context: a real comparison, letter closing, or narrator's aside
@@ -198,7 +217,7 @@ _EDITORIAL_OPENERS = re.compile(
 # Bound each side to a short clause and never cross a paragraph or intervening
 # sentence; otherwise an unrelated later "but" would manufacture a contrast.
 _CONTRAST_BOUNDARY = r"\n(?:[ \t]*\n|" + _BLOCK_START.pattern[1:] + r")"
-_CONTRAST_CLAUSE = rf"(?:(?!{_CONTRAST_BOUNDARY})[^.!?\ufffc]){{1,120}}?"
+_CONTRAST_CLAUSE = rf"(?:(?!{_CONTRAST_BOUNDARY})[^.!?\ufffc|]){{1,120}}?"
 _CONTRAST_SPACE = rf"(?:(?!{_CONTRAST_BOUNDARY})\s)+"
 _EDITORIAL_CONTRAST = re.compile(
     rf"\b(?P<setup>not{_CONTRAST_SPACE}{_CONTRAST_CLAUSE}\bbut{_CONTRAST_SPACE}"

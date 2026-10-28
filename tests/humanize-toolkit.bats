@@ -1544,3 +1544,65 @@ for text in ['Not\nonly text but images.', 'Not only text but\nalso images.']:
     assert editorial_patterns(text), text
 PY
 }
+
+@test "review phrases preserve straight multi-paragraph and separately closed dialogue" {
+  python3 - "$TK" <<'PY'
+import sys
+sys.dont_write_bytecode = True
+sys.path.insert(0, sys.argv[1])
+from slop_report import rhetorical_scaffolding, editorial_patterns, _mask_quotations
+failures=[]
+for text, expected in [
+    ('"The guard waited.\n\n"Imagine this: he came back."\n\nImagine this: the gate is open.', [5]),
+    ('"The guard waited.\n\n  "Imagine this: he came back."\n\nImagine this: the gate is open.', [5]),
+    ('"A guard."\n\n"Imagine this: he came back."\n\nImagine this: the gate is open.', [5]),
+    ('"A guard." "Imagine this: he came back."\n\nImagine this: the gate is open.', [3]),
+]:
+    got=[hit[0] for hit in rhetorical_scaffolding(text)]
+    if got != expected: failures.append((text,expected,got))
+text = '"No closing quotation.\n\n"Imagine this: the gate is open.'
+assert _mask_quotations(text) == text
+
+assert not failures, failures
+PY
+}
+
+@test "review phrases do not treat decades and common leading elisions as quotation openers" {
+  python3 - "$TK" <<'PY'
+import sys
+sys.dont_write_bytecode = True
+sys.path.insert(0, sys.argv[1])
+from slop_report import rhetorical_scaffolding, editorial_patterns, _mask_quotations
+failures=[]
+for elision in ["'90s", "'em", "'tis", "'cause"]:
+    text=f"We remember {elision}. Imagine this: every gate opens.\n\nThe workers' union called."
+    got=[hit[0] for hit in rhetorical_scaffolding(text)]
+    if got != [1]: failures.append((text,[1],got))
+for text in ["'Imagine this: the gate opens,' she said.", "He called it 'em'. Imagine this: every gate opens."]:
+    expected=[] if text.startswith("'Imagine") else [1]
+    got=[hit[0] for hit in rhetorical_scaffolding(text)]
+    if got != expected: failures.append((text,expected,got))
+
+assert not failures, failures
+PY
+}
+
+@test "editorial contrasts stop at setext headings and pipe-table boundaries" {
+  python3 - "$TK" <<'PY'
+import sys
+sys.dont_write_bytecode = True
+sys.path.insert(0, sys.argv[1])
+from slop_report import rhetorical_scaffolding, editorial_patterns, _mask_quotations
+failures=[]
+for text in ['Not required\n============\nBut optional flags still work.',
+             'Not required\n--\nBut optional flags still work.',
+             '| Not required | Mode |\n| --- | --- |\n| But optional flags | off |',
+             'Not required | Mode\n--- | ---\nBut optional flags | off']:
+    got=editorial_patterns(text)
+    if got: failures.append((text,[],got))
+for text in ['Not only text but images.', 'Not\nonly text but images.']:
+    if not editorial_patterns(text): failures.append((text,'finding',[]))
+
+assert not failures, failures
+PY
+}
