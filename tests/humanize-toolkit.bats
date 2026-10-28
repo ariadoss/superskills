@@ -77,6 +77,150 @@ setup() {
   [[ "$output" == *"almost imperceptible"* ]] || false
 }
 
+@test "rhetorical scaffolding reports scene openers, announced questions and filler" {
+  cat > "$SAMPLE" <<'COPY'
+Imagine this: your report is finished.
+
+The practical test: can the reader repeat the calculation?
+
+Here's the thing: we already collected the data.
+COPY
+  run python3 "$TK/slop_report.py" "$SAMPLE"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"RHETORICAL SCAFFOLDING (review, not authorship): 3"* ]] || false
+  [[ "$output" == *"L1:"* && "$output" == *"L3:"* && "$output" == *"L5:"* ]] || false
+}
+
+@test "rhetorical checks preserve literal language, technical scenarios and direct questions" {
+  cat > "$SAMPLE" <<'COPY'
+Imagine two requests arriving at the same time.
+
+I can't imagine this working without a backup.
+
+The practical test starts at nine.
+
+Here's the thing I ordered.
+
+Let's be honest with the customer about the delay.
+
+Can both requests safely update the same record?
+COPY
+  run python3 "$TK/slop_report.py" "$SAMPLE"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"RHETORICAL SCAFFOLDING (review, not authorship): none"* ]] || false
+}
+
+@test "rhetorical checks ignore quoted words, literals and code but keep line numbers" {
+  cat > "$SAMPLE" <<'COPY'
+"Imagine this: a new report," said Jo.
+
+> Here's the thing: keep the receipt.
+
+```text
+The practical test: can it restart?
+```
+
+    Imagine this: a new report.
+
+<!--
+Imagine this: a new report.
+-->
+
+The string is `Here's the thing: a new report`.
+
+Read [the guide](https://example.org "Imagine this: a new report").
+
+Imagine this: a new report.
+COPY
+  run python3 "$TK/slop_report.py" "$SAMPLE"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"RHETORICAL SCAFFOLDING (review, not authorship): 1"* ]] || false
+  [[ "$output" == *"L19: [Imagine this:]"* ]] || false
+}
+
+@test "rhetorical checks handle emphasis, list items, curly apostrophes and soft wraps" {
+  cat > "$SAMPLE" <<'COPY'
+**Imagine this:** your report is ready.
+
+- Here’s the thing: the data already exists.
+
+The practical test:
+Can the reader reproduce the result?
+COPY
+  run python3 "$TK/slop_report.py" "$SAMPLE"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"RHETORICAL SCAFFOLDING (review, not authorship): 3"* ]] || false
+  [[ "$output" == *"L5: [The practical test:"* ]] || false
+}
+
+@test "a wrapped phrase mid-sentence is not a rhetorical opener" {
+  printf 'The engineer could not\nimagine this: two workers charging the same card.\n' > "$SAMPLE"
+  run python3 "$TK/slop_report.py" "$SAMPLE"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"RHETORICAL SCAFFOLDING (review, not authorship): none"* ]] || false
+}
+
+@test "construction review is read-only and does not change the lexical score" {
+  printf 'Imagine this: your report is ready.\n' > "$SAMPLE"
+  cp "$SAMPLE" "$BATS_TEST_TMPDIR/original.md"
+  run python3 "$TK/slop_report.py" "$SAMPLE"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"RHETORICAL SCAFFOLDING (review, not authorship): 1"* ]] || false
+  [[ "$output" == *"slop_index = 0.0  [word 0, bigram 0, trigram 0]"* ]] || false
+  cmp "$SAMPLE" "$BATS_TEST_TMPDIR/original.md"
+}
+
+@test "rhetorical checks accept literal-only and empty files without a final newline" {
+  for content in '`Imagine this: a report`' '<!-- Imagine this: a report -->' ''; do
+    printf '%s' "$content" > "$SAMPLE"
+    run python3 "$TK/slop_report.py" "$SAMPLE"
+    [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+    [[ "$output" == *"RHETORICAL SCAFFOLDING (review, not authorship): none"* ]] || false
+  done
+}
+
+@test "rhetorical checks protect wrapped quotations and contractions in dialogue" {
+  cat > "$SAMPLE" <<'COPY'
+Jo wrote, "The report is ready.
+Imagine this: every invoice is paid."
+
+'Here's the thing. Imagine this: a report,' she said.
+
+‘Here’s the thing. Imagine this: a report,’ she said.
+
+Jo wrote, “The report is ready.
+The practical test: can I open it?”
+
+Imagine this: the next report is ready.
+COPY
+  run python3 "$TK/slop_report.py" "$SAMPLE"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"RHETORICAL SCAFFOLDING (review, not authorship): 1"* ]] || false
+  [[ "$output" == *"L11: [Imagine this:]"* ]] || false
+}
+
+@test "rhetorical checks protect lazy blockquotes but release following paragraphs and lists" {
+  cat > "$SAMPLE" <<'COPY'
+> First the customer writes.
+Then she adds. Imagine this: every invoice is paid.
+
+Imagine this: your own report is ready.
+
+> The customer finished.
+- Here's the thing: the next report is late.
+
+> Another quote.
+>
+Picture this: the invoice is missing.
+COPY
+  run python3 "$TK/slop_report.py" "$SAMPLE"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"RHETORICAL SCAFFOLDING (review, not authorship): 3"* ]] || false
+  [[ "$output" == *"L4: [Imagine this:]"* ]] || false
+  [[ "$output" == *"L7: [Here's the thing:]"* ]] || false
+  [[ "$output" == *"L11: [Picture this:]"* ]] || false
+}
+
 @test "the legacy phrase-probability index is live, not a silent zero" {
   # Guards the packaging trap: drop eq_bench_slop_phrase_prob_adjustments.json and
   # this number reads 0.0 with no error, which would look like clean prose.
@@ -1178,4 +1322,167 @@ TSX
     run uf classify "$path"
     [ "$output" = "none" ] || { echo "$path -> $output"; return 1; }
   done
+}
+
+@test "editorial patterns: stock openers closers contrasts and chat wrappers are review signals" {
+  python3 - "$TK" <<'PY'
+import sys
+sys.dont_write_bytecode = True
+sys.path.insert(0, sys.argv[1])
+from slop_report import editorial_patterns
+examples = [
+    "Let's dive in. The file is ready.",
+    "Let's break this down: the file is ready.",
+    "Here's what you need to know: the file is ready.",
+    "Without further ado, the file is ready.",
+    "The thing is: the file is ready.",
+    "Real talk: the file is ready.",
+    "Honestly? The file is ready.",
+    "The file is ready. Read that again.",
+    "That is the real win.",
+    "That's why it matters.",
+    "That distinction matters.",
+    "It is not just storage, but a searchable archive.",
+    "The archive holds not only receipts but also attachments.",
+    "I wanted not a pardon but an answer.",
+    "This isn't about storage. It's about finding receipts.",
+    "It's not filing. It's finding.",
+    "It is not storage; it is retrieval.",
+    "Great question! The file is ready.",
+    "Certainly! The file is ready.",
+    "I hope this helps!",
+    "Would you like me to expand on this?",
+    "Want me to continue?",
+    "Should I continue?",
+    "As an AI language model, I cannot inspect the file.",
+]
+for text in examples:
+    assert editorial_patterns(text), text
+PY
+}
+
+@test "editorial patterns: near misses and useful ordinary language are not blanket banned" {
+  python3 - "$TK" <<'PY'
+import sys
+sys.dont_write_bytecode = True
+sys.path.insert(0, sys.argv[1])
+from slop_report import editorial_patterns
+examples = [
+    "Imagine two workers reading the queue.",
+    "I answered honestly and put the letter away.",
+    "Read the message again if the code is missing.",
+    "The backup is not complete.",
+    "The backup is complete, but the index is missing.",
+    "As of 2026, the archive holds 128 files.",
+    "The cause of the missing attachment is not known.",
+    "The service includes invoices, receipts, and attachments.",
+    "She came. She saw. She conquered.",
+    "Here is a copper key.",
+    "I hope this helps us find the missing key.",
+    "The thing is missing from the drawer.",
+    "The expression without further ado appears in the essay.",
+]
+for text in examples:
+    assert not editorial_patterns(text), text
+PY
+}
+
+@test "editorial patterns: quoted words Markdown literals and source line numbers survive" {
+  python3 - "$TK" <<'PY'
+import sys
+sys.dont_write_bytecode = True
+sys.path.insert(0, sys.argv[1])
+from slop_report import editorial_patterns
+text = '''"Great question!\nI hope this helps!"
+
+'Let's break this down: I kept the ticket.'
+
+> Read that again.
+Certainly! I kept the ticket.
+
+```text
+The thing is: keep the ticket.
+```
+
+`Would you like me to continue?`
+<!-- Great question! -->
+[link](https://example.test/Great-question)
+
+Great question! The gate opens at six.
+'''
+hits = editorial_patterns(text)
+assert [(line, phrase) for line, phrase, _ in hits] == [(17, 'Great question!')], hits
+PY
+}
+
+@test "editorial patterns: sentence paragraph and list boundaries include soft wraps" {
+  python3 - "$TK" <<'PY'
+import sys
+sys.dont_write_bytecode = True
+sys.path.insert(0, sys.argv[1])
+from slop_report import editorial_patterns
+text = "A plain sentence. **Great question!**\n\n- Here’s what you need\nto know: the gate opens.\n\nThis isn’t about speed.\nIt’s about trust."
+hits = editorial_patterns(text)
+assert [h[0] for h in hits] == [1, 3, 6], hits
+assert not editorial_patterns('I used the phrase\ngreat question! when I wrote to her.')
+assert not editorial_patterns('This is not about speed.\n\nIt is about trust.')
+assert not editorial_patterns('The backup is not complete. It failed, but a copy remains.')
+assert not editorial_patterns('Not only one room. Another room has a bell, but no key.')
+PY
+}
+
+@test "editorial patterns: empty and literal-only files are safe" {
+  python3 - "$TK" <<'PY'
+import sys
+sys.dont_write_bytecode = True
+sys.path.insert(0, sys.argv[1])
+from slop_report import editorial_patterns
+for text in ['', '`Great question!`', '<!-- Great question! -->', '"Great question!"', '> Great question!']:
+    assert not editorial_patterns(text), text
+PY
+}
+
+@test "editorial patterns: CLI reports findings without rewriting or changing lexical scores" {
+  printf 'Great question! The file is ready.\n' > "$SAMPLE"
+  cp "$SAMPLE" "$BATS_TEST_TMPDIR/original.md"
+  run python3 "$TK/slop_report.py" "$SAMPLE"
+  [ "$status" -eq 0 ] || false
+  [[ "$output" == *"EDITORIAL PATTERNS (review context; never auto-delete): 1"* ]] || false
+  [[ "$output" == *"L1: [Great question!]"* ]] || false
+  cmp "$SAMPLE" "$BATS_TEST_TMPDIR/original.md"
+}
+
+@test "editorial patterns: protected spans and Markdown blocks cannot manufacture a contrast" {
+  python3 - "$TK" <<'PY'
+import sys
+sys.dont_write_bytecode = True
+sys.path.insert(0, sys.argv[1])
+from slop_report import editorial_patterns
+for text in [
+    'The response was not "Ready." We retried, but the service timed out.',
+    'The response was not `Ready.` We retried, but the service timed out.',
+    'The response was not [Ready.](https://example.test) We retried, but the service timed out.',
+    '- The cache is not ready\n- The search is slow, but results load.',
+    'The cache is not ready\n## Search\nIt is slow, but results load.',
+    'The cache is not ready\n---\nIt is slow, but results load.',
+]:
+    assert not editorial_patterns(text), text
+for text in [
+    'The page includes not only text\nbut also images.',
+    '- The page includes not only text but also images.',
+]:
+    assert editorial_patterns(text), text
+PY
+}
+
+@test "editorial patterns: supported closing emphasis preserves stock closer matches" {
+  python3 - "$TK" <<'PY'
+import sys
+sys.dont_write_bytecode = True
+sys.path.insert(0, sys.argv[1])
+from slop_report import editorial_patterns
+for phrase in ['Read that again.', 'That is the real win.', 'That distinction matters.', 'I hope this helps!']:
+    for marker in ['**', '__']:
+        assert editorial_patterns(marker + phrase + marker), (phrase, marker)
+PY
 }

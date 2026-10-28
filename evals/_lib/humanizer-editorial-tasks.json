@@ -1,0 +1,50 @@
+[
+  {
+    "id": "nonfiction-edit",
+    "genre": "nonfiction",
+    "context": "standalone customer-facing product copy",
+    "text": "Great question! Let's break this down: Cedar stores receipts for seven years.\n\nHere's what you need to know: the plan costs $29 per month for two workspaces.\n\nIt's not just a filing cabinet, but a place to search receipts by vendor and date.\n\nRead that again. Search works after cancellation.\n\nI hope this helps!\n",
+    "cleanup": "Remove chatbot greeting/closing, empty run-up and dramatic pause. State searchable receipt storage directly without the decorative filing-cabinet contrast.",
+    "preserve": "Keep Cedar, seven-year receipt retention, $29 per month, two workspaces, search by vendor and date, and search availability after cancellation. Local edits only; no invented benefits."
+  },
+  {
+    "id": "nonfiction-reference",
+    "genre": "nonfiction",
+    "context": "technical reference describing an actual boundary and an uncertainty",
+    "text": "The backup contains not only invoices but also their attachments. Both must be restored together.\n\nThe system stores a checksum, not a copy of the file. A checksum cannot restore deleted data.\n\nAs of 2026, the archive holds 128 files. The cause of the missing attachment is not known.\n\nRun `restore --include attachments`.\n",
+    "cleanup": null,
+    "preserve": "Keep both invoices and attachments and the requirement to restore them together; the distinction between checksum and file copy, inability to restore from checksum, 2026 date, 128 files, uncertainty, and exact command. Do not delete a real contrast or hedge merely because its form is flagged. Minor local wording/punctuation changes allowed."
+  },
+  {
+    "id": "nonfiction-letter",
+    "genre": "nonfiction",
+    "context": "a personal support email from Jo to a customer, whose polite closing has a real conversational purpose",
+    "text": "Hi Ada,\n\nI found your two missing receipts in the March folder. Would you like me to send paper copies to your office?\n\nI hope this helps. Please let me know by Friday so I can catch the last post.\n\nJo\n",
+    "cleanup": null,
+    "preserve": "Keep the email voice, Ada and Jo, two missing receipts in March, the real offer to send paper copies to the office, polite closing, Friday deadline and reason. Do not strip real correspondence as if it were chatbot residue. No invention."
+  },
+  {
+    "id": "fiction-edit",
+    "genre": "fiction",
+    "context": "a close-third-person suspense scene; remove intrusive editorial setup while preserving the scene",
+    "text": "Leah slid the copper key under her tongue. She had four minutes before the ferry left.\n\nThe thing is: the guard could hear her breathing.\n\nShe pressed her sleeve against the bell so it would not ring. That is the real win.\n\nAt the jetty, a boy held up her missing shoe.\n\n\"Read that again,\" he said, pointing at the name inside it.\n",
+    "cleanup": "Remove the intrusive narrative labels The thing is: and That is the real win. Preserve the spoken instruction to read the name again.",
+    "preserve": "Keep Leah, copper key under her tongue, four minutes, ferry, guard hearing breathing, sleeve muffling bell and its purpose, boy at jetty with her missing shoe, exact spoken words and name inside the shoe. Keep suspense, close-third perspective and scene order; no new plot."
+  },
+  {
+    "id": "fiction-voice",
+    "genre": "fiction",
+    "context": "an opinionated first-person literary narrator with deliberate contrasts and rhythmic repetition",
+    "text": "I wanted not a pardon but an answer. The judge gave me a chair.\n\nI sat. I waited. I counted the cracks in the blue tiles until they began to look like roads.\n\nHonestly? I would have taken a smaller room if it had a window.\n\nMy sister said the sea was two streets away. I could smell it on her coat.\n",
+    "cleanup": null,
+    "preserve": "Keep the narrator wanting an answer rather than a pardon, judge giving a chair, deliberate I sat/I waited/I counted rhythm, blue cracked tiles becoming roads, conversational Honestly?, conditional smaller room with window, sister, two streets, sea smell on her coat. Preserve first-person voice and uncertainty; no invented details or flattened narration."
+  },
+  {
+    "id": "fiction-quotes",
+    "genre": "fiction",
+    "context": "a fictional letter quoted inside a scene",
+    "text": "Nell opened the envelope.\n\n'Let's break this down: I am not your enemy,' the letter began.\n\n\"The thing is: I kept the ticket.\nWould you like me to send it back?\"\n\n> Great question!\nI hope this helps. Read that again.\n\nShe put the envelope beneath the cracked blue bowl.\n",
+    "cleanup": null,
+    "preserve": "Preserve Nell opening envelope, all quoted and blockquoted words including wrapped dialogue and lazy blockquote continuations, and envelope beneath cracked blue bowl. Only punctuation normalization is permitted; do not remove quoted wrappers or flatten the scene."
+  }
+]

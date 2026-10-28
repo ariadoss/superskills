@@ -154,6 +154,22 @@ You get `slop_index`, `complexity_index`, EQ-Bench slop words/bigrams/trigrams
 with line numbers, and construction densities (way-x, aphorism, as-if, magic
 adverb, pushbutton, distancing verb, filler).
 
+The **rhetorical scaffolding** group flags stock scene invitations, announced
+questions or takeaways, and conversational filler. These are review candidates,
+not proof of AI authorship or automatic deletions. They do not affect the
+lexical `slop_index`, which can remain zero while constructions need editing.
+
+The **editorial patterns** group checks selected stock openers and closers,
+contrast formulas, and chatbot wrappers. A match records a shape, not a verdict:
+preserve both claims in a real comparison, purposeful fictional rhythm or
+reader address, and actual greetings, offers, or closings in correspondence.
+When a contrast adds only emphasis, state its useful claim directly. Retain
+the negative half only if it corrects a real misconception or carries useful
+information; do not turn discarded framing into a new assertion.
+Python detects the wording; you decide whether it serves the passage. Resolve
+each finding by editing it or explaining the hold. Do not impose Wikipedia's
+markup or neutral-register conventions on marketing, documentation, or fiction.
+
 **3. Apply the edits to `<dir>/<name>_humanized.md` with the Edit tool.**
 
 Work through the flags from step 2 and fix each one in place, without stopping
@@ -172,6 +188,17 @@ to stay grammatical. In this order:
    exactly what the scanner would reward.
 5. **Normalize punctuation last.**
 
+Also read for these construction roles when the scanner misses a variant:
+an invitation to picture something before stating it, a label announcing the
+next question or lesson, or a stock claim of candor before a plain assertion.
+Flag unnecessary scaffolding during that read, then edit just that span. A
+setup that adds nothing can usually be deleted while keeping its useful point.
+Preserve concrete thought experiments, direct questions, literal uses,
+quotations, code, and distinctive narrator or character voice. In fiction,
+check whether a reader address or rhetorical question creates perspective,
+suspense, or rhythm before changing it; retain it when that function matters.
+Explain a hold rather than flattening the passage to clear a flag.
+
 **Preserve meaning absolutely.** Never change a fact, number, name, date, or the
 logical relation between statements. Edit prose, not content.
 
@@ -181,6 +208,9 @@ Run `slop_report.py` again on the edited file. **PASS** when every genuine flag
 from step 2 is either removed by a disciplined edit, a deliberately held vivid
 line (name which, and why), or an exempt domain term — **and** the edits
 introduced no new flags — **and** meaning is intact.
+
+The scan and editorial read must cover the version being handed off. An earlier
+draft's report does not validate a later adaptation or replacement paragraph.
 
 `slop_index == 0` is **not** a pass condition. Do not chase the index to zero:
 that rewards synonym-swapping and flattening. A held vivid word leaving a nonzero
@@ -218,3 +248,5 @@ The scan reuses public research data, redistributed under the licenses below. Se
 - Academic AI-overused vocabulary — Reinhart et al., PNAS 2025
   ([arXiv:2410.16107](https://arxiv.org/abs/2410.16107)); Juzek, COLING 2025.
 - `top2000_en.json` — common-word frequency list via `wordfreq` (Apache-2.0).
+- Selected editorial patterns — [blader/humanizer](https://github.com/blader/humanizer),
+  MIT; source revision and license are recorded in `toolkit/NOTICE.md`.

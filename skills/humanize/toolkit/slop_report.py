@@ -37,6 +37,7 @@ if str(Path(__file__).resolve().parent) not in sys.path:
     sys.path.insert(0, str(Path(__file__).resolve().parent))
 from eq_bench_slop_index import SLOP_BIGRAMS, SLOP_TRIGRAMS, SLOP_UNIGRAMS, load_slop_set, slop_index_new, slop_index_legacy
 from textio import read_prose
+from mla_format import code_lines, mask_literals
 
 HERE = Path(__file__).resolve().parent
 
@@ -129,6 +130,99 @@ def scan_lines(lines, patterns, flags=re.I):
             for m in c.finditer(text):
                 hits.append((ln, m.group(0).strip(), text.strip()))
     return hits
+
+
+# Narrow review signals, not a ban on imagining, questions, or fictional voice.
+# Require an opening position and setup punctuation; literal continuations such
+# as "Imagine two workers" and "Here's the thing I ordered" do not match.
+_RHETORICAL_START = r"(?:\A[ \t]*|(?<=\n)[ \t]*\n[ \t]*|(?<=[.!?])\s+|(?m:^[ \t]*(?:[-*+]|\d+[.)])[ \t]+))"
+_RHETORICAL_SETUP = re.compile(
+    _RHETORICAL_START + r"(?:\*\*|__)?(?P<setup>"
+    r"(?:imagine|picture)\s+(?:(?:this|the scene)(?:\s+for a (?:moment|second))?\s*[:.!?—]"
+    r"|(?:a|the)\s+world\s+(?:where|in which)\b)"
+    r"|(?:the|a)\s+(?:(?:practical|simple|real|key|big|important|ultimate)\s+)?"
+    r"(?:test|question)\s*:\s*(?:\*\*|__)?\s*"
+    r"(?=(?:can|could|should|would|do|does|did|is|are|will|what|why|how|when|where|who|whether|which)\b)"
+    r"|(?:the|a)\s+(?:(?:key|real|main|big)\s+)?(?:takeaway|lesson|point|bottom line)\s*[:?]"
+    r"|(?:here['’]s|here is)\s+the thing\s*[:.!?—]"
+    r"|(?:let['’]s|let us)\s+be honest\s*[:,.!?—]"
+    r"|let that sink in\s*[.!?](?=\s|$))", re.I)
+_QUOTED = re.compile(r'''"[^"]*"|“[^”]*”|(?<!\w)'(?:[^']|'(?=\w))*'(?!\w)|‘(?:[^’]|’(?=\w))*’(?!\w)''')
+_BLOCK_START = re.compile(r"^ {0,3}(?:#{1,6}(?:\s|$)|[-+*]\s|\d{1,9}[.)]\s|[`~]{3,}|(?:[-*_]\s*){3,}$)")
+
+# Selected shapes from blader/humanizer; provenance and MIT notice in NOTICE.md.
+# A match needs context: a real comparison, letter closing, or narrator's aside
+# may be worth keeping. Deliberately omit broad bans on "rather than", dates,
+# headings, triples, and individual words. Existing density checks cover rhythm.
+_EDITORIAL_OPENERS = re.compile(
+    _RHETORICAL_START + r"(?:\*\*|__)?(?P<setup>"
+    r"(?:let['’]s|let us)\s+(?:dive in|break this down)\s*[:.!?—]"
+    r"|(?:here['’]s|here is)\s+what you need\s+to know\s*[:.!?—]"
+    r"|without further ado\s*[:,.!—]|the thing is\s*[:,—]"
+    r"|real talk\s*[:,—]|honestly\s*\?"
+    r"|read that again\s*[.!](?=(?:\*\*|__)?(?:\s|$))"
+    r"|(?:that is|that['’]s)\s+(?:the real win|why it matters)\s*[.!](?=(?:\*\*|__)?(?:\s|$))"
+    r"|that distinction matters\s*[.!](?=(?:\*\*|__)?(?:\s|$))"
+    r"|(?:great question|certainly)\s*!"
+    r"|i hope this helps\s*[.!](?=(?:\*\*|__)?(?:\s|$))"
+    r"|(?:would you like me to|want me to)\b|should i continue\s*\?"
+    r"|as an ai\s+(?:language\s+)?model\b)", re.I)
+# Bound each side to a short clause and never cross a paragraph or intervening
+# sentence; otherwise an unrelated later "but" would manufacture a contrast.
+_CONTRAST_CLAUSE = (r"(?:(?!\n(?:[ \t]*\n|" + _BLOCK_START.pattern[1:] +
+                    r"))[^.!?\ufffc]){1,120}?")
+_EDITORIAL_CONTRAST = re.compile(
+    r"\b(?P<setup>not\s+" + _CONTRAST_CLAUSE + r"\bbut\s+(?:also\s+)?"
+    r"|(?:(?:this|it)\s+(?:is not|isn['’]t)|it['’]s not)\s+" + _CONTRAST_CLAUSE +
+    r"[.;][ \t]*(?:\n[ \t]*)?"
+    r"(?:it['’]s|this is|it is)\s+)", re.I | re.M)
+
+
+def _review_hits(raw: str, patterns):
+    """Line-numbered review phrases outside Markdown literals and quotations.
+
+    Reuse the formatter's literal/code parsing; keep line breaks when masking
+    multiline literals so a finding still points at the original source.
+    Existing report groups and lexical scores intentionally remain unchanged.
+    """
+    original = raw.split('\n')
+    masked, held = mask_literals(raw)
+    # Keep a barrier where a protected span stood. Deleting it could connect
+    # unrelated clauses on either side and manufacture a contrast.
+    masked = re.sub("\ue010(\\d+)\ue011",
+                    lambda m: "\ufffc" + "\n" * held[int(m.group(1))].count("\n"), masked)
+    lines = masked.split('\n')
+    in_quote = False
+    for i, is_code in enumerate(code_lines(original)):
+        stripped = original[i].lstrip()
+        quoted_line = stripped.startswith('>')
+        if quoted_line:
+            # A bare > ends the quoted paragraph; an unmarked next line is not
+            # its lazy continuation. New Markdown blocks also end a paragraph.
+            in_quote = bool(stripped.lstrip('> ').strip())
+        elif not stripped or is_code or _BLOCK_START.match(original[i]):
+            in_quote = False
+        if is_code or quoted_line or in_quote:
+            lines[i] = ''
+    prose = '\n'.join(lines)
+    prose = _QUOTED.sub(lambda m: '\ufffc' + '\n' * m.group(0).count('\n'), prose)
+    hits = []
+    for pattern in patterns:
+        for match in pattern.finditer(prose):
+            line = prose.count('\n', 0, match.start('setup')) + 1
+            phrase = re.sub(r'\*\*|__', '', match.group('setup'))
+            hits.append((line, ' '.join(phrase.split()), original[line - 1].strip()))
+    return sorted(hits, key=lambda hit: hit[0])
+
+
+def rhetorical_scaffolding(raw: str):
+    """Stock scene invitations and announced questions; review before editing."""
+    return _review_hits(raw, [_RHETORICAL_SETUP])
+
+
+def editorial_patterns(raw: str):
+    """Stock transitions, contrast frames and chat wrappers, never auto-edits."""
+    return _review_hits(raw, [_EDITORIAL_OPENERS, _EDITORIAL_CONTRAST])
 
 
 _EXEMPT: set = set()  # set in main() from --exempt; tokens here are skipped from all checks
@@ -234,6 +328,8 @@ def main():
     report_group("AI VERB-PHRASES (washed over, couldn't help but…)", scan_lines(lines, VERB_PHRASES))
     report_group("VAGUE GESTURES (something about, for a long moment…)", scan_lines(lines, VAGUE_GESTURES))
     report_group("AUTHORITY TROPES (the real question is, at its core…)", scan_lines(lines, [re.escape(p) for p in AUTHORITY_TROPES]))
+    report_group("RHETORICAL SCAFFOLDING (review, not authorship)", rhetorical_scaffolding(raw))
+    report_group("EDITORIAL PATTERNS (review context; never auto-delete)", editorial_patterns(raw))
     report_group("EXTENDED INTENSIFIERS (somehow, perfectly, merely…)", scan_lines(lines, [rf"\b{re.escape(w)}\b" for w in INTENSIFIERS]))
     report_group("BODY-AS-EMOTION-METER (heart pounding, breath caught…)", scan_lines(lines, BODY_METER))
     report_group("CLICHÉ SIMILES (like a knife/stone/sea…)", scan_lines(lines, CLICHE_SIMILE))

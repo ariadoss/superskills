@@ -1,0 +1,2278 @@
+{
+  "baseline_commit": "208ecbc",
+  "baseline_sha256": {
+    "SKILL.md": "e76f5f69bc5156c992706da9bbcf9471dcdf502aeb4cb7f72fa0dff9a793ace3",
+    "toolkit/slop_report.py": "eed3b98bebeb2552cb189439ea237ccefb5e9f075fe6717eff923628a50b7ea7"
+  },
+  "candidate_sha256": {
+    "SKILL.md": "2e6031fe352164da936c0fe5860932d6457cfda8b5a1c8a39199f673a6d01861",
+    "toolkit/slop_report.py": "07bbe8e28ff26664a845dc6d93f957144b477005c4c263e9632483abadcaf824"
+  },
+  "design": "Two independent editing agents per arm; six tasks each; same inherited session model. A separate blind grader reviewed 24 outputs and 10 seeded answers.",
+  "labels": "Primary-agent-reviewed keys, not human study labels. FAIL is the positive class for grading. The calibrator field named human contains the agent-reviewed reference key.",
+  "detector_scope": "Dedicated construction-review group only, not total recall of all original detectors. 58 preregistered cases plus 5 exploratory quote controls added after review.",
+  "detector_before": {
+    "positive_class": "needs editorial review",
+    "counts": {
+      "TP": 0,
+      "TN": 37,
+      "FP": 0,
+      "FN": 26
+    },
+    "metrics": {
+      "recall": 0.0,
+      "specificity": 1.0,
+      "accuracy": 0.5873015873015873,
+      "precision": null
+    },
+    "cases": [
+      {
+        "id": "scene-this",
+        "group": "scene",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "e0b6f3199681b155173f236a120a57be823d2c1ea2f4046e45a5779d3ac5b658",
+        "findings": ""
+      },
+      {
+        "id": "scene-picture",
+        "group": "scene",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "32fa359ef0ceb6391dbc2fafeb91339d60bef7122e461b5dc1ceb96b00158cf1",
+        "findings": ""
+      },
+      {
+        "id": "scene-world",
+        "group": "scene",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "c0160994d0540555d1dec05e16263c29d7a56059a7c9ce3fecc8173886e4a8c4",
+        "findings": ""
+      },
+      {
+        "id": "scene-moment",
+        "group": "scene",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "38a2175bd696c311d93fd47dc7eef92ba0ea9d15965b9853e86a00ccde29392e",
+        "findings": ""
+      },
+      {
+        "id": "scene-sentence",
+        "group": "scene",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "6e38f7f399ee078f8e0395bb7742e8011c33d88ca83daad19a24b547a833b5a6",
+        "findings": ""
+      },
+      {
+        "id": "scene-bold",
+        "group": "scene",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "4d9f456b0c09f4273e9a096707e8083ee0e3fe11ef84ebf5c7e6fd8df1c0309f",
+        "findings": ""
+      },
+      {
+        "id": "scene-list",
+        "group": "scene",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "2518e51e5a149eda98b6b7d9e441a9b122ec6113adf66406c898fbaaf66f4e9f",
+        "findings": ""
+      },
+      {
+        "id": "scene-wrap",
+        "group": "scene",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "70b9f401535bf1fe7a447886597d45456a8433a911514143e4cf37faaae2c0db",
+        "findings": ""
+      },
+      {
+        "id": "question-practical",
+        "group": "announcement",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "4de23362b150d6f6ae974bceb29894dfcd7d563ae815b931a50afeb65c7bd217",
+        "findings": ""
+      },
+      {
+        "id": "question-simple",
+        "group": "announcement",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "30aa7d892911622cf0db1850c37a353c27e244f5177ec822fc730825a9833718",
+        "findings": ""
+      },
+      {
+        "id": "question-real",
+        "group": "announcement",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "6cad04ba25ae4ef7da7e6a3a5444ac1c3d107429c1a4fd7fe2d39158f1eff92c",
+        "findings": ""
+      },
+      {
+        "id": "question-key",
+        "group": "announcement",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "710cfbc817073ce82dc25c8741b1f2f682b77ff274bef0197e52aedc954b2195",
+        "findings": ""
+      },
+      {
+        "id": "takeaway",
+        "group": "announcement",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "5cc3b5038d756208c599f58c49eb9d6a7ce18f5a09374bf5cd9caa6882937401",
+        "findings": ""
+      },
+      {
+        "id": "lesson",
+        "group": "announcement",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "e78713e86d193c98012393af454fd7a3289664c69db1dfede0bc3dd76c3619b4",
+        "findings": ""
+      },
+      {
+        "id": "question-bold",
+        "group": "announcement",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "00a6e309100512445c1f4c4b8b9587cba2dc8aa3046b218859bf47767e8617c9",
+        "findings": ""
+      },
+      {
+        "id": "question-wrap",
+        "group": "announcement",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "a37874c142100c09412ab968b514931e660898b32acb8bc5d326914fd27cd3ab",
+        "findings": ""
+      },
+      {
+        "id": "thing-straight",
+        "group": "filler",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "dc6a7a7070bdaa754b2c586489572b7e16a66b995ab2364e29c5ba11c02b1e87",
+        "findings": ""
+      },
+      {
+        "id": "thing-curly",
+        "group": "filler",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "9e0e23720a9e7326b3a54e013baa02d4c199d5f823a02453402f2ace9bdcd96e",
+        "findings": ""
+      },
+      {
+        "id": "thing-expanded",
+        "group": "filler",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "cda7751ae630d7d1f68332e2fe205c5942735f5328aa10a60e176e266c193a09",
+        "findings": ""
+      },
+      {
+        "id": "honest-straight",
+        "group": "filler",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "46919e5be86d3cc8985187ad206145bfdcbda3abd7319357226941d665c8db33",
+        "findings": ""
+      },
+      {
+        "id": "honest-curly",
+        "group": "filler",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "f5831f534f7a171be0e5728f7ac3de11276f8dfc50aa0d84da5480a46dfa6263",
+        "findings": ""
+      },
+      {
+        "id": "honest-expanded",
+        "group": "filler",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "77ce885d485d70ffb83f1c1651bdb9ff920a085970ddc7a818109c7df225fa96",
+        "findings": ""
+      },
+      {
+        "id": "sink-in",
+        "group": "filler",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "e909d0cbb0f03f7c082f08bec761bc313303b491270bb671233c8635f41c2194",
+        "findings": ""
+      },
+      {
+        "id": "thing-list",
+        "group": "filler",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "30c2b48c2439dc339578af8e5b0d84013732de56b7b0da42620facccf4570b26",
+        "findings": ""
+      },
+      {
+        "id": "literal-cant",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "7a503658e187aa03b878183d17fa80ad38e1075a8314012ee5c752ace0671ba0",
+        "findings": ""
+      },
+      {
+        "id": "literal-could",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "94ca8e4c1c672bce7411b3e995417e4ac6595c63c85f0b5504228a6850d31801",
+        "findings": ""
+      },
+      {
+        "id": "literal-two",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "2f4b94d61a3134e2b6856973c76eb5cb6274f33444b260ea887e163664653a33",
+        "findings": ""
+      },
+      {
+        "id": "literal-geometry",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "4c331035ba13d0549c3888dfebbce86a5c74fef74a5a05c3ba9a2d68c9ba5845",
+        "findings": ""
+      },
+      {
+        "id": "literal-picture",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "b5c64e6f4d912085c39fbfb9ec6de4a4a181a230b5f6f858ec3b99927a772be6",
+        "findings": ""
+      },
+      {
+        "id": "literal-photo",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "ec23d177fe394a585024022a36443ebe3cf94e06127aae1a9a6de02a943bcf1b",
+        "findings": ""
+      },
+      {
+        "id": "literal-test",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "9a43290daf7b3d3de97c38f1b115f881698db165cc84d706fdfccca3473ee8c2",
+        "findings": ""
+      },
+      {
+        "id": "literal-test-label",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "c640312e46920b811111822006eb4f8fb2f70894f8578a126292815e885895aa",
+        "findings": ""
+      },
+      {
+        "id": "literal-question",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "a3cb4ffddfa9d599981f4ceceff82a5add1a66b4d999c887cfa955773f1746a3",
+        "findings": ""
+      },
+      {
+        "id": "literal-thing",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "ceea2fd096114f431e1e236b8f9f8f708c9f94f07254068893f9b16e09ef5119",
+        "findings": ""
+      },
+      {
+        "id": "literal-honest",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "4c1f5d8e0f426787bcff9f3dc26ca48426a9691e309b9641de34f49d1ce9da18",
+        "findings": ""
+      },
+      {
+        "id": "literal-sink",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "e4bb52344faa4e87936befe0de9fcd59a3893c85e83acd29b38a7c06dd77c15c",
+        "findings": ""
+      },
+      {
+        "id": "direct-question",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "1e66da23c359c20fe61273226b55b1bb0ffa484ac206c8cf606583a5151f0ddb",
+        "findings": ""
+      },
+      {
+        "id": "double-quote",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "be41ecb4b09154859368da761690fe4e3ab70ee89957618c46f2cfa144543aec",
+        "findings": ""
+      },
+      {
+        "id": "curly-quote",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "e65c85d83ac41c32c20d129b25886c768cb67ed25919b4487b5ee04a1ee66aa7",
+        "findings": ""
+      },
+      {
+        "id": "blockquote",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "7db31d4fdbc1ca7535d205d3d370b2061a28e3d9bd92c7593b0908ee8f3c2a82",
+        "findings": ""
+      },
+      {
+        "id": "inline-code",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "a3f9d94fb051262669007b4a1747456e3120d13d7127bd94ac1c7d137c4dbf14",
+        "findings": ""
+      },
+      {
+        "id": "fenced-code",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "179d2c321538ed5971299ea25522995d4fa4cb1400ce448991782c53a2c7b02f",
+        "findings": ""
+      },
+      {
+        "id": "indented-code",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "c68a32dcf0aaf7c46e189b80a235e1b3976719984df3e4cb4e394ce0d8ad152c",
+        "findings": ""
+      },
+      {
+        "id": "comment",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "a8f34e2c3eb085ff2be9a79febaf9b43c433839b9fa0f1c0ba58c490de66c3e8",
+        "findings": ""
+      },
+      {
+        "id": "url-title",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "a063eb2f6c7579fb6029d1d01695fc66585079be4571a111b977959d7d343cc3",
+        "findings": ""
+      },
+      {
+        "id": "meta-inline",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "3c4258d3a6f330093dab3f74e653e6f30b64bb874a22598b0f7628d15b5bc783",
+        "findings": ""
+      },
+      {
+        "id": "legacy-vocab",
+        "group": "legacy",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "6b13175fba4c590ddcc0e689b2ad554dd226039b7e49c26b3741fb5030f9d332",
+        "findings": ""
+      },
+      {
+        "id": "legacy-pattern",
+        "group": "legacy",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "e5a88ee62f263e4cdf0406fa2ca7062b18cb9d29f5a28952d80ed2a5888ad5fa",
+        "findings": ""
+      },
+      {
+        "id": "legacy-dashes",
+        "group": "legacy",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "97c5dea109d9bf51e85947978b6f2158549ee2b1ee638fc700be806096d312aa",
+        "findings": ""
+      },
+      {
+        "id": "legacy-technical",
+        "group": "legacy",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "e1d3a4f81ff65b3ea29b6f4cd811776af83352f20924132bb10462cf09b92c0e",
+        "findings": ""
+      },
+      {
+        "id": "fiction-dialogue",
+        "group": "fiction-negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "019bfb1c89cdf6070ef7b1ba51ab5afcd3b7117a66b96e0d1ba0729e4cab4cb0",
+        "findings": ""
+      },
+      {
+        "id": "fiction-narrator",
+        "group": "fiction-negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "ee57674e966464d3ff993901d45ab2f465faf878a21a2ddd877baa5504a4ca7e",
+        "findings": ""
+      },
+      {
+        "id": "fiction-question",
+        "group": "fiction-negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "d027b78854ea3603118326fcb23cfe67b4b606708f05c42d0d95a89eddfb61dc",
+        "findings": ""
+      },
+      {
+        "id": "fiction-literal",
+        "group": "fiction-negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "70b2fbd75deb328ec776e9f75c7a1b226c3fe2bfb133dc995c1acbf5a85b4da6",
+        "findings": ""
+      },
+      {
+        "id": "fiction-voice",
+        "group": "fiction-negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "515073f5c7406ac286eb93803df0bcab90c97e84081f9236e6678b14e1fb1002",
+        "findings": ""
+      },
+      {
+        "id": "fiction-image",
+        "group": "fiction-negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "416a173f81b879d9b6a282ff1edf4fbf1c958e7ae5d81475aa5a5105adb67cb3",
+        "findings": ""
+      },
+      {
+        "id": "fiction-announcement",
+        "group": "fiction-review",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "df325d2588b9477965c03e25bc4cc4d48dab9f6c3e3bf8fbe351e58a3c4f84e7",
+        "findings": ""
+      },
+      {
+        "id": "fiction-filler",
+        "group": "fiction-review",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "4fb8b3bc59c70a19ccc926fede193e986e02ac9c1f3f283debc4f77c5a78f340",
+        "findings": ""
+      },
+      {
+        "id": "quoted-wrap",
+        "group": "quote-stress",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "6ec09c163de22e9fcbbc7e5b455bb7345bf687911b8d0954d410feaefe8eb41a",
+        "findings": ""
+      },
+      {
+        "id": "quoted-curly-wrap",
+        "group": "quote-stress",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "835d2ef75816426645f454927539a3612939ded0e7157266ac87d657fc36f33b",
+        "findings": ""
+      },
+      {
+        "id": "quoted-apostrophe",
+        "group": "quote-stress",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "7eae9dde3963c92a6235f992dd695047b8c7c65392e2952cde3cd27b558565cd",
+        "findings": ""
+      },
+      {
+        "id": "quoted-curly-apostrophe",
+        "group": "quote-stress",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "b56d75ae425cb80a6a9fcb47fc26f1e654c1b9106844cad28a3afec71e20c23a",
+        "findings": ""
+      },
+      {
+        "id": "lazy-blockquote",
+        "group": "quote-stress",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "8c9db1632f47e9e745e0bf09ecb611669c7d458e8e219452e9a6a3e5d16a7d8d",
+        "findings": ""
+      }
+    ]
+  },
+  "detector_after": {
+    "positive_class": "needs editorial review",
+    "counts": {
+      "TP": 26,
+      "TN": 37,
+      "FP": 0,
+      "FN": 0
+    },
+    "metrics": {
+      "recall": 1.0,
+      "specificity": 1.0,
+      "accuracy": 1.0,
+      "precision": 1.0
+    },
+    "cases": [
+      {
+        "id": "scene-this",
+        "group": "scene",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "e0b6f3199681b155173f236a120a57be823d2c1ea2f4046e45a5779d3ac5b658",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): 1  (imagine this:×1)\n    L1: [Imagine this:]  Imagine this: Your invoices arrive already sorted.\n"
+      },
+      {
+        "id": "scene-picture",
+        "group": "scene",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "32fa359ef0ceb6391dbc2fafeb91339d60bef7122e461b5dc1ceb96b00158cf1",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): 1  (picture this.×1)\n    L1: [Picture this.]  Picture this. Your weekly report is ready before lunch.\n"
+      },
+      {
+        "id": "scene-world",
+        "group": "scene",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "c0160994d0540555d1dec05e16263c29d7a56059a7c9ce3fecc8173886e4a8c4",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): 1  (imagine a world where×1)\n    L1: [Imagine a world where]  Imagine a world where every receipt files itself.\n"
+      },
+      {
+        "id": "scene-moment",
+        "group": "scene",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "38a2175bd696c311d93fd47dc7eef92ba0ea9d15965b9853e86a00ccde29392e",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): 1  (imagine this for a moment:×1)\n    L1: [Imagine this for a moment:]  Imagine this for a moment: the report writes itself.\n"
+      },
+      {
+        "id": "scene-sentence",
+        "group": "scene",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "6e38f7f399ee078f8e0395bb7742e8011c33d88ca83daad19a24b547a833b5a6",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): 1  (picture this:×1)\n    L1: [Picture this:]  Monday arrives. Picture this: your inbox is empty.\n"
+      },
+      {
+        "id": "scene-bold",
+        "group": "scene",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "4d9f456b0c09f4273e9a096707e8083ee0e3fe11ef84ebf5c7e6fd8df1c0309f",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): 1  (imagine this:×1)\n    L1: [IMAGINE THIS:]  **IMAGINE THIS:** Your files are already organized.\n"
+      },
+      {
+        "id": "scene-list",
+        "group": "scene",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "2518e51e5a149eda98b6b7d9e441a9b122ec6113adf66406c898fbaaf66f4e9f",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): 1  (picture this:×1)\n    L1: [Picture this:]  - Picture this: every receipt is in the right folder.\n"
+      },
+      {
+        "id": "scene-wrap",
+        "group": "scene",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "70b9f401535bf1fe7a447886597d45456a8433a911514143e4cf37faaae2c0db",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): 1  (imagine this:×1)\n    L1: [Imagine this:]  Imagine this:\n"
+      },
+      {
+        "id": "question-practical",
+        "group": "announcement",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "4de23362b150d6f6ae974bceb29894dfcd7d563ae815b931a50afeb65c7bd217",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): 1  (the practical test:×1)\n    L1: [The practical test:]  The practical test: can the service restart without dropping jobs?\n"
+      },
+      {
+        "id": "question-simple",
+        "group": "announcement",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "30aa7d892911622cf0db1850c37a353c27e244f5177ec822fc730825a9833718",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): 1  (a simple test:×1)\n    L1: [A simple test:]  A simple test: does the feature run without another branch?\n"
+      },
+      {
+        "id": "question-real",
+        "group": "announcement",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "6cad04ba25ae4ef7da7e6a3a5444ac1c3d107429c1a4fd7fe2d39158f1eff92c",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): 1  (the real question:×1)\n    L1: [The real question:]  The real question: why are we still sorting receipts by hand?\n"
+      },
+      {
+        "id": "question-key",
+        "group": "announcement",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "710cfbc817073ce82dc25c8741b1f2f682b77ff274bef0197e52aedc954b2195",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): 1  (the key question:×1)\n    L1: [The key question:]  The key question: what happens when the server restarts?\n"
+      },
+      {
+        "id": "takeaway",
+        "group": "announcement",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "5cc3b5038d756208c599f58c49eb9d6a7ce18f5a09374bf5cd9caa6882937401",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): 1  (the takeaway:×1)\n    L1: [The takeaway:]  The takeaway: smaller batches shorten feedback loops.\n"
+      },
+      {
+        "id": "lesson",
+        "group": "announcement",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "e78713e86d193c98012393af454fd7a3289664c69db1dfede0bc3dd76c3619b4",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): 1  (the lesson?×1)\n    L1: [The lesson?]  The lesson? Give every change a clear owner.\n"
+      },
+      {
+        "id": "question-bold",
+        "group": "announcement",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "00a6e309100512445c1f4c4b8b9587cba2dc8aa3046b218859bf47767e8617c9",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): 1  (the practical test:×1)\n    L1: [The practical test:]  **The practical test:** Can a new reader follow the instructions?\n"
+      },
+      {
+        "id": "question-wrap",
+        "group": "announcement",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "a37874c142100c09412ab968b514931e660898b32acb8bc5d326914fd27cd3ab",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): 1  (the practical test:×1)\n    L1: [The practical test:]  The practical test:\n"
+      },
+      {
+        "id": "thing-straight",
+        "group": "filler",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "dc6a7a7070bdaa754b2c586489572b7e16a66b995ab2364e29c5ba11c02b1e87",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): 1  (here's the thing:×1)\n    L1: [Here's the thing:]  Here's the thing: the report only runs once a day.\n"
+      },
+      {
+        "id": "thing-curly",
+        "group": "filler",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "9e0e23720a9e7326b3a54e013baa02d4c199d5f823a02453402f2ace9bdcd96e",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): 1  (here’s the thing.×1)\n    L1: [Here’s the thing.]  Here’s the thing. We already have the data.\n"
+      },
+      {
+        "id": "thing-expanded",
+        "group": "filler",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "cda7751ae630d7d1f68332e2fe205c5942735f5328aa10a60e176e266c193a09",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): 1  (here is the thing:×1)\n    L1: [Here is the thing:]  Here is the thing: retries need a limit.\n"
+      },
+      {
+        "id": "honest-straight",
+        "group": "filler",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "46919e5be86d3cc8985187ad206145bfdcbda3abd7319357226941d665c8db33",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): 1  (let's be honest:×1)\n    L1: [Let's be honest:]  Let's be honest: nobody enjoys sorting receipts.\n"
+      },
+      {
+        "id": "honest-curly",
+        "group": "filler",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "f5831f534f7a171be0e5728f7ac3de11276f8dfc50aa0d84da5480a46dfa6263",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): 1  (let’s be honest,×1)\n    L1: [Let’s be honest,]  Let’s be honest, this report takes too long.\n"
+      },
+      {
+        "id": "honest-expanded",
+        "group": "filler",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "77ce885d485d70ffb83f1c1651bdb9ff920a085970ddc7a818109c7df225fa96",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): 1  (let us be honest.×1)\n    L1: [Let us be honest.]  Let us be honest. Nobody reads the entire report.\n"
+      },
+      {
+        "id": "sink-in",
+        "group": "filler",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "e909d0cbb0f03f7c082f08bec761bc313303b491270bb671233c8635f41c2194",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): 1  (let that sink in.×1)\n    L1: [Let that sink in.]  We send the same form every week. Let that sink in.\n"
+      },
+      {
+        "id": "thing-list",
+        "group": "filler",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "30c2b48c2439dc339578af8e5b0d84013732de56b7b0da42620facccf4570b26",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): 1  (here's the thing:×1)\n    L1: [Here's the thing:]  1. Here's the thing: every release needs an owner.\n"
+      },
+      {
+        "id": "literal-cant",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "7a503658e187aa03b878183d17fa80ad38e1075a8314012ee5c752ace0671ba0",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "literal-could",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "94ca8e4c1c672bce7411b3e995417e4ac6595c63c85f0b5504228a6850d31801",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "literal-two",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "2f4b94d61a3134e2b6856973c76eb5cb6274f33444b260ea887e163664653a33",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "literal-geometry",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "4c331035ba13d0549c3888dfebbce86a5c74fef74a5a05c3ba9a2d68c9ba5845",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "literal-picture",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "b5c64e6f4d912085c39fbfb9ec6de4a4a181a230b5f6f858ec3b99927a772be6",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "literal-photo",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "ec23d177fe394a585024022a36443ebe3cf94e06127aae1a9a6de02a943bcf1b",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "literal-test",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "9a43290daf7b3d3de97c38f1b115f881698db165cc84d706fdfccca3473ee8c2",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "literal-test-label",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "c640312e46920b811111822006eb4f8fb2f70894f8578a126292815e885895aa",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "literal-question",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "a3cb4ffddfa9d599981f4ceceff82a5add1a66b4d999c887cfa955773f1746a3",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "literal-thing",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "ceea2fd096114f431e1e236b8f9f8f708c9f94f07254068893f9b16e09ef5119",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "literal-honest",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "4c1f5d8e0f426787bcff9f3dc26ca48426a9691e309b9641de34f49d1ce9da18",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "literal-sink",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "e4bb52344faa4e87936befe0de9fcd59a3893c85e83acd29b38a7c06dd77c15c",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "direct-question",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "1e66da23c359c20fe61273226b55b1bb0ffa484ac206c8cf606583a5151f0ddb",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "double-quote",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "be41ecb4b09154859368da761690fe4e3ab70ee89957618c46f2cfa144543aec",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "curly-quote",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "e65c85d83ac41c32c20d129b25886c768cb67ed25919b4487b5ee04a1ee66aa7",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "blockquote",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "7db31d4fdbc1ca7535d205d3d370b2061a28e3d9bd92c7593b0908ee8f3c2a82",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "inline-code",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "a3f9d94fb051262669007b4a1747456e3120d13d7127bd94ac1c7d137c4dbf14",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "fenced-code",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "179d2c321538ed5971299ea25522995d4fa4cb1400ce448991782c53a2c7b02f",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "indented-code",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "c68a32dcf0aaf7c46e189b80a235e1b3976719984df3e4cb4e394ce0d8ad152c",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "comment",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "a8f34e2c3eb085ff2be9a79febaf9b43c433839b9fa0f1c0ba58c490de66c3e8",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "url-title",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "a063eb2f6c7579fb6029d1d01695fc66585079be4571a111b977959d7d343cc3",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "meta-inline",
+        "group": "negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "3c4258d3a6f330093dab3f74e653e6f30b64bb874a22598b0f7628d15b5bc783",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "legacy-vocab",
+        "group": "legacy",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "6b13175fba4c590ddcc0e689b2ad554dd226039b7e49c26b3741fb5030f9d332",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "legacy-pattern",
+        "group": "legacy",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "e5a88ee62f263e4cdf0406fa2ca7062b18cb9d29f5a28952d80ed2a5888ad5fa",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "legacy-dashes",
+        "group": "legacy",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "97c5dea109d9bf51e85947978b6f2158549ee2b1ee638fc700be806096d312aa",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "legacy-technical",
+        "group": "legacy",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "e1d3a4f81ff65b3ea29b6f4cd811776af83352f20924132bb10462cf09b92c0e",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "fiction-dialogue",
+        "group": "fiction-negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "019bfb1c89cdf6070ef7b1ba51ab5afcd3b7117a66b96e0d1ba0729e4cab4cb0",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "fiction-narrator",
+        "group": "fiction-negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "ee57674e966464d3ff993901d45ab2f465faf878a21a2ddd877baa5504a4ca7e",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "fiction-question",
+        "group": "fiction-negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "d027b78854ea3603118326fcb23cfe67b4b606708f05c42d0d95a89eddfb61dc",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "fiction-literal",
+        "group": "fiction-negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "70b2fbd75deb328ec776e9f75c7a1b226c3fe2bfb133dc995c1acbf5a85b4da6",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "fiction-voice",
+        "group": "fiction-negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "515073f5c7406ac286eb93803df0bcab90c97e84081f9236e6678b14e1fb1002",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "fiction-image",
+        "group": "fiction-negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "416a173f81b879d9b6a282ff1edf4fbf1c958e7ae5d81475aa5a5105adb67cb3",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "fiction-announcement",
+        "group": "fiction-review",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "df325d2588b9477965c03e25bc4cc4d48dab9f6c3e3bf8fbe351e58a3c4f84e7",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): 1  (the practical test:×1)\n    L1: [The practical test:]  The practical test: could Mara cross the bridge before dawn?\n"
+      },
+      {
+        "id": "fiction-filler",
+        "group": "fiction-review",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "4fb8b3bc59c70a19ccc926fede193e986e02ac9c1f3f283debc4f77c5a78f340",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): 1  (here's the thing:×1)\n    L1: [Here's the thing:]  Here's the thing: the watchman knew her name.\n"
+      },
+      {
+        "id": "quoted-wrap",
+        "group": "quote-stress",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "6ec09c163de22e9fcbbc7e5b455bb7345bf687911b8d0954d410feaefe8eb41a",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "quoted-curly-wrap",
+        "group": "quote-stress",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "835d2ef75816426645f454927539a3612939ded0e7157266ac87d657fc36f33b",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "quoted-apostrophe",
+        "group": "quote-stress",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "7eae9dde3963c92a6235f992dd695047b8c7c65392e2952cde3cd27b558565cd",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "quoted-curly-apostrophe",
+        "group": "quote-stress",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "b56d75ae425cb80a6a9fcb47fc26f1e654c1b9106844cad28a3afec71e20c23a",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      },
+      {
+        "id": "lazy-blockquote",
+        "group": "quote-stress",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "8c9db1632f47e9e745e0bf09ecb611669c7d458e8e219452e9a6a3e5d16a7d8d",
+        "findings": "— RHETORICAL SCAFFOLDING (review, not authorship): none\n"
+      }
+    ]
+  },
+  "legacy_reports_identical": 63,
+  "behavioral_outcomes": {
+    "before": {
+      "fiction": {
+        "total": 6,
+        "passing": 4,
+        "preserved": 6
+      },
+      "all": {
+        "total": 12,
+        "passing": 6,
+        "preserved": 12
+      },
+      "nonfiction": {
+        "total": 6,
+        "passing": 2,
+        "preserved": 6
+      }
+    },
+    "final": {
+      "fiction": {
+        "total": 6,
+        "passing": 6,
+        "preserved": 6
+      },
+      "all": {
+        "total": 12,
+        "passing": 12,
+        "preserved": 12
+      },
+      "nonfiction": {
+        "total": 6,
+        "passing": 6,
+        "preserved": 6
+      }
+    }
+  },
+  "behavioral_records": [
+    {
+      "id": "J01",
+      "origin": "complete",
+      "kind": "calibration",
+      "case": "marketing",
+      "expected": {
+        "outcome": true,
+        "preservation": true
+      },
+      "source": "Imagine this: Cedar sends your invoice at noon UTC on the first business day of each month.\n\nHere's the thing: the plan costs $29 per month and includes two workspaces.\n\nThe practical test: can you export your invoices as CSV? Yes. Exports remain available after cancellation.\n\nA customer wrote, \"Imagine this: I finally found my missing invoice.\"\n\nGet your invoice from Billing > Documents.\n",
+      "response": "Cedar sends your invoice at noon UTC on the first business day of each month.\n\nThe plan costs $29 per month and includes two workspaces.\n\nCan you export your invoices as CSV? Yes. Exports remain available after cancellation.\n\nA customer wrote, \"Imagine this: I finally found my missing invoice.\"\n\nGet your invoice from Billing > Documents.\n",
+      "rubrics": {
+        "preservation": "PASS only if the complete final copy preserves all these facts: Cedar invoices\nat noon UTC on the first business day of every month; the plan costs $29 per\nmonth and includes two workspaces; CSV exports are possible and remain available\nafter cancellation; navigation is Billing > Documents. The quotation \"Imagine\nthis: I finally found my missing invoice.\" must remain a customer quotation with\nits words intact. Punctuation normalization is allowed. FAIL on any omission,\nchanged fact, invented benefit, altered quote, or replacement of the passage\nwith generic advice. Prefer local edits; factual but wholesale reinvention fails.",
+        "outcome": "Grade the final edited billing copy, not the surrounding report. PASS only if\nthe body removes the empty introductions \"Imagine this:\", \"Here's the thing:\",\nand \"The practical test:\" outside the customer quotation. The exact sentence\nwording and whether CSV export is described as a question/answer are flexible.\nThe customer quotation may and should still say \"Imagine this\". FAIL if a setup\nis retained without a substantive reason, only suggestions are supplied, or the\nentire passage is missing. Mentioning original phrases in the edit report is fine."
+      },
+      "judgments": {
+        "outcome": {
+          "label": "PASS",
+          "reason": "All three empty introductions are removed from the billing prose, while the complete passage and the legitimate customer quotation remain."
+        },
+        "preservation": {
+          "label": "PASS",
+          "reason": "The complete copy retains noon UTC on the first business day each month, $29 per month, two workspaces, CSV exports after cancellation, Billing > Documents, and the intact attributed customer quotation; changes are local."
+        }
+      }
+    },
+    {
+      "id": "J02",
+      "origin": "before-1-fiction-voice",
+      "kind": "system",
+      "case": "fiction-voice",
+      "expected": {
+        "preservation": true
+      },
+      "source": "Imagine a city where every window opens onto a different year.\n\nYours opens onto tomorrow. A child stands in the rain on the other side, wearing your father's coat.\n\nWho would leave a child out in weather like that?\n\n\"Here's the thing,\" your father used to say. \"A door only owes you a way through.\"\n\nThe child raises a hand. You raise yours. Neither of you smiles.\n",
+      "response": "Imagine a city where every window opens onto a different year.\n\nYours opens onto tomorrow. A child stands in the rain on the other side, wearing your father's coat.\n\nWho would leave a child out in weather like that?\n\n\"Here's the thing,\" your father used to say. \"A door only owes you a way through.\"\n\nThe child raises a hand. You raise yours. Neither of you smiles.\n",
+      "rubrics": {
+        "preservation": "This is a negative control with purposeful reader address. PASS if the final\nstory preserves \"Imagine a city where every window opens onto a different\nyear,\" the second-person present narration, tomorrow's window, the child in rain\nwearing the narrator's father's coat, the rhetorical question about leaving a\nchild in that weather, and both quoted sentences from the father (\"Here's the\nthing\" and \"A door only owes you a way through\"). Keep the final exchange of\nraised hands and neither person smiling. Punctuation normalization is fine.\nFAIL if it flattens the imagined premise into exposition, removes the rhetorical\nquestion as a supposed AI tell, changes the quoted words, imagery or ending,\nrewrites the whole story, or supplies no complete final copy."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "The complete story preserves the imaginative reader address, second-person present narration, tomorrow window, child in the rain wearing the father's coat, rhetorical question, both paternal quotations, and the unsmiling exchange of raised hands."
+        }
+      }
+    },
+    {
+      "id": "J03",
+      "origin": "complete-clean",
+      "kind": "calibration",
+      "case": "clean",
+      "expected": {
+        "preservation": true
+      },
+      "source": "Imagine a triangle rotated ninety degrees clockwise. Its side lengths do not change.\n\nI can't imagine this being useful without a diagram.\n\nThe practical test starts at nine and lasts an hour.\n\nCan the worker restart without losing a job?\n\nOpen the file with `reader --mode safe`.\n\n> \"Imagine this: two shadows,\" wrote Jo.\n",
+      "response": "Imagine a triangle rotated ninety degrees clockwise. Its side lengths do not change.\n\nI can't imagine this being useful without a diagram.\n\nThe practical test starts at nine and lasts an hour.\n\nCan the worker restart without losing a job?\n\nOpen the file with `reader --mode safe`.\n\n> \"Imagine this: two shadows,\" wrote Jo.\n",
+      "rubrics": {
+        "preservation": "This is a negative control: the complete final copy should retain the concrete\ngeometry instruction \"Imagine a triangle rotated ninety degrees clockwise\"\nand unchanged side lengths; the first-person inability to imagine usefulness\nwithout a diagram; the literal practical test at nine lasting one hour; the\ndirect question about worker restart/job loss; inline command reader --mode safe;\nand Jo's quote \"Imagine this: two shadows\". PASS if these phrases, claims and\nfunctions remain with only mechanical punctuation changes, or no edits. FAIL\nif it removes/replaces legitimate imagine language, the schedule, the real\nquestion, or the quote/code because they look like empty AI phrasing, makes a\nwholesale rewrite, changes facts, or supplies no complete resulting copy."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "The unchanged complete copy preserves the concrete rotation instruction and side lengths, first-person diagram remark, one-hour test at nine, real restart question, exact inline command, and Jo's quotation."
+        }
+      }
+    },
+    {
+      "id": "J04",
+      "origin": "complete-fiction",
+      "kind": "calibration",
+      "case": "fiction-edit",
+      "expected": {
+        "outcome": true,
+        "preservation": true
+      },
+      "source": "Mara crouched beneath the stairs, a brass key pressed into her palm.\n\nThe practical test: could she reach the gate before the bell rang? She had seven minutes.\n\nHere's the thing: the guard knew her name.\n\n\"Imagine this: we both walk out alive,\" she whispered.\n\nHe lifted the lantern. The light caught a second key hanging from his wrist.\n",
+      "response": "Mara crouched beneath the stairs, a brass key pressed into her palm.\n\nCould she reach the gate before the bell rang? She had seven minutes.\n\nThe guard knew her name.\n\n\"Imagine this: we both walk out alive,\" she whispered.\n\nHe lifted the lantern. The light caught a second key hanging from his wrist.\n",
+      "rubrics": {
+        "preservation": "PASS only if the final scene preserves Mara crouching under the stairs with a\nbrass key pressed into her palm; her uncertainty about reaching the gate before\nthe bell; seven minutes available; the guard knowing her name; her exact spoken\nwords \"Imagine this: we both walk out alive\" and whisper; the guard lifting a\nlantern and the light revealing a second key on his wrist. Retain third-person\npast narration and scene order. Local grammar/punctuation edits are fine;\nflattening imagery, changing dialogue, converting uncertainty into a guaranteed\nescape, changing a fact or inventing a resolution fails.",
+        "outcome": "PASS if the final fiction removes the generic labels \"The practical test:\" and\n\"Here's the thing:\" from narration, preserving the underlying action and\ninformation. The question about reaching the gate may remain to create suspense.\nDo not demand deleting \"Imagine this\" from Mara's dialogue. FAIL if a generic\nlabel remains with no meaningful narrative reason, the passage is absent, or\nthe agent supplies only suggestions."
+      },
+      "judgments": {
+        "outcome": {
+          "label": "PASS",
+          "reason": "Both generic narration labels are removed through local edits, retaining the suspenseful question, underlying scene information, and Mara's purposeful dialogue."
+        },
+        "preservation": {
+          "label": "PASS",
+          "reason": "The complete scene retains Mara crouching with the brass key, uncertainty about reaching the gate before the bell, seven minutes, the guard knowing her name, exact whispered dialogue, lantern and second wrist key, third-person past narration, and scene order."
+        }
+      }
+    },
+    {
+      "id": "J05",
+      "origin": "before-2-fiction-edit",
+      "kind": "system",
+      "case": "fiction-edit",
+      "expected": {
+        "preservation": true,
+        "outcome": false
+      },
+      "source": "Mara crouched beneath the stairs, a brass key pressed into her palm.\n\nThe practical test: could she reach the gate before the bell rang? She had seven minutes.\n\nHere's the thing: the guard knew her name.\n\n\"Imagine this: we both walk out alive,\" she whispered.\n\nHe lifted the lantern. The light caught a second key hanging from his wrist.\n",
+      "response": "Mara crouched beneath the stairs, a brass key pressed into her palm.\n\nThe practical test: could she reach the gate before the bell rang? She had seven minutes.\n\nThe guard knew her name.\n\n\"Imagine this: we both walk out alive,\" she whispered.\n\nHe lifted the lantern. The light caught a second key hanging from his wrist.\n",
+      "rubrics": {
+        "preservation": "PASS only if the final scene preserves Mara crouching under the stairs with a\nbrass key pressed into her palm; her uncertainty about reaching the gate before\nthe bell; seven minutes available; the guard knowing her name; her exact spoken\nwords \"Imagine this: we both walk out alive\" and whisper; the guard lifting a\nlantern and the light revealing a second key on his wrist. Retain third-person\npast narration and scene order. Local grammar/punctuation edits are fine;\nflattening imagery, changing dialogue, converting uncertainty into a guaranteed\nescape, changing a fact or inventing a resolution fails.",
+        "outcome": "PASS if the final fiction removes the generic labels \"The practical test:\" and\n\"Here's the thing:\" from narration, preserving the underlying action and\ninformation. The question about reaching the gate may remain to create suspense.\nDo not demand deleting \"Imagine this\" from Mara's dialogue. FAIL if a generic\nlabel remains with no meaningful narrative reason, the passage is absent, or\nthe agent supplies only suggestions."
+      },
+      "judgments": {
+        "outcome": {
+          "label": "FAIL",
+          "reason": "The practical test: remains an empty narratorial label before the suspense question; removing only Here's the thing: does not satisfy the rubric."
+        },
+        "preservation": {
+          "label": "PASS",
+          "reason": "The complete scene retains Mara crouching with the brass key, uncertainty about reaching the gate before the bell, seven minutes, the guard knowing her name, exact whispered dialogue, lantern and second wrist key, third-person past narration, and scene order."
+        }
+      }
+    },
+    {
+      "id": "J06",
+      "origin": "final-2-fiction-voice",
+      "kind": "system",
+      "case": "fiction-voice",
+      "expected": {
+        "preservation": true
+      },
+      "source": "Imagine a city where every window opens onto a different year.\n\nYours opens onto tomorrow. A child stands in the rain on the other side, wearing your father's coat.\n\nWho would leave a child out in weather like that?\n\n\"Here's the thing,\" your father used to say. \"A door only owes you a way through.\"\n\nThe child raises a hand. You raise yours. Neither of you smiles.\n",
+      "response": "Imagine a city where every window opens onto a different year.\n\nYours opens onto tomorrow. A child stands in the rain on the other side, wearing your father's coat.\n\nWho would leave a child out in weather like that?\n\n\"Here's the thing,\" your father used to say. \"A door only owes you a way through.\"\n\nThe child raises a hand. You raise yours. Neither of you smiles.\n",
+      "rubrics": {
+        "preservation": "This is a negative control with purposeful reader address. PASS if the final\nstory preserves \"Imagine a city where every window opens onto a different\nyear,\" the second-person present narration, tomorrow's window, the child in rain\nwearing the narrator's father's coat, the rhetorical question about leaving a\nchild in that weather, and both quoted sentences from the father (\"Here's the\nthing\" and \"A door only owes you a way through\"). Keep the final exchange of\nraised hands and neither person smiling. Punctuation normalization is fine.\nFAIL if it flattens the imagined premise into exposition, removes the rhetorical\nquestion as a supposed AI tell, changes the quoted words, imagery or ending,\nrewrites the whole story, or supplies no complete final copy."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "The complete story preserves the imaginative reader address, second-person present narration, tomorrow window, child in the rain wearing the father's coat, rhetorical question, both paternal quotations, and the unsmiling exchange of raised hands."
+        }
+      }
+    },
+    {
+      "id": "J07",
+      "origin": "final-2-fiction-quotes",
+      "kind": "system",
+      "case": "fiction-quotes",
+      "expected": {
+        "preservation": true
+      },
+      "source": "Mara unfolded the letter.\n\n'Here's the thing. Imagine this: a city without a shore,' it began.\n\n“The tide is coming.\nThe practical test: can you keep the lamp lit?”\n\n> I saw the gate open.\nThen I heard your name. Imagine this: you came back.\n\nShe folded the paper along the old crease.\n",
+      "response": "Mara unfolded the letter.\n\n\"Here's the thing. Imagine this: a city without a shore,\" it began.\n\n\"The tide is coming.\nThe practical test: can you keep the lamp lit?\"\n\n> I saw the gate open.\nThen I heard your name. Imagine this: you came back.\n\nShe folded the paper along the old crease.\n",
+      "rubrics": {
+        "preservation": "PASS if the final scene preserves Mara unfolding and refolding the letter along\nits old crease, plus all of the letter's quoted words: \"Here's the thing.\nImagine this: a city without a shore\"; \"The tide is coming. The practical test:\ncan you keep the lamp lit?\"; and the blockquoted \"I saw the gate open. Then I\nheard your name. Imagine this: you came back.\" Straight/curly quote conversion\nand soft-line wrapping are acceptable, but removing the stock-looking phrases\nfrom quotations is not. Keep the third-person past narration and scene order.\nFAIL on missing or rewritten quotations, altered actions or a missing final copy."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "All letter quotations and blockquote words remain intact, including the stock-looking phrases, and Mara's unfolding/refolding actions, old crease, third-person past narration, and scene order are preserved; quote normalization is allowed."
+        }
+      }
+    },
+    {
+      "id": "J08",
+      "origin": "unchanged-setups",
+      "kind": "calibration",
+      "case": "marketing",
+      "expected": {
+        "outcome": false,
+        "preservation": true
+      },
+      "source": "Imagine this: Cedar sends your invoice at noon UTC on the first business day of each month.\n\nHere's the thing: the plan costs $29 per month and includes two workspaces.\n\nThe practical test: can you export your invoices as CSV? Yes. Exports remain available after cancellation.\n\nA customer wrote, \"Imagine this: I finally found my missing invoice.\"\n\nGet your invoice from Billing > Documents.\n",
+      "response": "Imagine this: Cedar sends your invoice at noon UTC on the first business day of each month.\n\nHere's the thing: the plan costs $29 per month and includes two workspaces.\n\nThe practical test: can you export your invoices as CSV? Yes. Exports remain available after cancellation.\n\nA customer wrote, \"Imagine this: I finally found my missing invoice.\"\n\nGet your invoice from Billing > Documents.\n",
+      "rubrics": {
+        "preservation": "PASS only if the complete final copy preserves all these facts: Cedar invoices\nat noon UTC on the first business day of every month; the plan costs $29 per\nmonth and includes two workspaces; CSV exports are possible and remain available\nafter cancellation; navigation is Billing > Documents. The quotation \"Imagine\nthis: I finally found my missing invoice.\" must remain a customer quotation with\nits words intact. Punctuation normalization is allowed. FAIL on any omission,\nchanged fact, invented benefit, altered quote, or replacement of the passage\nwith generic advice. Prefer local edits; factual but wholesale reinvention fails.",
+        "outcome": "Grade the final edited billing copy, not the surrounding report. PASS only if\nthe body removes the empty introductions \"Imagine this:\", \"Here's the thing:\",\nand \"The practical test:\" outside the customer quotation. The exact sentence\nwording and whether CSV export is described as a question/answer are flexible.\nThe customer quotation may and should still say \"Imagine this\". FAIL if a setup\nis retained without a substantive reason, only suggestions are supplied, or the\nentire passage is missing. Mentioning original phrases in the edit report is fine."
+      },
+      "judgments": {
+        "outcome": {
+          "label": "FAIL",
+          "reason": "The complete billing passage retains all three empty introductions outside the customer quotation; none has a substantive function here."
+        },
+        "preservation": {
+          "label": "PASS",
+          "reason": "The complete copy retains noon UTC on the first business day each month, $29 per month, two workspaces, CSV exports after cancellation, Billing > Documents, and the intact attributed customer quotation; changes are local."
+        }
+      }
+    },
+    {
+      "id": "J09",
+      "origin": "before-2-clean",
+      "kind": "system",
+      "case": "clean",
+      "expected": {
+        "preservation": true
+      },
+      "source": "Imagine a triangle rotated ninety degrees clockwise. Its side lengths do not change.\n\nI can't imagine this being useful without a diagram.\n\nThe practical test starts at nine and lasts an hour.\n\nCan the worker restart without losing a job?\n\nOpen the file with `reader --mode safe`.\n\n> \"Imagine this: two shadows,\" wrote Jo.\n",
+      "response": "Imagine a triangle rotated ninety degrees clockwise. Its side lengths do not change.\n\nI can't imagine this being useful without a diagram.\n\nThe practical test starts at nine and lasts an hour.\n\nCan the worker restart without losing a job?\n\nOpen the file with `reader --mode safe`.\n\n> \"Imagine this: two shadows,\" wrote Jo.\n",
+      "rubrics": {
+        "preservation": "This is a negative control: the complete final copy should retain the concrete\ngeometry instruction \"Imagine a triangle rotated ninety degrees clockwise\"\nand unchanged side lengths; the first-person inability to imagine usefulness\nwithout a diagram; the literal practical test at nine lasting one hour; the\ndirect question about worker restart/job loss; inline command reader --mode safe;\nand Jo's quote \"Imagine this: two shadows\". PASS if these phrases, claims and\nfunctions remain with only mechanical punctuation changes, or no edits. FAIL\nif it removes/replaces legitimate imagine language, the schedule, the real\nquestion, or the quote/code because they look like empty AI phrasing, makes a\nwholesale rewrite, changes facts, or supplies no complete resulting copy."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "The unchanged complete copy preserves the concrete rotation instruction and side lengths, first-person diagram remark, one-hour test at nine, real restart question, exact inline command, and Jo's quotation."
+        }
+      }
+    },
+    {
+      "id": "J10",
+      "origin": "final-1-fiction-quotes",
+      "kind": "system",
+      "case": "fiction-quotes",
+      "expected": {
+        "preservation": true
+      },
+      "source": "Mara unfolded the letter.\n\n'Here's the thing. Imagine this: a city without a shore,' it began.\n\n“The tide is coming.\nThe practical test: can you keep the lamp lit?”\n\n> I saw the gate open.\nThen I heard your name. Imagine this: you came back.\n\nShe folded the paper along the old crease.\n",
+      "response": "Mara unfolded the letter.\n\n\"Here's the thing. Imagine this: a city without a shore,\" it began.\n\n\"The tide is coming.\nThe practical test: can you keep the lamp lit?\"\n\n> I saw the gate open.\nThen I heard your name. Imagine this: you came back.\n\nShe folded the paper along the old crease.\n",
+      "rubrics": {
+        "preservation": "PASS if the final scene preserves Mara unfolding and refolding the letter along\nits old crease, plus all of the letter's quoted words: \"Here's the thing.\nImagine this: a city without a shore\"; \"The tide is coming. The practical test:\ncan you keep the lamp lit?\"; and the blockquoted \"I saw the gate open. Then I\nheard your name. Imagine this: you came back.\" Straight/curly quote conversion\nand soft-line wrapping are acceptable, but removing the stock-looking phrases\nfrom quotations is not. Keep the third-person past narration and scene order.\nFAIL on missing or rewritten quotations, altered actions or a missing final copy."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "All letter quotations and blockquote words remain intact, including the stock-looking phrases, and Mara's unfolding/refolding actions, old crease, third-person past narration, and scene order are preserved; quote normalization is allowed."
+        }
+      }
+    },
+    {
+      "id": "J11",
+      "origin": "final-2-fiction-edit",
+      "kind": "system",
+      "case": "fiction-edit",
+      "expected": {
+        "preservation": true,
+        "outcome": true
+      },
+      "source": "Mara crouched beneath the stairs, a brass key pressed into her palm.\n\nThe practical test: could she reach the gate before the bell rang? She had seven minutes.\n\nHere's the thing: the guard knew her name.\n\n\"Imagine this: we both walk out alive,\" she whispered.\n\nHe lifted the lantern. The light caught a second key hanging from his wrist.\n",
+      "response": "Mara crouched beneath the stairs, a brass key pressed into her palm.\n\nCould she reach the gate before the bell rang? She had seven minutes.\n\nThe guard knew her name.\n\n\"Imagine this: we both walk out alive,\" she whispered.\n\nHe lifted the lantern. The light caught a second key hanging from his wrist.\n",
+      "rubrics": {
+        "preservation": "PASS only if the final scene preserves Mara crouching under the stairs with a\nbrass key pressed into her palm; her uncertainty about reaching the gate before\nthe bell; seven minutes available; the guard knowing her name; her exact spoken\nwords \"Imagine this: we both walk out alive\" and whisper; the guard lifting a\nlantern and the light revealing a second key on his wrist. Retain third-person\npast narration and scene order. Local grammar/punctuation edits are fine;\nflattening imagery, changing dialogue, converting uncertainty into a guaranteed\nescape, changing a fact or inventing a resolution fails.",
+        "outcome": "PASS if the final fiction removes the generic labels \"The practical test:\" and\n\"Here's the thing:\" from narration, preserving the underlying action and\ninformation. The question about reaching the gate may remain to create suspense.\nDo not demand deleting \"Imagine this\" from Mara's dialogue. FAIL if a generic\nlabel remains with no meaningful narrative reason, the passage is absent, or\nthe agent supplies only suggestions."
+      },
+      "judgments": {
+        "outcome": {
+          "label": "PASS",
+          "reason": "Both generic narration labels are removed through local edits, retaining the suspenseful question, underlying scene information, and Mara's purposeful dialogue."
+        },
+        "preservation": {
+          "label": "PASS",
+          "reason": "The complete scene retains Mara crouching with the brass key, uncertainty about reaching the gate before the bell, seven minutes, the guard knowing her name, exact whispered dialogue, lantern and second wrist key, third-person past narration, and scene order."
+        }
+      }
+    },
+    {
+      "id": "J12",
+      "origin": "before-1-fiction-quotes",
+      "kind": "system",
+      "case": "fiction-quotes",
+      "expected": {
+        "preservation": true
+      },
+      "source": "Mara unfolded the letter.\n\n'Here's the thing. Imagine this: a city without a shore,' it began.\n\n“The tide is coming.\nThe practical test: can you keep the lamp lit?”\n\n> I saw the gate open.\nThen I heard your name. Imagine this: you came back.\n\nShe folded the paper along the old crease.\n",
+      "response": "Mara unfolded the letter.\n\n'Here's the thing. Imagine this: a city without a shore,' it began.\n\n“The tide is coming.\nThe practical test: can you keep the lamp lit?”\n\n> I saw the gate open.\nThen I heard your name. Imagine this: you came back.\n\nShe folded the paper along the old crease.\n",
+      "rubrics": {
+        "preservation": "PASS if the final scene preserves Mara unfolding and refolding the letter along\nits old crease, plus all of the letter's quoted words: \"Here's the thing.\nImagine this: a city without a shore\"; \"The tide is coming. The practical test:\ncan you keep the lamp lit?\"; and the blockquoted \"I saw the gate open. Then I\nheard your name. Imagine this: you came back.\" Straight/curly quote conversion\nand soft-line wrapping are acceptable, but removing the stock-looking phrases\nfrom quotations is not. Keep the third-person past narration and scene order.\nFAIL on missing or rewritten quotations, altered actions or a missing final copy."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "The complete scene is unchanged, retaining every quoted and blockquoted word, the unfolding and refolding along the old crease, third-person past narration, and scene order."
+        }
+      }
+    },
+    {
+      "id": "J13",
+      "origin": "final-2-marketing",
+      "kind": "system",
+      "case": "marketing",
+      "expected": {
+        "preservation": true,
+        "outcome": true
+      },
+      "source": "Imagine this: Cedar sends your invoice at noon UTC on the first business day of each month.\n\nHere's the thing: the plan costs $29 per month and includes two workspaces.\n\nThe practical test: can you export your invoices as CSV? Yes. Exports remain available after cancellation.\n\nA customer wrote, \"Imagine this: I finally found my missing invoice.\"\n\nGet your invoice from Billing > Documents.\n",
+      "response": "Cedar sends your invoice at noon UTC on the first business day of each month.\n\nThe plan costs $29 per month and includes two workspaces.\n\nCan you export your invoices as CSV? Yes. Exports remain available after cancellation.\n\nA customer wrote, \"Imagine this: I finally found my missing invoice.\"\n\nGet your invoice from Billing > Documents.\n",
+      "rubrics": {
+        "preservation": "PASS only if the complete final copy preserves all these facts: Cedar invoices\nat noon UTC on the first business day of every month; the plan costs $29 per\nmonth and includes two workspaces; CSV exports are possible and remain available\nafter cancellation; navigation is Billing > Documents. The quotation \"Imagine\nthis: I finally found my missing invoice.\" must remain a customer quotation with\nits words intact. Punctuation normalization is allowed. FAIL on any omission,\nchanged fact, invented benefit, altered quote, or replacement of the passage\nwith generic advice. Prefer local edits; factual but wholesale reinvention fails.",
+        "outcome": "Grade the final edited billing copy, not the surrounding report. PASS only if\nthe body removes the empty introductions \"Imagine this:\", \"Here's the thing:\",\nand \"The practical test:\" outside the customer quotation. The exact sentence\nwording and whether CSV export is described as a question/answer are flexible.\nThe customer quotation may and should still say \"Imagine this\". FAIL if a setup\nis retained without a substantive reason, only suggestions are supplied, or the\nentire passage is missing. Mentioning original phrases in the edit report is fine."
+      },
+      "judgments": {
+        "outcome": {
+          "label": "PASS",
+          "reason": "All three empty introductions are removed from the billing prose, while the complete passage and the legitimate customer quotation remain."
+        },
+        "preservation": {
+          "label": "PASS",
+          "reason": "The complete copy retains noon UTC on the first business day each month, $29 per month, two workspaces, CSV exports after cancellation, Billing > Documents, and the intact attributed customer quotation; changes are local."
+        }
+      }
+    },
+    {
+      "id": "J14",
+      "origin": "complete-docs",
+      "kind": "calibration",
+      "case": "docs",
+      "expected": {
+        "outcome": true,
+        "preservation": true
+      },
+      "source": "Picture this. The worker retries a failed job three times.\n\nThe key question: what happens after the third failure? The job moves to the dead-letter queue.\n\nImagine two workers reading the same queue. Both receive job 42; the idempotency key prevents a duplicate charge.\n\nThe practical test starts at nine and lasts an hour.\n\n```python\nmessage = \"Imagine this: a retry\"\n```\n\n> \"Here's the thing: keep the receipt,\" said Jo.\n",
+      "response": "The worker retries a failed job three times.\n\nWhat happens after the third failure? The job moves to the dead-letter queue.\n\nImagine two workers reading the same queue. Both receive job 42; the idempotency key prevents a duplicate charge.\n\nThe practical test starts at nine and lasts an hour.\n\n```python\nmessage = \"Imagine this: a retry\"\n```\n\n> \"Here's the thing: keep the receipt,\" said Jo.\n",
+      "rubrics": {
+        "preservation": "PASS only if final copy retains three retries, dead-letter queue after the third\nfailure, two workers both receiving job 42, and the idempotency key preventing\na duplicate charge. Preserve the concrete thought experiment beginning \"Imagine\ntwo workers\"; no deletion for using the word imagine. The practical test still\nstarts at nine and lasts an hour. Preserve the exact code line\nmessage = \"Imagine this: a retry\" and Jo's quoted words \"Here's the thing: keep\nthe receipt\" (typographic quote changes allowed). FAIL on lost/changed facts,\nquote/code edits, unnecessary replacement of the thought experiment, or a\nwholesale rewrite. A complete edited passage must be present.",
+        "outcome": "PASS if the final edited guide removes the empty lead-ins \"Picture this.\" and\n\"The key question:\" from the explanatory prose. Any clear local edit works.\nDo not require changing the legitimate \"Imagine two workers\" thought experiment,\nthe literal practical-test schedule, the code or Jo's quote. FAIL on a retained\nempty lead-in, no complete copy, or advice without the edit."
+      },
+      "judgments": {
+        "outcome": {
+          "label": "PASS",
+          "reason": "Both empty explanatory lead-ins are removed with local edits; the complete guide, concrete thought experiment, literal schedule, and purposeful quoted material remain."
+        },
+        "preservation": {
+          "label": "PASS",
+          "reason": "The complete guide retains three retries, the dead-letter queue after the third failure, the concrete two-worker/job-42 experiment and idempotency effect, the one-hour test at nine, the exact code line, and Jo's quoted words."
+        }
+      }
+    },
+    {
+      "id": "J15",
+      "origin": "final-1-docs",
+      "kind": "system",
+      "case": "docs",
+      "expected": {
+        "preservation": true,
+        "outcome": true
+      },
+      "source": "Picture this. The worker retries a failed job three times.\n\nThe key question: what happens after the third failure? The job moves to the dead-letter queue.\n\nImagine two workers reading the same queue. Both receive job 42; the idempotency key prevents a duplicate charge.\n\nThe practical test starts at nine and lasts an hour.\n\n```python\nmessage = \"Imagine this: a retry\"\n```\n\n> \"Here's the thing: keep the receipt,\" said Jo.\n",
+      "response": "The worker retries a failed job three times.\n\nWhat happens after the third failure? The job moves to the dead-letter queue.\n\nImagine two workers reading the same queue. Both receive job 42; the idempotency key prevents a duplicate charge.\n\nThe practical test starts at nine and lasts an hour.\n\n```python\nmessage = \"Imagine this: a retry\"\n```\n\n> \"Here's the thing: keep the receipt,\" said Jo.\n",
+      "rubrics": {
+        "preservation": "PASS only if final copy retains three retries, dead-letter queue after the third\nfailure, two workers both receiving job 42, and the idempotency key preventing\na duplicate charge. Preserve the concrete thought experiment beginning \"Imagine\ntwo workers\"; no deletion for using the word imagine. The practical test still\nstarts at nine and lasts an hour. Preserve the exact code line\nmessage = \"Imagine this: a retry\" and Jo's quoted words \"Here's the thing: keep\nthe receipt\" (typographic quote changes allowed). FAIL on lost/changed facts,\nquote/code edits, unnecessary replacement of the thought experiment, or a\nwholesale rewrite. A complete edited passage must be present.",
+        "outcome": "PASS if the final edited guide removes the empty lead-ins \"Picture this.\" and\n\"The key question:\" from the explanatory prose. Any clear local edit works.\nDo not require changing the legitimate \"Imagine two workers\" thought experiment,\nthe literal practical-test schedule, the code or Jo's quote. FAIL on a retained\nempty lead-in, no complete copy, or advice without the edit."
+      },
+      "judgments": {
+        "outcome": {
+          "label": "PASS",
+          "reason": "Both empty explanatory lead-ins are removed with local edits; the complete guide, concrete thought experiment, literal schedule, and purposeful quoted material remain."
+        },
+        "preservation": {
+          "label": "PASS",
+          "reason": "The complete guide retains three retries, the dead-letter queue after the third failure, the concrete two-worker/job-42 experiment and idempotency effect, the one-hour test at nine, the exact code line, and Jo's quoted words."
+        }
+      }
+    },
+    {
+      "id": "J16",
+      "origin": "final-1-fiction-voice",
+      "kind": "system",
+      "case": "fiction-voice",
+      "expected": {
+        "preservation": true
+      },
+      "source": "Imagine a city where every window opens onto a different year.\n\nYours opens onto tomorrow. A child stands in the rain on the other side, wearing your father's coat.\n\nWho would leave a child out in weather like that?\n\n\"Here's the thing,\" your father used to say. \"A door only owes you a way through.\"\n\nThe child raises a hand. You raise yours. Neither of you smiles.\n",
+      "response": "Imagine a city where every window opens onto a different year.\n\nYours opens onto tomorrow. A child stands in the rain on the other side, wearing your father's coat.\n\nWho would leave a child out in weather like that?\n\n\"Here's the thing,\" your father used to say. \"A door only owes you a way through.\"\n\nThe child raises a hand. You raise yours. Neither of you smiles.\n",
+      "rubrics": {
+        "preservation": "This is a negative control with purposeful reader address. PASS if the final\nstory preserves \"Imagine a city where every window opens onto a different\nyear,\" the second-person present narration, tomorrow's window, the child in rain\nwearing the narrator's father's coat, the rhetorical question about leaving a\nchild in that weather, and both quoted sentences from the father (\"Here's the\nthing\" and \"A door only owes you a way through\"). Keep the final exchange of\nraised hands and neither person smiling. Punctuation normalization is fine.\nFAIL if it flattens the imagined premise into exposition, removes the rhetorical\nquestion as a supposed AI tell, changes the quoted words, imagery or ending,\nrewrites the whole story, or supplies no complete final copy."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "The complete story preserves the imaginative reader address, second-person present narration, tomorrow window, child in the rain wearing the father's coat, rhetorical question, both paternal quotations, and the unsmiling exchange of raised hands."
+        }
+      }
+    },
+    {
+      "id": "J17",
+      "origin": "final-2-docs",
+      "kind": "system",
+      "case": "docs",
+      "expected": {
+        "preservation": true,
+        "outcome": true
+      },
+      "source": "Picture this. The worker retries a failed job three times.\n\nThe key question: what happens after the third failure? The job moves to the dead-letter queue.\n\nImagine two workers reading the same queue. Both receive job 42; the idempotency key prevents a duplicate charge.\n\nThe practical test starts at nine and lasts an hour.\n\n```python\nmessage = \"Imagine this: a retry\"\n```\n\n> \"Here's the thing: keep the receipt,\" said Jo.\n",
+      "response": "The worker retries a failed job three times.\n\nWhat happens after the third failure? The job moves to the dead-letter queue.\n\nImagine two workers reading the same queue. Both receive job 42; the idempotency key prevents a duplicate charge.\n\nThe practical test starts at nine and lasts an hour.\n\n```python\nmessage = \"Imagine this: a retry\"\n```\n\n> \"Here's the thing: keep the receipt,\" said Jo.\n",
+      "rubrics": {
+        "preservation": "PASS only if final copy retains three retries, dead-letter queue after the third\nfailure, two workers both receiving job 42, and the idempotency key preventing\na duplicate charge. Preserve the concrete thought experiment beginning \"Imagine\ntwo workers\"; no deletion for using the word imagine. The practical test still\nstarts at nine and lasts an hour. Preserve the exact code line\nmessage = \"Imagine this: a retry\" and Jo's quoted words \"Here's the thing: keep\nthe receipt\" (typographic quote changes allowed). FAIL on lost/changed facts,\nquote/code edits, unnecessary replacement of the thought experiment, or a\nwholesale rewrite. A complete edited passage must be present.",
+        "outcome": "PASS if the final edited guide removes the empty lead-ins \"Picture this.\" and\n\"The key question:\" from the explanatory prose. Any clear local edit works.\nDo not require changing the legitimate \"Imagine two workers\" thought experiment,\nthe literal practical-test schedule, the code or Jo's quote. FAIL on a retained\nempty lead-in, no complete copy, or advice without the edit."
+      },
+      "judgments": {
+        "outcome": {
+          "label": "PASS",
+          "reason": "Both empty explanatory lead-ins are removed with local edits; the complete guide, concrete thought experiment, literal schedule, and purposeful quoted material remain."
+        },
+        "preservation": {
+          "label": "PASS",
+          "reason": "The complete guide retains three retries, the dead-letter queue after the third failure, the concrete two-worker/job-42 experiment and idempotency effect, the one-hour test at nine, the exact code line, and Jo's quoted words."
+        }
+      }
+    },
+    {
+      "id": "J18",
+      "origin": "flattened-voice",
+      "kind": "calibration",
+      "case": "fiction-voice",
+      "expected": {
+        "preservation": false
+      },
+      "source": "Imagine a city where every window opens onto a different year.\n\nYours opens onto tomorrow. A child stands in the rain on the other side, wearing your father's coat.\n\nWho would leave a child out in weather like that?\n\n\"Here's the thing,\" your father used to say. \"A door only owes you a way through.\"\n\nThe child raises a hand. You raise yours. Neither of you smiles.\n",
+      "response": "Every window in the city opens onto a different year.\n\nYours opens onto tomorrow. A child stands in the rain on the other side, wearing your father's coat.\n\n\"Here's the thing,\" your father used to say. \"A door only owes you a way through.\"\n\nThe child raises a hand. You raise yours. Neither of you smiles.\n",
+      "rubrics": {
+        "preservation": "This is a negative control with purposeful reader address. PASS if the final\nstory preserves \"Imagine a city where every window opens onto a different\nyear,\" the second-person present narration, tomorrow's window, the child in rain\nwearing the narrator's father's coat, the rhetorical question about leaving a\nchild in that weather, and both quoted sentences from the father (\"Here's the\nthing\" and \"A door only owes you a way through\"). Keep the final exchange of\nraised hands and neither person smiling. Punctuation normalization is fine.\nFAIL if it flattens the imagined premise into exposition, removes the rhetorical\nquestion as a supposed AI tell, changes the quoted words, imagery or ending,\nrewrites the whole story, or supplies no complete final copy."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "FAIL",
+          "reason": "The response replaces the purposeful Imagine a city reader address with exposition and deletes the rhetorical question about leaving the child in the weather, violating explicit preservation requirements."
+        }
+      }
+    },
+    {
+      "id": "J19",
+      "origin": "before-1-clean",
+      "kind": "system",
+      "case": "clean",
+      "expected": {
+        "preservation": true
+      },
+      "source": "Imagine a triangle rotated ninety degrees clockwise. Its side lengths do not change.\n\nI can't imagine this being useful without a diagram.\n\nThe practical test starts at nine and lasts an hour.\n\nCan the worker restart without losing a job?\n\nOpen the file with `reader --mode safe`.\n\n> \"Imagine this: two shadows,\" wrote Jo.\n",
+      "response": "Imagine a triangle rotated ninety degrees clockwise. Its side lengths do not change.\n\nI can't imagine this being useful without a diagram.\n\nThe practical test starts at nine and lasts an hour.\n\nCan the worker restart without losing a job?\n\nOpen the file with `reader --mode safe`.\n\n> \"Imagine this: two shadows,\" wrote Jo.\n",
+      "rubrics": {
+        "preservation": "This is a negative control: the complete final copy should retain the concrete\ngeometry instruction \"Imagine a triangle rotated ninety degrees clockwise\"\nand unchanged side lengths; the first-person inability to imagine usefulness\nwithout a diagram; the literal practical test at nine lasting one hour; the\ndirect question about worker restart/job loss; inline command reader --mode safe;\nand Jo's quote \"Imagine this: two shadows\". PASS if these phrases, claims and\nfunctions remain with only mechanical punctuation changes, or no edits. FAIL\nif it removes/replaces legitimate imagine language, the schedule, the real\nquestion, or the quote/code because they look like empty AI phrasing, makes a\nwholesale rewrite, changes facts, or supplies no complete resulting copy."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "The unchanged complete copy preserves the concrete rotation instruction and side lengths, first-person diagram remark, one-hour test at nine, real restart question, exact inline command, and Jo's quotation."
+        }
+      }
+    },
+    {
+      "id": "J20",
+      "origin": "final-1-fiction-edit",
+      "kind": "system",
+      "case": "fiction-edit",
+      "expected": {
+        "preservation": true,
+        "outcome": true
+      },
+      "source": "Mara crouched beneath the stairs, a brass key pressed into her palm.\n\nThe practical test: could she reach the gate before the bell rang? She had seven minutes.\n\nHere's the thing: the guard knew her name.\n\n\"Imagine this: we both walk out alive,\" she whispered.\n\nHe lifted the lantern. The light caught a second key hanging from his wrist.\n",
+      "response": "Mara crouched beneath the stairs, a brass key pressed into her palm.\n\nCould she reach the gate before the bell rang? She had seven minutes.\n\nThe guard knew her name.\n\n\"Imagine this: we both walk out alive,\" she whispered.\n\nHe lifted the lantern. The light caught a second key hanging from his wrist.\n",
+      "rubrics": {
+        "preservation": "PASS only if the final scene preserves Mara crouching under the stairs with a\nbrass key pressed into her palm; her uncertainty about reaching the gate before\nthe bell; seven minutes available; the guard knowing her name; her exact spoken\nwords \"Imagine this: we both walk out alive\" and whisper; the guard lifting a\nlantern and the light revealing a second key on his wrist. Retain third-person\npast narration and scene order. Local grammar/punctuation edits are fine;\nflattening imagery, changing dialogue, converting uncertainty into a guaranteed\nescape, changing a fact or inventing a resolution fails.",
+        "outcome": "PASS if the final fiction removes the generic labels \"The practical test:\" and\n\"Here's the thing:\" from narration, preserving the underlying action and\ninformation. The question about reaching the gate may remain to create suspense.\nDo not demand deleting \"Imagine this\" from Mara's dialogue. FAIL if a generic\nlabel remains with no meaningful narrative reason, the passage is absent, or\nthe agent supplies only suggestions."
+      },
+      "judgments": {
+        "outcome": {
+          "label": "PASS",
+          "reason": "Both generic narration labels are removed through local edits, retaining the suspenseful question, underlying scene information, and Mara's purposeful dialogue."
+        },
+        "preservation": {
+          "label": "PASS",
+          "reason": "The complete scene retains Mara crouching with the brass key, uncertainty about reaching the gate before the bell, seven minutes, the guard knowing her name, exact whispered dialogue, lantern and second wrist key, third-person past narration, and scene order."
+        }
+      }
+    },
+    {
+      "id": "J21",
+      "origin": "before-1-docs",
+      "kind": "system",
+      "case": "docs",
+      "expected": {
+        "preservation": true,
+        "outcome": false
+      },
+      "source": "Picture this. The worker retries a failed job three times.\n\nThe key question: what happens after the third failure? The job moves to the dead-letter queue.\n\nImagine two workers reading the same queue. Both receive job 42; the idempotency key prevents a duplicate charge.\n\nThe practical test starts at nine and lasts an hour.\n\n```python\nmessage = \"Imagine this: a retry\"\n```\n\n> \"Here's the thing: keep the receipt,\" said Jo.\n",
+      "response": "Picture this. The worker retries a failed job three times.\n\nThe key question: what happens after the third failure? The job moves to the dead-letter queue.\n\nImagine two workers reading the same queue. Both receive job 42; the idempotency key prevents a duplicate charge.\n\nThe practical test starts at nine and lasts an hour.\n\n```python\nmessage = \"Imagine this: a retry\"\n```\n\n> \"Here's the thing: keep the receipt,\" said Jo.\n",
+      "rubrics": {
+        "preservation": "PASS only if final copy retains three retries, dead-letter queue after the third\nfailure, two workers both receiving job 42, and the idempotency key preventing\na duplicate charge. Preserve the concrete thought experiment beginning \"Imagine\ntwo workers\"; no deletion for using the word imagine. The practical test still\nstarts at nine and lasts an hour. Preserve the exact code line\nmessage = \"Imagine this: a retry\" and Jo's quoted words \"Here's the thing: keep\nthe receipt\" (typographic quote changes allowed). FAIL on lost/changed facts,\nquote/code edits, unnecessary replacement of the thought experiment, or a\nwholesale rewrite. A complete edited passage must be present.",
+        "outcome": "PASS if the final edited guide removes the empty lead-ins \"Picture this.\" and\n\"The key question:\" from the explanatory prose. Any clear local edit works.\nDo not require changing the legitimate \"Imagine two workers\" thought experiment,\nthe literal practical-test schedule, the code or Jo's quote. FAIL on a retained\nempty lead-in, no complete copy, or advice without the edit."
+      },
+      "judgments": {
+        "outcome": {
+          "label": "FAIL",
+          "reason": "Both Picture this. and The key question: remain empty lead-ins in the explanatory prose, so the required edit has not been made."
+        },
+        "preservation": {
+          "label": "PASS",
+          "reason": "The complete guide retains three retries, the dead-letter queue after the third failure, the concrete two-worker/job-42 experiment and idempotency effect, the one-hour test at nine, the exact code line, and Jo's quoted words."
+        }
+      }
+    },
+    {
+      "id": "J22",
+      "origin": "before-2-fiction-quotes",
+      "kind": "system",
+      "case": "fiction-quotes",
+      "expected": {
+        "preservation": true
+      },
+      "source": "Mara unfolded the letter.\n\n'Here's the thing. Imagine this: a city without a shore,' it began.\n\n“The tide is coming.\nThe practical test: can you keep the lamp lit?”\n\n> I saw the gate open.\nThen I heard your name. Imagine this: you came back.\n\nShe folded the paper along the old crease.\n",
+      "response": "Mara unfolded the letter.\n\n\"Here's the thing. Imagine this: a city without a shore,\" it began.\n\n\"The tide is coming.\nThe practical test: can you keep the lamp lit?\"\n\n> I saw the gate open.\nThen I heard your name. Imagine this: you came back.\n\nShe folded the paper along the old crease.\n",
+      "rubrics": {
+        "preservation": "PASS if the final scene preserves Mara unfolding and refolding the letter along\nits old crease, plus all of the letter's quoted words: \"Here's the thing.\nImagine this: a city without a shore\"; \"The tide is coming. The practical test:\ncan you keep the lamp lit?\"; and the blockquoted \"I saw the gate open. Then I\nheard your name. Imagine this: you came back.\" Straight/curly quote conversion\nand soft-line wrapping are acceptable, but removing the stock-looking phrases\nfrom quotations is not. Keep the third-person past narration and scene order.\nFAIL on missing or rewritten quotations, altered actions or a missing final copy."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "All letter quotations and blockquote words remain intact, including the stock-looking phrases, and Mara's unfolding/refolding actions, old crease, third-person past narration, and scene order are preserved; quote normalization is allowed."
+        }
+      }
+    },
+    {
+      "id": "J23",
+      "origin": "changed-code",
+      "kind": "calibration",
+      "case": "docs",
+      "expected": {
+        "outcome": true,
+        "preservation": false
+      },
+      "source": "Picture this. The worker retries a failed job three times.\n\nThe key question: what happens after the third failure? The job moves to the dead-letter queue.\n\nImagine two workers reading the same queue. Both receive job 42; the idempotency key prevents a duplicate charge.\n\nThe practical test starts at nine and lasts an hour.\n\n```python\nmessage = \"Imagine this: a retry\"\n```\n\n> \"Here's the thing: keep the receipt,\" said Jo.\n",
+      "response": "The worker retries a failed job three times.\n\nWhat happens after the third failure? The job moves to the dead-letter queue.\n\nImagine two workers reading the same queue. Both receive job 42; the idempotency key prevents a duplicate charge.\n\nThe practical test starts at nine and lasts an hour.\n\n```python\nmessage = \"A retry\"\n```\n\n> \"Here's the thing: keep the receipt,\" said Jo.\n",
+      "rubrics": {
+        "preservation": "PASS only if final copy retains three retries, dead-letter queue after the third\nfailure, two workers both receiving job 42, and the idempotency key preventing\na duplicate charge. Preserve the concrete thought experiment beginning \"Imagine\ntwo workers\"; no deletion for using the word imagine. The practical test still\nstarts at nine and lasts an hour. Preserve the exact code line\nmessage = \"Imagine this: a retry\" and Jo's quoted words \"Here's the thing: keep\nthe receipt\" (typographic quote changes allowed). FAIL on lost/changed facts,\nquote/code edits, unnecessary replacement of the thought experiment, or a\nwholesale rewrite. A complete edited passage must be present.",
+        "outcome": "PASS if the final edited guide removes the empty lead-ins \"Picture this.\" and\n\"The key question:\" from the explanatory prose. Any clear local edit works.\nDo not require changing the legitimate \"Imagine two workers\" thought experiment,\nthe literal practical-test schedule, the code or Jo's quote. FAIL on a retained\nempty lead-in, no complete copy, or advice without the edit."
+      },
+      "judgments": {
+        "outcome": {
+          "label": "PASS",
+          "reason": "The complete guide removes both empty explanatory lead-ins with local edits; the separate code alteration does not reinstate either lead-in or remove the passage."
+        },
+        "preservation": {
+          "label": "FAIL",
+          "reason": "The protected code line changes from message = \"Imagine this: a retry\" to message = \"A retry\", violating the explicit requirement to preserve exact code."
+        }
+      }
+    },
+    {
+      "id": "J24",
+      "origin": "final-2-clean",
+      "kind": "system",
+      "case": "clean",
+      "expected": {
+        "preservation": true
+      },
+      "source": "Imagine a triangle rotated ninety degrees clockwise. Its side lengths do not change.\n\nI can't imagine this being useful without a diagram.\n\nThe practical test starts at nine and lasts an hour.\n\nCan the worker restart without losing a job?\n\nOpen the file with `reader --mode safe`.\n\n> \"Imagine this: two shadows,\" wrote Jo.\n",
+      "response": "Imagine a triangle rotated ninety degrees clockwise. Its side lengths do not change.\n\nI can't imagine this being useful without a diagram.\n\nThe practical test starts at nine and lasts an hour.\n\nCan the worker restart without losing a job?\n\nOpen the file with `reader --mode safe`.\n\n> \"Imagine this: two shadows,\" wrote Jo.\n",
+      "rubrics": {
+        "preservation": "This is a negative control: the complete final copy should retain the concrete\ngeometry instruction \"Imagine a triangle rotated ninety degrees clockwise\"\nand unchanged side lengths; the first-person inability to imagine usefulness\nwithout a diagram; the literal practical test at nine lasting one hour; the\ndirect question about worker restart/job loss; inline command reader --mode safe;\nand Jo's quote \"Imagine this: two shadows\". PASS if these phrases, claims and\nfunctions remain with only mechanical punctuation changes, or no edits. FAIL\nif it removes/replaces legitimate imagine language, the schedule, the real\nquestion, or the quote/code because they look like empty AI phrasing, makes a\nwholesale rewrite, changes facts, or supplies no complete resulting copy."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "The unchanged complete copy preserves the concrete rotation instruction and side lengths, first-person diagram remark, one-hour test at nine, real restart question, exact inline command, and Jo's quotation."
+        }
+      }
+    },
+    {
+      "id": "J25",
+      "origin": "advice-only",
+      "kind": "calibration",
+      "case": "marketing",
+      "expected": {
+        "outcome": false,
+        "preservation": false
+      },
+      "source": "Imagine this: Cedar sends your invoice at noon UTC on the first business day of each month.\n\nHere's the thing: the plan costs $29 per month and includes two workspaces.\n\nThe practical test: can you export your invoices as CSV? Yes. Exports remain available after cancellation.\n\nA customer wrote, \"Imagine this: I finally found my missing invoice.\"\n\nGet your invoice from Billing > Documents.\n",
+      "response": "I recommend removing the introductory labels and preserving the billing details.",
+      "rubrics": {
+        "preservation": "PASS only if the complete final copy preserves all these facts: Cedar invoices\nat noon UTC on the first business day of every month; the plan costs $29 per\nmonth and includes two workspaces; CSV exports are possible and remain available\nafter cancellation; navigation is Billing > Documents. The quotation \"Imagine\nthis: I finally found my missing invoice.\" must remain a customer quotation with\nits words intact. Punctuation normalization is allowed. FAIL on any omission,\nchanged fact, invented benefit, altered quote, or replacement of the passage\nwith generic advice. Prefer local edits; factual but wholesale reinvention fails.",
+        "outcome": "Grade the final edited billing copy, not the surrounding report. PASS only if\nthe body removes the empty introductions \"Imagine this:\", \"Here's the thing:\",\nand \"The practical test:\" outside the customer quotation. The exact sentence\nwording and whether CSV export is described as a question/answer are flexible.\nThe customer quotation may and should still say \"Imagine this\". FAIL if a setup\nis retained without a substantive reason, only suggestions are supplied, or the\nentire passage is missing. Mentioning original phrases in the edit report is fine."
+      },
+      "judgments": {
+        "outcome": {
+          "label": "FAIL",
+          "reason": "The response provides only a recommendation and no complete edited billing passage."
+        },
+        "preservation": {
+          "label": "FAIL",
+          "reason": "Generic advice replaces the passage; the billing schedule, price, workspaces, CSV availability, navigation, and customer quotation are all missing."
+        }
+      }
+    },
+    {
+      "id": "J26",
+      "origin": "before-1-fiction-edit",
+      "kind": "system",
+      "case": "fiction-edit",
+      "expected": {
+        "preservation": true,
+        "outcome": false
+      },
+      "source": "Mara crouched beneath the stairs, a brass key pressed into her palm.\n\nThe practical test: could she reach the gate before the bell rang? She had seven minutes.\n\nHere's the thing: the guard knew her name.\n\n\"Imagine this: we both walk out alive,\" she whispered.\n\nHe lifted the lantern. The light caught a second key hanging from his wrist.\n",
+      "response": "Mara crouched beneath the stairs, a brass key pressed into her palm.\n\nThe practical test: could she reach the gate before the bell rang? She had seven minutes.\n\nThe guard knew her name.\n\n\"Imagine this: we both walk out alive,\" she whispered.\n\nHe lifted the lantern. The light caught a second key hanging from his wrist.\n",
+      "rubrics": {
+        "preservation": "PASS only if the final scene preserves Mara crouching under the stairs with a\nbrass key pressed into her palm; her uncertainty about reaching the gate before\nthe bell; seven minutes available; the guard knowing her name; her exact spoken\nwords \"Imagine this: we both walk out alive\" and whisper; the guard lifting a\nlantern and the light revealing a second key on his wrist. Retain third-person\npast narration and scene order. Local grammar/punctuation edits are fine;\nflattening imagery, changing dialogue, converting uncertainty into a guaranteed\nescape, changing a fact or inventing a resolution fails.",
+        "outcome": "PASS if the final fiction removes the generic labels \"The practical test:\" and\n\"Here's the thing:\" from narration, preserving the underlying action and\ninformation. The question about reaching the gate may remain to create suspense.\nDo not demand deleting \"Imagine this\" from Mara's dialogue. FAIL if a generic\nlabel remains with no meaningful narrative reason, the passage is absent, or\nthe agent supplies only suggestions."
+      },
+      "judgments": {
+        "outcome": {
+          "label": "FAIL",
+          "reason": "The practical test: remains an empty narratorial label before the suspense question; removing only Here's the thing: does not satisfy the rubric."
+        },
+        "preservation": {
+          "label": "PASS",
+          "reason": "The complete scene retains Mara crouching with the brass key, uncertainty about reaching the gate before the bell, seven minutes, the guard knowing her name, exact whispered dialogue, lantern and second wrist key, third-person past narration, and scene order."
+        }
+      }
+    },
+    {
+      "id": "J27",
+      "origin": "final-1-marketing",
+      "kind": "system",
+      "case": "marketing",
+      "expected": {
+        "preservation": true,
+        "outcome": true
+      },
+      "source": "Imagine this: Cedar sends your invoice at noon UTC on the first business day of each month.\n\nHere's the thing: the plan costs $29 per month and includes two workspaces.\n\nThe practical test: can you export your invoices as CSV? Yes. Exports remain available after cancellation.\n\nA customer wrote, \"Imagine this: I finally found my missing invoice.\"\n\nGet your invoice from Billing > Documents.\n",
+      "response": "Cedar sends your invoice at noon UTC on the first business day of each month.\n\nThe plan costs $29 per month and includes two workspaces.\n\nCan you export your invoices as CSV? Yes. Exports remain available after cancellation.\n\nA customer wrote, \"Imagine this: I finally found my missing invoice.\"\n\nGet your invoice from Billing > Documents.\n",
+      "rubrics": {
+        "preservation": "PASS only if the complete final copy preserves all these facts: Cedar invoices\nat noon UTC on the first business day of every month; the plan costs $29 per\nmonth and includes two workspaces; CSV exports are possible and remain available\nafter cancellation; navigation is Billing > Documents. The quotation \"Imagine\nthis: I finally found my missing invoice.\" must remain a customer quotation with\nits words intact. Punctuation normalization is allowed. FAIL on any omission,\nchanged fact, invented benefit, altered quote, or replacement of the passage\nwith generic advice. Prefer local edits; factual but wholesale reinvention fails.",
+        "outcome": "Grade the final edited billing copy, not the surrounding report. PASS only if\nthe body removes the empty introductions \"Imagine this:\", \"Here's the thing:\",\nand \"The practical test:\" outside the customer quotation. The exact sentence\nwording and whether CSV export is described as a question/answer are flexible.\nThe customer quotation may and should still say \"Imagine this\". FAIL if a setup\nis retained without a substantive reason, only suggestions are supplied, or the\nentire passage is missing. Mentioning original phrases in the edit report is fine."
+      },
+      "judgments": {
+        "outcome": {
+          "label": "PASS",
+          "reason": "All three empty introductions are removed from the billing prose, while the complete passage and the legitimate customer quotation remain."
+        },
+        "preservation": {
+          "label": "PASS",
+          "reason": "The complete copy retains noon UTC on the first business day each month, $29 per month, two workspaces, CSV exports after cancellation, Billing > Documents, and the intact attributed customer quotation; changes are local."
+        }
+      }
+    },
+    {
+      "id": "J28",
+      "origin": "final-1-clean",
+      "kind": "system",
+      "case": "clean",
+      "expected": {
+        "preservation": true
+      },
+      "source": "Imagine a triangle rotated ninety degrees clockwise. Its side lengths do not change.\n\nI can't imagine this being useful without a diagram.\n\nThe practical test starts at nine and lasts an hour.\n\nCan the worker restart without losing a job?\n\nOpen the file with `reader --mode safe`.\n\n> \"Imagine this: two shadows,\" wrote Jo.\n",
+      "response": "Imagine a triangle rotated ninety degrees clockwise. Its side lengths do not change.\n\nI can't imagine this being useful without a diagram.\n\nThe practical test starts at nine and lasts an hour.\n\nCan the worker restart without losing a job?\n\nOpen the file with `reader --mode safe`.\n\n> \"Imagine this: two shadows,\" wrote Jo.\n",
+      "rubrics": {
+        "preservation": "This is a negative control: the complete final copy should retain the concrete\ngeometry instruction \"Imagine a triangle rotated ninety degrees clockwise\"\nand unchanged side lengths; the first-person inability to imagine usefulness\nwithout a diagram; the literal practical test at nine lasting one hour; the\ndirect question about worker restart/job loss; inline command reader --mode safe;\nand Jo's quote \"Imagine this: two shadows\". PASS if these phrases, claims and\nfunctions remain with only mechanical punctuation changes, or no edits. FAIL\nif it removes/replaces legitimate imagine language, the schedule, the real\nquestion, or the quote/code because they look like empty AI phrasing, makes a\nwholesale rewrite, changes facts, or supplies no complete resulting copy."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "The unchanged complete copy preserves the concrete rotation instruction and side lengths, first-person diagram remark, one-hour test at nine, real restart question, exact inline command, and Jo's quotation."
+        }
+      }
+    },
+    {
+      "id": "J29",
+      "origin": "certainty-drift",
+      "kind": "calibration",
+      "case": "fiction-edit",
+      "expected": {
+        "outcome": true,
+        "preservation": false
+      },
+      "source": "Mara crouched beneath the stairs, a brass key pressed into her palm.\n\nThe practical test: could she reach the gate before the bell rang? She had seven minutes.\n\nHere's the thing: the guard knew her name.\n\n\"Imagine this: we both walk out alive,\" she whispered.\n\nHe lifted the lantern. The light caught a second key hanging from his wrist.\n",
+      "response": "Mara crouched beneath the stairs, a brass key pressed into her palm.\n\nShe would reach the gate before the bell rang. She had seven minutes.\n\nThe guard knew her name.\n\n\"Imagine this: we both walk out alive,\" she whispered.\n\nHe lifted the lantern. The light caught a second key hanging from his wrist.\n",
+      "rubrics": {
+        "preservation": "PASS only if the final scene preserves Mara crouching under the stairs with a\nbrass key pressed into her palm; her uncertainty about reaching the gate before\nthe bell; seven minutes available; the guard knowing her name; her exact spoken\nwords \"Imagine this: we both walk out alive\" and whisper; the guard lifting a\nlantern and the light revealing a second key on his wrist. Retain third-person\npast narration and scene order. Local grammar/punctuation edits are fine;\nflattening imagery, changing dialogue, converting uncertainty into a guaranteed\nescape, changing a fact or inventing a resolution fails.",
+        "outcome": "PASS if the final fiction removes the generic labels \"The practical test:\" and\n\"Here's the thing:\" from narration, preserving the underlying action and\ninformation. The question about reaching the gate may remain to create suspense.\nDo not demand deleting \"Imagine this\" from Mara's dialogue. FAIL if a generic\nlabel remains with no meaningful narrative reason, the passage is absent, or\nthe agent supplies only suggestions."
+      },
+      "judgments": {
+        "outcome": {
+          "label": "FAIL",
+          "reason": "Although both labels are removed, She would reach the gate before the bell rang changes the underlying information from uncertainty to a definite outcome; the outcome rubric also requires preserving that information."
+        },
+        "preservation": {
+          "label": "FAIL",
+          "reason": "She would reach the gate before the bell rang replaces the original uncertainty with a definite outcome, explicitly violating the requirement to preserve uncertainty."
+        }
+      }
+    },
+    {
+      "id": "J30",
+      "origin": "before-2-docs",
+      "kind": "system",
+      "case": "docs",
+      "expected": {
+        "preservation": true,
+        "outcome": false
+      },
+      "source": "Picture this. The worker retries a failed job three times.\n\nThe key question: what happens after the third failure? The job moves to the dead-letter queue.\n\nImagine two workers reading the same queue. Both receive job 42; the idempotency key prevents a duplicate charge.\n\nThe practical test starts at nine and lasts an hour.\n\n```python\nmessage = \"Imagine this: a retry\"\n```\n\n> \"Here's the thing: keep the receipt,\" said Jo.\n",
+      "response": "Picture this. The worker retries a failed job three times.\n\nThe key question: what happens after the third failure? The job moves to the dead-letter queue.\n\nImagine two workers reading the same queue. Both receive job 42; the idempotency key prevents a duplicate charge.\n\nThe practical test starts at nine and lasts an hour.\n\n```python\nmessage = \"Imagine this: a retry\"\n```\n\n> \"Here's the thing: keep the receipt,\" said Jo.\n",
+      "rubrics": {
+        "preservation": "PASS only if final copy retains three retries, dead-letter queue after the third\nfailure, two workers both receiving job 42, and the idempotency key preventing\na duplicate charge. Preserve the concrete thought experiment beginning \"Imagine\ntwo workers\"; no deletion for using the word imagine. The practical test still\nstarts at nine and lasts an hour. Preserve the exact code line\nmessage = \"Imagine this: a retry\" and Jo's quoted words \"Here's the thing: keep\nthe receipt\" (typographic quote changes allowed). FAIL on lost/changed facts,\nquote/code edits, unnecessary replacement of the thought experiment, or a\nwholesale rewrite. A complete edited passage must be present.",
+        "outcome": "PASS if the final edited guide removes the empty lead-ins \"Picture this.\" and\n\"The key question:\" from the explanatory prose. Any clear local edit works.\nDo not require changing the legitimate \"Imagine two workers\" thought experiment,\nthe literal practical-test schedule, the code or Jo's quote. FAIL on a retained\nempty lead-in, no complete copy, or advice without the edit."
+      },
+      "judgments": {
+        "outcome": {
+          "label": "FAIL",
+          "reason": "Both Picture this. and The key question: remain empty lead-ins in the explanatory prose, so the required edit has not been made."
+        },
+        "preservation": {
+          "label": "PASS",
+          "reason": "The complete guide retains three retries, the dead-letter queue after the third failure, the concrete two-worker/job-42 experiment and idempotency effect, the one-hour test at nine, the exact code line, and Jo's quoted words."
+        }
+      }
+    },
+    {
+      "id": "J31",
+      "origin": "before-2-marketing",
+      "kind": "system",
+      "case": "marketing",
+      "expected": {
+        "preservation": true,
+        "outcome": false
+      },
+      "source": "Imagine this: Cedar sends your invoice at noon UTC on the first business day of each month.\n\nHere's the thing: the plan costs $29 per month and includes two workspaces.\n\nThe practical test: can you export your invoices as CSV? Yes. Exports remain available after cancellation.\n\nA customer wrote, \"Imagine this: I finally found my missing invoice.\"\n\nGet your invoice from Billing > Documents.\n",
+      "response": "Imagine this: Cedar sends your invoice at noon UTC on the first business day of each month.\n\nThe plan costs $29 per month and includes two workspaces.\n\nThe practical test: can you export your invoices as CSV? Yes. Exports remain available after cancellation.\n\nA customer wrote, \"Imagine this: I finally found my missing invoice.\"\n\nGet your invoice from Billing > Documents.\n",
+      "rubrics": {
+        "preservation": "PASS only if the complete final copy preserves all these facts: Cedar invoices\nat noon UTC on the first business day of every month; the plan costs $29 per\nmonth and includes two workspaces; CSV exports are possible and remain available\nafter cancellation; navigation is Billing > Documents. The quotation \"Imagine\nthis: I finally found my missing invoice.\" must remain a customer quotation with\nits words intact. Punctuation normalization is allowed. FAIL on any omission,\nchanged fact, invented benefit, altered quote, or replacement of the passage\nwith generic advice. Prefer local edits; factual but wholesale reinvention fails.",
+        "outcome": "Grade the final edited billing copy, not the surrounding report. PASS only if\nthe body removes the empty introductions \"Imagine this:\", \"Here's the thing:\",\nand \"The practical test:\" outside the customer quotation. The exact sentence\nwording and whether CSV export is described as a question/answer are flexible.\nThe customer quotation may and should still say \"Imagine this\". FAIL if a setup\nis retained without a substantive reason, only suggestions are supplied, or the\nentire passage is missing. Mentioning original phrases in the edit report is fine."
+      },
+      "judgments": {
+        "outcome": {
+          "label": "FAIL",
+          "reason": "Imagine this: and The practical test: remain empty introductions in the billing prose outside the quotation; deleting only Here's the thing: is insufficient."
+        },
+        "preservation": {
+          "label": "PASS",
+          "reason": "The complete copy retains noon UTC on the first business day each month, $29 per month, two workspaces, CSV exports after cancellation, Billing > Documents, and the intact attributed customer quotation; changes are local."
+        }
+      }
+    },
+    {
+      "id": "J32",
+      "origin": "before-1-marketing",
+      "kind": "system",
+      "case": "marketing",
+      "expected": {
+        "preservation": true,
+        "outcome": false
+      },
+      "source": "Imagine this: Cedar sends your invoice at noon UTC on the first business day of each month.\n\nHere's the thing: the plan costs $29 per month and includes two workspaces.\n\nThe practical test: can you export your invoices as CSV? Yes. Exports remain available after cancellation.\n\nA customer wrote, \"Imagine this: I finally found my missing invoice.\"\n\nGet your invoice from Billing > Documents.\n",
+      "response": "Imagine this: Cedar sends your invoice at noon UTC on the first business day of each month.\n\nThe plan costs $29 per month and includes two workspaces.\n\nThe practical test: can you export your invoices as CSV? Yes. Exports remain available after cancellation.\n\nA customer wrote, \"Imagine this: I finally found my missing invoice.\"\n\nGet your invoice from Billing > Documents.\n",
+      "rubrics": {
+        "preservation": "PASS only if the complete final copy preserves all these facts: Cedar invoices\nat noon UTC on the first business day of every month; the plan costs $29 per\nmonth and includes two workspaces; CSV exports are possible and remain available\nafter cancellation; navigation is Billing > Documents. The quotation \"Imagine\nthis: I finally found my missing invoice.\" must remain a customer quotation with\nits words intact. Punctuation normalization is allowed. FAIL on any omission,\nchanged fact, invented benefit, altered quote, or replacement of the passage\nwith generic advice. Prefer local edits; factual but wholesale reinvention fails.",
+        "outcome": "Grade the final edited billing copy, not the surrounding report. PASS only if\nthe body removes the empty introductions \"Imagine this:\", \"Here's the thing:\",\nand \"The practical test:\" outside the customer quotation. The exact sentence\nwording and whether CSV export is described as a question/answer are flexible.\nThe customer quotation may and should still say \"Imagine this\". FAIL if a setup\nis retained without a substantive reason, only suggestions are supplied, or the\nentire passage is missing. Mentioning original phrases in the edit report is fine."
+      },
+      "judgments": {
+        "outcome": {
+          "label": "FAIL",
+          "reason": "Imagine this: and The practical test: remain empty introductions in the billing prose outside the quotation; deleting only Here's the thing: is insufficient."
+        },
+        "preservation": {
+          "label": "PASS",
+          "reason": "The complete copy retains noon UTC on the first business day each month, $29 per month, two workspaces, CSV exports after cancellation, Billing > Documents, and the intact attributed customer quotation; changes are local."
+        }
+      }
+    },
+    {
+      "id": "J33",
+      "origin": "wrong-price",
+      "kind": "calibration",
+      "case": "marketing",
+      "expected": {
+        "outcome": true,
+        "preservation": false
+      },
+      "source": "Imagine this: Cedar sends your invoice at noon UTC on the first business day of each month.\n\nHere's the thing: the plan costs $29 per month and includes two workspaces.\n\nThe practical test: can you export your invoices as CSV? Yes. Exports remain available after cancellation.\n\nA customer wrote, \"Imagine this: I finally found my missing invoice.\"\n\nGet your invoice from Billing > Documents.\n",
+      "response": "Cedar sends your invoice at noon UTC on the first business day of each month.\n\nThe plan costs $19 per month and includes two workspaces.\n\nCan you export your invoices as CSV? Yes. Exports remain available after cancellation.\n\nA customer wrote, \"Imagine this: I finally found my missing invoice.\"\n\nGet your invoice from Billing > Documents.\n",
+      "rubrics": {
+        "preservation": "PASS only if the complete final copy preserves all these facts: Cedar invoices\nat noon UTC on the first business day of every month; the plan costs $29 per\nmonth and includes two workspaces; CSV exports are possible and remain available\nafter cancellation; navigation is Billing > Documents. The quotation \"Imagine\nthis: I finally found my missing invoice.\" must remain a customer quotation with\nits words intact. Punctuation normalization is allowed. FAIL on any omission,\nchanged fact, invented benefit, altered quote, or replacement of the passage\nwith generic advice. Prefer local edits; factual but wholesale reinvention fails.",
+        "outcome": "Grade the final edited billing copy, not the surrounding report. PASS only if\nthe body removes the empty introductions \"Imagine this:\", \"Here's the thing:\",\nand \"The practical test:\" outside the customer quotation. The exact sentence\nwording and whether CSV export is described as a question/answer are flexible.\nThe customer quotation may and should still say \"Imagine this\". FAIL if a setup\nis retained without a substantive reason, only suggestions are supplied, or the\nentire passage is missing. Mentioning original phrases in the edit report is fine."
+      },
+      "judgments": {
+        "outcome": {
+          "label": "PASS",
+          "reason": "All three empty introductions are removed from the billing prose, while the complete passage and the legitimate customer quotation remain."
+        },
+        "preservation": {
+          "label": "FAIL",
+          "reason": "The monthly price changes from $29 to $19, violating the explicit factual preservation requirement."
+        }
+      }
+    },
+    {
+      "id": "J34",
+      "origin": "before-2-fiction-voice",
+      "kind": "system",
+      "case": "fiction-voice",
+      "expected": {
+        "preservation": true
+      },
+      "source": "Imagine a city where every window opens onto a different year.\n\nYours opens onto tomorrow. A child stands in the rain on the other side, wearing your father's coat.\n\nWho would leave a child out in weather like that?\n\n\"Here's the thing,\" your father used to say. \"A door only owes you a way through.\"\n\nThe child raises a hand. You raise yours. Neither of you smiles.\n",
+      "response": "Imagine a city where every window opens onto a different year.\n\nYours opens onto tomorrow. A child stands in the rain on the other side, wearing your father's coat.\n\nWho would leave a child out in weather like that?\n\n\"Here's the thing,\" your father used to say. \"A door only owes you a way through.\"\n\nThe child raises a hand. You raise yours. Neither of you smiles.\n",
+      "rubrics": {
+        "preservation": "This is a negative control with purposeful reader address. PASS if the final\nstory preserves \"Imagine a city where every window opens onto a different\nyear,\" the second-person present narration, tomorrow's window, the child in rain\nwearing the narrator's father's coat, the rhetorical question about leaving a\nchild in that weather, and both quoted sentences from the father (\"Here's the\nthing\" and \"A door only owes you a way through\"). Keep the final exchange of\nraised hands and neither person smiling. Punctuation normalization is fine.\nFAIL if it flattens the imagined premise into exposition, removes the rhetorical\nquestion as a supposed AI tell, changes the quoted words, imagery or ending,\nrewrites the whole story, or supplies no complete final copy."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "The complete story preserves the imaginative reader address, second-person present narration, tomorrow window, child in the rain wearing the father's coat, rhetorical question, both paternal quotations, and the unsmiling exchange of raised hands."
+        }
+      }
+    }
+  ],
+  "blind_calibration": {
+    "system": {
+      "dimension_count": 36,
+      "tool_output": "n=36 positive=FAIL labels: FAIL, PASS\nTP=6 TN=30 FP=0 FN=0\nTPR (recall)       1.0000\nTNR (specificity)  1.0000\naccuracy           1.0000\nprecision          1.0000\nbias: none - judge FAIL where human PASS: 0/30 (0.0000) = judge PASS where human FAIL: 0/6 (0.0000)\n",
+      "pairs": [
+        {
+          "id": "J02",
+          "dimension": "preservation",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J05",
+          "dimension": "preservation",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J05",
+          "dimension": "outcome",
+          "human": "FAIL",
+          "judge": "FAIL"
+        },
+        {
+          "id": "J06",
+          "dimension": "preservation",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J07",
+          "dimension": "preservation",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J09",
+          "dimension": "preservation",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J10",
+          "dimension": "preservation",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J11",
+          "dimension": "preservation",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J11",
+          "dimension": "outcome",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J12",
+          "dimension": "preservation",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J13",
+          "dimension": "preservation",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J13",
+          "dimension": "outcome",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J15",
+          "dimension": "preservation",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J15",
+          "dimension": "outcome",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J16",
+          "dimension": "preservation",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J17",
+          "dimension": "preservation",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J17",
+          "dimension": "outcome",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J19",
+          "dimension": "preservation",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J20",
+          "dimension": "preservation",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J20",
+          "dimension": "outcome",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J21",
+          "dimension": "preservation",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J21",
+          "dimension": "outcome",
+          "human": "FAIL",
+          "judge": "FAIL"
+        },
+        {
+          "id": "J22",
+          "dimension": "preservation",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J24",
+          "dimension": "preservation",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J26",
+          "dimension": "preservation",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J26",
+          "dimension": "outcome",
+          "human": "FAIL",
+          "judge": "FAIL"
+        },
+        {
+          "id": "J27",
+          "dimension": "preservation",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J27",
+          "dimension": "outcome",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J28",
+          "dimension": "preservation",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J30",
+          "dimension": "preservation",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J30",
+          "dimension": "outcome",
+          "human": "FAIL",
+          "judge": "FAIL"
+        },
+        {
+          "id": "J31",
+          "dimension": "preservation",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J31",
+          "dimension": "outcome",
+          "human": "FAIL",
+          "judge": "FAIL"
+        },
+        {
+          "id": "J32",
+          "dimension": "preservation",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J32",
+          "dimension": "outcome",
+          "human": "FAIL",
+          "judge": "FAIL"
+        },
+        {
+          "id": "J34",
+          "dimension": "preservation",
+          "human": "PASS",
+          "judge": "PASS"
+        }
+      ]
+    },
+    "calibration": {
+      "dimension_count": 18,
+      "tool_output": "n=18 positive=FAIL labels: FAIL, PASS\nTP=7 TN=10 FP=1 FN=0\nTPR (recall)       1.0000\nTNR (specificity)  0.9091\naccuracy           0.9444\nprecision          0.8750\nbias: harsh - judge FAIL where human PASS: 1/11 (0.0909) > judge PASS where human FAIL: 0/7 (0.0000)\n",
+      "pairs": [
+        {
+          "id": "J01",
+          "dimension": "outcome",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J01",
+          "dimension": "preservation",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J03",
+          "dimension": "preservation",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J04",
+          "dimension": "outcome",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J04",
+          "dimension": "preservation",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J08",
+          "dimension": "outcome",
+          "human": "FAIL",
+          "judge": "FAIL"
+        },
+        {
+          "id": "J08",
+          "dimension": "preservation",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J14",
+          "dimension": "outcome",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J14",
+          "dimension": "preservation",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J18",
+          "dimension": "preservation",
+          "human": "FAIL",
+          "judge": "FAIL"
+        },
+        {
+          "id": "J23",
+          "dimension": "outcome",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J23",
+          "dimension": "preservation",
+          "human": "FAIL",
+          "judge": "FAIL"
+        },
+        {
+          "id": "J25",
+          "dimension": "outcome",
+          "human": "FAIL",
+          "judge": "FAIL"
+        },
+        {
+          "id": "J25",
+          "dimension": "preservation",
+          "human": "FAIL",
+          "judge": "FAIL"
+        },
+        {
+          "id": "J29",
+          "dimension": "outcome",
+          "human": "PASS",
+          "judge": "FAIL"
+        },
+        {
+          "id": "J29",
+          "dimension": "preservation",
+          "human": "FAIL",
+          "judge": "FAIL"
+        },
+        {
+          "id": "J33",
+          "dimension": "outcome",
+          "human": "PASS",
+          "judge": "PASS"
+        },
+        {
+          "id": "J33",
+          "dimension": "preservation",
+          "human": "FAIL",
+          "judge": "FAIL"
+        }
+      ]
+    }
+  },
+  "calibration_note": "J29 has overlapping rubric dimensions: the blind judge rejects certainty drift under both dimensions; the primary key rejects it under preservation. Both reject the response overall. Initial labels are retained.",
+  "validation": {
+    "new_regression_tests": 9,
+    "original_toolkit": {
+      "tests": 102,
+      "failed": 0,
+      "skipped": 2
+    },
+    "final_toolkit": {
+      "tests": 111,
+      "failed": 0,
+      "skipped": 2
+    },
+    "final_focused": {
+      "tests": 140,
+      "failed": 0,
+      "skipped": 2,
+      "command": "bats tests/humanize-toolkit.bats tests/humanize-pipeline.bats tests/humanize-prepush-hook.bats"
+    },
+    "coverage": {
+      "function": "rhetorical_scaffolding",
+      "covered": 22,
+      "statements": 22,
+      "missing": []
+    },
+    "standalone_export": "Passed its embedded toolkit test run on final source.",
+    "review_reproductions": "14 targeted assertions passed after quotation repair.",
+    "broad_suite": {
+      "phase": "Before final quotation repair; focused suite and export rerun after repair",
+      "tests": 793,
+      "initial_failures": 2,
+      "initial_skips": 2,
+      "followup": "Two plugin validation tests encountered untracked .DS_Store files. After moving those files out of the checkout, one passed; one retained an unrelated Claude CLI README-fallback warning failure. The same remaining failure was reproduced in a clean worktree at baseline 208ecbc. Full-suite success is not claimed."
+    },
+    "skill_validation": "Passed",
+    "skill_lint": "Passed",
+    "python_lint": "No new F/E9 findings; unchanged baseline F541 warning excluded."
+  },
+  "limits": [
+    "Small synthetic regression set, not evidence about all writing styles.",
+    "Two repetitions per task and one model family; batched tasks are not fully independent.",
+    "Post-review quotation stress cases are development regressions, not an untouched holdout.",
+    "Claude plugin eval hit session limits before grading; in-session agent runs evaluate editing, not automatic skill routing."
+  ],
+  "release_status": "Canonical source and linked local skill updated; cached 2.49.0 plugin and public releases unchanged."
+}

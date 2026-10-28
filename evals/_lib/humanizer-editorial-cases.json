@@ -1,0 +1,404 @@
+[
+  {
+    "id": "opener-1",
+    "group": "opener",
+    "flag": true,
+    "text": "Let's dive in. The trial lasts fourteen days."
+  },
+  {
+    "id": "opener-2",
+    "group": "opener",
+    "flag": true,
+    "text": "Let’s break this down: the lock expires at noon."
+  },
+  {
+    "id": "opener-3",
+    "group": "opener",
+    "flag": true,
+    "text": "Here's what you need to know: billing stops on cancellation."
+  },
+  {
+    "id": "opener-4",
+    "group": "opener",
+    "flag": true,
+    "text": "Without further ado, the train leaves at six."
+  },
+  {
+    "id": "opener-5",
+    "group": "opener",
+    "flag": true,
+    "text": "The thing is: the gate has two locks."
+  },
+  {
+    "id": "opener-6",
+    "group": "opener",
+    "flag": true,
+    "text": "Real talk: the plan costs $19."
+  },
+  {
+    "id": "opener-7",
+    "group": "opener",
+    "flag": true,
+    "text": "Honestly? The answer arrived yesterday."
+  },
+  {
+    "id": "opener-8",
+    "group": "opener",
+    "flag": true,
+    "text": "One detail remains. HERE IS WHAT YOU NEED TO KNOW: the key expires."
+  },
+  {
+    "id": "closer-1",
+    "group": "closer",
+    "flag": true,
+    "text": "The file stays on your disk. Read that again."
+  },
+  {
+    "id": "closer-2",
+    "group": "closer",
+    "flag": true,
+    "text": "That is the real win."
+  },
+  {
+    "id": "closer-3",
+    "group": "closer",
+    "flag": true,
+    "text": "That’s why it matters."
+  },
+  {
+    "id": "closer-4",
+    "group": "closer",
+    "flag": true,
+    "text": "That distinction matters."
+  },
+  {
+    "id": "contrast-1",
+    "group": "contrast",
+    "flag": true,
+    "text": "The app is not merely a notebook, but a shared record."
+  },
+  {
+    "id": "contrast-2",
+    "group": "contrast",
+    "flag": true,
+    "text": "The export includes not only pages but also images."
+  },
+  {
+    "id": "contrast-3",
+    "group": "contrast",
+    "flag": true,
+    "text": "She wanted not a medal but a name."
+  },
+  {
+    "id": "contrast-4",
+    "group": "contrast",
+    "flag": true,
+    "text": "This isn't about luck. It's about checking the address."
+  },
+  {
+    "id": "contrast-5",
+    "group": "contrast",
+    "flag": true,
+    "text": "It is not a race; it is a queue."
+  },
+  {
+    "id": "contrast-6",
+    "group": "contrast",
+    "flag": true,
+    "text": "This isn’t about rank.\nIt’s about access."
+  },
+  {
+    "id": "contrast-7",
+    "group": "contrast",
+    "flag": true,
+    "text": "Not just speed, but speed with saved work."
+  },
+  {
+    "id": "wrapper-1",
+    "group": "wrapper",
+    "flag": true,
+    "text": "Great question! The account closes tomorrow."
+  },
+  {
+    "id": "wrapper-2",
+    "group": "wrapper",
+    "flag": true,
+    "text": "Certainly! Your receipt is below."
+  },
+  {
+    "id": "wrapper-3",
+    "group": "wrapper",
+    "flag": true,
+    "text": "I hope this helps!"
+  },
+  {
+    "id": "wrapper-4",
+    "group": "wrapper",
+    "flag": true,
+    "text": "Would you like me to add examples?"
+  },
+  {
+    "id": "wrapper-5",
+    "group": "wrapper",
+    "flag": true,
+    "text": "Want me to explain the chart?"
+  },
+  {
+    "id": "wrapper-6",
+    "group": "wrapper",
+    "flag": true,
+    "text": "Should I continue?"
+  },
+  {
+    "id": "wrapper-7",
+    "group": "wrapper",
+    "flag": true,
+    "text": "As an AI model, I cannot see your screen."
+  },
+  {
+    "id": "wrapper-8",
+    "group": "wrapper",
+    "flag": true,
+    "text": "As an AI language model, I do not have memories."
+  },
+  {
+    "id": "format-1",
+    "group": "format",
+    "flag": true,
+    "text": "- **Great question!** The file contains six rows."
+  },
+  {
+    "id": "format-2",
+    "group": "format",
+    "flag": true,
+    "text": "Here’s what you need\nto know: access expires tomorrow."
+  },
+  {
+    "id": "literal-1",
+    "group": "literal",
+    "flag": false,
+    "text": "Imagine two tickets in the same queue."
+  },
+  {
+    "id": "literal-2",
+    "group": "literal",
+    "flag": false,
+    "text": "The test starts at ten."
+  },
+  {
+    "id": "literal-3",
+    "group": "literal",
+    "flag": false,
+    "text": "I spoke honestly because she asked."
+  },
+  {
+    "id": "literal-4",
+    "group": "literal",
+    "flag": false,
+    "text": "Read the address again before sending."
+  },
+  {
+    "id": "literal-5",
+    "group": "literal",
+    "flag": false,
+    "text": "I hope this helps us find the key."
+  },
+  {
+    "id": "literal-6",
+    "group": "literal",
+    "flag": false,
+    "text": "The thing is missing from the shelf."
+  },
+  {
+    "id": "literal-7",
+    "group": "literal",
+    "flag": false,
+    "text": "Here is a silver key."
+  },
+  {
+    "id": "literal-8",
+    "group": "literal",
+    "flag": false,
+    "text": "As of 2026, the archive holds 64 files."
+  },
+  {
+    "id": "literal-9",
+    "group": "literal",
+    "flag": false,
+    "text": "We do not know which file was lost."
+  },
+  {
+    "id": "literal-10",
+    "group": "literal",
+    "flag": false,
+    "text": "Use red, green, and blue paint."
+  },
+  {
+    "id": "literal-11",
+    "group": "literal",
+    "flag": false,
+    "text": "He came. He waited. He left."
+  },
+  {
+    "id": "literal-12",
+    "group": "literal",
+    "flag": false,
+    "text": "The backup is not complete."
+  },
+  {
+    "id": "literal-13",
+    "group": "literal",
+    "flag": false,
+    "text": "The copy is complete, but the index is missing."
+  },
+  {
+    "id": "literal-14",
+    "group": "literal",
+    "flag": false,
+    "text": "Our heading uses title case by house style."
+  },
+  {
+    "id": "literal-15",
+    "group": "literal",
+    "flag": false,
+    "text": "A schema and an index are required rather than optional."
+  },
+  {
+    "id": "literal-16",
+    "group": "literal",
+    "flag": false,
+    "text": "She had learned the phrase\ngreat question! from her brother."
+  },
+  {
+    "id": "protected-1",
+    "group": "protected",
+    "flag": false,
+    "text": "\"Great question! I hope this helps!\" she said."
+  },
+  {
+    "id": "protected-2",
+    "group": "protected",
+    "flag": false,
+    "text": "'Let's break this down: it is not a key but a token,' wrote Ada."
+  },
+  {
+    "id": "protected-3",
+    "group": "protected",
+    "flag": false,
+    "text": "“The thing is: the gate is open.\nRead that again.”"
+  },
+  {
+    "id": "protected-4",
+    "group": "protected",
+    "flag": false,
+    "text": "> Great question!\nI hope this helps!"
+  },
+  {
+    "id": "protected-5",
+    "group": "protected",
+    "flag": false,
+    "text": "`Should I continue?`"
+  },
+  {
+    "id": "protected-6",
+    "group": "protected",
+    "flag": false,
+    "text": "```text\nWithout further ado, the gate is open.\n```"
+  },
+  {
+    "id": "protected-7",
+    "group": "protected",
+    "flag": false,
+    "text": "    Great question!\n    I hope this helps!"
+  },
+  {
+    "id": "protected-8",
+    "group": "protected",
+    "flag": false,
+    "text": "<!-- Great question! -->"
+  },
+  {
+    "id": "protected-9",
+    "group": "protected",
+    "flag": false,
+    "text": "[Great question!](https://example.test)"
+  },
+  {
+    "id": "protected-10",
+    "group": "protected",
+    "flag": false,
+    "text": "[link](https://example.test/Great-question)"
+  },
+  {
+    "id": "review-False-1",
+    "group": "review-negative",
+    "flag": false,
+    "text": "The response was not \"Ready.\" We retried, but the service timed out."
+  },
+  {
+    "id": "review-False-2",
+    "group": "review-negative",
+    "flag": false,
+    "text": "The response was not `Ready.` We retried, but the service timed out."
+  },
+  {
+    "id": "review-False-3",
+    "group": "review-negative",
+    "flag": false,
+    "text": "The response was not [Ready.](https://example.test) We retried, but the service timed out."
+  },
+  {
+    "id": "review-False-4",
+    "group": "review-negative",
+    "flag": false,
+    "text": "- The cache is not ready\n- The search is slow, but results load."
+  },
+  {
+    "id": "review-False-5",
+    "group": "review-negative",
+    "flag": false,
+    "text": "The cache is not ready\n## Search\nIt is slow, but results load."
+  },
+  {
+    "id": "review-False-6",
+    "group": "review-negative",
+    "flag": false,
+    "text": "The cache is not ready\n---\nIt is slow, but results load."
+  },
+  {
+    "id": "review-True-1",
+    "group": "review-positive",
+    "flag": true,
+    "text": "It's not filing. It's finding."
+  },
+  {
+    "id": "review-True-2",
+    "group": "review-positive",
+    "flag": true,
+    "text": "**Read that again.**"
+  },
+  {
+    "id": "review-True-3",
+    "group": "review-positive",
+    "flag": true,
+    "text": "__That is the real win.__"
+  },
+  {
+    "id": "review-True-4",
+    "group": "review-positive",
+    "flag": true,
+    "text": "**I hope this helps!**"
+  },
+  {
+    "id": "review-True-5",
+    "group": "review-positive",
+    "flag": true,
+    "text": "The page includes not only text\nbut also images."
+  },
+  {
+    "id": "review-True-6",
+    "group": "review-positive",
+    "flag": true,
+    "text": "- The page includes not only text but also images."
+  }
+]

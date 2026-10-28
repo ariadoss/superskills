@@ -1,0 +1,380 @@
+[
+  {
+    "id": "scene-this",
+    "group": "scene",
+    "flag": true,
+    "text": "Imagine this: Your invoices arrive already sorted."
+  },
+  {
+    "id": "scene-picture",
+    "group": "scene",
+    "flag": true,
+    "text": "Picture this. Your weekly report is ready before lunch."
+  },
+  {
+    "id": "scene-world",
+    "group": "scene",
+    "flag": true,
+    "text": "Imagine a world where every receipt files itself."
+  },
+  {
+    "id": "scene-moment",
+    "group": "scene",
+    "flag": true,
+    "text": "Imagine this for a moment: the report writes itself."
+  },
+  {
+    "id": "scene-sentence",
+    "group": "scene",
+    "flag": true,
+    "text": "Monday arrives. Picture this: your inbox is empty."
+  },
+  {
+    "id": "scene-bold",
+    "group": "scene",
+    "flag": true,
+    "text": "**IMAGINE THIS:** Your files are already organized."
+  },
+  {
+    "id": "scene-list",
+    "group": "scene",
+    "flag": true,
+    "text": "- Picture this: every receipt is in the right folder."
+  },
+  {
+    "id": "scene-wrap",
+    "group": "scene",
+    "flag": true,
+    "text": "Imagine this:\nYour report is already finished."
+  },
+  {
+    "id": "question-practical",
+    "group": "announcement",
+    "flag": true,
+    "text": "The practical test: can the service restart without dropping jobs?"
+  },
+  {
+    "id": "question-simple",
+    "group": "announcement",
+    "flag": true,
+    "text": "A simple test: does the feature run without another branch?"
+  },
+  {
+    "id": "question-real",
+    "group": "announcement",
+    "flag": true,
+    "text": "The real question: why are we still sorting receipts by hand?"
+  },
+  {
+    "id": "question-key",
+    "group": "announcement",
+    "flag": true,
+    "text": "The key question: what happens when the server restarts?"
+  },
+  {
+    "id": "takeaway",
+    "group": "announcement",
+    "flag": true,
+    "text": "The takeaway: smaller batches shorten feedback loops."
+  },
+  {
+    "id": "lesson",
+    "group": "announcement",
+    "flag": true,
+    "text": "The lesson? Give every change a clear owner."
+  },
+  {
+    "id": "question-bold",
+    "group": "announcement",
+    "flag": true,
+    "text": "**The practical test:** Can a new reader follow the instructions?"
+  },
+  {
+    "id": "question-wrap",
+    "group": "announcement",
+    "flag": true,
+    "text": "The practical test:\nCan a reader reproduce the result?"
+  },
+  {
+    "id": "thing-straight",
+    "group": "filler",
+    "flag": true,
+    "text": "Here's the thing: the report only runs once a day."
+  },
+  {
+    "id": "thing-curly",
+    "group": "filler",
+    "flag": true,
+    "text": "Here\u2019s the thing. We already have the data."
+  },
+  {
+    "id": "thing-expanded",
+    "group": "filler",
+    "flag": true,
+    "text": "Here is the thing: retries need a limit."
+  },
+  {
+    "id": "honest-straight",
+    "group": "filler",
+    "flag": true,
+    "text": "Let's be honest: nobody enjoys sorting receipts."
+  },
+  {
+    "id": "honest-curly",
+    "group": "filler",
+    "flag": true,
+    "text": "Let\u2019s be honest, this report takes too long."
+  },
+  {
+    "id": "honest-expanded",
+    "group": "filler",
+    "flag": true,
+    "text": "Let us be honest. Nobody reads the entire report."
+  },
+  {
+    "id": "sink-in",
+    "group": "filler",
+    "flag": true,
+    "text": "We send the same form every week. Let that sink in."
+  },
+  {
+    "id": "thing-list",
+    "group": "filler",
+    "flag": true,
+    "text": "1. Here's the thing: every release needs an owner."
+  },
+  {
+    "id": "literal-cant",
+    "group": "negative",
+    "flag": false,
+    "text": "I can't imagine this working without a backup."
+  },
+  {
+    "id": "literal-could",
+    "group": "negative",
+    "flag": false,
+    "text": "Could you imagine this happening during a deployment?"
+  },
+  {
+    "id": "literal-two",
+    "group": "negative",
+    "flag": false,
+    "text": "Imagine two workers reading the same queue. Both receive job 42."
+  },
+  {
+    "id": "literal-geometry",
+    "group": "negative",
+    "flag": false,
+    "text": "Imagine this triangle rotated ninety degrees clockwise."
+  },
+  {
+    "id": "literal-picture",
+    "group": "negative",
+    "flag": false,
+    "text": "Picture this graph as a set of connected rooms."
+  },
+  {
+    "id": "literal-photo",
+    "group": "negative",
+    "flag": false,
+    "text": "We need to picture this accurately before ordering parts."
+  },
+  {
+    "id": "literal-test",
+    "group": "negative",
+    "flag": false,
+    "text": "The practical test starts at nine and lasts an hour."
+  },
+  {
+    "id": "literal-test-label",
+    "group": "negative",
+    "flag": false,
+    "text": "The test: a two-hour driving assessment on public roads."
+  },
+  {
+    "id": "literal-question",
+    "group": "negative",
+    "flag": false,
+    "text": "The question asks whether both workers receive the same job."
+  },
+  {
+    "id": "literal-thing",
+    "group": "negative",
+    "flag": false,
+    "text": "Here's the thing I ordered for the workshop."
+  },
+  {
+    "id": "literal-honest",
+    "group": "negative",
+    "flag": false,
+    "text": "Let's be honest with the client about the missed deadline."
+  },
+  {
+    "id": "literal-sink",
+    "group": "negative",
+    "flag": false,
+    "text": "Let that sink into the clay before adding water."
+  },
+  {
+    "id": "direct-question",
+    "group": "negative",
+    "flag": false,
+    "text": "Can the service restart without dropping jobs?"
+  },
+  {
+    "id": "double-quote",
+    "group": "negative",
+    "flag": false,
+    "text": "The reviewer wrote, \"Imagine this: Your report is ready.\""
+  },
+  {
+    "id": "curly-quote",
+    "group": "negative",
+    "flag": false,
+    "text": "\u201cHere\u2019s the thing: we need a backup,\u201d said the engineer."
+  },
+  {
+    "id": "blockquote",
+    "group": "negative",
+    "flag": false,
+    "text": "> Imagine this: the moon has two shadows.\n> The practical test: can you sketch them?"
+  },
+  {
+    "id": "inline-code",
+    "group": "negative",
+    "flag": false,
+    "text": "The literal string is `Imagine this: a new report`."
+  },
+  {
+    "id": "fenced-code",
+    "group": "negative",
+    "flag": false,
+    "text": "```text\nImagine this: a new report.\nThe practical test: can we parse it?\n```"
+  },
+  {
+    "id": "indented-code",
+    "group": "negative",
+    "flag": false,
+    "text": "Example:\n\n    Imagine this: a new report."
+  },
+  {
+    "id": "comment",
+    "group": "negative",
+    "flag": false,
+    "text": "<!--\nImagine this: a new report.\n-->\nRead the report before Friday."
+  },
+  {
+    "id": "url-title",
+    "group": "negative",
+    "flag": false,
+    "text": "Read [the guide](https://example.org/guide \"Imagine this: a new report\")."
+  },
+  {
+    "id": "meta-inline",
+    "group": "negative",
+    "flag": false,
+    "text": "Avoid the opener \"The takeaway:\" when it adds nothing."
+  },
+  {
+    "id": "legacy-vocab",
+    "group": "legacy",
+    "flag": false,
+    "text": "The tapestry shimmered as she murmured an answer."
+  },
+  {
+    "id": "legacy-pattern",
+    "group": "legacy",
+    "flag": false,
+    "text": "It's not just a report, it's a revolution. The result? More paperwork."
+  },
+  {
+    "id": "legacy-dashes",
+    "group": "legacy",
+    "flag": false,
+    "text": "The release shipped\u2014the queue was empty.  Nobody waited."
+  },
+  {
+    "id": "legacy-technical",
+    "group": "legacy",
+    "flag": false,
+    "text": "The robust estimator reduces the influence of outliers."
+  },
+  {
+    "id": "fiction-dialogue",
+    "group": "fiction-negative",
+    "flag": false,
+    "text": "\"Imagine this: we leave tonight,\" Mara whispered."
+  },
+  {
+    "id": "fiction-narrator",
+    "group": "fiction-negative",
+    "flag": false,
+    "text": "Imagine a city where the windows open onto different years."
+  },
+  {
+    "id": "fiction-question",
+    "group": "fiction-negative",
+    "flag": false,
+    "text": "Could she reach the gate before the bell rang? She had seven minutes."
+  },
+  {
+    "id": "fiction-literal",
+    "group": "fiction-negative",
+    "flag": false,
+    "text": "He tried to imagine this room with the lights on."
+  },
+  {
+    "id": "fiction-voice",
+    "group": "fiction-negative",
+    "flag": false,
+    "text": "What did the sea owe him? Another night, perhaps."
+  },
+  {
+    "id": "fiction-image",
+    "group": "fiction-negative",
+    "flag": false,
+    "text": "The moon caught on the broken chimney like a torn sleeve."
+  },
+  {
+    "id": "fiction-announcement",
+    "group": "fiction-review",
+    "flag": true,
+    "text": "The practical test: could Mara cross the bridge before dawn?"
+  },
+  {
+    "id": "fiction-filler",
+    "group": "fiction-review",
+    "flag": true,
+    "text": "Here's the thing: the watchman knew her name."
+  },
+  {
+    "id": "quoted-wrap",
+    "group": "quote-stress",
+    "flag": false,
+    "text": "Jo wrote, \"The report is ready.\nImagine this: every invoice is paid.\""
+  },
+  {
+    "id": "quoted-curly-wrap",
+    "group": "quote-stress",
+    "flag": false,
+    "text": "Jo wrote, \u201cThe report is ready.\nThe practical test: can I open it?\u201d"
+  },
+  {
+    "id": "quoted-apostrophe",
+    "group": "quote-stress",
+    "flag": false,
+    "text": "'Here's the thing. Imagine this: a report,' she said."
+  },
+  {
+    "id": "quoted-curly-apostrophe",
+    "group": "quote-stress",
+    "flag": false,
+    "text": "\u2018Here\u2019s the thing. Imagine this: a report,\u2019 she said."
+  },
+  {
+    "id": "lazy-blockquote",
+    "group": "quote-stress",
+    "flag": false,
+    "text": "> First the customer writes.\nThen she adds. Imagine this: every invoice is paid."
+  }
+]

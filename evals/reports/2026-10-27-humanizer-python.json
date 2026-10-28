@@ -1,0 +1,2539 @@
+{
+  "baseline": "Local humanize after the preceding construction update; not the released main branch.",
+  "baseline_sha256": {
+    "SKILL.md": "2e6031fe352164da936c0fe5860932d6457cfda8b5a1c8a39199f673a6d01861",
+    "toolkit/slop_report.py": "07bbe8e28ff26664a845dc6d93f957144b477005c4c263e9632483abadcaf824"
+  },
+  "candidate_sha256": {
+    "SKILL.md": "f8475f9c579babc44d29f07b745d3a8f8bb67e84765df57b1574eee4c3b62355",
+    "toolkit/slop_report.py": "a9a80f167241f19d24388470b0c65c01d927a9abe1c378d1efe14eead7ab5209",
+    "toolkit/NOTICE.md": "059b80b125418b07147194f1d82b1323fb0dcf966ab8b68609a4175c842aed95"
+  },
+  "sources": {
+    "humanizer": "https://github.com/blader/humanizer/blob/8c307f367c91bd974002f10f2be2965d642c13df/SKILL.md",
+    "wikipedia_signs_revision": 1382015304,
+    "wikipedia_project_revision": 1382243356
+  },
+  "detector_scope": "Only the dedicated new editorial-pattern group. Positive class is a declared review shape, not AI authorship or an automatic deletion. Includes legitimate contrasts.",
+  "detector_before": {
+    "positive_class": "needs editorial review",
+    "counts": {
+      "TP": 0,
+      "TN": 32,
+      "FP": 0,
+      "FN": 35
+    },
+    "metrics": {
+      "recall": 0.0,
+      "specificity": 1.0,
+      "accuracy": 0.47761194029850745,
+      "precision": null
+    },
+    "cases": [
+      {
+        "id": "opener-1",
+        "group": "opener",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "0f9564b763bcefa0790e25b0e47f5993af2dcca28e55fde68dc0ef7d495c8e25",
+        "findings": ""
+      },
+      {
+        "id": "opener-2",
+        "group": "opener",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "932a8f109c7bb920f22fd0f43e455b9952e7af45fbb16095e4ca236d39b30e1f",
+        "findings": ""
+      },
+      {
+        "id": "opener-3",
+        "group": "opener",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "e1d53d6ba8167caa6f616300c02402eacb11e95c1b68191686b63b5b75ee9bf7",
+        "findings": ""
+      },
+      {
+        "id": "opener-4",
+        "group": "opener",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "9c468e6adc83e7033d8510b8e1c0bcc9f3b3d87e5a8deb4f8a93669fa97be348",
+        "findings": ""
+      },
+      {
+        "id": "opener-5",
+        "group": "opener",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "f238482588473ae1a9d0c8ed89f9ac10034ec7c1dfb3c6c9202bc23b4a8bc699",
+        "findings": ""
+      },
+      {
+        "id": "opener-6",
+        "group": "opener",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "8a7bb06209822690f58b5b04e0ed5760df1a571b0a18b5d424aa23e023d1d901",
+        "findings": ""
+      },
+      {
+        "id": "opener-7",
+        "group": "opener",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "f42827190265386f29167e60b6ecbe0545b299a31a775c1711600a23df06d25a",
+        "findings": ""
+      },
+      {
+        "id": "opener-8",
+        "group": "opener",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "a5b5d3dd57d4b301dcd4a7db70de61adb82bc844ddbd3d48058c8c428f6c5e45",
+        "findings": ""
+      },
+      {
+        "id": "closer-1",
+        "group": "closer",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "64b1650edc29490dfdfa7bad2179331b9bcfb2ce1100c75bbbcd62f7e40ce669",
+        "findings": ""
+      },
+      {
+        "id": "closer-2",
+        "group": "closer",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "8f470a3c61f76f1315819fb1185feb9a03cd6e61d0c519cf8d8a3d738b016bc6",
+        "findings": ""
+      },
+      {
+        "id": "closer-3",
+        "group": "closer",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "b533628690b1c4ff1f556a5a3c0d8fc0ee1a41bf8ead03bc064c57796c562502",
+        "findings": ""
+      },
+      {
+        "id": "closer-4",
+        "group": "closer",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "ba6792caec8e8e03f31bc427d470e74a1e3342afc23615b1a2235d554e861e8b",
+        "findings": ""
+      },
+      {
+        "id": "contrast-1",
+        "group": "contrast",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "8742d796ab35d0d92765d55c002091e56f3b85071494f738cb04480b588eb84d",
+        "findings": ""
+      },
+      {
+        "id": "contrast-2",
+        "group": "contrast",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "09b5df72528d8becdaffaf0cf968c93fab785025691ba88c46e120062e10a61b",
+        "findings": ""
+      },
+      {
+        "id": "contrast-3",
+        "group": "contrast",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "56e0669c21b0920221a26b01cc659173383cdbc35cbd14079b307b4b8d53b2b6",
+        "findings": ""
+      },
+      {
+        "id": "contrast-4",
+        "group": "contrast",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "b73512c2bb55d87660fa44599cda38bd40cce2437857c036446480205b2ce2ac",
+        "findings": ""
+      },
+      {
+        "id": "contrast-5",
+        "group": "contrast",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "63518ed6d93b2e78affe7eac7d2a65c10036b189cdacf5bf136366ac4f237e57",
+        "findings": ""
+      },
+      {
+        "id": "contrast-6",
+        "group": "contrast",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "a47b0d55f642a8cdd3139937bb91e4c749ca9ef8bb6de55fec19be8956cdd75d",
+        "findings": ""
+      },
+      {
+        "id": "contrast-7",
+        "group": "contrast",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "e22151f5dc83bf2dbae68666129ac130f86f54902242820f9444affd4ca4f1de",
+        "findings": ""
+      },
+      {
+        "id": "wrapper-1",
+        "group": "wrapper",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "8abc2835b5ebbc5dfcc2b8087fe8b3aab2d4dbca2d0ac74085d933f8e66e8fe4",
+        "findings": ""
+      },
+      {
+        "id": "wrapper-2",
+        "group": "wrapper",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "e4983169f70f675a59151e6f50d02da51a54961b53212fa41fab833a793fb929",
+        "findings": ""
+      },
+      {
+        "id": "wrapper-3",
+        "group": "wrapper",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "303dab747ad54c529de8c653c0ad1f761e75f02ca1197aaa2420dcdc800212e3",
+        "findings": ""
+      },
+      {
+        "id": "wrapper-4",
+        "group": "wrapper",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "036f3a36712cd3d9b9bbe30dff350d02eb962a8aabb05c8f8a4b9b5cbde80404",
+        "findings": ""
+      },
+      {
+        "id": "wrapper-5",
+        "group": "wrapper",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "6f2e03eb0b274124cfb1e7e84c8d9b7b1ba5b2e4dd4d8958ad3c8e11950df53c",
+        "findings": ""
+      },
+      {
+        "id": "wrapper-6",
+        "group": "wrapper",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "8999437cb75b2ba567ecc8dadde491250a9c7d821e32dcda8a338da19afa0aeb",
+        "findings": ""
+      },
+      {
+        "id": "wrapper-7",
+        "group": "wrapper",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "4b178e087f9cc051d3aaa0ab8afb453a7566fab58fad3a581e999403507355a5",
+        "findings": ""
+      },
+      {
+        "id": "wrapper-8",
+        "group": "wrapper",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "24fa2030c0ffed4ef65b2124c886fe9c624ecd262eb9ec19148769001287b022",
+        "findings": ""
+      },
+      {
+        "id": "format-1",
+        "group": "format",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "196b4b38f7f3dfc4463d1ccccf09150f071fcf4fdb96dd8d95e47e9ecd6184f0",
+        "findings": ""
+      },
+      {
+        "id": "format-2",
+        "group": "format",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "d0b3b09af115249d430018f843b0bda8077e6470ea4b05642692ff905f919cdf",
+        "findings": ""
+      },
+      {
+        "id": "literal-1",
+        "group": "literal",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "bec99ab6de0bdb0676f58c4fb7e6401615e494eca5cdb6abba5506f34a708319",
+        "findings": ""
+      },
+      {
+        "id": "literal-2",
+        "group": "literal",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "f56377c0e04257cb9250eaca874ae2da79d3c7a93533dbc8ef5ec040b0f633d5",
+        "findings": ""
+      },
+      {
+        "id": "literal-3",
+        "group": "literal",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "f86836c0e47a176082af23c4a238900aa2d229ede23b441dd7c85c59bae7d92d",
+        "findings": ""
+      },
+      {
+        "id": "literal-4",
+        "group": "literal",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "63d29d50e81629430dd5d28068877e31b32e51318df3c88ab91599096ae0e2b6",
+        "findings": ""
+      },
+      {
+        "id": "literal-5",
+        "group": "literal",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "eea4b6555a095180479cdb267b06c2ff42e94d36051c0cb5241ecaba00b79824",
+        "findings": ""
+      },
+      {
+        "id": "literal-6",
+        "group": "literal",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "8401294ee293d5216346609b8690aba848f0514810e0f241d03e0c70ba6f617d",
+        "findings": ""
+      },
+      {
+        "id": "literal-7",
+        "group": "literal",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "ff6a71ffb5b09f6f8e34400d6a0769d655b9896242e338340ba57bd878ed7cef",
+        "findings": ""
+      },
+      {
+        "id": "literal-8",
+        "group": "literal",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "84c5e923c7345a3b895da57e9c2f2ae1d3073219b8010adb0ad2bc078bccfb3e",
+        "findings": ""
+      },
+      {
+        "id": "literal-9",
+        "group": "literal",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "a8cb8c487a2ad9b4343c5930733cf44a1a72bb24038af5a3c27d3ed0ee784fc0",
+        "findings": ""
+      },
+      {
+        "id": "literal-10",
+        "group": "literal",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "75b5a7e58006c92222129811e54c5f9239bb9832800aa1b55d85c424a103c3f3",
+        "findings": ""
+      },
+      {
+        "id": "literal-11",
+        "group": "literal",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "5117f29cca842db696c368e35bb7546b85afb8246241a12f21a444ccabd837cf",
+        "findings": ""
+      },
+      {
+        "id": "literal-12",
+        "group": "literal",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "49f08a28bf9b8a0ad4d27f9bd863b2eebef2ed567f8b6496e8fdee6a33f4bac2",
+        "findings": ""
+      },
+      {
+        "id": "literal-13",
+        "group": "literal",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "35de587899b96f33224d7451415ed721f35cbbbd7236b8891a3f804faa142c6d",
+        "findings": ""
+      },
+      {
+        "id": "literal-14",
+        "group": "literal",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "52b1b8d903f41718daecd229772567d5aeab76a7fc1b850d561d0597cca5495c",
+        "findings": ""
+      },
+      {
+        "id": "literal-15",
+        "group": "literal",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "0d16aab80853b7a306e3fa0af838d8da755c2bbc5ae4c410454e9cd0daffe597",
+        "findings": ""
+      },
+      {
+        "id": "literal-16",
+        "group": "literal",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "5c3df8925ba874d5e930675dc65c81176f638a9a9b238fa321bb45704745ebf1",
+        "findings": ""
+      },
+      {
+        "id": "protected-1",
+        "group": "protected",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "0edb7324065af892ba0b96bd4ddca4ae9c09ce7cc183cf4c251f4eb3fd8ce97c",
+        "findings": ""
+      },
+      {
+        "id": "protected-2",
+        "group": "protected",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "8f7e0e0e84ed5a2cac92ff5742659d2fa2bc561d5c59d03543f5912ff1d6d879",
+        "findings": ""
+      },
+      {
+        "id": "protected-3",
+        "group": "protected",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "5e371aa75926e592118372633c8774258f3445fe4cb229c57837673b087231aa",
+        "findings": ""
+      },
+      {
+        "id": "protected-4",
+        "group": "protected",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "fd9f49cb75244f639e9ec64b499de25c5a763de57133fa31c7a169d2d27cfa99",
+        "findings": ""
+      },
+      {
+        "id": "protected-5",
+        "group": "protected",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "031eab65b730535b1751c7b05868077e6f3cd71ab6dbaa0d6bc2019cc985f0f4",
+        "findings": ""
+      },
+      {
+        "id": "protected-6",
+        "group": "protected",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "29ced6ef2ae3896d8c2f72bca88f05f2406dd7eac052cd5f43758c5e91ef78f1",
+        "findings": ""
+      },
+      {
+        "id": "protected-7",
+        "group": "protected",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "22e25281140eda4a3fa666a823e6d56bbdef8e29a0c198c72be3e005dbb78207",
+        "findings": ""
+      },
+      {
+        "id": "protected-8",
+        "group": "protected",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "86041a133b426ae2b5d59cd37da11daa2608cad0b176d1d502838243eee7b4d2",
+        "findings": ""
+      },
+      {
+        "id": "protected-9",
+        "group": "protected",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "71f49a70b967fbd587e9b7ee0129faeeb69c0f23b895b38527da8ad8568f90e6",
+        "findings": ""
+      },
+      {
+        "id": "protected-10",
+        "group": "protected",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "1d37e7c5b0a4b560fe319ff3e89c4e5f1fdf209c94735c6055ff990e9b94f909",
+        "findings": ""
+      },
+      {
+        "id": "review-False-1",
+        "group": "review-negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "5487ede13ada761fb6649518959f9c1d7b8816e4e4bf34f074a185834d42784f",
+        "findings": ""
+      },
+      {
+        "id": "review-False-2",
+        "group": "review-negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "a5ee9a3c93032ee7e9598ed0b0887aecca39e0c79949b7dea777ea0899875b91",
+        "findings": ""
+      },
+      {
+        "id": "review-False-3",
+        "group": "review-negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "5e8b96bc3a8d503afc2bc6c61f05477af0d713cae5f50388666addac867a41f6",
+        "findings": ""
+      },
+      {
+        "id": "review-False-4",
+        "group": "review-negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "8515fd66c4b972f798a9cff7303da446ce2f459c6a76117b2c1bd55027e49851",
+        "findings": ""
+      },
+      {
+        "id": "review-False-5",
+        "group": "review-negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "95315463eece11991ba9408cc36f6fc14c9dcf5ce79cc0de42eee79961c2a0ae",
+        "findings": ""
+      },
+      {
+        "id": "review-False-6",
+        "group": "review-negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "9ecedc4765bd7f0a2c4abec43669831bd9a8ad9d8afc3640e72077c48e8d7f1e",
+        "findings": ""
+      },
+      {
+        "id": "review-True-1",
+        "group": "review-positive",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "4ec4e4fba4af49c27c04e29c77569bc67a8d543b77049773f327d1281958ea8b",
+        "findings": ""
+      },
+      {
+        "id": "review-True-2",
+        "group": "review-positive",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "828b62efd6cbe1966276f4c3e5bd75f845a280d90724285bd89e6f28d29e6201",
+        "findings": ""
+      },
+      {
+        "id": "review-True-3",
+        "group": "review-positive",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "314fc6415f4cec29332c502ea916a248a4c3a9618e3a634880eca866a0ae52a3",
+        "findings": ""
+      },
+      {
+        "id": "review-True-4",
+        "group": "review-positive",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "d607b6c09c2dcb73045b68c40a4474a8c57491e3c8d0b8b47596d5aa31e57d31",
+        "findings": ""
+      },
+      {
+        "id": "review-True-5",
+        "group": "review-positive",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "e89712808606706f0e0b9f4d91a7e227b03816d71718dec3c912e72a701f996a",
+        "findings": ""
+      },
+      {
+        "id": "review-True-6",
+        "group": "review-positive",
+        "expected": true,
+        "flagged": false,
+        "legacy_sha256": "8e6e478c56a85f46ff4df3c6a901e4d1642d51fd1e9bf9ea8bc84bd8fedb244d",
+        "findings": ""
+      }
+    ]
+  },
+  "detector_after": {
+    "positive_class": "needs editorial review",
+    "counts": {
+      "TP": 35,
+      "TN": 32,
+      "FP": 0,
+      "FN": 0
+    },
+    "metrics": {
+      "recall": 1.0,
+      "specificity": 1.0,
+      "accuracy": 1.0,
+      "precision": 1.0
+    },
+    "cases": [
+      {
+        "id": "opener-1",
+        "group": "opener",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "0f9564b763bcefa0790e25b0e47f5993af2dcca28e55fde68dc0ef7d495c8e25",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): 1  (let's dive in.×1)\n    L1: [Let's dive in.]  Let's dive in. The trial lasts fourteen days.\n"
+      },
+      {
+        "id": "opener-2",
+        "group": "opener",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "932a8f109c7bb920f22fd0f43e455b9952e7af45fbb16095e4ca236d39b30e1f",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): 1  (let’s break this down:×1)\n    L1: [Let’s break this down:]  Let’s break this down: the lock expires at noon.\n"
+      },
+      {
+        "id": "opener-3",
+        "group": "opener",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "e1d53d6ba8167caa6f616300c02402eacb11e95c1b68191686b63b5b75ee9bf7",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): 1  (here's what you need to know:×1)\n    L1: [Here's what you need to know:]  Here's what you need to know: billing stops on cancellation.\n"
+      },
+      {
+        "id": "opener-4",
+        "group": "opener",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "9c468e6adc83e7033d8510b8e1c0bcc9f3b3d87e5a8deb4f8a93669fa97be348",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): 1  (without further ado,×1)\n    L1: [Without further ado,]  Without further ado, the train leaves at six.\n"
+      },
+      {
+        "id": "opener-5",
+        "group": "opener",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "f238482588473ae1a9d0c8ed89f9ac10034ec7c1dfb3c6c9202bc23b4a8bc699",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): 1  (the thing is:×1)\n    L1: [The thing is:]  The thing is: the gate has two locks.\n"
+      },
+      {
+        "id": "opener-6",
+        "group": "opener",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "8a7bb06209822690f58b5b04e0ed5760df1a571b0a18b5d424aa23e023d1d901",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): 1  (real talk:×1)\n    L1: [Real talk:]  Real talk: the plan costs $19.\n"
+      },
+      {
+        "id": "opener-7",
+        "group": "opener",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "f42827190265386f29167e60b6ecbe0545b299a31a775c1711600a23df06d25a",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): 1  (honestly?×1)\n    L1: [Honestly?]  Honestly? The answer arrived yesterday.\n"
+      },
+      {
+        "id": "opener-8",
+        "group": "opener",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "a5b5d3dd57d4b301dcd4a7db70de61adb82bc844ddbd3d48058c8c428f6c5e45",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): 1  (here is what you need to know:×1)\n    L1: [HERE IS WHAT YOU NEED TO KNOW:]  One detail remains. HERE IS WHAT YOU NEED TO KNOW: the key expires.\n"
+      },
+      {
+        "id": "closer-1",
+        "group": "closer",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "64b1650edc29490dfdfa7bad2179331b9bcfb2ce1100c75bbbcd62f7e40ce669",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): 1  (read that again.×1)\n    L1: [Read that again.]  The file stays on your disk. Read that again.\n"
+      },
+      {
+        "id": "closer-2",
+        "group": "closer",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "8f470a3c61f76f1315819fb1185feb9a03cd6e61d0c519cf8d8a3d738b016bc6",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): 1  (that is the real win.×1)\n    L1: [That is the real win.]  That is the real win.\n"
+      },
+      {
+        "id": "closer-3",
+        "group": "closer",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "b533628690b1c4ff1f556a5a3c0d8fc0ee1a41bf8ead03bc064c57796c562502",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): 1  (that’s why it matters.×1)\n    L1: [That’s why it matters.]  That’s why it matters.\n"
+      },
+      {
+        "id": "closer-4",
+        "group": "closer",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "ba6792caec8e8e03f31bc427d470e74a1e3342afc23615b1a2235d554e861e8b",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): 1  (that distinction matters.×1)\n    L1: [That distinction matters.]  That distinction matters.\n"
+      },
+      {
+        "id": "contrast-1",
+        "group": "contrast",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "8742d796ab35d0d92765d55c002091e56f3b85071494f738cb04480b588eb84d",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): 1  (not merely a notebook, but×1)\n    L1: [not merely a notebook, but]  The app is not merely a notebook, but a shared record.\n"
+      },
+      {
+        "id": "contrast-2",
+        "group": "contrast",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "09b5df72528d8becdaffaf0cf968c93fab785025691ba88c46e120062e10a61b",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): 1  (not only pages but also×1)\n    L1: [not only pages but also]  The export includes not only pages but also images.\n"
+      },
+      {
+        "id": "contrast-3",
+        "group": "contrast",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "56e0669c21b0920221a26b01cc659173383cdbc35cbd14079b307b4b8d53b2b6",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): 1  (not a medal but×1)\n    L1: [not a medal but]  She wanted not a medal but a name.\n"
+      },
+      {
+        "id": "contrast-4",
+        "group": "contrast",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "b73512c2bb55d87660fa44599cda38bd40cce2437857c036446480205b2ce2ac",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): 1  (this isn't about luck. it's×1)\n    L1: [This isn't about luck. It's]  This isn't about luck. It's about checking the address.\n"
+      },
+      {
+        "id": "contrast-5",
+        "group": "contrast",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "63518ed6d93b2e78affe7eac7d2a65c10036b189cdacf5bf136366ac4f237e57",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): 1  (it is not a race; it is×1)\n    L1: [It is not a race; it is]  It is not a race; it is a queue.\n"
+      },
+      {
+        "id": "contrast-6",
+        "group": "contrast",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "a47b0d55f642a8cdd3139937bb91e4c749ca9ef8bb6de55fec19be8956cdd75d",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): 1  (this isn’t about rank. it’s×1)\n    L1: [This isn’t about rank. It’s]  This isn’t about rank.\n"
+      },
+      {
+        "id": "contrast-7",
+        "group": "contrast",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "e22151f5dc83bf2dbae68666129ac130f86f54902242820f9444affd4ca4f1de",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): 1  (not just speed, but×1)\n    L1: [Not just speed, but]  Not just speed, but speed with saved work.\n"
+      },
+      {
+        "id": "wrapper-1",
+        "group": "wrapper",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "8abc2835b5ebbc5dfcc2b8087fe8b3aab2d4dbca2d0ac74085d933f8e66e8fe4",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): 1  (great question!×1)\n    L1: [Great question!]  Great question! The account closes tomorrow.\n"
+      },
+      {
+        "id": "wrapper-2",
+        "group": "wrapper",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "e4983169f70f675a59151e6f50d02da51a54961b53212fa41fab833a793fb929",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): 1  (certainly!×1)\n    L1: [Certainly!]  Certainly! Your receipt is below.\n"
+      },
+      {
+        "id": "wrapper-3",
+        "group": "wrapper",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "303dab747ad54c529de8c653c0ad1f761e75f02ca1197aaa2420dcdc800212e3",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): 1  (i hope this helps!×1)\n    L1: [I hope this helps!]  I hope this helps!\n"
+      },
+      {
+        "id": "wrapper-4",
+        "group": "wrapper",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "036f3a36712cd3d9b9bbe30dff350d02eb962a8aabb05c8f8a4b9b5cbde80404",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): 1  (would you like me to×1)\n    L1: [Would you like me to]  Would you like me to add examples?\n"
+      },
+      {
+        "id": "wrapper-5",
+        "group": "wrapper",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "6f2e03eb0b274124cfb1e7e84c8d9b7b1ba5b2e4dd4d8958ad3c8e11950df53c",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): 1  (want me to×1)\n    L1: [Want me to]  Want me to explain the chart?\n"
+      },
+      {
+        "id": "wrapper-6",
+        "group": "wrapper",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "8999437cb75b2ba567ecc8dadde491250a9c7d821e32dcda8a338da19afa0aeb",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): 1  (should i continue?×1)\n    L1: [Should I continue?]  Should I continue?\n"
+      },
+      {
+        "id": "wrapper-7",
+        "group": "wrapper",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "4b178e087f9cc051d3aaa0ab8afb453a7566fab58fad3a581e999403507355a5",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): 1  (as an ai model×1)\n    L1: [As an AI model]  As an AI model, I cannot see your screen.\n"
+      },
+      {
+        "id": "wrapper-8",
+        "group": "wrapper",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "24fa2030c0ffed4ef65b2124c886fe9c624ecd262eb9ec19148769001287b022",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): 1  (as an ai language model×1)\n    L1: [As an AI language model]  As an AI language model, I do not have memories.\n"
+      },
+      {
+        "id": "format-1",
+        "group": "format",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "196b4b38f7f3dfc4463d1ccccf09150f071fcf4fdb96dd8d95e47e9ecd6184f0",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): 1  (great question!×1)\n    L1: [Great question!]  - **Great question!** The file contains six rows.\n"
+      },
+      {
+        "id": "format-2",
+        "group": "format",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "d0b3b09af115249d430018f843b0bda8077e6470ea4b05642692ff905f919cdf",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): 1  (here’s what you need to know:×1)\n    L1: [Here’s what you need to know:]  Here’s what you need\n"
+      },
+      {
+        "id": "literal-1",
+        "group": "literal",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "bec99ab6de0bdb0676f58c4fb7e6401615e494eca5cdb6abba5506f34a708319",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): none\n"
+      },
+      {
+        "id": "literal-2",
+        "group": "literal",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "f56377c0e04257cb9250eaca874ae2da79d3c7a93533dbc8ef5ec040b0f633d5",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): none\n"
+      },
+      {
+        "id": "literal-3",
+        "group": "literal",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "f86836c0e47a176082af23c4a238900aa2d229ede23b441dd7c85c59bae7d92d",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): none\n"
+      },
+      {
+        "id": "literal-4",
+        "group": "literal",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "63d29d50e81629430dd5d28068877e31b32e51318df3c88ab91599096ae0e2b6",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): none\n"
+      },
+      {
+        "id": "literal-5",
+        "group": "literal",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "eea4b6555a095180479cdb267b06c2ff42e94d36051c0cb5241ecaba00b79824",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): none\n"
+      },
+      {
+        "id": "literal-6",
+        "group": "literal",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "8401294ee293d5216346609b8690aba848f0514810e0f241d03e0c70ba6f617d",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): none\n"
+      },
+      {
+        "id": "literal-7",
+        "group": "literal",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "ff6a71ffb5b09f6f8e34400d6a0769d655b9896242e338340ba57bd878ed7cef",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): none\n"
+      },
+      {
+        "id": "literal-8",
+        "group": "literal",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "84c5e923c7345a3b895da57e9c2f2ae1d3073219b8010adb0ad2bc078bccfb3e",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): none\n"
+      },
+      {
+        "id": "literal-9",
+        "group": "literal",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "a8cb8c487a2ad9b4343c5930733cf44a1a72bb24038af5a3c27d3ed0ee784fc0",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): none\n"
+      },
+      {
+        "id": "literal-10",
+        "group": "literal",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "75b5a7e58006c92222129811e54c5f9239bb9832800aa1b55d85c424a103c3f3",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): none\n"
+      },
+      {
+        "id": "literal-11",
+        "group": "literal",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "5117f29cca842db696c368e35bb7546b85afb8246241a12f21a444ccabd837cf",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): none\n"
+      },
+      {
+        "id": "literal-12",
+        "group": "literal",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "49f08a28bf9b8a0ad4d27f9bd863b2eebef2ed567f8b6496e8fdee6a33f4bac2",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): none\n"
+      },
+      {
+        "id": "literal-13",
+        "group": "literal",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "35de587899b96f33224d7451415ed721f35cbbbd7236b8891a3f804faa142c6d",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): none\n"
+      },
+      {
+        "id": "literal-14",
+        "group": "literal",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "52b1b8d903f41718daecd229772567d5aeab76a7fc1b850d561d0597cca5495c",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): none\n"
+      },
+      {
+        "id": "literal-15",
+        "group": "literal",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "0d16aab80853b7a306e3fa0af838d8da755c2bbc5ae4c410454e9cd0daffe597",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): none\n"
+      },
+      {
+        "id": "literal-16",
+        "group": "literal",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "5c3df8925ba874d5e930675dc65c81176f638a9a9b238fa321bb45704745ebf1",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): none\n"
+      },
+      {
+        "id": "protected-1",
+        "group": "protected",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "0edb7324065af892ba0b96bd4ddca4ae9c09ce7cc183cf4c251f4eb3fd8ce97c",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): none\n"
+      },
+      {
+        "id": "protected-2",
+        "group": "protected",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "8f7e0e0e84ed5a2cac92ff5742659d2fa2bc561d5c59d03543f5912ff1d6d879",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): none\n"
+      },
+      {
+        "id": "protected-3",
+        "group": "protected",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "5e371aa75926e592118372633c8774258f3445fe4cb229c57837673b087231aa",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): none\n"
+      },
+      {
+        "id": "protected-4",
+        "group": "protected",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "fd9f49cb75244f639e9ec64b499de25c5a763de57133fa31c7a169d2d27cfa99",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): none\n"
+      },
+      {
+        "id": "protected-5",
+        "group": "protected",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "031eab65b730535b1751c7b05868077e6f3cd71ab6dbaa0d6bc2019cc985f0f4",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): none\n"
+      },
+      {
+        "id": "protected-6",
+        "group": "protected",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "29ced6ef2ae3896d8c2f72bca88f05f2406dd7eac052cd5f43758c5e91ef78f1",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): none\n"
+      },
+      {
+        "id": "protected-7",
+        "group": "protected",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "22e25281140eda4a3fa666a823e6d56bbdef8e29a0c198c72be3e005dbb78207",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): none\n"
+      },
+      {
+        "id": "protected-8",
+        "group": "protected",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "86041a133b426ae2b5d59cd37da11daa2608cad0b176d1d502838243eee7b4d2",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): none\n"
+      },
+      {
+        "id": "protected-9",
+        "group": "protected",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "71f49a70b967fbd587e9b7ee0129faeeb69c0f23b895b38527da8ad8568f90e6",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): none\n"
+      },
+      {
+        "id": "protected-10",
+        "group": "protected",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "1d37e7c5b0a4b560fe319ff3e89c4e5f1fdf209c94735c6055ff990e9b94f909",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): none\n"
+      },
+      {
+        "id": "review-False-1",
+        "group": "review-negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "5487ede13ada761fb6649518959f9c1d7b8816e4e4bf34f074a185834d42784f",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): none\n"
+      },
+      {
+        "id": "review-False-2",
+        "group": "review-negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "a5ee9a3c93032ee7e9598ed0b0887aecca39e0c79949b7dea777ea0899875b91",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): none\n"
+      },
+      {
+        "id": "review-False-3",
+        "group": "review-negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "5e8b96bc3a8d503afc2bc6c61f05477af0d713cae5f50388666addac867a41f6",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): none\n"
+      },
+      {
+        "id": "review-False-4",
+        "group": "review-negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "8515fd66c4b972f798a9cff7303da446ce2f459c6a76117b2c1bd55027e49851",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): none\n"
+      },
+      {
+        "id": "review-False-5",
+        "group": "review-negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "95315463eece11991ba9408cc36f6fc14c9dcf5ce79cc0de42eee79961c2a0ae",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): none\n"
+      },
+      {
+        "id": "review-False-6",
+        "group": "review-negative",
+        "expected": false,
+        "flagged": false,
+        "legacy_sha256": "9ecedc4765bd7f0a2c4abec43669831bd9a8ad9d8afc3640e72077c48e8d7f1e",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): none\n"
+      },
+      {
+        "id": "review-True-1",
+        "group": "review-positive",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "4ec4e4fba4af49c27c04e29c77569bc67a8d543b77049773f327d1281958ea8b",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): 1  (it's not filing. it's×1)\n    L1: [It's not filing. It's]  It's not filing. It's finding.\n"
+      },
+      {
+        "id": "review-True-2",
+        "group": "review-positive",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "828b62efd6cbe1966276f4c3e5bd75f845a280d90724285bd89e6f28d29e6201",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): 1  (read that again.×1)\n    L1: [Read that again.]  **Read that again.**\n"
+      },
+      {
+        "id": "review-True-3",
+        "group": "review-positive",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "314fc6415f4cec29332c502ea916a248a4c3a9618e3a634880eca866a0ae52a3",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): 1  (that is the real win.×1)\n    L1: [That is the real win.]  __That is the real win.__\n"
+      },
+      {
+        "id": "review-True-4",
+        "group": "review-positive",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "d607b6c09c2dcb73045b68c40a4474a8c57491e3c8d0b8b47596d5aa31e57d31",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): 1  (i hope this helps!×1)\n    L1: [I hope this helps!]  **I hope this helps!**\n"
+      },
+      {
+        "id": "review-True-5",
+        "group": "review-positive",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "e89712808606706f0e0b9f4d91a7e227b03816d71718dec3c912e72a701f996a",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): 1  (not only text but also×1)\n    L1: [not only text but also]  The page includes not only text\n"
+      },
+      {
+        "id": "review-True-6",
+        "group": "review-positive",
+        "expected": true,
+        "flagged": true,
+        "legacy_sha256": "8e6e478c56a85f46ff4df3c6a901e4d1642d51fd1e9bf9ea8bc84bd8fedb244d",
+        "findings": "— EDITORIAL PATTERNS (review context; never auto-delete): 1  (not only text but also×1)\n    L1: [not only text but also]  - The page includes not only text but also images.\n"
+      }
+    ]
+  },
+  "legacy_reports_unchanged": {
+    "new_set": 67,
+    "previous_regression_set": 63
+  },
+  "previous_regression_hashes": [
+    {
+      "id": "scene-this",
+      "sha256": "0776e33056a7a3415cb787c929b461daba1516f1716172898478a07d6354a689"
+    },
+    {
+      "id": "scene-picture",
+      "sha256": "3a34f18dc53959449249eb39d51c16fb9736890710cba9b39be1ecff8a9fcba0"
+    },
+    {
+      "id": "scene-world",
+      "sha256": "d67791d963ce6de93b2ead981d8a175ea49abe4d7f702da1165251476e4d40ec"
+    },
+    {
+      "id": "scene-moment",
+      "sha256": "62ea4ba1ce897fe45b7241c5fe3335495730d479b1a0d2dbab545ad48c49b8b5"
+    },
+    {
+      "id": "scene-sentence",
+      "sha256": "76593f22dba4dc64ce106ad65337c36373fee246b592518e6cf11ac4753373e3"
+    },
+    {
+      "id": "scene-bold",
+      "sha256": "f043f7614acc6e72ca3afdeba4ee6578dafddb9dd39aa3d72cb7da881ce40fcb"
+    },
+    {
+      "id": "scene-list",
+      "sha256": "29adec94654f7028ee44cdcddad349016a7f7128eb84bca7f06dda5061c2a0f0"
+    },
+    {
+      "id": "scene-wrap",
+      "sha256": "63bdabde22048609e09bf32c3b8ac491d117b9874583ea8e1790d9cbc4826c22"
+    },
+    {
+      "id": "question-practical",
+      "sha256": "e801770524e94b488e26bdf1b19c34c1e79123092804e923229ea25047ea7729"
+    },
+    {
+      "id": "question-simple",
+      "sha256": "b382c80d31a4dc3c8f8a90304ce04d62715e5247a418bd1be2ced07b91b901c4"
+    },
+    {
+      "id": "question-real",
+      "sha256": "39c659edcb1de72de00f06225097d2a4a04393c0e167a8cb084a1678ac5b9da2"
+    },
+    {
+      "id": "question-key",
+      "sha256": "13418d80e1dd384c7424dbb747bdef14d812abdb6d616c633baf55d523850654"
+    },
+    {
+      "id": "takeaway",
+      "sha256": "5ec724d1041eb3a039574ebedadddaeb8e81feb8c4265d91ed4d7875db9d4b57"
+    },
+    {
+      "id": "lesson",
+      "sha256": "7da578aa819d37a82c42938cb729a611c959d9b6152a4c222b323ae918f8989a"
+    },
+    {
+      "id": "question-bold",
+      "sha256": "e96986833dcfd5ec3a19dc069f940d9463c9be59851581cb4bc59f2e106af3c1"
+    },
+    {
+      "id": "question-wrap",
+      "sha256": "ea68ab08d9d3c4d7b4df81c17c614057642db5b77c60fc5cae52d5c5e03989b8"
+    },
+    {
+      "id": "thing-straight",
+      "sha256": "1ec6ace3589329bc63388595880084b3fa81c3cc6ba29168545d88797c3226d8"
+    },
+    {
+      "id": "thing-curly",
+      "sha256": "41af889651f40ca1747cdcba20e4f65f7ad0964ebd2568c65cac332d852491e4"
+    },
+    {
+      "id": "thing-expanded",
+      "sha256": "55d67b73390a2a6f39977c2c8dbbef209d87f5bf96546e8a54ce5878f805f787"
+    },
+    {
+      "id": "honest-straight",
+      "sha256": "69c1874bb6e38d92d2b561b8518e2a6d4ae2dc30ccb4ef9d1234748ad6eb8755"
+    },
+    {
+      "id": "honest-curly",
+      "sha256": "fc543fb5e3790203a9c91f4193fb10434d7fcb3b42c13fdd01cabcb41ce4f479"
+    },
+    {
+      "id": "honest-expanded",
+      "sha256": "85bd40660da7e3c1c1abf2b77fbd8ad7cffc2dc2838f41af97170a731a2e9954"
+    },
+    {
+      "id": "sink-in",
+      "sha256": "7ea7de18270fa47f3ca0d30d6f7ebc065c6a3cb8d8f90cee4a618b10340e3da5"
+    },
+    {
+      "id": "thing-list",
+      "sha256": "95c8b2a1a51c7ca3022a9b85b60d9914ea20f114248bad5a937fd2cb7e543ee0"
+    },
+    {
+      "id": "literal-cant",
+      "sha256": "0176d031d601cd249cee0d9f51d50ebac2fddfc756123dbc25b45d73d45a580d"
+    },
+    {
+      "id": "literal-could",
+      "sha256": "ca55fff12a0094d6bb8a79eb43c782716d045e57812f0e410f5a5745a5b1e423"
+    },
+    {
+      "id": "literal-two",
+      "sha256": "92acc0f295b520a218a70b92d08dff0231e82f1464861d8ee81829ef0e3fc4d5"
+    },
+    {
+      "id": "literal-geometry",
+      "sha256": "d22d5031ece1eb80ad104762ff0b51e327440c2173e445f10031786022fce85d"
+    },
+    {
+      "id": "literal-picture",
+      "sha256": "381c5872b09520dbe7830b7c39061eb7a281fa655cd454c3ed47728e602c19a9"
+    },
+    {
+      "id": "literal-photo",
+      "sha256": "1baa1efee2a4aed62e77fa4b611fde72bfd21c0a8ade6f87a741df8b3e8ce185"
+    },
+    {
+      "id": "literal-test",
+      "sha256": "163f38585ea8ca9e63d87035b8839e49a8477966b5bfb84ba3c297a28f5adf2b"
+    },
+    {
+      "id": "literal-test-label",
+      "sha256": "930fff6d796338d55e76953234a0cea395ac2f448b7d024ba2af185701037651"
+    },
+    {
+      "id": "literal-question",
+      "sha256": "21e0f412afb7dcd0ff0112f6fd4d77350f03add3ba54e88248314b2a419f9b74"
+    },
+    {
+      "id": "literal-thing",
+      "sha256": "46b1ed9fff839dc7e9da03cb176bf4e25839722e169ab3c090405e2b7298973a"
+    },
+    {
+      "id": "literal-honest",
+      "sha256": "850da9fc9be3d133b1f58237f173f1529df3f14215d7a2fb789f32a4f09d2136"
+    },
+    {
+      "id": "literal-sink",
+      "sha256": "059944d4bf07bd67cc04bad9549660792b343c230a6d51f54a3247f9073fbacb"
+    },
+    {
+      "id": "direct-question",
+      "sha256": "afb43500d072aa925aaddd60b0f54481b980de7b7fb242f8c864edd3b34b1540"
+    },
+    {
+      "id": "double-quote",
+      "sha256": "042d3a293c423fc51b91bf0bf452053f40509521074e6eee48d39eef2484a65f"
+    },
+    {
+      "id": "curly-quote",
+      "sha256": "b107eabf01460832b2ff1b1f4e0c335403ab39ce79ae700c98ed446bcd5676e7"
+    },
+    {
+      "id": "blockquote",
+      "sha256": "6dfdf5e857dd9a6f8364bc10a0204d4f84de05c59287c4d8daa5218a1594d928"
+    },
+    {
+      "id": "inline-code",
+      "sha256": "13d2f26ce1ceffcaed264f501327ea7e48a4e309db76bf4aad38031f0136ab6d"
+    },
+    {
+      "id": "fenced-code",
+      "sha256": "e30518b56c1395d4d932538fdfa5c713c1dd3b3b7d68eef7dcdc6a2d6e68686e"
+    },
+    {
+      "id": "indented-code",
+      "sha256": "380612de0e98c212c8927d9578780087520d74f51ba9824ad7940c491e309fae"
+    },
+    {
+      "id": "comment",
+      "sha256": "ce66b8443137994858143623cb1b52b07f45e41979bf316f80aff51361d7ed79"
+    },
+    {
+      "id": "url-title",
+      "sha256": "42e4cd4331efd7ccec0360914129f7128addc210a571f50be005a69d06a7e3aa"
+    },
+    {
+      "id": "meta-inline",
+      "sha256": "de924eebb811a14721dcd183ebe51179d52d33cd3bf8c3bdd30478ff48014cb9"
+    },
+    {
+      "id": "legacy-vocab",
+      "sha256": "2494186058237fe7ce3f5f4a5fd033bdf63fc35c08b6a53325e6e15ea72063fe"
+    },
+    {
+      "id": "legacy-pattern",
+      "sha256": "defa48c57fce90bbd16d26ac2c368e2b338c85d341d90c5d699ec82863bf5402"
+    },
+    {
+      "id": "legacy-dashes",
+      "sha256": "d70bc535334d353dc49478cbdeea8e0bb190ea3b8d6987dd300cc815f0acd7c1"
+    },
+    {
+      "id": "legacy-technical",
+      "sha256": "dd510f64f62376c39aa5243cabb04c6ed7b7063631688c26e92b3306bd9799b7"
+    },
+    {
+      "id": "fiction-dialogue",
+      "sha256": "47f9d1dc0e8f52f59e2ab81ba04d5ffa0db02de2ee29a8cbe07cfd65f172d4bb"
+    },
+    {
+      "id": "fiction-narrator",
+      "sha256": "147f3f878111060758e69c0900ff392511066efb9aa0e9eba554b8c60e858f8c"
+    },
+    {
+      "id": "fiction-question",
+      "sha256": "2f5c515a16930ad616606a69365bfc37b3b41e816c508c5df6ad4d93e3bb60ae"
+    },
+    {
+      "id": "fiction-literal",
+      "sha256": "14a0959295c85242e674482955266f47bf36f42c793b495adf196f8563f23832"
+    },
+    {
+      "id": "fiction-voice",
+      "sha256": "87452076f2c97d5c1d3779e6bafd56467b50bcb2c246c5ad1ddb4793b88c005c"
+    },
+    {
+      "id": "fiction-image",
+      "sha256": "fdad29ee2c14a2fb30534495e78c6e050c1875726be28e914548cebb26e0f3fc"
+    },
+    {
+      "id": "fiction-announcement",
+      "sha256": "cf99c134f4710fbc5d0210e1b80ac74ee1b600c5ced1173ecad629c06a929960"
+    },
+    {
+      "id": "fiction-filler",
+      "sha256": "bbf7b3a1b9e4ad06272e3873df9b6d603d98d441a0eda73e48f9ffcdfb358894"
+    },
+    {
+      "id": "quoted-wrap",
+      "sha256": "55fd191d96a4ba0bdb729933043d369d91367309413d35928846f34599319b0e"
+    },
+    {
+      "id": "quoted-curly-wrap",
+      "sha256": "dabca93491ee0b1fbd3b5fda675dbb7dff4b7168a24f9b924a5d848a04f21300"
+    },
+    {
+      "id": "quoted-apostrophe",
+      "sha256": "7c36d3e5b97ea3b848e09dc02ec855da1a149bee99fd2274e3b87d9eacb2c287"
+    },
+    {
+      "id": "quoted-curly-apostrophe",
+      "sha256": "eef6fae63f4a902e3ea849f9ab961c19799923975271c79a2c95fb50eba78134"
+    },
+    {
+      "id": "lazy-blockquote",
+      "sha256": "3908217b1fbc452d18692b1062cdbb59360fd71ffe24bc09c5b109f8b38dd7c1"
+    }
+  ],
+  "behavioral_outcomes": {
+    "candidate": {
+      "fiction": {
+        "total": 6,
+        "passing": 6,
+        "preserved": 6
+      },
+      "all": {
+        "total": 12,
+        "passing": 12,
+        "preserved": 12
+      },
+      "nonfiction": {
+        "total": 6,
+        "passing": 6,
+        "preserved": 6
+      }
+    },
+    "baseline": {
+      "nonfiction": {
+        "total": 6,
+        "passing": 6,
+        "preserved": 6
+      },
+      "all": {
+        "total": 12,
+        "passing": 12,
+        "preserved": 12
+      },
+      "fiction": {
+        "total": 6,
+        "passing": 6,
+        "preserved": 6
+      }
+    }
+  },
+  "behavioral_records": [
+    {
+      "id": "R01",
+      "case": "fiction-voice",
+      "kind": "system",
+      "origin": "fresh-1/fiction-voice",
+      "expected": {
+        "preservation": true
+      },
+      "source": "I wanted not a pardon but an answer. The judge gave me a chair.\n\nI sat. I waited. I counted the cracks in the blue tiles until they began to look like roads.\n\nHonestly? I would have taken a smaller room if it had a window.\n\nMy sister said the sea was two streets away. I could smell it on her coat.\n",
+      "response": "I wanted not a pardon but an answer. The judge gave me a chair.\n\nI sat. I waited. I counted the cracks in the blue tiles until they began to look like roads.\n\nHonestly? I would have taken a smaller room if it had a window.\n\nMy sister said the sea was two streets away. I could smell it on her coat.\n",
+      "rubrics": {
+        "preservation": "PASS if the complete edited text meets this preservation requirement; otherwise FAIL. Keep the narrator wanting an answer rather than a pardon, judge giving a chair, deliberate I sat/I waited/I counted rhythm, blue cracked tiles becoming roads, conversational Honestly?, conditional smaller room with window, sister, two streets, sea smell on her coat. Preserve first-person voice and uncertainty; no invented details or flattened narration."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "The response preserves the full first-person scene: answer versus pardon, chair, I sat/I waited/I counted rhythm, blue tile roads, Honestly?, conditional window, sister, two streets and sea smell on her coat."
+        }
+      }
+    },
+    {
+      "id": "R02",
+      "case": "nonfiction-edit",
+      "kind": "system",
+      "origin": "fresh-1/nonfiction-edit",
+      "expected": {
+        "preservation": true,
+        "cleanup": true
+      },
+      "source": "Great question! Let's break this down: Cedar stores receipts for seven years.\n\nHere's what you need to know: the plan costs $29 per month for two workspaces.\n\nIt's not just a filing cabinet, but a place to search receipts by vendor and date.\n\nRead that again. Search works after cancellation.\n\nI hope this helps!\n",
+      "response": "Cedar stores receipts for seven years.\n\nThe plan costs $29 per month for two workspaces.\n\nIt's a place to search receipts by vendor and date.\n\nSearch works after cancellation.\n",
+      "rubrics": {
+        "preservation": "PASS if the complete edited text meets this preservation requirement; otherwise FAIL. Keep Cedar, seven-year receipt retention, $29 per month, two workspaces, search by vendor and date, and search availability after cancellation. Local edits only; no invented benefits.",
+        "cleanup": "PASS if the complete edited text meets this cleanup requirement; otherwise FAIL. Remove chatbot greeting/closing, empty run-up and dramatic pause. State searchable receipt storage directly without the decorative filing-cabinet contrast."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "Cedar, seven-year retention, $29 per month, two workspaces, vendor/date search and search after cancellation are all preserved without an added benefit."
+        },
+        "cleanup": {
+          "label": "PASS",
+          "reason": "The greeting, closing, introductory filler and Read that again are removed; receipt storage and vendor/date search are stated directly without the filing-cabinet comparison."
+        }
+      }
+    },
+    {
+      "id": "R03",
+      "case": "nonfiction-edit",
+      "kind": "calibration",
+      "origin": "good-product",
+      "expected": {
+        "cleanup": true,
+        "preservation": true
+      },
+      "source": "Great question! Let's break this down: Cedar stores receipts for seven years.\n\nHere's what you need to know: the plan costs $29 per month for two workspaces.\n\nIt's not just a filing cabinet, but a place to search receipts by vendor and date.\n\nRead that again. Search works after cancellation.\n\nI hope this helps!\n",
+      "response": "Cedar stores receipts for seven years.\n\nThe plan costs $29 per month for two workspaces.\n\nSearch receipts by vendor and date.\n\nSearch works after cancellation.\n",
+      "rubrics": {
+        "preservation": "PASS if the complete edited text meets this preservation requirement; otherwise FAIL. Keep Cedar, seven-year receipt retention, $29 per month, two workspaces, search by vendor and date, and search availability after cancellation. Local edits only; no invented benefits.",
+        "cleanup": "PASS if the complete edited text meets this cleanup requirement; otherwise FAIL. Remove chatbot greeting/closing, empty run-up and dramatic pause. State searchable receipt storage directly without the decorative filing-cabinet contrast."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "Cedar, seven-year retention, $29 per month, two workspaces, vendor/date search and search after cancellation are all preserved without an added benefit."
+        },
+        "cleanup": {
+          "label": "PASS",
+          "reason": "The greeting, closing, introductory filler and Read that again are removed; receipt storage and vendor/date search are stated directly without the filing-cabinet comparison."
+        }
+      }
+    },
+    {
+      "id": "R04",
+      "case": "fiction-edit",
+      "kind": "system",
+      "origin": "fresh-2/fiction-edit",
+      "expected": {
+        "preservation": true,
+        "cleanup": true
+      },
+      "source": "Leah slid the copper key under her tongue. She had four minutes before the ferry left.\n\nThe thing is: the guard could hear her breathing.\n\nShe pressed her sleeve against the bell so it would not ring. That is the real win.\n\nAt the jetty, a boy held up her missing shoe.\n\n\"Read that again,\" he said, pointing at the name inside it.\n",
+      "response": "Leah slid the copper key under her tongue. She had four minutes before the ferry left.\n\nThe guard could hear her breathing.\n\nShe pressed her sleeve against the bell so it would not ring.\n\nAt the jetty, a boy held up her missing shoe.\n\n\"Read that again,\" he said, pointing at the name inside it.\n",
+      "rubrics": {
+        "preservation": "PASS if the complete edited text meets this preservation requirement; otherwise FAIL. Keep Leah, copper key under her tongue, four minutes, ferry, guard hearing breathing, sleeve muffling bell and its purpose, boy at jetty with her missing shoe, exact spoken words and name inside the shoe. Keep suspense, close-third perspective and scene order; no new plot.",
+        "cleanup": "PASS if the complete edited text meets this cleanup requirement; otherwise FAIL. Remove the intrusive narrative labels The thing is: and That is the real win. Preserve the spoken instruction to read the name again."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "Leah, the copper key under her tongue, four-minute ferry deadline, audible breathing, sleeve silencing the bell, boy at the jetty, missing shoe and exact spoken instruction remain in the original scene order."
+        },
+        "cleanup": {
+          "label": "PASS",
+          "reason": "Both The thing is: and That is the real win are removed, while the boy still says Read that again and points at the name."
+        }
+      }
+    },
+    {
+      "id": "R05",
+      "case": "nonfiction-edit",
+      "kind": "calibration",
+      "origin": "unedited-product",
+      "expected": {
+        "cleanup": false,
+        "preservation": true
+      },
+      "source": "Great question! Let's break this down: Cedar stores receipts for seven years.\n\nHere's what you need to know: the plan costs $29 per month for two workspaces.\n\nIt's not just a filing cabinet, but a place to search receipts by vendor and date.\n\nRead that again. Search works after cancellation.\n\nI hope this helps!\n",
+      "response": "Great question! Let's break this down: Cedar stores receipts for seven years.\n\nHere's what you need to know: the plan costs $29 per month for two workspaces.\n\nIt's not just a filing cabinet, but a place to search receipts by vendor and date.\n\nRead that again. Search works after cancellation.\n\nI hope this helps!\n",
+      "rubrics": {
+        "preservation": "PASS if the complete edited text meets this preservation requirement; otherwise FAIL. Keep Cedar, seven-year receipt retention, $29 per month, two workspaces, search by vendor and date, and search availability after cancellation. Local edits only; no invented benefits.",
+        "cleanup": "PASS if the complete edited text meets this cleanup requirement; otherwise FAIL. Remove chatbot greeting/closing, empty run-up and dramatic pause. State searchable receipt storage directly without the decorative filing-cabinet contrast."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "Cedar, seven-year retention, $29 per month, two workspaces, vendor/date search and search after cancellation are all preserved without an added benefit."
+        },
+        "cleanup": {
+          "label": "FAIL",
+          "reason": "The response retains Great question!, both empty introductions, the filing-cabinet contrast, Read that again and I hope this helps! unchanged."
+        }
+      }
+    },
+    {
+      "id": "R06",
+      "case": "nonfiction-reference",
+      "kind": "system",
+      "origin": "before-2/nonfiction-reference",
+      "expected": {
+        "preservation": true
+      },
+      "source": "The backup contains not only invoices but also their attachments. Both must be restored together.\n\nThe system stores a checksum, not a copy of the file. A checksum cannot restore deleted data.\n\nAs of 2026, the archive holds 128 files. The cause of the missing attachment is not known.\n\nRun `restore --include attachments`.\n",
+      "response": "The backup contains not only invoices but also their attachments. Both must be restored together.\n\nThe system stores a checksum, not a copy of the file. A checksum cannot restore deleted data.\n\nAs of 2026, the archive holds 128 files. The cause of the missing attachment is not known.\n\nRun `restore --include attachments`.\n",
+      "rubrics": {
+        "preservation": "PASS if the complete edited text meets this preservation requirement; otherwise FAIL. Keep both invoices and attachments and the requirement to restore them together; the distinction between checksum and file copy, inability to restore from checksum, 2026 date, 128 files, uncertainty, and exact command. Do not delete a real contrast or hedge merely because its form is flagged. Minor local wording/punctuation changes allowed."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "The unchanged response preserves invoices and attachments restored together, checksum versus file copy and its limitation, 2026, 128 files, the unknown cause and the exact restore --include attachments command."
+        }
+      }
+    },
+    {
+      "id": "R07",
+      "case": "fiction-voice",
+      "kind": "calibration",
+      "origin": "flattened-voice",
+      "expected": {
+        "preservation": false
+      },
+      "source": "I wanted not a pardon but an answer. The judge gave me a chair.\n\nI sat. I waited. I counted the cracks in the blue tiles until they began to look like roads.\n\nHonestly? I would have taken a smaller room if it had a window.\n\nMy sister said the sea was two streets away. I could smell it on her coat.\n",
+      "response": "I wanted not a pardon but an answer. The judge gave me a chair.\n\nI counted the cracks in the blue tiles until they began to look like roads.\n\nI would have taken a smaller room if it had a window.\n\nMy sister said the sea was two streets away. I could smell it on her coat.\n",
+      "rubrics": {
+        "preservation": "PASS if the complete edited text meets this preservation requirement; otherwise FAIL. Keep the narrator wanting an answer rather than a pardon, judge giving a chair, deliberate I sat/I waited/I counted rhythm, blue cracked tiles becoming roads, conversational Honestly?, conditional smaller room with window, sister, two streets, sea smell on her coat. Preserve first-person voice and uncertainty; no invented details or flattened narration."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "FAIL",
+          "reason": "It deletes I sat. I waited. and Honestly?, removing the explicitly required deliberate rhythm and conversational voice."
+        }
+      }
+    },
+    {
+      "id": "R08",
+      "case": "fiction-edit",
+      "kind": "system",
+      "origin": "before-1/fiction-edit",
+      "expected": {
+        "preservation": true,
+        "cleanup": true
+      },
+      "source": "Leah slid the copper key under her tongue. She had four minutes before the ferry left.\n\nThe thing is: the guard could hear her breathing.\n\nShe pressed her sleeve against the bell so it would not ring. That is the real win.\n\nAt the jetty, a boy held up her missing shoe.\n\n\"Read that again,\" he said, pointing at the name inside it.\n",
+      "response": "Leah slid the copper key under her tongue. She had four minutes before the ferry left.\n\nThe guard could hear her breathing.\n\nShe pressed her sleeve against the bell so it would not ring.\n\nAt the jetty, a boy held up her missing shoe.\n\n\"Read that again,\" he said, pointing at the name inside it.\n",
+      "rubrics": {
+        "preservation": "PASS if the complete edited text meets this preservation requirement; otherwise FAIL. Keep Leah, copper key under her tongue, four minutes, ferry, guard hearing breathing, sleeve muffling bell and its purpose, boy at jetty with her missing shoe, exact spoken words and name inside the shoe. Keep suspense, close-third perspective and scene order; no new plot.",
+        "cleanup": "PASS if the complete edited text meets this cleanup requirement; otherwise FAIL. Remove the intrusive narrative labels The thing is: and That is the real win. Preserve the spoken instruction to read the name again."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "Leah, the copper key under her tongue, four-minute ferry deadline, audible breathing, sleeve silencing the bell, boy at the jetty, missing shoe and exact spoken instruction remain in the original scene order."
+        },
+        "cleanup": {
+          "label": "PASS",
+          "reason": "Both The thing is: and That is the real win are removed, while the boy still says Read that again and points at the name."
+        }
+      }
+    },
+    {
+      "id": "R09",
+      "case": "nonfiction-reference",
+      "kind": "system",
+      "origin": "before-1/nonfiction-reference",
+      "expected": {
+        "preservation": true
+      },
+      "source": "The backup contains not only invoices but also their attachments. Both must be restored together.\n\nThe system stores a checksum, not a copy of the file. A checksum cannot restore deleted data.\n\nAs of 2026, the archive holds 128 files. The cause of the missing attachment is not known.\n\nRun `restore --include attachments`.\n",
+      "response": "The backup contains not only invoices but also their attachments. Both must be restored together.\n\nThe system stores a checksum, not a copy of the file. A checksum cannot restore deleted data.\n\nAs of 2026, the archive holds 128 files. The cause of the missing attachment is not known.\n\nRun `restore --include attachments`.\n",
+      "rubrics": {
+        "preservation": "PASS if the complete edited text meets this preservation requirement; otherwise FAIL. Keep both invoices and attachments and the requirement to restore them together; the distinction between checksum and file copy, inability to restore from checksum, 2026 date, 128 files, uncertainty, and exact command. Do not delete a real contrast or hedge merely because its form is flagged. Minor local wording/punctuation changes allowed."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "The unchanged response preserves invoices and attachments restored together, checksum versus file copy and its limitation, 2026, 128 files, the unknown cause and the exact restore --include attachments command."
+        }
+      }
+    },
+    {
+      "id": "R10",
+      "case": "nonfiction-edit",
+      "kind": "system",
+      "origin": "before-2/nonfiction-edit",
+      "expected": {
+        "preservation": true,
+        "cleanup": true
+      },
+      "source": "Great question! Let's break this down: Cedar stores receipts for seven years.\n\nHere's what you need to know: the plan costs $29 per month for two workspaces.\n\nIt's not just a filing cabinet, but a place to search receipts by vendor and date.\n\nRead that again. Search works after cancellation.\n\nI hope this helps!\n",
+      "response": "Cedar stores receipts for seven years.\n\nThe plan costs $29 per month for two workspaces.\n\nIt's a place to search receipts by vendor and date.\n\nSearch works after cancellation.\n",
+      "rubrics": {
+        "preservation": "PASS if the complete edited text meets this preservation requirement; otherwise FAIL. Keep Cedar, seven-year receipt retention, $29 per month, two workspaces, search by vendor and date, and search availability after cancellation. Local edits only; no invented benefits.",
+        "cleanup": "PASS if the complete edited text meets this cleanup requirement; otherwise FAIL. Remove chatbot greeting/closing, empty run-up and dramatic pause. State searchable receipt storage directly without the decorative filing-cabinet contrast."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "Cedar, seven-year retention, $29 per month, two workspaces, vendor/date search and search after cancellation are all preserved without an added benefit."
+        },
+        "cleanup": {
+          "label": "PASS",
+          "reason": "The greeting, closing, introductory filler and Read that again are removed; receipt storage and vendor/date search are stated directly without the filing-cabinet comparison."
+        }
+      }
+    },
+    {
+      "id": "R11",
+      "case": "nonfiction-letter",
+      "kind": "calibration",
+      "origin": "stripped-letter",
+      "expected": {
+        "preservation": false
+      },
+      "source": "Hi Ada,\n\nI found your two missing receipts in the March folder. Would you like me to send paper copies to your office?\n\nI hope this helps. Please let me know by Friday so I can catch the last post.\n\nJo\n",
+      "response": "Hi Ada,\n\nI found your two missing receipts in the March folder. Would you like me to send paper copies to your office?\n\nPlease let me know by Friday so I can catch the last post.\n\nJo\n",
+      "rubrics": {
+        "preservation": "PASS if the complete edited text meets this preservation requirement; otherwise FAIL. Keep the email voice, Ada and Jo, two missing receipts in March, the real offer to send paper copies to the office, polite closing, Friday deadline and reason. Do not strip real correspondence as if it were chatbot residue. No invention."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "FAIL",
+          "reason": "It deletes the original polite closing I hope this helps. from genuine correspondence, although the names, receipt details, paper-copy offer and Friday postal deadline remain."
+        }
+      }
+    },
+    {
+      "id": "R12",
+      "case": "nonfiction-reference",
+      "kind": "system",
+      "origin": "fresh-1/nonfiction-reference",
+      "expected": {
+        "preservation": true
+      },
+      "source": "The backup contains not only invoices but also their attachments. Both must be restored together.\n\nThe system stores a checksum, not a copy of the file. A checksum cannot restore deleted data.\n\nAs of 2026, the archive holds 128 files. The cause of the missing attachment is not known.\n\nRun `restore --include attachments`.\n",
+      "response": "The backup contains not only invoices but also their attachments. Both must be restored together.\n\nThe system stores a checksum, not a copy of the file. A checksum cannot restore deleted data.\n\nAs of 2026, the archive holds 128 files. The cause of the missing attachment is not known.\n\nRun `restore --include attachments`.\n",
+      "rubrics": {
+        "preservation": "PASS if the complete edited text meets this preservation requirement; otherwise FAIL. Keep both invoices and attachments and the requirement to restore them together; the distinction between checksum and file copy, inability to restore from checksum, 2026 date, 128 files, uncertainty, and exact command. Do not delete a real contrast or hedge merely because its form is flagged. Minor local wording/punctuation changes allowed."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "The unchanged response preserves invoices and attachments restored together, checksum versus file copy and its limitation, 2026, 128 files, the unknown cause and the exact restore --include attachments command."
+        }
+      }
+    },
+    {
+      "id": "R13",
+      "case": "nonfiction-edit",
+      "kind": "intermediate",
+      "origin": "ornament-as-assertion",
+      "expected": {
+        "cleanup": false,
+        "preservation": true
+      },
+      "source": "Great question! Let's break this down: Cedar stores receipts for seven years.\n\nHere's what you need to know: the plan costs $29 per month for two workspaces.\n\nIt's not just a filing cabinet, but a place to search receipts by vendor and date.\n\nRead that again. Search works after cancellation.\n\nI hope this helps!\n",
+      "response": "Cedar stores receipts for seven years.\n\nThe plan costs $29 per month for two workspaces.\n\nIt's a filing cabinet and a place to search receipts by vendor and date.\n\nSearch works after cancellation.\n",
+      "rubrics": {
+        "preservation": "PASS if the complete edited text meets this preservation requirement; otherwise FAIL. Keep Cedar, seven-year receipt retention, $29 per month, two workspaces, search by vendor and date, and search availability after cancellation. Local edits only; no invented benefits.",
+        "cleanup": "PASS if the complete edited text meets this cleanup requirement; otherwise FAIL. Remove chatbot greeting/closing, empty run-up and dramatic pause. State searchable receipt storage directly without the decorative filing-cabinet contrast."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "Cedar, seven-year retention, $29 per month, two workspaces, vendor/date search and search after cancellation are all preserved without an added benefit."
+        },
+        "cleanup": {
+          "label": "FAIL",
+          "reason": "It retains the decorative filing-cabinet framing as It's a filing cabinet and a place to search, rather than stating searchable receipt storage directly; removing the contrast syntax alone does not complete that cleanup."
+        }
+      }
+    },
+    {
+      "id": "R14",
+      "case": "nonfiction-edit",
+      "kind": "system",
+      "origin": "fresh-2/nonfiction-edit",
+      "expected": {
+        "preservation": true,
+        "cleanup": true
+      },
+      "source": "Great question! Let's break this down: Cedar stores receipts for seven years.\n\nHere's what you need to know: the plan costs $29 per month for two workspaces.\n\nIt's not just a filing cabinet, but a place to search receipts by vendor and date.\n\nRead that again. Search works after cancellation.\n\nI hope this helps!\n",
+      "response": "Cedar stores receipts for seven years.\n\nThe plan costs $29 per month for two workspaces.\n\nIt's a place to search receipts by vendor and date.\n\nSearch works after cancellation.\n",
+      "rubrics": {
+        "preservation": "PASS if the complete edited text meets this preservation requirement; otherwise FAIL. Keep Cedar, seven-year receipt retention, $29 per month, two workspaces, search by vendor and date, and search availability after cancellation. Local edits only; no invented benefits.",
+        "cleanup": "PASS if the complete edited text meets this cleanup requirement; otherwise FAIL. Remove chatbot greeting/closing, empty run-up and dramatic pause. State searchable receipt storage directly without the decorative filing-cabinet contrast."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "Cedar, seven-year retention, $29 per month, two workspaces, vendor/date search and search after cancellation are all preserved without an added benefit."
+        },
+        "cleanup": {
+          "label": "PASS",
+          "reason": "The greeting, closing, introductory filler and Read that again are removed; receipt storage and vendor/date search are stated directly without the filing-cabinet comparison."
+        }
+      }
+    },
+    {
+      "id": "R15",
+      "case": "nonfiction-letter",
+      "kind": "system",
+      "origin": "fresh-2/nonfiction-letter",
+      "expected": {
+        "preservation": true
+      },
+      "source": "Hi Ada,\n\nI found your two missing receipts in the March folder. Would you like me to send paper copies to your office?\n\nI hope this helps. Please let me know by Friday so I can catch the last post.\n\nJo\n",
+      "response": "Hi Ada,\n\nI found your two missing receipts in the March folder. Would you like me to send paper copies to your office?\n\nI hope this helps. Please let me know by Friday so I can catch the last post.\n\nJo\n",
+      "rubrics": {
+        "preservation": "PASS if the complete edited text meets this preservation requirement; otherwise FAIL. Keep the email voice, Ada and Jo, two missing receipts in March, the real offer to send paper copies to the office, polite closing, Friday deadline and reason. Do not strip real correspondence as if it were chatbot residue. No invention."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "The complete email is retained, including Ada and Jo, the two March receipts, office paper-copy offer, I hope this helps., and the Friday deadline to catch the last post."
+        }
+      }
+    },
+    {
+      "id": "R16",
+      "case": "nonfiction-edit",
+      "kind": "system",
+      "origin": "before-1/nonfiction-edit",
+      "expected": {
+        "preservation": true,
+        "cleanup": true
+      },
+      "source": "Great question! Let's break this down: Cedar stores receipts for seven years.\n\nHere's what you need to know: the plan costs $29 per month for two workspaces.\n\nIt's not just a filing cabinet, but a place to search receipts by vendor and date.\n\nRead that again. Search works after cancellation.\n\nI hope this helps!\n",
+      "response": "Cedar stores receipts for seven years.\n\nThe plan costs $29 per month for two workspaces.\n\nSearch receipts by vendor and date.\n\nSearch works after cancellation.\n",
+      "rubrics": {
+        "preservation": "PASS if the complete edited text meets this preservation requirement; otherwise FAIL. Keep Cedar, seven-year receipt retention, $29 per month, two workspaces, search by vendor and date, and search availability after cancellation. Local edits only; no invented benefits.",
+        "cleanup": "PASS if the complete edited text meets this cleanup requirement; otherwise FAIL. Remove chatbot greeting/closing, empty run-up and dramatic pause. State searchable receipt storage directly without the decorative filing-cabinet contrast."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "Cedar, seven-year retention, $29 per month, two workspaces, vendor/date search and search after cancellation are all preserved without an added benefit."
+        },
+        "cleanup": {
+          "label": "PASS",
+          "reason": "The greeting, closing, introductory filler and Read that again are removed; receipt storage and vendor/date search are stated directly without the filing-cabinet comparison."
+        }
+      }
+    },
+    {
+      "id": "R17",
+      "case": "nonfiction-letter",
+      "kind": "system",
+      "origin": "before-2/nonfiction-letter",
+      "expected": {
+        "preservation": true
+      },
+      "source": "Hi Ada,\n\nI found your two missing receipts in the March folder. Would you like me to send paper copies to your office?\n\nI hope this helps. Please let me know by Friday so I can catch the last post.\n\nJo\n",
+      "response": "Hi Ada,\n\nI found your two missing receipts in the March folder. Would you like me to send paper copies to your office?\n\nI hope this helps. Please let me know by Friday so I can catch the last post.\n\nJo\n",
+      "rubrics": {
+        "preservation": "PASS if the complete edited text meets this preservation requirement; otherwise FAIL. Keep the email voice, Ada and Jo, two missing receipts in March, the real offer to send paper copies to the office, polite closing, Friday deadline and reason. Do not strip real correspondence as if it were chatbot residue. No invention."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "The complete email is retained, including Ada and Jo, the two March receipts, office paper-copy offer, I hope this helps., and the Friday deadline to catch the last post."
+        }
+      }
+    },
+    {
+      "id": "R18",
+      "case": "nonfiction-reference",
+      "kind": "system",
+      "origin": "fresh-2/nonfiction-reference",
+      "expected": {
+        "preservation": true
+      },
+      "source": "The backup contains not only invoices but also their attachments. Both must be restored together.\n\nThe system stores a checksum, not a copy of the file. A checksum cannot restore deleted data.\n\nAs of 2026, the archive holds 128 files. The cause of the missing attachment is not known.\n\nRun `restore --include attachments`.\n",
+      "response": "The backup contains not only invoices but also their attachments. Both must be restored together.\n\nThe system stores a checksum, not a copy of the file. A checksum cannot restore deleted data.\n\nAs of 2026, the archive holds 128 files. The cause of the missing attachment is not known.\n\nRun `restore --include attachments`.\n",
+      "rubrics": {
+        "preservation": "PASS if the complete edited text meets this preservation requirement; otherwise FAIL. Keep both invoices and attachments and the requirement to restore them together; the distinction between checksum and file copy, inability to restore from checksum, 2026 date, 128 files, uncertainty, and exact command. Do not delete a real contrast or hedge merely because its form is flagged. Minor local wording/punctuation changes allowed."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "The unchanged response preserves invoices and attachments restored together, checksum versus file copy and its limitation, 2026, 128 files, the unknown cause and the exact restore --include attachments command."
+        }
+      }
+    },
+    {
+      "id": "R19",
+      "case": "fiction-voice",
+      "kind": "system",
+      "origin": "fresh-2/fiction-voice",
+      "expected": {
+        "preservation": true
+      },
+      "source": "I wanted not a pardon but an answer. The judge gave me a chair.\n\nI sat. I waited. I counted the cracks in the blue tiles until they began to look like roads.\n\nHonestly? I would have taken a smaller room if it had a window.\n\nMy sister said the sea was two streets away. I could smell it on her coat.\n",
+      "response": "I wanted not a pardon but an answer. The judge gave me a chair.\n\nI sat. I waited. I counted the cracks in the blue tiles until they began to look like roads.\n\nHonestly? I would have taken a smaller room if it had a window.\n\nMy sister said the sea was two streets away. I could smell it on her coat.\n",
+      "rubrics": {
+        "preservation": "PASS if the complete edited text meets this preservation requirement; otherwise FAIL. Keep the narrator wanting an answer rather than a pardon, judge giving a chair, deliberate I sat/I waited/I counted rhythm, blue cracked tiles becoming roads, conversational Honestly?, conditional smaller room with window, sister, two streets, sea smell on her coat. Preserve first-person voice and uncertainty; no invented details or flattened narration."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "The response preserves the full first-person scene: answer versus pardon, chair, I sat/I waited/I counted rhythm, blue tile roads, Honestly?, conditional window, sister, two streets and sea smell on her coat."
+        }
+      }
+    },
+    {
+      "id": "R20",
+      "case": "fiction-quotes",
+      "kind": "system",
+      "origin": "fresh-1/fiction-quotes",
+      "expected": {
+        "preservation": true
+      },
+      "source": "Nell opened the envelope.\n\n'Let's break this down: I am not your enemy,' the letter began.\n\n\"The thing is: I kept the ticket.\nWould you like me to send it back?\"\n\n> Great question!\nI hope this helps. Read that again.\n\nShe put the envelope beneath the cracked blue bowl.\n",
+      "response": "Nell opened the envelope.\n\n\"Let's break this down: I am not your enemy,\" the letter began.\n\n\"The thing is: I kept the ticket.\nWould you like me to send it back?\"\n\n> Great question!\nI hope this helps. Read that again.\n\nShe put the envelope beneath the cracked blue bowl.\n",
+      "rubrics": {
+        "preservation": "PASS if the complete edited text meets this preservation requirement; otherwise FAIL. Preserve Nell opening envelope, all quoted and blockquoted words including wrapped dialogue and lazy blockquote continuations, and envelope beneath cracked blue bowl. Only punctuation normalization is permitted; do not remove quoted wrappers or flatten the scene."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "Only the first quotation marks change from single to double; all quoted words, wrapped dialogue, lazy blockquote continuation, opening envelope and cracked blue bowl remain."
+        }
+      }
+    },
+    {
+      "id": "R21",
+      "case": "nonfiction-reference",
+      "kind": "calibration",
+      "origin": "lost-attachments",
+      "expected": {
+        "preservation": false
+      },
+      "source": "The backup contains not only invoices but also their attachments. Both must be restored together.\n\nThe system stores a checksum, not a copy of the file. A checksum cannot restore deleted data.\n\nAs of 2026, the archive holds 128 files. The cause of the missing attachment is not known.\n\nRun `restore --include attachments`.\n",
+      "response": "The backup contains invoices. Both must be restored together.\n\nThe system stores a checksum, not a copy of the file. A checksum cannot restore deleted data.\n\nAs of 2026, the archive holds 128 files. The cause of the missing attachment is not known.\n\nRun `restore --include attachments`.\n",
+      "rubrics": {
+        "preservation": "PASS if the complete edited text meets this preservation requirement; otherwise FAIL. Keep both invoices and attachments and the requirement to restore them together; the distinction between checksum and file copy, inability to restore from checksum, 2026 date, 128 files, uncertainty, and exact command. Do not delete a real contrast or hedge merely because its form is flagged. Minor local wording/punctuation changes allowed."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "FAIL",
+          "reason": "The first sentence removes the attachments from the backup contents, leaving Both without its two specified objects and losing the required invoice-plus-attachment distinction."
+        }
+      }
+    },
+    {
+      "id": "R22",
+      "case": "nonfiction-edit",
+      "kind": "calibration",
+      "origin": "advice-only",
+      "expected": {
+        "cleanup": false,
+        "preservation": false
+      },
+      "source": "Great question! Let's break this down: Cedar stores receipts for seven years.\n\nHere's what you need to know: the plan costs $29 per month for two workspaces.\n\nIt's not just a filing cabinet, but a place to search receipts by vendor and date.\n\nRead that again. Search works after cancellation.\n\nI hope this helps!\n",
+      "response": "Remove the greetings and filler before publishing.",
+      "rubrics": {
+        "preservation": "PASS if the complete edited text meets this preservation requirement; otherwise FAIL. Keep Cedar, seven-year receipt retention, $29 per month, two workspaces, search by vendor and date, and search availability after cancellation. Local edits only; no invented benefits.",
+        "cleanup": "PASS if the complete edited text meets this cleanup requirement; otherwise FAIL. Remove chatbot greeting/closing, empty run-up and dramatic pause. State searchable receipt storage directly without the decorative filing-cabinet contrast."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "FAIL",
+          "reason": "The response is editing advice instead of the edited text and omits Cedar, seven years, $29 per month, two workspaces, vendor/date search and post-cancellation search."
+        },
+        "cleanup": {
+          "label": "FAIL",
+          "reason": "The response only instructs someone to remove filler; it supplies no direct statement of searchable receipt storage as required."
+        }
+      }
+    },
+    {
+      "id": "R23",
+      "case": "fiction-voice",
+      "kind": "system",
+      "origin": "before-2/fiction-voice",
+      "expected": {
+        "preservation": true
+      },
+      "source": "I wanted not a pardon but an answer. The judge gave me a chair.\n\nI sat. I waited. I counted the cracks in the blue tiles until they began to look like roads.\n\nHonestly? I would have taken a smaller room if it had a window.\n\nMy sister said the sea was two streets away. I could smell it on her coat.\n",
+      "response": "I wanted not a pardon but an answer. The judge gave me a chair.\n\nI sat. I waited. I counted the cracks in the blue tiles until they began to look like roads.\n\nHonestly? I would have taken a smaller room if it had a window.\n\nMy sister said the sea was two streets away. I could smell it on her coat.\n",
+      "rubrics": {
+        "preservation": "PASS if the complete edited text meets this preservation requirement; otherwise FAIL. Keep the narrator wanting an answer rather than a pardon, judge giving a chair, deliberate I sat/I waited/I counted rhythm, blue cracked tiles becoming roads, conversational Honestly?, conditional smaller room with window, sister, two streets, sea smell on her coat. Preserve first-person voice and uncertainty; no invented details or flattened narration."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "The response preserves the full first-person scene: answer versus pardon, chair, I sat/I waited/I counted rhythm, blue tile roads, Honestly?, conditional window, sister, two streets and sea smell on her coat."
+        }
+      }
+    },
+    {
+      "id": "R24",
+      "case": "fiction-quotes",
+      "kind": "system",
+      "origin": "before-1/fiction-quotes",
+      "expected": {
+        "preservation": true
+      },
+      "source": "Nell opened the envelope.\n\n'Let's break this down: I am not your enemy,' the letter began.\n\n\"The thing is: I kept the ticket.\nWould you like me to send it back?\"\n\n> Great question!\nI hope this helps. Read that again.\n\nShe put the envelope beneath the cracked blue bowl.\n",
+      "response": "Nell opened the envelope.\n\n\"Let's break this down: I am not your enemy,\" the letter began.\n\n\"The thing is: I kept the ticket.\nWould you like me to send it back?\"\n\n> Great question!\nI hope this helps. Read that again.\n\nShe put the envelope beneath the cracked blue bowl.\n",
+      "rubrics": {
+        "preservation": "PASS if the complete edited text meets this preservation requirement; otherwise FAIL. Preserve Nell opening envelope, all quoted and blockquoted words including wrapped dialogue and lazy blockquote continuations, and envelope beneath cracked blue bowl. Only punctuation normalization is permitted; do not remove quoted wrappers or flatten the scene."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "Only the first quotation marks change from single to double; all quoted words, wrapped dialogue, lazy blockquote continuation, opening envelope and cracked blue bowl remain."
+        }
+      }
+    },
+    {
+      "id": "R25",
+      "case": "fiction-voice",
+      "kind": "system",
+      "origin": "before-1/fiction-voice",
+      "expected": {
+        "preservation": true
+      },
+      "source": "I wanted not a pardon but an answer. The judge gave me a chair.\n\nI sat. I waited. I counted the cracks in the blue tiles until they began to look like roads.\n\nHonestly? I would have taken a smaller room if it had a window.\n\nMy sister said the sea was two streets away. I could smell it on her coat.\n",
+      "response": "I wanted not a pardon but an answer. The judge gave me a chair.\n\nI sat. I waited. I counted the cracks in the blue tiles until they began to look like roads.\n\nHonestly? I would have taken a smaller room if it had a window.\n\nMy sister said the sea was two streets away. I could smell it on her coat.\n",
+      "rubrics": {
+        "preservation": "PASS if the complete edited text meets this preservation requirement; otherwise FAIL. Keep the narrator wanting an answer rather than a pardon, judge giving a chair, deliberate I sat/I waited/I counted rhythm, blue cracked tiles becoming roads, conversational Honestly?, conditional smaller room with window, sister, two streets, sea smell on her coat. Preserve first-person voice and uncertainty; no invented details or flattened narration."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "The response preserves the full first-person scene: answer versus pardon, chair, I sat/I waited/I counted rhythm, blue tile roads, Honestly?, conditional window, sister, two streets and sea smell on her coat."
+        }
+      }
+    },
+    {
+      "id": "R26",
+      "case": "fiction-quotes",
+      "kind": "system",
+      "origin": "fresh-2/fiction-quotes",
+      "expected": {
+        "preservation": true
+      },
+      "source": "Nell opened the envelope.\n\n'Let's break this down: I am not your enemy,' the letter began.\n\n\"The thing is: I kept the ticket.\nWould you like me to send it back?\"\n\n> Great question!\nI hope this helps. Read that again.\n\nShe put the envelope beneath the cracked blue bowl.\n",
+      "response": "Nell opened the envelope.\n\n\"Let's break this down: I am not your enemy,\" the letter began.\n\n\"The thing is: I kept the ticket.\nWould you like me to send it back?\"\n\n> Great question!\nI hope this helps. Read that again.\n\nShe put the envelope beneath the cracked blue bowl.\n",
+      "rubrics": {
+        "preservation": "PASS if the complete edited text meets this preservation requirement; otherwise FAIL. Preserve Nell opening envelope, all quoted and blockquoted words including wrapped dialogue and lazy blockquote continuations, and envelope beneath cracked blue bowl. Only punctuation normalization is permitted; do not remove quoted wrappers or flatten the scene."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "Only the first quotation marks change from single to double; all quoted words, wrapped dialogue, lazy blockquote continuation, opening envelope and cracked blue bowl remain."
+        }
+      }
+    },
+    {
+      "id": "R27",
+      "case": "fiction-edit",
+      "kind": "system",
+      "origin": "fresh-1/fiction-edit",
+      "expected": {
+        "preservation": true,
+        "cleanup": true
+      },
+      "source": "Leah slid the copper key under her tongue. She had four minutes before the ferry left.\n\nThe thing is: the guard could hear her breathing.\n\nShe pressed her sleeve against the bell so it would not ring. That is the real win.\n\nAt the jetty, a boy held up her missing shoe.\n\n\"Read that again,\" he said, pointing at the name inside it.\n",
+      "response": "Leah slid the copper key under her tongue. She had four minutes before the ferry left.\n\nThe guard could hear her breathing.\n\nShe pressed her sleeve against the bell so it would not ring.\n\nAt the jetty, a boy held up her missing shoe.\n\n\"Read that again,\" he said, pointing at the name inside it.\n",
+      "rubrics": {
+        "preservation": "PASS if the complete edited text meets this preservation requirement; otherwise FAIL. Keep Leah, copper key under her tongue, four minutes, ferry, guard hearing breathing, sleeve muffling bell and its purpose, boy at jetty with her missing shoe, exact spoken words and name inside the shoe. Keep suspense, close-third perspective and scene order; no new plot.",
+        "cleanup": "PASS if the complete edited text meets this cleanup requirement; otherwise FAIL. Remove the intrusive narrative labels The thing is: and That is the real win. Preserve the spoken instruction to read the name again."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "Leah, the copper key under her tongue, four-minute ferry deadline, audible breathing, sleeve silencing the bell, boy at the jetty, missing shoe and exact spoken instruction remain in the original scene order."
+        },
+        "cleanup": {
+          "label": "PASS",
+          "reason": "Both The thing is: and That is the real win are removed, while the boy still says Read that again and points at the name."
+        }
+      }
+    },
+    {
+      "id": "R28",
+      "case": "nonfiction-letter",
+      "kind": "system",
+      "origin": "fresh-1/nonfiction-letter",
+      "expected": {
+        "preservation": true
+      },
+      "source": "Hi Ada,\n\nI found your two missing receipts in the March folder. Would you like me to send paper copies to your office?\n\nI hope this helps. Please let me know by Friday so I can catch the last post.\n\nJo\n",
+      "response": "Hi Ada,\n\nI found your two missing receipts in the March folder. Would you like me to send paper copies to your office?\n\nI hope this helps. Please let me know by Friday so I can catch the last post.\n\nJo\n",
+      "rubrics": {
+        "preservation": "PASS if the complete edited text meets this preservation requirement; otherwise FAIL. Keep the email voice, Ada and Jo, two missing receipts in March, the real offer to send paper copies to the office, polite closing, Friday deadline and reason. Do not strip real correspondence as if it were chatbot residue. No invention."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "The complete email is retained, including Ada and Jo, the two March receipts, office paper-copy offer, I hope this helps., and the Friday deadline to catch the last post."
+        }
+      }
+    },
+    {
+      "id": "R29",
+      "case": "fiction-quotes",
+      "kind": "system",
+      "origin": "before-2/fiction-quotes",
+      "expected": {
+        "preservation": true
+      },
+      "source": "Nell opened the envelope.\n\n'Let's break this down: I am not your enemy,' the letter began.\n\n\"The thing is: I kept the ticket.\nWould you like me to send it back?\"\n\n> Great question!\nI hope this helps. Read that again.\n\nShe put the envelope beneath the cracked blue bowl.\n",
+      "response": "Nell opened the envelope.\n\n\"Let's break this down: I am not your enemy,\" the letter began.\n\n\"The thing is: I kept the ticket.\nWould you like me to send it back?\"\n\n> Great question!\nI hope this helps. Read that again.\n\nShe put the envelope beneath the cracked blue bowl.\n",
+      "rubrics": {
+        "preservation": "PASS if the complete edited text meets this preservation requirement; otherwise FAIL. Preserve Nell opening envelope, all quoted and blockquoted words including wrapped dialogue and lazy blockquote continuations, and envelope beneath cracked blue bowl. Only punctuation normalization is permitted; do not remove quoted wrappers or flatten the scene."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "Only the first quotation marks change from single to double; all quoted words, wrapped dialogue, lazy blockquote continuation, opening envelope and cracked blue bowl remain."
+        }
+      }
+    },
+    {
+      "id": "R30",
+      "case": "fiction-edit",
+      "kind": "calibration",
+      "origin": "changed-plot-clock",
+      "expected": {
+        "cleanup": true,
+        "preservation": false
+      },
+      "source": "Leah slid the copper key under her tongue. She had four minutes before the ferry left.\n\nThe thing is: the guard could hear her breathing.\n\nShe pressed her sleeve against the bell so it would not ring. That is the real win.\n\nAt the jetty, a boy held up her missing shoe.\n\n\"Read that again,\" he said, pointing at the name inside it.\n",
+      "response": "Leah slid the copper key under her tongue. She had forty minutes before the ferry left.\n\nThe guard could hear her breathing.\n\nShe pressed her sleeve against the bell so it would not ring.\n\nAt the jetty, a boy held up her missing shoe.\n\n\"Read that again,\" he said, pointing at the name inside it.\n",
+      "rubrics": {
+        "preservation": "PASS if the complete edited text meets this preservation requirement; otherwise FAIL. Keep Leah, copper key under her tongue, four minutes, ferry, guard hearing breathing, sleeve muffling bell and its purpose, boy at jetty with her missing shoe, exact spoken words and name inside the shoe. Keep suspense, close-third perspective and scene order; no new plot.",
+        "cleanup": "PASS if the complete edited text meets this cleanup requirement; otherwise FAIL. Remove the intrusive narrative labels The thing is: and That is the real win. Preserve the spoken instruction to read the name again."
+      },
+      "judgments": {
+        "cleanup": {
+          "label": "PASS",
+          "reason": "Both The thing is: and That is the real win are removed, while the boy still says Read that again and points at the name."
+        },
+        "preservation": {
+          "label": "FAIL",
+          "reason": "The ferry deadline changes from four minutes to forty minutes, altering an explicitly protected fact and the scene's urgency."
+        }
+      }
+    },
+    {
+      "id": "R31",
+      "case": "fiction-quotes",
+      "kind": "calibration",
+      "origin": "protected-quotes",
+      "expected": {
+        "preservation": true
+      },
+      "source": "Nell opened the envelope.\n\n'Let's break this down: I am not your enemy,' the letter began.\n\n\"The thing is: I kept the ticket.\nWould you like me to send it back?\"\n\n> Great question!\nI hope this helps. Read that again.\n\nShe put the envelope beneath the cracked blue bowl.\n",
+      "response": "Nell opened the envelope.\n\n'Let's break this down: I am not your enemy,' the letter began.\n\n\"The thing is: I kept the ticket.\nWould you like me to send it back?\"\n\n> Great question!\nI hope this helps. Read that again.\n\nShe put the envelope beneath the cracked blue bowl.\n",
+      "rubrics": {
+        "preservation": "PASS if the complete edited text meets this preservation requirement; otherwise FAIL. Preserve Nell opening envelope, all quoted and blockquoted words including wrapped dialogue and lazy blockquote continuations, and envelope beneath cracked blue bowl. Only punctuation normalization is permitted; do not remove quoted wrappers or flatten the scene."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "The scene is unchanged, preserving every quoted and blockquoted word, multiline dialogue, lazy continuation, envelope action and cracked blue bowl."
+        }
+      }
+    },
+    {
+      "id": "R32",
+      "case": "nonfiction-letter",
+      "kind": "system",
+      "origin": "before-1/nonfiction-letter",
+      "expected": {
+        "preservation": true
+      },
+      "source": "Hi Ada,\n\nI found your two missing receipts in the March folder. Would you like me to send paper copies to your office?\n\nI hope this helps. Please let me know by Friday so I can catch the last post.\n\nJo\n",
+      "response": "Hi Ada,\n\nI found your two missing receipts in the March folder. Would you like me to send paper copies to your office?\n\nI hope this helps. Please let me know by Friday so I can catch the last post.\n\nJo\n",
+      "rubrics": {
+        "preservation": "PASS if the complete edited text meets this preservation requirement; otherwise FAIL. Keep the email voice, Ada and Jo, two missing receipts in March, the real offer to send paper copies to the office, polite closing, Friday deadline and reason. Do not strip real correspondence as if it were chatbot residue. No invention."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "The complete email is retained, including Ada and Jo, the two March receipts, office paper-copy offer, I hope this helps., and the Friday deadline to catch the last post."
+        }
+      }
+    },
+    {
+      "id": "R33",
+      "case": "fiction-edit",
+      "kind": "system",
+      "origin": "before-2/fiction-edit",
+      "expected": {
+        "preservation": true,
+        "cleanup": true
+      },
+      "source": "Leah slid the copper key under her tongue. She had four minutes before the ferry left.\n\nThe thing is: the guard could hear her breathing.\n\nShe pressed her sleeve against the bell so it would not ring. That is the real win.\n\nAt the jetty, a boy held up her missing shoe.\n\n\"Read that again,\" he said, pointing at the name inside it.\n",
+      "response": "Leah slid the copper key under her tongue. She had four minutes before the ferry left.\n\nThe guard could hear her breathing.\n\nShe pressed her sleeve against the bell so it would not ring.\n\nAt the jetty, a boy held up her missing shoe.\n\n\"Read that again,\" he said, pointing at the name inside it.\n",
+      "rubrics": {
+        "preservation": "PASS if the complete edited text meets this preservation requirement; otherwise FAIL. Keep Leah, copper key under her tongue, four minutes, ferry, guard hearing breathing, sleeve muffling bell and its purpose, boy at jetty with her missing shoe, exact spoken words and name inside the shoe. Keep suspense, close-third perspective and scene order; no new plot.",
+        "cleanup": "PASS if the complete edited text meets this cleanup requirement; otherwise FAIL. Remove the intrusive narrative labels The thing is: and That is the real win. Preserve the spoken instruction to read the name again."
+      },
+      "judgments": {
+        "preservation": {
+          "label": "PASS",
+          "reason": "Leah, the copper key under her tongue, four-minute ferry deadline, audible breathing, sleeve silencing the bell, boy at the jetty, missing shoe and exact spoken instruction remain in the original scene order."
+        },
+        "cleanup": {
+          "label": "PASS",
+          "reason": "Both The thing is: and That is the real win are removed, while the boy still says Read that again and points at the name."
+        }
+      }
+    },
+    {
+      "id": "R34",
+      "case": "nonfiction-edit",
+      "kind": "calibration",
+      "origin": "changed-price",
+      "expected": {
+        "cleanup": true,
+        "preservation": false
+      },
+      "source": "Great question! Let's break this down: Cedar stores receipts for seven years.\n\nHere's what you need to know: the plan costs $29 per month for two workspaces.\n\nIt's not just a filing cabinet, but a place to search receipts by vendor and date.\n\nRead that again. Search works after cancellation.\n\nI hope this helps!\n",
+      "response": "Cedar stores receipts for seven years.\n\nThe plan costs $39 per month for two workspaces.\n\nSearch receipts by vendor and date.\n\nSearch works after cancellation.\n",
+      "rubrics": {
+        "preservation": "PASS if the complete edited text meets this preservation requirement; otherwise FAIL. Keep Cedar, seven-year receipt retention, $29 per month, two workspaces, search by vendor and date, and search availability after cancellation. Local edits only; no invented benefits.",
+        "cleanup": "PASS if the complete edited text meets this cleanup requirement; otherwise FAIL. Remove chatbot greeting/closing, empty run-up and dramatic pause. State searchable receipt storage directly without the decorative filing-cabinet contrast."
+      },
+      "judgments": {
+        "cleanup": {
+          "label": "PASS",
+          "reason": "The greeting, closing, introductory filler and Read that again are removed; receipt storage and vendor/date search are stated directly without the filing-cabinet comparison."
+        },
+        "preservation": {
+          "label": "FAIL",
+          "reason": "The monthly price changes from $29 to $39; the other receipt-storage and search details do not repair that factual change."
+        }
+      }
+    }
+  ],
+  "grading": {
+    "labels": "Primary-agent-reviewed reference keys, not human study data. The calibration schema field human contains the reference key. FAIL is positive.",
+    "metrics": {
+      "system": {
+        "dimensions": 32,
+        "tool_output": "n=32 positive=FAIL labels: PASS\nTP=0 TN=32 FP=0 FN=0\nTPR (recall)       n/a\nTNR (specificity)  1.0000\naccuracy           1.0000\nprecision          n/a\nbias: n/a - judge FAIL where human PASS: 0/32 (0.0000) vs judge PASS where human FAIL: 0/0 (n/a)\n",
+        "pairs": [
+          {
+            "id": "R01",
+            "dimension": "preservation",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R02",
+            "dimension": "preservation",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R02",
+            "dimension": "cleanup",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R04",
+            "dimension": "preservation",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R04",
+            "dimension": "cleanup",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R06",
+            "dimension": "preservation",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R08",
+            "dimension": "preservation",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R08",
+            "dimension": "cleanup",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R09",
+            "dimension": "preservation",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R10",
+            "dimension": "preservation",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R10",
+            "dimension": "cleanup",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R12",
+            "dimension": "preservation",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R14",
+            "dimension": "preservation",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R14",
+            "dimension": "cleanup",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R15",
+            "dimension": "preservation",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R16",
+            "dimension": "preservation",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R16",
+            "dimension": "cleanup",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R17",
+            "dimension": "preservation",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R18",
+            "dimension": "preservation",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R19",
+            "dimension": "preservation",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R20",
+            "dimension": "preservation",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R23",
+            "dimension": "preservation",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R24",
+            "dimension": "preservation",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R25",
+            "dimension": "preservation",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R26",
+            "dimension": "preservation",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R27",
+            "dimension": "preservation",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R27",
+            "dimension": "cleanup",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R28",
+            "dimension": "preservation",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R29",
+            "dimension": "preservation",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R32",
+            "dimension": "preservation",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R33",
+            "dimension": "preservation",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R33",
+            "dimension": "cleanup",
+            "human": "PASS",
+            "judge": "PASS"
+          }
+        ]
+      },
+      "calibration": {
+        "dimensions": 14,
+        "tool_output": "n=14 positive=FAIL labels: FAIL, PASS\nTP=8 TN=6 FP=0 FN=0\nTPR (recall)       1.0000\nTNR (specificity)  1.0000\naccuracy           1.0000\nprecision          1.0000\nbias: none - judge FAIL where human PASS: 0/6 (0.0000) = judge PASS where human FAIL: 0/8 (0.0000)\n",
+        "pairs": [
+          {
+            "id": "R03",
+            "dimension": "cleanup",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R03",
+            "dimension": "preservation",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R05",
+            "dimension": "cleanup",
+            "human": "FAIL",
+            "judge": "FAIL"
+          },
+          {
+            "id": "R05",
+            "dimension": "preservation",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R07",
+            "dimension": "preservation",
+            "human": "FAIL",
+            "judge": "FAIL"
+          },
+          {
+            "id": "R11",
+            "dimension": "preservation",
+            "human": "FAIL",
+            "judge": "FAIL"
+          },
+          {
+            "id": "R21",
+            "dimension": "preservation",
+            "human": "FAIL",
+            "judge": "FAIL"
+          },
+          {
+            "id": "R22",
+            "dimension": "cleanup",
+            "human": "FAIL",
+            "judge": "FAIL"
+          },
+          {
+            "id": "R22",
+            "dimension": "preservation",
+            "human": "FAIL",
+            "judge": "FAIL"
+          },
+          {
+            "id": "R30",
+            "dimension": "cleanup",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R30",
+            "dimension": "preservation",
+            "human": "FAIL",
+            "judge": "FAIL"
+          },
+          {
+            "id": "R31",
+            "dimension": "preservation",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R34",
+            "dimension": "cleanup",
+            "human": "PASS",
+            "judge": "PASS"
+          },
+          {
+            "id": "R34",
+            "dimension": "preservation",
+            "human": "FAIL",
+            "judge": "FAIL"
+          }
+        ]
+      },
+      "intermediate": {
+        "dimensions": 2,
+        "tool_output": "n=2 positive=FAIL labels: FAIL, PASS\nTP=1 TN=1 FP=0 FN=0\nTPR (recall)       1.0000\nTNR (specificity)  1.0000\naccuracy           1.0000\nprecision          1.0000\nbias: none - judge FAIL where human PASS: 0/1 (0.0000) = judge PASS where human FAIL: 0/1 (0.0000)\n",
+        "pairs": [
+          {
+            "id": "R13",
+            "dimension": "cleanup",
+            "human": "FAIL",
+            "judge": "FAIL"
+          },
+          {
+            "id": "R13",
+            "dimension": "preservation",
+            "human": "PASS",
+            "judge": "PASS"
+          }
+        ]
+      }
+    },
+    "disagreements": []
+  },
+  "validation": {
+    "new_unit_tests": 8,
+    "focused": {
+      "total": 150,
+      "passed": 148,
+      "skipped": 2,
+      "failed": 0
+    },
+    "standalone_toolkit": {
+      "total": 119,
+      "passed": 117,
+      "skipped": 2,
+      "failed": 0
+    },
+    "coverage": {
+      "_review_hits": {
+        "covered": 24,
+        "statements": 24,
+        "missing": []
+      },
+      "rhetorical_scaffolding": {
+        "covered": 2,
+        "statements": 2,
+        "missing": []
+      },
+      "editorial_patterns": {
+        "covered": 2,
+        "statements": 2,
+        "missing": []
+      }
+    },
+    "review_checks": 76,
+    "export": "Passed on final source",
+    "full_suite": "Not repeated for this extension. Previous run retained an unrelated plugin-validation README-fallback-warning failure reproduced at original 208ecbc. No full-suite success claimed."
+  },
+  "limits": [
+    "Small synthetic set; one model family and two repetitions per task.",
+    "Tasks batched within an agent are not fully independent.",
+    "Twelve detector cases added after review; not an untouched holdout.",
+    "One intermediate editing failure required a wording repair. Final candidate measured with fresh agents; earlier and interrupted attempts excluded from final counts.",
+    "Baseline already passed these editing cases: no measured improvement in final prose, only added repeatable detection with no observed regression on this set."
+  ],
+  "release": "Local source and symlinks updated; no public release or cached-plugin change."
+}
