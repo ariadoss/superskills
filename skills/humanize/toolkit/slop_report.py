@@ -30,15 +30,22 @@ from bisect import bisect_left, bisect_right
 from collections import Counter, defaultdict
 from pathlib import Path
 
-# Sibling imports resolve against this file's real directory, so they work when it
-# runs as a script, via runpy, as part of a package, or through a symlink; and they
-# never write __pycache__ into the installed skill directory.
-sys.dont_write_bytecode = True
-if str(Path(__file__).resolve().parent) not in sys.path:
-    sys.path.insert(0, str(Path(__file__).resolve().parent))
-from eq_bench_slop_index import SLOP_BIGRAMS, SLOP_TRIGRAMS, SLOP_UNIGRAMS, load_slop_set, slop_index_new, slop_index_legacy
-from textio import read_prose
-from mla_format import code_lines, mask_literals
+# Sibling imports. Installed (or run with -m) the module sits in the
+# humanize_toolkit package and uses relative imports; importing it never touches
+# sys.path. Run by file path (the skill's scripts, hooks and evals) there is no
+# package, so the script's own directory is put on sys.path and the siblings are
+# imported bare, and no __pycache__ is written into the skill directory.
+if __package__:
+    from .eq_bench_slop_index import SLOP_BIGRAMS, SLOP_TRIGRAMS, SLOP_UNIGRAMS, load_slop_set, slop_index_new, slop_index_legacy
+    from .textio import read_prose
+    from .mla_format import code_lines, mask_literals
+else:
+    sys.dont_write_bytecode = True
+    if str(Path(__file__).resolve().parent) not in sys.path:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from eq_bench_slop_index import SLOP_BIGRAMS, SLOP_TRIGRAMS, SLOP_UNIGRAMS, load_slop_set, slop_index_new, slop_index_legacy
+    from textio import read_prose
+    from mla_format import code_lines, mask_literals
 
 HERE = Path(__file__).resolve().parent
 

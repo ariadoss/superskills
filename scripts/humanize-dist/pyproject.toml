@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "humanize-toolkit"
+dynamic = ["version"]
+description = "Deterministic prose-quality tools: an AI-slop scan with line numbers, em-dash and spacing fixes. No LLM calls."
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE", "NOTICE.md"]
+authors = [{ name = "Danilo Stern-Sapad" }]
+keywords = ["prose", "writing", "slop", "lint", "humanize"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
+  "Topic :: Text Processing :: Linguistic",
+]
+# Standard library only. spaCy and NLTK are optional and degrade cleanly.
+dependencies = []
+
+[project.optional-dependencies]
+spacy = ["spacy"]
+nltk = ["nltk"]
+
+[project.urls]
+Source = "https://github.com/ariadoss/humanize"
+
+[project.scripts]
+humanize-scan = "humanize_toolkit.slop_report:main"
+
+# The export keeps the skill's flat toolkit/ folder; this maps it onto the
+# importable package name, so nothing is renamed or rewritten on the way out.
+[tool.setuptools]
+package-dir = { "humanize_toolkit" = "toolkit" }
+packages = ["humanize_toolkit"]
+include-package-data = false
+
+[tool.setuptools.package-data]
+humanize_toolkit = ["*.json", "*.txt", "NOTICE.md"]
+
+[tool.setuptools.dynamic]
+version = { attr = "humanize_toolkit.__version__" }

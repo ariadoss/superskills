@@ -1,0 +1,4 @@
+include LICENSE NOTICE.md README.md SKILL.md
+include toolkit/*.json toolkit/*.txt toolkit/NOTICE.md
+include tests/humanize-toolkit.bats
+global-exclude __pycache__ *.py[cod] .DS_Store

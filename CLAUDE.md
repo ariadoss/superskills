@@ -136,6 +136,14 @@ The export is a pure copy of git-tracked files only (`git add` a new toolkit
 file to publish it) and refuses to finish unless the exported tree passes its
 own tests under `bats`; `tests/export-humanize.bats` asserts byte-identity. Never edit the
 public repo directly. The next export would silently overwrite the change.
+The toolkit is also an installable Python package. `scripts/humanize-dist/pyproject.toml`
+(copied verbatim by the export) maps the flat `toolkit/` folder onto the import name
+`humanize_toolkit` (distribution `humanize-toolkit`; plain `humanize` is taken on PyPI).
+Modules use relative imports when imported as a package and fall back to bare imports
+plus a `sys.path` entry only when run by file path, so every script keeps working both
+ways and importing the package never touches `sys.path`. `__version__` in
+`toolkit/__init__.py` is the single version source; the release steps (bump, export, tag
+`vX.Y.Z` in the public repo, consumers pin the tag tarball) are in the exported README.
 Whole-text LLM rewriting humanizers are private and must never be added here;
 `/humanize` only makes surgical, span-level edits.
 

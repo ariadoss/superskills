@@ -31,7 +31,8 @@ fake_repo() {
 @test "exports the standalone layout" {
   run bash "$EXPORT" "$OUT"
   [ "$status" -eq 0 ]
-  for f in SKILL.md README.md LICENSE NOTICE.md .gitignore \
+  for f in SKILL.md README.md LICENSE NOTICE.md .gitignore pyproject.toml MANIFEST.in \
+           toolkit/__init__.py \
            toolkit/emdash_fix.py toolkit/slop_report.py toolkit/NOTICE.md \
            tests/humanize-toolkit.bats; do
     [ -f "$OUT/$f" ] || { echo "missing $f"; return 1; }
@@ -44,6 +45,8 @@ fake_repo() {
   cmp "$OUT/LICENSE"                   "$REPO_ROOT/LICENSE" || return 1
   cmp "$OUT/NOTICE.md"                 "$REPO_ROOT/skills/humanize/toolkit/NOTICE.md" || return 1
   cmp "$OUT/README.md"                 "$REPO_ROOT/scripts/humanize-dist/README.md" || return 1
+  cmp "$OUT/pyproject.toml"            "$REPO_ROOT/scripts/humanize-dist/pyproject.toml" || return 1
+  cmp "$OUT/MANIFEST.in"               "$REPO_ROOT/scripts/humanize-dist/MANIFEST.in" || return 1
   cmp "$OUT/tests/humanize-toolkit.bats" "$REPO_ROOT/tests/humanize-toolkit.bats" || return 1
   for f in "$REPO_ROOT"/skills/humanize/toolkit/*; do
     [ -f "$f" ] || continue   # e.g. a local __pycache__/, which is never exported
@@ -77,12 +80,46 @@ fake_repo() {
   [ ! -f "$OUT/toolkit/stale.json" ] || { echo "stale toolkit file survived"; return 1; }
 }
 
-@test "the exported README points at toolkit/ and never at a path the export does not create" {
+@test "the exported README points at toolkit/ and never at a humanize_toolkit/ directory the export does not create" {
   bash "$EXPORT" "$OUT" >/dev/null
-  run grep -c 'humanize_toolkit' "$OUT/README.md"
+  run grep -c 'humanize_toolkit/' "$OUT/README.md"
   [ "$output" = "0" ] || { echo "README references a nonexistent humanize_toolkit/ path"; return 1; }
   run grep -c 'toolkit/' "$OUT/README.md"
   [ "$output" -ge 1 ] || false
+}
+
+@test "the exported README documents the import name and the tag-pinning release steps" {
+  bash "$EXPORT" "$OUT" >/dev/null
+  grep -q 'humanize_toolkit' "$OUT/README.md" || { echo "import name undocumented"; return 1; }
+  grep -q 'archive/refs/tags/vX.Y.Z.tar.gz' "$OUT/README.md" || { echo "tag tarball pin undocumented"; return 1; }
+}
+
+@test "the exported tree builds a wheel and an sdist that carry every data file and the notices" {
+  command -v python3 >/dev/null || skip "no python3"
+  bash "$EXPORT" "$OUT" >/dev/null
+  venv="$BATS_TEST_TMPDIR/venv"
+  python3 -m venv "$venv" || skip "cannot create a venv"
+  "$venv/bin/python" -m pip install -q build >/dev/null 2>&1 || skip "cannot install build (offline?)"
+  run bash -c "cd '$OUT' && '$venv/bin/python' -m build --outdir '$BATS_TEST_TMPDIR/built' ."
+  [ "$status" -eq 0 ] || { echo "$output" | tail -20; return 1; }
+  run "$venv/bin/python" - "$OUT" "$BATS_TEST_TMPDIR/built" <<'PY'
+import glob, sys, tarfile, zipfile
+out, built = sys.argv[1:3]
+import os
+json_files = sorted(f for f in os.listdir(os.path.join(out, "toolkit")) if f.endswith(".json"))
+assert len(json_files) >= 8, json_files
+whl = zipfile.ZipFile(glob.glob(built + "/*.whl")[0]).namelist()
+sdist = tarfile.open(glob.glob(built + "/*.tar.gz")[0]).getnames()
+for f in json_files + ["__init__.py", "slop_report.py", "exempt_example.txt"]:
+    assert "humanize_toolkit/" + f in whl, ("wheel", f)
+    assert any(n.endswith("/toolkit/" + f) for n in sdist), ("sdist", f)
+for n in ("LICENSE", "NOTICE.md"):
+    assert any(w.endswith("/licenses/" + n) for w in whl), ("wheel license", n)
+    assert any(s.endswith("/" + n) for s in sdist), ("sdist license", n)
+assert not any(w.split("/")[0] in ("textio.py", "normalize.py") for w in whl)
+print("packaging ok")
+PY
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
 }
 
 @test "fails loudly when the skill is missing rather than exporting an empty repo" {
