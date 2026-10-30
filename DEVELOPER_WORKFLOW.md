@@ -1,9 +1,9 @@
 # 10x+ Engineering Output with Parallel AI Agents
 
-Run 10+ features simultaneously. Each built, tested, reviewed, documented, and PR'd at the same time.
+Run a fleet of 10+ features a day, 3-5 lanes at once. Each built, tested, reviewed, documented, and PR'd on its own branch.
 
 **Traditional:** 1 engineer, 1 task at a time  
-**With AI agents:** 1 engineer, 10+ features built, tested, reviewed, documented, and PR'd simultaneously
+**With AI agents:** 1 engineer, a 10+-feature fleet built, tested, reviewed, documented, and PR'd — 3-5 lanes running at once
 
 Engineers who master this don't just move faster. They operate at a different level entirely.
 
@@ -157,7 +157,7 @@ Each feature is scoped end-to-end on its own isolated branch. Nothing touches th
 | `/plan-eng-review` | Architecture, data flow, and test planning review |
 | `/dbmap` | Map the database schema so agents work with accurate data models; its final step offers automatic regeneration after migrations (`.dbmap-auto`), so the map tracks the live schema without a separate command |
 
-### 2. Launch 10+ agents in parallel (one per branch)
+### 2. Launch the agent fleet (one per branch, 3-5 lanes at once)
 
 Each agent works independently and spawns subagents. Exponentially faster than pair programming with AI one task at a time.
 
@@ -205,7 +205,7 @@ Each agent works independently and spawns subagents. Exponentially faster than p
 >    into independent slices or stack them (see the git model) and run the
 >    chain on a single lane.
 
-### 3. Each agent runs the full quality pipeline simultaneously
+### 3. Every lane runs the full quality pipeline before it merges
 
 | Command | Role |
 |---------|------|

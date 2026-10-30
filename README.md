@@ -5,7 +5,7 @@ Curated AI skills pack for Claude Code, ZCode, OpenCode, Codex CLI, DSH (DeepSee
 41 core skills + 54 gstack skills + 174 marketing skills + 36 design skills, selected by [packs](#packs-choose-what-gets-installed). gstack is vendored in this repo so its skills are available even if the upstream repo is removed.
 
 > **[Full command reference →](COMMANDS.md)**: all skills with descriptions and overlap notes
-> **[10x+ Engineering Workflow →](DEVELOPER_WORKFLOW.md)**: run 10+ parallel AI agents, each with a full quality pipeline ([full write-up](https://hyperion360.com/blog/parallel-ai-agents-engineering-workflow/))
+> **[10x+ Engineering Workflow →](DEVELOPER_WORKFLOW.md)**: run a fleet of 10+ parallel AI agents, 3-5 lanes at once, each with a full quality pipeline ([full write-up](https://hyperion360.com/blog/parallel-ai-agents-engineering-workflow/))
 
 ## Install
 
