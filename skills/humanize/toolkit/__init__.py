@@ -63,7 +63,11 @@ def scan(text, exempt_terms=None):
         src = os.path.join(tmp, "input.md")
         with open(src, "w", encoding="utf-8") as fh:
             fh.write(text)
-        cmd = [sys.executable, "-m", "humanize_toolkit.slop_report", src]
+        # By file path in isolated mode (-I): a same-named package in the
+        # caller's directory or PYTHONPATH can never be picked up, and it works
+        # however this package was found (installed or on sys.path).
+        script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "slop_report.py")
+        cmd = [sys.executable, "-I", script, src]
         if exempt_terms:
             ex = os.path.join(tmp, "exempt.txt")
             with open(ex, "w", encoding="utf-8") as fh:

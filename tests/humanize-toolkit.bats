@@ -1680,3 +1680,18 @@ print("api ok")' "$SAMPLE"
   run python3 "$TK/normalize.py" "$SAMPLE" "$BATS_TEST_TMPDIR/n.md"
   [ "$status" -eq 0 ] || { echo "$output"; return 1; }
 }
+
+@test "package: scan() never runs a humanize_toolkit planted in the caller's directory" {
+  command -v python3 >/dev/null || skip "no python3"
+  mkdir -p "$BATS_TEST_TMPDIR/evil/humanize_toolkit" "$BATS_TEST_TMPDIR/site"
+  printf 'open("%s/pwned", "w").write("x")\n' "$BATS_TEST_TMPDIR" > "$BATS_TEST_TMPDIR/evil/humanize_toolkit/slop_report.py"
+  mkdir -p "$BATS_TEST_TMPDIR/site"; ln -sfn "$TK" "$BATS_TEST_TMPDIR/site/humanize_toolkit"
+  cd "$BATS_TEST_TMPDIR/evil"
+  # The package is found via sys.path only (not PYTHONPATH), as an app that vendors it would.
+  run python3 -B -c 'import sys; sys.path.insert(1, sys.argv[1])
+import humanize_toolkit as ht
+assert "tapestry" in ht.scan(open(sys.argv[2]).read())
+print("scan ok")' "$BATS_TEST_TMPDIR/site" "$SAMPLE"
+  [ ! -e "$BATS_TEST_TMPDIR/pwned" ] || { echo "planted module ran"; return 1; }
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+}
