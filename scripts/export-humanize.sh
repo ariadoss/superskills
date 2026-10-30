@@ -3,7 +3,8 @@
 # this repo, which is the single source of truth for the skill.
 #
 # Deliberately a pure copy: the standalone repo names the toolkit directory
-# `toolkit/`, exactly as the skill does, and tests/humanize-toolkit.bats locates
+# `toolkit/`, exactly as the skill does (pyproject.toml's package-dir makes that
+# folder the installable `humanize_toolkit` package), and tests/humanize-toolkit.bats locates
 # its layout at runtime. So there is no path rewriting anywhere in this script.
 # That is the point — a transformation step is the thing that drifts, and a
 # rewrite that half-applies produces a repo whose tests pass and whose docs lie.
@@ -48,6 +49,10 @@ cp "$SRC_ROOT/LICENSE"                       "$OUT/LICENSE"
 cp "$SKILL_DIR/toolkit/NOTICE.md"            "$OUT/NOTICE.md"
 cp "$SRC_ROOT/scripts/humanize-dist/README.md"   "$OUT/README.md"
 cp "$SRC_ROOT/scripts/humanize-dist/.gitignore"  "$OUT/.gitignore"
+# Packaging: pyproject.toml maps toolkit/ onto the importable humanize_toolkit
+# package (package-dir), so the folder is shipped as is and never renamed.
+cp "$SRC_ROOT/scripts/humanize-dist/pyproject.toml" "$OUT/pyproject.toml"
+cp "$SRC_ROOT/scripts/humanize-dist/MANIFEST.in"    "$OUT/MANIFEST.in"
 
 # The export is only good if it stands alone, so prove it here rather than
 # discovering it after a push. No bats means no proof, so no export.
@@ -55,6 +60,9 @@ command -v bats >/dev/null 2>&1 || {
   echo "bats is required to verify the export (brew install bats-core); $OUT is NOT publishable" >&2
   exit 1
 }
+# No bytecode: importing the toolkit as a package would otherwise leave a
+# __pycache__/ in the tree we are about to publish.
+export PYTHONDONTWRITEBYTECODE=1
 if bats "$OUT/tests/humanize-toolkit.bats" >/dev/null 2>&1; then
   verdict="tests pass in the exported tree"
 else

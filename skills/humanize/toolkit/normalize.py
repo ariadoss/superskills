@@ -10,15 +10,22 @@ leaves no OUT at all. SRC is never overwritten.
 import sys
 from pathlib import Path
 
-# Sibling imports resolve against this file's real directory, so they work when it
-# runs as a script, via runpy, as part of a package, or through a symlink; and they
-# never write __pycache__ into the installed skill directory.
-sys.dont_write_bytecode = True
-if str(Path(__file__).resolve().parent) not in sys.path:
-    sys.path.insert(0, str(Path(__file__).resolve().parent))
-import emdash_fix
-from mla_format import mla_format
-from textio import read_prose, write_prose
+# Sibling imports. Installed (or run with -m) the module sits in the
+# humanize_toolkit package and uses relative imports; importing it never touches
+# sys.path. Run by file path (the skill's scripts, hooks and evals) there is no
+# package, so the script's own directory is put on sys.path and the siblings are
+# imported bare, and no __pycache__ is written into the skill directory.
+if __package__:
+    from . import emdash_fix
+    from .mla_format import mla_format
+    from .textio import read_prose, write_prose
+else:
+    sys.dont_write_bytecode = True
+    if str(Path(__file__).resolve().parent) not in sys.path:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import emdash_fix
+    from mla_format import mla_format
+    from textio import read_prose, write_prose
 
 
 def main(argv: list[str]) -> int:

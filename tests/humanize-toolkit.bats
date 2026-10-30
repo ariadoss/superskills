@@ -6,6 +6,9 @@
 # index read 0.0 rather than "unavailable"), so they are asserted explicitly.
 
 setup() {
+  # Package-mode imports (unlike file-path runs) would write __pycache__/ into
+  # the toolkit directory, which is the tree the export publishes.
+  export PYTHONDONTWRITEBYTECODE=1
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
   # Layout-agnostic on purpose: this same file ships unmodified in the standalone
   # humanize repo, where the skill sits at the root. An export that rewrote paths
@@ -270,7 +273,8 @@ COPY
   # must be spaCy or NLTK: grep -o'ing for just those two used to drop any other
   # third-party import on the floor instead of failing on it.
   imports="$(grep -hE '^[[:space:]]*(import|from) ' "$TK"/*.py | sed -E 's/^[[:space:]]+//' \
-    | grep -vE '^(import|from) (re|sys|json|statistics|subprocess|math|os|argparse|collections|pathlib|__future__|typing|unicodedata|itertools|functools|textwrap|string|tempfile|shutil|bisect|html|mla_format|textio|emdash_fix|eq_bench_slop_index)([. ]|$)')"
+    | grep -vE '^(import|from) (re|sys|json|statistics|subprocess|math|os|argparse|collections|pathlib|__future__|typing|unicodedata|itertools|functools|textwrap|string|tempfile|shutil|bisect|html|mla_format|textio|emdash_fix|eq_bench_slop_index)([. ]|$)' \
+    | grep -vE '^from \.')"
   run bash -c "printf '%s\n' \"\$1\" | grep -vE '^(import|from) (spacy|nltk)([. ]|$)' | grep -c ." _ "$imports"
   [ "$output" = "0" ] || { echo "undocumented non-stdlib imports: $(printf '%s\n' "$imports" | grep -vE '(spacy|nltk)')"; return 1; }
   run bash -c "printf '%s\n' \"\$1\" | grep -oE '(spacy|nltk)' | sort -u | tr '\n' ' '" _ "$imports"
@@ -572,7 +576,6 @@ PY
   # imports (`from textio import ...`) only resolved when run as a script.
   d="$BATS_TEST_TMPDIR/downstream"
   mkdir -p "$d/pkg"
-  : > "$d/pkg/__init__.py"
   for f in "$TK"/*.py "$TK"/*.json "$TK"/*.txt; do ln -s "$f" "$d/pkg/$(basename "$f")"; done
   printf 'We paused—it was late—and.\n' > "$d/in.md"
   run bash -c "cd '$d' && python3 -B -c '
@@ -1605,4 +1608,90 @@ for text in ['Not only text but images.', 'Not\nonly text but images.']:
 
 assert not failures, failures
 PY
+}
+
+# ---- installable package: humanize_toolkit ---------------------------------
+# pkg_root <dir>: a directory holding the toolkit under its import name, which
+# is what pip's package-dir mapping produces in site-packages. A symlink keeps
+# this layout-agnostic (skill layout or standalone repo) and needs no network.
+pkg_root() { mkdir -p "$1" && ln -s "$TK" "$1/humanize_toolkit"; }
+
+@test "package: importing humanize_toolkit is cheap and never touches sys.path" {
+  pkg_root "$BATS_TEST_TMPDIR/site"
+  run env PYTHONPATH="$BATS_TEST_TMPDIR/site" python3 -B -c '
+import sys
+before = list(sys.path); bytecode = sys.dont_write_bytecode
+import humanize_toolkit as ht
+assert sys.path == before, "sys.path changed"
+assert sys.dont_write_bytecode == bytecode, "bytecode flag changed"
+heavy = {"humanize_toolkit.slop_report", "humanize_toolkit.emdash_fix", "spacy", "nltk"}
+assert not heavy & set(sys.modules), sorted(heavy & set(sys.modules))
+for bare in ("textio", "normalize", "emdash_fix", "mla_format", "slop_report", "userfacing", "construction_scanner", "eq_bench_slop_index"):
+    assert bare not in sys.modules, bare
+print(ht.__version__)'
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+  [[ "$output" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "$output"; return 1; }
+}
+
+@test "package: every module imports with relative imports and still writes no sys.path entries" {
+  pkg_root "$BATS_TEST_TMPDIR/site"
+  run env PYTHONPATH="$BATS_TEST_TMPDIR/site" python3 -B -c '
+import importlib, sys
+before = list(sys.path)
+for m in ("textio", "mla_format", "emdash_fix", "normalize", "eq_bench_slop_index", "slop_report", "construction_scanner", "userfacing"):
+    importlib.import_module("humanize_toolkit." + m)
+assert sys.path == before, "sys.path changed"
+for bare in ("textio", "normalize", "emdash_fix", "mla_format", "slop_report"):
+    assert bare not in sys.modules, bare
+print("ok")'
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+}
+
+@test "package: the public API works and agrees with the command line" {
+  pkg_root "$BATS_TEST_TMPDIR/site"
+  run env PYTHONPATH="$BATS_TEST_TMPDIR/site" python3 -B -c '
+import sys, humanize_toolkit as ht
+text = open(sys.argv[1], encoding="utf-8").read()
+assert ht.slop_index(text)["word_hits"] >= 1
+assert "tapestry" in ht.scan(text)
+assert "—" not in ht.normalize("We paused—it was late—and.")
+assert ht.classify("README.md") == "markdown"
+print("api ok")' "$SAMPLE"
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+  run env PYTHONPATH="$BATS_TEST_TMPDIR/site" python3 -B -m humanize_toolkit.slop_report "$SAMPLE"
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+  [[ "$output" == *"tapestry"* ]] || false
+}
+
+@test "package: __version__ is a plain literal that matches pyproject when one ships" {
+  run grep -E '^__version__ = "[0-9]+\.[0-9]+\.[0-9]+"$' "$TK/__init__.py"
+  [ "$status" -eq 0 ] || { echo "version literal missing"; return 1; }
+  if [ -f "$REPO_ROOT/pyproject.toml" ]; then
+    run grep -E '^version = \{ attr = "humanize_toolkit.__version__" \}' "$REPO_ROOT/pyproject.toml"
+    [ "$status" -eq 0 ] || { echo "pyproject does not read the single version source"; return 1; }
+  fi
+}
+
+@test "package: scripts still run by file path from another directory, with isolated mode off" {
+  cd "$BATS_TEST_TMPDIR"
+  run python3 "$TK/slop_report.py" "$SAMPLE"
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+  [[ "$output" == *"tapestry"* ]] || false
+  run python3 "$TK/normalize.py" "$SAMPLE" "$BATS_TEST_TMPDIR/n.md"
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+}
+
+@test "package: scan() never runs a humanize_toolkit planted in the caller's directory" {
+  command -v python3 >/dev/null || skip "no python3"
+  mkdir -p "$BATS_TEST_TMPDIR/evil/humanize_toolkit" "$BATS_TEST_TMPDIR/site"
+  printf 'open("%s/pwned", "w").write("x")\n' "$BATS_TEST_TMPDIR" > "$BATS_TEST_TMPDIR/evil/humanize_toolkit/slop_report.py"
+  mkdir -p "$BATS_TEST_TMPDIR/site"; ln -sfn "$TK" "$BATS_TEST_TMPDIR/site/humanize_toolkit"
+  cd "$BATS_TEST_TMPDIR/evil"
+  # The package is found via sys.path only (not PYTHONPATH), as an app that vendors it would.
+  run python3 -B -c 'import sys; sys.path.insert(1, sys.argv[1])
+import humanize_toolkit as ht
+assert "tapestry" in ht.scan(open(sys.argv[2]).read())
+print("scan ok")' "$BATS_TEST_TMPDIR/site" "$SAMPLE"
+  [ ! -e "$BATS_TEST_TMPDIR/pwned" ] || { echo "planted module ran"; return 1; }
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
 }
