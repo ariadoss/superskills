@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # Claude Code UserPromptSubmit hook: nudge /handoff once per trigger when
 #   - this session's context window reaches HANDOFF_USAGE_THRESHOLD (90%), or
+#     (when CLAUDE_CODE_AUTO_COMPACT_WINDOW is set below the model window, the
+#     statusline's published percentage is compact-window-relative, so this
+#     fires relative to auto-compaction — the earlier nudge /handoff wants), or
 #   - the account's 5-hour window reaches HANDOFF_FIVE_HOUR_THRESHOLD (90%), or
 #   - the account's weekly window reaches HANDOFF_WEEKLY_THRESHOLD (95%).
 # The 5-hour window resets within hours, so firing early wastes a note, but a
