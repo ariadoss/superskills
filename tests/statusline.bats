@@ -89,6 +89,34 @@ J"
   [[ "$output" == *"ctx 23%"* ]] || false
 }
 
+@test "a compaction window equal to the model window changes nothing" {
+  # The window only matters when it is smaller; at the boundary the reported field wins.
+  export CLAUDE_CODE_AUTO_COMPACT_WINDOW=200000
+  run bash -c "'$SL' <<'J'
+{\"context_window\":{\"used_percentage\":23,\"context_window_size\":200000,
+  \"current_usage\":{\"input_tokens\":100000}}}
+J"
+  [[ "$output" == *"ctx 23%"* ]] || false
+}
+
+@test "measures against the compaction window when the payload omits the model window size" {
+  export CLAUDE_CODE_AUTO_COMPACT_WINDOW=200000
+  run bash -c "'$SL' <<'J'
+{\"context_window\":{\"used_percentage\":9,
+  \"current_usage\":{\"input_tokens\":100000}}}
+J"
+  [[ "$output" == *"ctx 50%"* ]] || false
+}
+
+@test "publishes the compaction-window percentage for the handoff hook" {
+  export CLAUDE_CODE_AUTO_COMPACT_WINDOW=200000
+  bash -c "'$SL' <<'J'
+{\"session_id\":\"s1\",\"context_window\":{\"used_percentage\":15,\"context_window_size\":1000000,
+  \"current_usage\":{\"input_tokens\":150000}}}
+J" >/dev/null
+  jq -e '.used_percentage == 75' "$XDG_CACHE_HOME/claude-statusline/context-s1.json" >/dev/null
+}
+
 @test "ignores a non-numeric CLAUDE_CODE_AUTO_COMPACT_WINDOW" {
   export CLAUDE_CODE_AUTO_COMPACT_WINDOW=abc
   run bash -c "'$SL' <<'J'
