@@ -331,11 +331,15 @@ points at the checkout, `/superskills-upgrade` updates the statusline too.
 
 Needs `bash` and `jq` 1.6 or newer (`brew install jq`, `apt install jq`); macOS
 and Linux. Set `NO_COLOR=1` for plain output, `STATUSLINE_DEBUG=1` to surface stderr.
+When `CLAUDE_CODE_AUTO_COMPACT_WINDOW` is set below the model's context window,
+the context % is measured against that window (distance to auto-compaction)
+instead of the model window.
 
 The statusline is on a hot path: Claude Code debounces updates at 300ms and cancels
 an in-flight script when a new update arrives. One `jq` call does all parsing, the
 cache merge, the clock arithmetic and the rendering. No `awk` (context % is a
-documented field), no `date` (jq has `now`), no `stat`, `tr`, `sleep`, or lock.
+documented field, or one division when `CLAUDE_CODE_AUTO_COMPACT_WINDOW` is
+set), no `date` (jq has `now`), no `stat`, `tr`, `sleep`, or lock.
 
 `rate_limits` is absent until a session's first API response and Claude Code drops
 each window at its `resets_at`, so the last-seen windows are cached under
