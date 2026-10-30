@@ -191,6 +191,20 @@ Each agent works independently and spawns subagents. Exponentially faster than p
 > semantics for parallel lanes — not a violation of single-item focus.
 > (Both patterns recorded from the claw-code harness study, 2026-10-14.)
 
+> **Bound the fleet.** Independent slices make lanes safe; they don't make
+> them free. Every lane runs the full quality pipeline, so N simultaneous
+> lanes spend tokens against the same quota window at N times the rate:
+> the same token economics as the delegation risks above, one level up.
+> "10+ agents" is fleet throughput across the day, not simultaneous lanes.
+>
+> 1. **Run 3-5 lanes at once, no more.** Slices beyond the cap queue and
+>    start as lanes merge. Stagger the heavy gates (`/qa-full`, full test
+>    suites) rather than firing them all in the same moment.
+> 2. **Sequential work gets one lane.** Spreading dependent tasks across
+>    parallel lanes just moves the queue; it doesn't remove it. Re-scope
+>    into independent slices or stack them (see the git model) and run the
+>    chain on a single lane.
+
 ### 3. Each agent runs the full quality pipeline simultaneously
 
 | Command | Role |

@@ -1,0 +1,1 @@
+The next feature is real-time collaborative editing: a CRDT merge engine, the sync wire protocol and transport, live presence cursors, and the editor UI integration. The parts share the note model and can't ship separately. Set up the build per the workflow and give me the launch plan.
