@@ -26,7 +26,8 @@
 # percentage. Do not add a lock here: it buys nothing and costs a fork per render
 # on the hot path.
 #
-# Env: NO_COLOR=1 plain output. STATUSLINE_DEBUG=1 surfaces stderr.
+# Env: CLAUDE_CODE_AUTO_COMPACT_WINDOW (read when set below the model window).
+# NO_COLOR=1 plain output. STATUSLINE_DEBUG=1 surfaces stderr.
 # Input schema: https://code.claude.com/docs/en/statusline
 
 [ "${STATUSLINE_DEBUG:-}" = "1" ] || exec 2>/dev/null
@@ -123,16 +124,22 @@ def windows: if type == "object" and (.rate_limits | type) == "object" then .rat
 
 # Prefer the documented pre-calculated field; fall back to the token sum it is
 # defined as, so an older Claude Code still renders a context number.
-| ( if (.context_window.used_percentage | type) == "number"
-    then .context_window.used_percentage
-    else ( (.context_window.context_window_size // 0) as $size
-           | if $size > 0 then
-               ( ((.context_window.current_usage.input_tokens // 0)
-                + (.context_window.current_usage.cache_creation_input_tokens // 0)
-                + (.context_window.current_usage.cache_read_input_tokens // 0))
-                 / $size * 100 )
-             else null end )
-    end ) as $ctx
+# used_percentage is measured against the model's full window (1M on the long
+# context models), but CLAUDE_CODE_AUTO_COMPACT_WINDOW makes Claude Code compact
+# far earlier. When that window is smaller, recompute against it so the number
+# reads as distance to auto-compaction rather than to a limit never reached.
+| ( (.context_window.context_window_size // 0) as $size
+    | ($compactwin | tonumber? // 0) as $cw
+    | ( (.context_window.current_usage.input_tokens // 0)
+      + (.context_window.current_usage.cache_creation_input_tokens // 0)
+      + (.context_window.current_usage.cache_read_input_tokens // 0) ) as $tokens
+    | if $cw > 0 and ($size == 0 or $cw < $size)
+         and (.context_window.current_usage | type) == "object"
+      then $tokens / $cw * 100
+      elif (.context_window.used_percentage | type) == "number"
+      then .context_window.used_percentage
+      elif $size > 0 then $tokens / $size * 100
+      else null end ) as $ctx
 
 | [
     (if (.model.display_name // "") != "" then paint("1"; .model.display_name | clean) else empty end),
@@ -169,7 +176,8 @@ if ! command -v jq >/dev/null 2>&1; then
 fi
 
 # jq supplies its own clock via `now`, so not even date/1 forks here.
-out=$(jq -r --argjson color "$use_color" --arg cachetext "$cache_text" "$JQ" 2>/dev/null) || out=""
+out=$(jq -r --argjson color "$use_color" --arg cachetext "$cache_text" \
+  --arg compactwin "${CLAUDE_CODE_AUTO_COMPACT_WINDOW:-}" "$JQ" 2>/dev/null) || out=""
 
 # Line 1 is the statusline, line 2 is the account cache (possibly empty),
 # and line 3, when present, is this session's context reading.

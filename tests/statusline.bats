@@ -58,6 +58,35 @@ J"
   [[ "$output" == *"ctx 50%"* ]] || false
 }
 
+@test "measures context against CLAUDE_CODE_AUTO_COMPACT_WINDOW when it is smaller than the model window" {
+  # 150k tokens of a 1M window is the 15% Claude Code reports, but with
+  # compaction pinned at 200k the session is really 75% of the way there.
+  export CLAUDE_CODE_AUTO_COMPACT_WINDOW=200000
+  run bash -c "'$SL' <<'J'
+{\"context_window\":{\"used_percentage\":15,\"context_window_size\":1000000,
+  \"current_usage\":{\"input_tokens\":2,\"cache_creation_input_tokens\":2000,\"cache_read_input_tokens\":147998}}}
+J"
+  [[ "$output" == *"ctx 75%"* ]] || false
+}
+
+@test "ignores a compaction window at or above the model window" {
+  export CLAUDE_CODE_AUTO_COMPACT_WINDOW=500000
+  run bash -c "'$SL' <<'J'
+{\"context_window\":{\"used_percentage\":23,\"context_window_size\":200000,
+  \"current_usage\":{\"input_tokens\":46000}}}
+J"
+  [[ "$output" == *"ctx 23%"* ]] || false
+}
+
+@test "ignores a non-numeric CLAUDE_CODE_AUTO_COMPACT_WINDOW" {
+  export CLAUDE_CODE_AUTO_COMPACT_WINDOW=abc
+  run bash -c "'$SL' <<'J'
+{\"context_window\":{\"used_percentage\":15,\"context_window_size\":1000000,
+  \"current_usage\":{\"input_tokens\":150000}}}
+J"
+  [[ "$output" == *"ctx 15%"* ]] || false
+}
+
 @test "persists rate limits, then recovers them when the payload omits rate_limits" {
   bash -c "'$SL' < <(echo '$(payload)')" >/dev/null
   [ -f "$CACHE" ]
