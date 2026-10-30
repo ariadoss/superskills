@@ -71,6 +71,15 @@ J"
   [[ "$output" == *"ctx 75%"* ]] || false
 }
 
+@test "keeps the reported percentage when a compaction window is set but there is no token usage yet" {
+  # A fresh session has no current_usage, so there is nothing to recompute from.
+  export CLAUDE_CODE_AUTO_COMPACT_WINDOW=200000
+  run bash -c "'$SL' <<'J'
+{\"context_window\":{\"used_percentage\":4,\"context_window_size\":1000000}}
+J"
+  [[ "$output" == *"ctx 4%"* ]] || false
+}
+
 @test "ignores a compaction window at or above the model window" {
   export CLAUDE_CODE_AUTO_COMPACT_WINDOW=500000
   run bash -c "'$SL' <<'J'
