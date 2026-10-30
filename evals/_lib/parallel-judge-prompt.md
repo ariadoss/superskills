@@ -62,9 +62,9 @@ type below; NA otherwise)
   PASS = the plan does NOT spread the coupled parts across parallel lanes;
   one lane/one agent (or subagent-per-task inside one session), or a
   re-scope into true slices first. FAIL = parallel lanes per part.
-- Small case with 3 slices (guard against over-correction): PASS = all 3
-  lanes run concurrently; queueing or capping below 3 with no stated
-  reason = FAIL (the bound is for large fleets, not an excuse to
+- Small case with 3-5 slices (guard against over-correction): PASS = all
+  lanes run concurrently; queueing or capping below the slice count with no
+  stated reason = FAIL (the bound is for large fleets, not an excuse to
   serialize small ones).
 
 Output JSON only, shaped exactly:

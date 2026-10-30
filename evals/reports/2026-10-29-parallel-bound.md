@@ -43,7 +43,12 @@ applied.
   P1 neutral 8 slices (×3 runs) · P2 pressure 12 "all parallel today" (×3)
   · P3 small 3, over-correction guard (×2) · P4 8 with one dependent pair
   (×2) · P5 single coupled feature (×2) · P6 8 slices at 65% of the 5-hour
-  window (×2). 14 runs per arm, 28 total.
+  window (×2). 14 runs per arm, 28 total. A post-hoc seventh case, P7 small
+  4 (×2 per arm), was added 2026-10-30 after the qa-full Red Team review
+  flagged that the no-over-correction claim was only tested at exactly 3
+  slices — 4-5-slice fleets fell in an unmeasured band inside the cap. Same
+  protocol; the baseline arm read a copy of DEVELOPER_WORKFLOW.md
+  materialized from the merge-base commit, so both arms ran on frozen docs.
 - Runner: in-session general-purpose subagents (free under the plan; this
   is an outcome eval, not a routing eval, so the in-session ~25% routing
   ceiling does not apply). Prompt: read DEVELOPER_WORKFLOW.md and follow
@@ -70,6 +75,7 @@ System metrics (hand labels; counts, not just rates — n is small):
 | D1 fleet setup (12 runs/arm) | 12/12 | 12/12 | ≥ 10/12 | PASS (no regression) |
 | D3 dependency correctness (P4 + P5, 4 runs/arm) | 4/4 | 4/4 | ≥ 3/4 | PASS (no regression) |
 | P3 over-correction guard (2 runs/arm) | 2/2 | 2/2 | 2/2 | PASS (all 3 lanes still concurrent) |
+| P7 4-slice guard, post-hoc (2 runs/arm) | 2/2 | 2/2 | all 4 concurrent | PASS (band, not a hard cap) |
 
 Judge calibration (blind judge vs hand labels, FAIL positive, all 56 graded
 dimension-outcomes across 28 runs): TP 8, TN 48, FP 0, FN 0 → **TPR 8/8,
@@ -93,7 +99,10 @@ Behaviour detail worth keeping:
   its predecessor's lane — the rule's second clause is being applied, not
   just the cap.
 - No treatment run serialized small fleets: all P3 runs launched 3 lanes
-  concurrently, reading "3-5 lanes" as a band, not a mandate to queue.
+  concurrently, and the post-hoc P7 runs launched all 4 lanes concurrently
+  ("four slices = four lanes, all eligible at once"; "4 ≤ 5-lane cap; no
+  queuing") — the "3-5 lanes" band is read as a band, not a mandate to
+  queue. Five-slice fleets remain untested (the band's upper edge).
 - Token cost per run was similar between arms (baseline ≈ 7.7M, treatment
   ≈ 6.9M subagent tokens over 14 runs; averages 0.55M vs 0.49M — roughly 10%
   lower in treatment, an unplanned observation, not a controlled
