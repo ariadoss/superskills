@@ -122,8 +122,8 @@ def windows: if type == "object" and (.rate_limits | type) == "object" then .rat
 | merge($rl.seven_day;  $cl.seven_day)  as $w7
 | merge($rl.spend_limit; $cl.spend_limit) as $ws
 
-# Prefer the documented pre-calculated field; fall back to the token sum it is
-# defined as, so an older Claude Code still renders a context number.
+# Context %. Normally the documented pre-calculated field, falling back to the
+# token sum it is defined as so an older Claude Code still renders a number.
 # used_percentage is measured against the model's full window (1M on the long
 # context models), but CLAUDE_CODE_AUTO_COMPACT_WINDOW makes Claude Code compact
 # far earlier. When that window is smaller, recompute against it so the number

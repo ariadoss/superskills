@@ -13,6 +13,8 @@ setup() {
   SL="$REPO_ROOT/scripts/statusline.sh"
   export XDG_CACHE_HOME="$BATS_TEST_TMPDIR/cache"
   export NO_COLOR=1
+  # A developer's shell may export this; only the tests that mean to set it do.
+  unset CLAUDE_CODE_AUTO_COMPACT_WINDOW
   CACHE="$XDG_CACHE_HOME/claude-statusline/rate-limits.json"
   NOW=$(date +%s)
 }
