@@ -94,9 +94,10 @@ Behaviour detail worth keeping:
   just the cap.
 - No treatment run serialized small fleets: all P3 runs launched 3 lanes
   concurrently, reading "3-5 lanes" as a band, not a mandate to queue.
-- Token cost per run was unchanged between arms (baseline ≈ 7.7M,
-  treatment ≈ 6.9M subagent tokens over 14 runs; averages 0.55M vs 0.49M).
-  The bound shows up in the plans' content, not their length.
+- Token cost per run was similar between arms (baseline ≈ 7.7M, treatment
+  ≈ 6.9M subagent tokens over 14 runs; averages 0.55M vs 0.49M — roughly 10%
+  lower in treatment, an unplanned observation, not a controlled
+  comparison). The bound shows up in the plans' content, not their length.
 
 ## Reading
 

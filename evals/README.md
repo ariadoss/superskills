@@ -48,6 +48,9 @@ transcripts: `reports/2026-09-24-description-trim.md`,
 `reports/2026-09-25-daily-qa-skill-invocation.md`. The /qa-full fixture repo is
 built by `_lib/qa-full-fixture.sh <dir>` and the /daily-qa one by
 `_lib/daily-qa-fixture.sh <dir>` (not cases: they have no `prompt.md`).
+The parallel-bound report (`reports/2026-10-29-parallel-bound.md`) uses
+`_lib/parallel-fixture.sh`, the six case prompts in `_lib/parallel-cases/`,
+and the judge rubric `_lib/parallel-judge-prompt.md`.
 
 **Do not use in-session subagents for routing evals.** Tested directly: two
 45-run arms differing only in one prompt clause fired a skill in 22% and 26% of
