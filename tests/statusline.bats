@@ -90,6 +90,67 @@ J"
   [[ "$output" == *"ctx 15%"* ]] || false
 }
 
+@test "parses suffixed CLAUDE_CODE_AUTO_COMPACT_WINDOW values like 200k" {
+  # Claude Code documents suffixed spellings (200k); tonumber alone rejects
+  # them, which silently disabled the recompute — the exact misread (ctx 15
+  # instead of 75) this feature exists to prevent.
+  export CLAUDE_CODE_AUTO_COMPACT_WINDOW=200k
+  run bash -c "'$SL' <<'J'
+{\"context_window\":{\"used_percentage\":15,\"context_window_size\":1000000,
+  \"current_usage\":{\"input_tokens\":2,\"cache_creation_input_tokens\":2000,\"cache_read_input_tokens\":147998}}}
+J"
+  [[ "$output" == *"ctx 75%"* ]] || false
+}
+
+@test "coerces string-typed token fields instead of killing the render" {
+  export CLAUDE_CODE_AUTO_COMPACT_WINDOW=200000
+  run bash -c "'$SL' <<'J'
+{\"context_window\":{\"used_percentage\":15,\"context_window_size\":1000000,
+  \"current_usage\":{\"input_tokens\":\"147000\",\"cache_creation_input_tokens\":2000,\"cache_read_input_tokens\":1000}}}
+J"
+  [[ "$output" == *"ctx 75%"* ]] || false
+}
+
+@test "falls back to used_percentage when token fields are unusable" {
+  export CLAUDE_CODE_AUTO_COMPACT_WINDOW=200000
+  run bash -c "'$SL' <<'J'
+{\"context_window\":{\"used_percentage\":15,\"context_window_size\":1000000,
+  \"current_usage\":{\"input_tokens\":\"abc\",\"cache_creation_input_tokens\":2000,\"cache_read_input_tokens\":1000}}}
+J"
+  [[ "$output" == *"ctx 15%"* ]] || false
+}
+
+@test "empty current_usage object falls back to used_percentage" {
+  export CLAUDE_CODE_AUTO_COMPACT_WINDOW=200000
+  run bash -c "'$SL' <<'J'
+{\"context_window\":{\"used_percentage\":55,\"context_window_size\":1000000,
+  \"current_usage\":{}}}
+J"
+  [[ "$output" == *"ctx 55%"* ]] || false
+}
+
+@test "ignores a compaction window equal to the model window" {
+  # used_percentage deliberately disagrees with the token sum (50000/200000 =
+  # 25%): equality must route to the documented field, not the arithmetic.
+  export CLAUDE_CODE_AUTO_COMPACT_WINDOW=200000
+  run bash -c "'$SL' <<'J'
+{\"context_window\":{\"used_percentage\":23,\"context_window_size\":200000,
+  \"current_usage\":{\"input_tokens\":50000}}}
+J"
+  [[ "$output" == *"ctx 23%"* ]] || false
+}
+
+@test "unknown model window with a compaction window set: recompute against the var" {
+  # Distance to auto-compaction is computable without the model window; the
+  # recompute intentionally wins over used_percentage here.
+  export CLAUDE_CODE_AUTO_COMPACT_WINDOW=200000
+  run bash -c "'$SL' <<'J'
+{\"context_window\":{\"used_percentage\":15,
+  \"current_usage\":{\"input_tokens\":2,\"cache_creation_input_tokens\":2000,\"cache_read_input_tokens\":147998}}}
+J"
+  [[ "$output" == *"ctx 75%"* ]] || false
+}
+
 @test "persists rate limits, then recovers them when the payload omits rate_limits" {
   bash -c "'$SL' < <(echo '$(payload)')" >/dev/null
   [ -f "$CACHE" ]
