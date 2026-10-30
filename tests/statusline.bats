@@ -1,6 +1,8 @@
 #!/usr/bin/env bats
 # Tests for scripts/statusline.sh. Hermetic: XDG_CACHE_HOME points into
-# BATS_TEST_TMPDIR so no test touches the real ~/.cache.
+# BATS_TEST_TMPDIR so no test touches the real ~/.cache, and
+# CLAUDE_CODE_AUTO_COMPACT_WINDOW is unset in setup() so a value inherited
+# from the invoking shell cannot skew the tests that don't set it.
 #
 # Schema under test: https://code.claude.com/docs/en/statusline
 # The payload fields that matter are all optional in practice —
@@ -13,6 +15,7 @@ setup() {
   SL="$REPO_ROOT/scripts/statusline.sh"
   export XDG_CACHE_HOME="$BATS_TEST_TMPDIR/cache"
   export NO_COLOR=1
+  unset CLAUDE_CODE_AUTO_COMPACT_WINDOW
   CACHE="$XDG_CACHE_HOME/claude-statusline/rate-limits.json"
   NOW=$(date +%s)
 }
