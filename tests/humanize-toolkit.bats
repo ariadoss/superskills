@@ -28,7 +28,7 @@ setup() {
 @test "the closure is complete: every data file the scripts load is present" {
   for f in emdash_fix.py mla_format.py slop_report.py eq_bench_slop_index.py \
            construction_scanner.py ai_slop_wordlist.json ai_overused_research.json \
-           llm_slop.json eq_bench_slop_list.json eq_bench_slop_list_bigrams.json \
+           llm_slop.json cliche_signals.json eq_bench_slop_list.json eq_bench_slop_list_bigrams.json \
            eq_bench_slop_list_trigrams.json top2000_en.json \
            eq_bench_slop_phrase_prob_adjustments.json NOTICE.md; do
     [ -f "$TK/$f" ] || { echo "missing $f"; return 1; }
@@ -78,6 +78,38 @@ setup() {
 @test "slop_report flags a planted bigram" {
   run bash -c "python3 '$TK/slop_report.py' '$SAMPLE'"
   [[ "$output" == *"almost imperceptible"* ]] || false
+}
+
+@test "cliche signals: planted openers, collocations and theme words are reported with line numbers" {
+  printf 'The morning was ordinary.\nThe film tells the story of a man. It was a Tuesday.\nShe carried a testament to her grief.\n' > "$SAMPLE"
+  run python3 "$TK/slop_report.py" "$SAMPLE"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"CLICHÉ OPENERS / STOCK SENTENCES"*": 2"* ]] || false
+  [[ "$output" == *"L2: [tells the story of]"* ]] || false
+  [[ "$output" == *"L3: [a testament to]"* ]] || false
+  [[ "$output" == *"CLICHÉ THEME WORDS"*": 1"* ]] || false
+}
+
+@test "cliche signals: plain prose reports none and adds no other output" {
+  printf 'Mama kept the radio on all night. The kettle ticked as it cooled.\n' > "$SAMPLE"
+  run python3 "$TK/slop_report.py" "$SAMPLE"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"CLICHÉ OPENERS / STOCK SENTENCES (tells the story of, in a world where…): none"* ]] || false
+  [[ "$output" == *"STOCK COLLOCATIONS (a testament to, thick with, the weight of…): none"* ]] || false
+  [[ "$output" == *"CLICHÉ THEME WORDS (grief, tapestry, profound, journey…): none"* ]] || false
+}
+
+@test "cliche signals: anchored patterns match only at a sentence start, curly apostrophes count" {
+  printf 'He said that it wasn'"'"'t just rain. It wasn’t just rain.\n' > "$SAMPLE"
+  run python3 "$TK/slop_report.py" "$SAMPLE"
+  [[ "$output" == *"CLICHÉ OPENERS"*": 1 "* ]] || false
+}
+
+@test "cliche signals: a missing cliche_signals.json degrades to none instead of failing" {
+  cp -R "$TK" "$BATS_TEST_TMPDIR/tkc" && rm "$BATS_TEST_TMPDIR/tkc/cliche_signals.json"
+  run python3 "$BATS_TEST_TMPDIR/tkc/slop_report.py" "$SAMPLE"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"CLICHÉ THEME WORDS"*": none"* ]] || false
 }
 
 @test "rhetorical scaffolding reports scene openers, announced questions and filler" {
