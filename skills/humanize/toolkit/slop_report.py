@@ -117,19 +117,19 @@ def _load_llm_slop():
 LLM_SLOP_WORDS, LLM_SLOP_PHRASES = _load_llm_slop()
 _FIC_PHRASE_RE = re.compile("|".join(re.escape(p) for p in LLM_SLOP_PHRASES), re.I) if LLM_SLOP_PHRASES else None
 def _load_cliche_signals():
-    """Fiction-cliche lists (formulaic openers, stock collocations, theme words) mined from
+    """Fiction-cliche lists (formulaic openers, stock collocations) mined from
     AI vs human fiction. Each group is (compiled patterns); a leading ^ anchors a pattern to
     a sentence start. Missing or malformed file: no cliche groups."""
     def build(d):
         out = {}
-        for g in ("openers", "collocations", "themes"):
+        for g in ("openers", "collocations"):
             comp = []
             for p in d.get(g, []):
                 anch, body = p.startswith("^"), p.lstrip("^")
                 comp.append((anch, re.compile((r"\b" if body[:1].isalnum() else "") + body + r"\b", re.I)))
             out[g] = comp
         return out
-    return _load_json("cliche_signals.json", build, {"openers": [], "collocations": [], "themes": []})
+    return _load_json("cliche_signals.json", build, {"openers": [], "collocations": []})
 
 
 CLICHE_SIGNALS = _load_cliche_signals()
@@ -593,11 +593,10 @@ def main():
         ph_hits = [(ln, m.group(0), txt) for ln, txt in lines for m in _FIC_PHRASE_RE.finditer(txt)]
         report_group("SLOP PHRASE CLICHÉS (took a deep breath; ghost of a smile…)", ph_hits)
 
-    # ---- fiction-cliche signals (formulaic openers, stock collocations, theme words) ----
+    # ---- fiction-cliche signals (formulaic openers, stock collocations) ----
     ch = cliche_hits(lines)
     report_group("CLICHÉ OPENERS / STOCK SENTENCES (tells the story of, in a world where…)", ch["openers"], "  [flag: 1+ per ~250 words]")
     report_group("STOCK COLLOCATIONS (a testament to, thick with, the weight of…)", ch["collocations"], "  [flag: 2+ per ~250 words]")
-    report_group("CLICHÉ THEME WORDS (grief, tapestry, profound, journey…)", ch["themes"], "  [flag: 2+ per ~250 words]")
 
     # ---- paragraph-level: short-paragraph overuse (A8) + burstiness (A23) ----
     short_paras = [p for p in paras if len(sentences(p)) == 1 and len(p.split()) <= 5]

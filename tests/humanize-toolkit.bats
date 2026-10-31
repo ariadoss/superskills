@@ -80,14 +80,14 @@ setup() {
   [[ "$output" == *"almost imperceptible"* ]] || false
 }
 
-@test "cliche signals: planted openers, collocations and theme words are reported with line numbers" {
+@test "cliche signals: planted openers and collocations are reported with line numbers" {
   printf 'The morning was ordinary.\nThe film tells the story of a man. It was a Tuesday.\nShe carried a testament to her grief.\n' > "$SAMPLE"
   run python3 "$TK/slop_report.py" "$SAMPLE"
   [ "$status" -eq 0 ]
   [[ "$output" == *"CLICHÉ OPENERS / STOCK SENTENCES"*": 2"* ]] || false
   [[ "$output" == *"L2: [tells the story of]"* ]] || false
   [[ "$output" == *"L3: [a testament to]"* ]] || false
-  [[ "$output" == *"CLICHÉ THEME WORDS"*": 1"* ]] || false
+  [[ "$output" != *"CLICHÉ THEME WORDS"* ]] || false
 }
 
 @test "cliche signals: plain prose reports none and adds no other output" {
@@ -96,7 +96,7 @@ setup() {
   [ "$status" -eq 0 ]
   [[ "$output" == *"CLICHÉ OPENERS / STOCK SENTENCES (tells the story of, in a world where…): none"* ]] || false
   [[ "$output" == *"STOCK COLLOCATIONS (a testament to, thick with, the weight of…): none"* ]] || false
-  [[ "$output" == *"CLICHÉ THEME WORDS (grief, tapestry, profound, journey…): none"* ]] || false
+  [[ "$output" != *"THEME WORDS"* ]] || false
 }
 
 @test "cliche signals: anchored patterns match only at a sentence start, curly apostrophes count" {
@@ -109,7 +109,7 @@ setup() {
   cp -R "$TK" "$BATS_TEST_TMPDIR/tkc" && rm "$BATS_TEST_TMPDIR/tkc/cliche_signals.json"
   run python3 "$BATS_TEST_TMPDIR/tkc/slop_report.py" "$SAMPLE"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"CLICHÉ THEME WORDS"*": none"* ]] || false
+  [[ "$output" == *"CLICHÉ OPENERS"*": none"* ]] || false
 }
 
 @test "rhetorical scaffolding reports scene openers, announced questions and filler" {

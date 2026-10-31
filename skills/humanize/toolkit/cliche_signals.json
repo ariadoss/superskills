@@ -1,5 +1,5 @@
 {
- "_note": "Cliche signals for slop_report.py. Lists mined by log-odds (AI vs human fiction, mining half only), pruned by eye and by AI:human document-frequency ratio. A leading ^ anchors a pattern to the start of a sentence. Source: mlx-examples/lora detectors/cliche_prune.py.",
+ "_note": "Cliche signals for slop_report.py. Lists mined by log-odds (AI vs human fiction, mining half only), pruned by eye and by AI:human document-frequency ratio. A leading ^ anchors a pattern to the start of a sentence. Source: mlx-examples/lora detectors/cliche_prune.py. Theme words were dropped: they fired on 7-9% of award-winning human non-fiction passages.",
  "openers": [
   "tells the story of",
   "is set in",
@@ -90,34 +90,5 @@
   "a dry",
   "a low",
   "the way a"
- ],
- "themes": [
-  "grief",
-  "journey",
-  "profound(?:ly)?",
-  "ancient",
-  "peculiar",
-  "shimmering",
-  "jagged",
-  "rhythmic",
-  "trembling",
-  "metallic",
-  "amber",
-  "precision",
-  "merely",
-  "desperate",
-  "bruised",
-  "polished",
-  "possessed",
-  "legacy",
-  "destiny",
-  "resilience",
-  "tapestry",
-  "unspoken",
-  "ghosts?",
-  "shadows?",
-  "weight",
-  "particular",
-  "physical"
  ]
 }
