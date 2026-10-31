@@ -183,8 +183,8 @@ fi
 compactwin="${CLAUDE_CODE_AUTO_COMPACT_WINDOW:-}"
 case "$compactwin" in
   *[!0-9kKmM]*|'') : ;;
-  *[0-9][kK]) compactwin="$(( ${compactwin%[kK]} * 1000 ))" ;;
-  *[0-9][mM]) compactwin="$(( ${compactwin%[mM]} * 1000000 ))" ;;
+  *[0-9][kK]) compactwin="$(( 10#${compactwin%[kK]} * 1000 ))" ;;
+  *[0-9][mM]) compactwin="$(( 10#${compactwin%[mM]} * 1000000 ))" ;;
 esac
 
 # jq supplies its own clock via `now`, so not even date/1 forks here.

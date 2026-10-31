@@ -105,8 +105,8 @@ J"
 @test "parses the m suffix too (3m = three million)" {
   export CLAUDE_CODE_AUTO_COMPACT_WINDOW=3m
   run bash -c "'$SL' <<'J'
-{\"context_window\":{\"used_percentage":15,\"context_window_size\":10000000,
-  \"current_usage\":{\"input_tokens\":2,\"cache_creation_input_tokens\":2000,\"cache_read_input_tokens\":1495998}}}
+{\"context_window\":{\"used_percentage\":15,\"context_window_size\":10000000,
+  \"current_usage\":{\"input_tokens\":2,\"cache_creation_input_tokens\":2000,\"cache_read_input_tokens\":1497998}}}
 J"
   [[ "$output" == *"ctx 50%"* ]] || false
 }
