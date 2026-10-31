@@ -112,6 +112,14 @@ setup() {
   [[ "$output" == *"CLICHÉ OPENERS"*": none"* ]] || false
 }
 
+@test "cliche signals: a malformed cliche_signals.json degrades to none instead of failing" {
+  cp -R "$TK" "$BATS_TEST_TMPDIR/tkm" && printf '{not json' > "$BATS_TEST_TMPDIR/tkm/cliche_signals.json"
+  printf 'The film tells the story of a man.\n' > "$SAMPLE"
+  run python3 "$BATS_TEST_TMPDIR/tkm/slop_report.py" "$SAMPLE"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"CLICHÉ OPENERS"*": none"* ]] || false
+}
+
 @test "rhetorical scaffolding reports scene openers, announced questions and filler" {
   cat > "$SAMPLE" <<'COPY'
 Imagine this: your report is finished.

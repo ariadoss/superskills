@@ -111,6 +111,25 @@ J"
   [[ "$output" == *"ctx 50%"* ]] || false
 }
 
+@test "a leading-zero suffixed window is decimal, not octal (0200k = 200000)" {
+  # Regression for 9d5dc01: bash arithmetic read 0200 as octal (128), so 0200k showed 78%.
+  export CLAUDE_CODE_AUTO_COMPACT_WINDOW=0200k
+  run bash -c "'$SL' <<'J'
+{\"context_window\":{\"used_percentage\":15,\"context_window_size\":1000000,
+  \"current_usage\":{\"input_tokens\":2,\"cache_creation_input_tokens\":2000,\"cache_read_input_tokens\":97998}}}
+J"
+  [[ "$output" == *"ctx 50%"* ]] || false
+}
+
+@test "an uppercase K suffix parses like k" {
+  export CLAUDE_CODE_AUTO_COMPACT_WINDOW=200K
+  run bash -c "'$SL' <<'J'
+{\"context_window\":{\"used_percentage\":15,\"context_window_size\":1000000,
+  \"current_usage\":{\"input_tokens\":2,\"cache_creation_input_tokens\":2000,\"cache_read_input_tokens\":97998}}}
+J"
+  [[ "$output" == *"ctx 50%"* ]] || false
+}
+
 @test "coerces string-typed token fields instead of killing the render" {
   export CLAUDE_CODE_AUTO_COMPACT_WINDOW=200000
   run bash -c "'$SL' <<'J'
