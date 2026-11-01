@@ -3,7 +3,7 @@
 Run a fleet of 10+ features a day, 3-5 lanes at once. Each built, tested, reviewed, documented, and PR'd on its own branch.
 
 **Traditional:** 1 engineer, 1 task at a time  
-**With AI agents:** 1 engineer, a 10+-feature fleet built, tested, reviewed, documented, and PR'd — 3-5 lanes running at once
+**With AI agents:** 1 engineer, a 10+-feature fleet built, tested, reviewed, documented, and PR'd: 3-5 lanes running at once
 
 Engineers who master this don't just move faster. They operate at a different level entirely.
 
