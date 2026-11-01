@@ -5,7 +5,7 @@ Curated AI skills pack for Claude Code, ZCode, OpenCode, Codex CLI, DSH (DeepSee
 41 core skills + 54 gstack skills + 174 marketing skills + 36 design skills, selected by [packs](#packs-choose-what-gets-installed). gstack is vendored in this repo so its skills are available even if the upstream repo is removed.
 
 > **[Full command reference →](COMMANDS.md)**: all skills with descriptions and overlap notes
-> **[10x+ Engineering Workflow →](DEVELOPER_WORKFLOW.md)**: run 10+ parallel AI agents, each with a full quality pipeline ([full write-up](https://hyperion360.com/blog/parallel-ai-agents-engineering-workflow/))
+> **[10x+ Engineering Workflow →](DEVELOPER_WORKFLOW.md)**: run a fleet of 10+ parallel AI agents, 3-5 lanes at once, each with a full quality pipeline ([full write-up](https://hyperion360.com/blog/parallel-ai-agents-engineering-workflow/))
 
 ## Install
 
@@ -331,6 +331,9 @@ points at the checkout, `/superskills-upgrade` updates the statusline too.
 
 Needs `bash` and `jq` 1.6 or newer (`brew install jq`, `apt install jq`); macOS
 and Linux. Set `NO_COLOR=1` for plain output, `STATUSLINE_DEBUG=1` to surface stderr.
+When `CLAUDE_CODE_AUTO_COMPACT_WINDOW` is set below the model's context window,
+the context % is measured against that window (distance to auto-compaction)
+instead of the model window.
 
 If you set `CLAUDE_CODE_AUTO_COMPACT_WINDOW` below your model's window (say 200000 on
 a 1M model), context % is measured against that smaller window, so it shows how close
@@ -339,7 +342,8 @@ the session is to auto-compaction.
 The statusline is on a hot path: Claude Code debounces updates at 300ms and cancels
 an in-flight script when a new update arrives. One `jq` call does all parsing, the
 cache merge, the clock arithmetic and the rendering. No `awk` (context % is a
-documented field), no `date` (jq has `now`), no `stat`, `tr`, `sleep`, or lock.
+documented field, or one division when `CLAUDE_CODE_AUTO_COMPACT_WINDOW` is
+set), no `date` (jq has `now`), no `stat`, `tr`, `sleep`, or lock.
 
 `rate_limits` is absent until a session's first API response and Claude Code drops
 each window at its `resets_at`, so the last-seen windows are cached under

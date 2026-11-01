@@ -130,11 +130,15 @@ def windows: if type == "object" and (.rate_limits | type) == "object" then .rat
 # reads as distance to auto-compaction rather than to a limit never reached.
 | ( (.context_window.context_window_size // 0) as $size
     | ($compactwin | tonumber? // 0) as $cw
-    | ( (.context_window.current_usage.input_tokens // 0)
-      + (.context_window.current_usage.cache_creation_input_tokens // 0)
-      + (.context_window.current_usage.cache_read_input_tokens // 0) ) as $tokens
-    | if $cw > 0 and ($size == 0 or $cw < $size)
-         and (.context_window.current_usage | type) == "object"
+    | ( .context_window.current_usage
+        | if type == "object"
+          then [.input_tokens?, .cache_creation_input_tokens?, .cache_read_input_tokens?]
+               | map(select(. != null))
+          else [] end ) as $present
+    | ($present | map(tonumber?)) as $nums
+    | ($nums | length > 0 and length == ($present | length)) as $sum_ok
+    | (($nums | add) // 0) as $tokens
+    | if $cw > 0 and ($size == 0 or $cw < $size) and $sum_ok
       then $tokens / $cw * 100
       elif (.context_window.used_percentage | type) == "number"
       then .context_window.used_percentage
@@ -175,9 +179,19 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 0
 fi
 
+# Claude Code documents suffixed spellings (200k, 3m); jq's tonumber does
+# not parse them, which silently disabled the recompute. Normalize a clean
+# digits+suffix value here; anything else falls back inside jq.
+compactwin="${CLAUDE_CODE_AUTO_COMPACT_WINDOW:-}"
+case "$compactwin" in
+  *[!0-9kKmM]*|'') : ;;
+  *[0-9][kK]) compactwin="$(( 10#${compactwin%[kK]} * 1000 ))" ;;
+  *[0-9][mM]) compactwin="$(( 10#${compactwin%[mM]} * 1000000 ))" ;;
+esac
+
 # jq supplies its own clock via `now`, so not even date/1 forks here.
 out=$(jq -r --argjson color "$use_color" --arg cachetext "$cache_text" \
-  --arg compactwin "${CLAUDE_CODE_AUTO_COMPACT_WINDOW:-}" "$JQ" 2>/dev/null) || out=""
+  --arg compactwin "$compactwin" "$JQ" 2>/dev/null) || out=""
 
 # Line 1 is the statusline, line 2 is the account cache (possibly empty),
 # and line 3, when present, is this session's context reading.
@@ -227,6 +241,10 @@ if [ "$use_cache" = 1 ] && [[ "$out" == *$'\n'* ]]; then
 fi
 
 # The prompt hook has no context-window field, so publish this session's latest
+# reading for scripts/handoff-trigger-hook.sh. When CLAUDE_CODE_AUTO_COMPACT_WINDOW
+# is set below the model window, this percentage is compact-window-relative
+# (distance to auto-compaction), so the hook's threshold fires relative to
+# compaction — the earlier nudge /handoff wants.
 # statusline reading under its own key. Never let an input session id become a
 # path component without checking it first.
 if [ "$use_cache" = 1 ] && [ -n "$context_record" ]; then

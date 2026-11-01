@@ -8,6 +8,7 @@ The data files below are third-party and redistributed under their own terms.
 - `eq_bench_slop_list.json`, `eq_bench_slop_list_bigrams.json`,
   `eq_bench_slop_list_trigrams.json`, `eq_bench_slop_phrase_prob_adjustments.json`
 - `llm_slop.json` (mined over-representation data)
+- `cliche_signals.json` (fiction cliche openers and collocations; mined by log-odds on AI vs human fiction, then pruned by eye)
 - The slop-index formulas in `eq_bench_slop_index.py` replicate EQ-Bench's
   `core.metrics.calculate_slop_index` (new and legacy forms).
 
