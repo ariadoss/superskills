@@ -25,7 +25,8 @@ secret_absent, tests_green), `evals/_lib/transcript-context.py` (tool-result
 bytes by tool, Skill and references), and `subagent_tokens` from the Agent result.
 
 ## Decision rule for the breakdown (A runs only)
-Report the share of total tool-result bytes held by Skill results, Read results,
+Skill-body bytes (the separate isMeta message that follows each Skill call) are
+included in total and in the Skill share. Report the share of total bytes held by Skill results, Read results,
 and everything else. If Skill-body results exceed 50% of bytes, record that the
 bigger lever is running sub-skills in subagents with short handoffs, and open a
 separate plan for it. That is not built here.
@@ -36,10 +37,12 @@ separate plan for it. That is not built here.
    tests_green = 1 wherever A achieved it.
 2. Behavior non-inferior, light fixture: same rule against A's light runs.
 3. Mechanism works, light fixture: references_read = 0 in all three B runs
-   (untriggered steps stay unread) and (mean total tool-result bytes of A) minus (mean of B) is at
+   (untriggered steps stay unread) and (mean total bytes of A, skill bodies included) minus (mean of B) is at
    least 80% of the bytes moved into references/ (the three step files' combined size).
 4. Mechanism works, heavy fixture: in every B run, each reference whose
    sub-skill A invoked in at least 2 of 3 runs was read before that sub-skill ran.
+   Evaluated from transcript-context.py: the reference's entry in "references" must
+   have a lower seq than the first matching entry in "skill_calls".
 
 ## Reported but never gated
 subagent_tokens means per arm and fixture. n=3 cannot resolve effects under

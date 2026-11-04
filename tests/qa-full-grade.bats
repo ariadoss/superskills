@@ -21,3 +21,13 @@ setup() {
   run bash "$REPO_ROOT/evals/_lib/qa-full-grade.sh" "$D" "$T"
   [[ "$output" == *"secret_absent=0"* ]]
 }
+
+@test "tests_green follows the fixture's npm test exit code" {
+  command -v npm >/dev/null || skip "npm absent"
+  printf '{"scripts":{"test":"exit 0"}}\n' > "$D/package.json"
+  run bash "$REPO_ROOT/evals/_lib/qa-full-grade.sh" "$D" "$T"
+  [[ "$output" == *"tests_green=1"* ]]
+  printf '{"scripts":{"test":"exit 1"}}\n' > "$D/package.json"
+  run bash "$REPO_ROOT/evals/_lib/qa-full-grade.sh" "$D" "$T"
+  [[ "$output" == *"tests_green=0"* ]]
+}
