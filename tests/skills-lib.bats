@@ -447,3 +447,16 @@ root"
   done
   [ -z "$(ls -A "$TARGET" 2>/dev/null)" ] || false
 }
+
+@test "skill_frontmatter_from: echoes the frontmatter block, not the body" {
+  run skill_frontmatter_from "$FIX/alpha/SKILL.md"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"name: alpha-cmd"* ]]
+  [[ "$output" != *"body line 1"* ]]
+}
+
+@test "skill_frontmatter_from: a file with no fence yields at most the file, and never errors" {
+  printf '# plain\nno fence\n' > "$BATS_TEST_TMPDIR/plain.md"
+  run skill_frontmatter_from "$BATS_TEST_TMPDIR/plain.md"
+  [ "$status" -eq 0 ]
+}

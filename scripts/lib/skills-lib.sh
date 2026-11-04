@@ -387,6 +387,12 @@ skill_body_from() {
   awk 'BEGIN{n=0}/^---/{n++;next}n>=2{print}' "$1"
 }
 
+# skill_frontmatter_from <skill_md>
+# Echo the frontmatter block, fences included (what a tool reads at discovery time).
+skill_frontmatter_from() {
+  awk 'BEGIN{n=0}/^---/{n++}n>=1{print}n>=2&&/^---/{exit}' "$1"
+}
+
 # link_skill_into <base_dir> <skill_md> [fallback] [link_extras] [name_prefix]
 # Symlink a skill's SKILL.md (and, when link_extras=1, its sibling files) into
 # <base_dir>/<name_prefix><name>. Echoes the resolved name on success.
