@@ -93,9 +93,9 @@ with that evidence and NOT READY.
      write the failing test first when it's a logic bug (`/tdd`), apply the
      smallest correct fix, and commit it atomically with a message naming the
      check and finding.
-  3. **Verify** — re-run the *same* sub-skill on the diff and re-run the test
-     suite. A fix is only "fixed" when the re-audit no longer reports it and
-     tests are green. Never claim a fix without this fresh evidence (`/verify`
+  3. **Verify** — re-run the *same* sub-skill on the diff and re-run the fast
+     test tier (Step 2; the slow tier runs in Steps 9 and 10). A fix is only
+     "fixed" when the re-audit no longer reports it and tests are green. Never claim a fix without this fresh evidence (`/verify`
      discipline).
   A finding you could not fix (needs a product decision, external service,
   credentials, or an architectural change beyond the diff) is an **UNFIXED
@@ -165,6 +165,7 @@ for a `## qa-full` section and honor whatever it states. Example:
 - Design: skip `/design-review` (design is owned by the design team, do not auto-fix visuals)
 - Dev URL: http://localhost:3000   (for `/web-perf`, `/qa`, `/a11y`, `/fuzz`)
 - Test/build: `pnpm test` and `pnpm build`
+- Fast tests: `pnpm test:unit`   (unit-only gate; Step 2 runs it first)
 - QA tier: exhaustive
 ```
 
@@ -179,7 +180,9 @@ Recognized settings (all optional; absence = the defaults in the steps below):
 - **Design: skip `/design-review`** — opt *out* of the visual-fix pass (Step 8)
   entirely; by default it runs on any UI change. This skips the check (ledger:
   SKIPPED("project opt-out")) — it does not turn it into a report-only run.
-- **Test/build commands** — feed Steps 2 and 10. **Dev URL** — feeds Steps 4
+- **Test/build commands** — feed Steps 2 and 10. **Fast tests** — the
+  unit-only command Step 2 gates on and later verify phases re-run; absent, it
+  is inferred. **Dev URL** — feeds Steps 4
   (`/fuzz`), 6, 7 and 8. **QA tier** — feeds Step 7; defaults to `standard`.
 
 If there is no `## qa-full` section, run with the built-in defaults — nothing here
@@ -257,12 +260,32 @@ If there is no diff against base, stop and say so — there is nothing to QA.
 1. Find the project's test/build commands from `CLAUDE.md`; if absent, infer
    from `package.json` scripts, `Makefile`, `pyproject.toml`, etc. If you
    cannot determine them, **ask** rather than guess.
-2. **Audit:** run the test suite and the build. Capture exact failures (test
-   name + verbatim error in a code block).
-3. **Fix:** for each failing test or build error, follow `/debug` — reproduce,
-   root-cause, then fix the cause (not the assertion). Commit each fix.
-4. **Verify:** re-run the full suite and build. Green ⇒ FIXED(n). Still red
+2. **Split the suite into two tiers.** The **fast tier** is the build plus the
+   unit tests: no network, browser, or database server, and it finishes in
+   seconds to a couple of minutes. Use the `Fast tests` command from
+   `CLAUDE.md`, else the project's own unit-only script or marker (`test:unit`,
+   `pytest -m "not slow"`, `go test -short`). Where the runner can select tests
+   from the diff (`jest --changedSince`, `pytest --testmon`), add that, but
+   never as the only gate. The **slow tier** is everything else (integration,
+   e2e, the full suite). If the project has no separable fast tier, the whole
+   suite is the fast tier and nothing below changes.
+3. **Audit:** run the fast tier and the build first. Fail fast: stop at the
+   first red tier. Capture exact failures (test name + verbatim error in a code
+   block). Run the slow tier only once the fast tier is green, and no later
+   than Step 9. While the fast tier is red, never run the full suite (`npm
+   test`, `make test`, or any chained command that falls through to it); run
+   the unit-only command, and re-run one failing test by name.
+4. **Flaky check:** before treating a failure as real, re-run just that test
+   once on its own. Passes on re-run ⇒ record it as FLAKY (a warning, with the
+   test name), not as a fix target. Fails again ⇒ a real failure. Never
+   re-run the whole suite until it goes green.
+5. **Fix:** for each real failing test or build error, follow `/debug` —
+   reproduce, root-cause, then fix the cause (not the assertion). Commit each
+   fix.
+6. **Verify:** re-run the fast tier and the build. Green ⇒ FIXED(n). Still red
    after two rounds ⇒ UNFIXED blocker with the failing test and what was tried.
+   Every later step's verify phase re-runs the fast tier only; the slow tier
+   runs in Step 9 and again in Step 10, on the final HEAD.
 
 If this step ends UNFIXED after two rounds, **stop here** and report NOT READY
 with the failing test. Every later step's verify phase depends on a green
@@ -610,7 +633,8 @@ A metric regression is a warning unless the project marks evals MANDATORY in
 
 The fix rounds changed the branch, so verify the *whole* result once more:
 
-1. **Fresh tests + build** on the final HEAD (Step 2 commands). Stale results
+1. **Fresh tests + build** on the final HEAD (Step 2 commands), **both tiers**:
+   the fast-only runs of the fix rounds do not count here. Stale results
    ⇒ NOT READY.
 2. **Re-audit the fix commits:** run `/defense` scoped to the files the fix
    commits touched, and read the fix commits themselves
@@ -734,7 +758,7 @@ summary to the chat.
 - Running `/qa-only` or `/design-audit` where `/qa` / `/design-review` are
   specified. Report-only is for discovery inside a step, never the step's end.
 - Claiming a finding is fixed without re-running the check that found it and
-  the test suite (fresh evidence, not assertion).
+  the fast test tier (fresh evidence, not assertion).
 - Pushing, opening PRs, or merging — that's `/finish-branch` / `/ship`.
 - Fixing outside the diff: refactoring untouched modules, bumping deps, or
   "while I'm here" changes. Every commit must trace to a finding.
