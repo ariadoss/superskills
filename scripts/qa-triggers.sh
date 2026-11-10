@@ -21,7 +21,10 @@ case "$kind" in
   db | ui) ;;
   *) echo "usage: qa-triggers.sh <db|ui> [base-ref]" >&2; exit 2 ;;
 esac
-cd "$(git rev-parse --show-toplevel 2>/dev/null)" || { echo "qa-triggers: not in a git repo" >&2; exit 2; }
+export LC_ALL=C # byte-wise matching: invalid UTF-8 in a changed line must not defeat '.'
+case "$ref" in -*) echo "qa-triggers: ref '$ref' looks like an option" >&2; exit 2 ;; esac
+top="$(git rev-parse --show-toplevel 2>/dev/null)"
+[ -n "$top" ] && cd "$top" || { echo "qa-triggers: not in a git work tree" >&2; exit 2; }
 base="$(git merge-base "$ref" HEAD 2>/dev/null)" || { echo "qa-triggers: unknown ref '$ref'" >&2; exit 2; }
 
 IGNORED_PATH='(^|/)(docs?|tests?|__tests__|spec|node_modules|vendor|dist|build|__pycache__|\.git)/|\.pyc$|(^|/)test_[^/]*$|_test\.[a-z]+$|\.(md|txt|rst)$'
@@ -29,7 +32,7 @@ IGNORED_PATH='(^|/)(docs?|tests?|__tests__|spec|node_modules|vendor|dist|build|_
 DB_PATH_DIR='(^|/)(models?|migrations?|queries|dao|repositor(y|ies))/'
 DB_PATH_NAME='(^|/)[^/]*(schema|migrat|statements?|queries|query|repositor|dao)[^/]*\.[a-z]+$|\.sql$'
 # Matched case-insensitively (grep -i): lowercase SQL and ORM calls count too.
-DB_CONTENT='(^|[^A-Za-z])(SELECT[[:space:]].*[[:space:]]FROM[[:space:]]+[A-Za-z_"`]|INSERT[[:space:]]+INTO|UPDATE[[:space:]]+[A-Za-z_."]+[[:space:]]+SET|DELETE[[:space:]]+FROM|(CREATE|DROP)[[:space:]]+(UNIQUE[[:space:]]+)?(TABLE|INDEX)|ALTER[[:space:]]+TABLE)|\.(execute|executemany|executescript)\(|\.(preload|includes|select_related|prefetch_related)\(|\.objects\.|session\.query\(|\.find(Many|All|One|ByPk)\(|\.raw\('
+DB_CONTENT='(^|[^A-Za-z])(SELECT[[:space:]].*[[:space:]]FROM[[:space:]]+[^[:space:]]|INSERT[[:space:]]+INTO|UPDATE[[:space:]]+[A-Za-z_."]+[[:space:]]+SET|DELETE[[:space:]]+FROM|MERGE[[:space:]]+INTO|TRUNCATE[[:space:]]+TABLE|(CREATE|DROP)[[:space:]]+(UNIQUE[[:space:]]+|TEMP(ORARY)?[[:space:]]+)?(TABLE|INDEX)|ALTER[[:space:]]+TABLE)|\.(execute|executemany|executescript)\(|\.(preload|includes|select_related|prefetch_related)\(|\.objects\.|session\.query\(|\.find(Many|All|One|ByPk)\(|\.raw\('
 
 UI_PATH_EXT='\.(tsx|jsx|vue|svelte|astro|css|scss|sass|less|html?|jinja2?|j2|erb|haml|hbs|ejs|liquid|twig)$'
 UI_PATH_DIR='(^|/)(components|pages|views|templates|static|public|assets)/'
@@ -40,7 +43,7 @@ n="$(printf '%s' "$files" | grep -c .)"
 added_lines() { # path -> lines this branch adds (all of an untracked file)
   [ -f "$1" ] && [ ! -L "$1" ] || return 0
   if git ls-files --error-unmatch -- "$1" >/dev/null 2>&1; then
-    git diff -U0 "$base" -- "$1" | grep '^+' | grep -v '^+++'
+    git diff --no-color --no-ext-diff --no-textconv -U0 "$base" -- "$1" | awk '/^diff /{h=0;next} /^@@/{h=1;next} h && /^\+/'
   else
     cat -- "$1" 2>/dev/null
   fi

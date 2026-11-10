@@ -156,3 +156,45 @@ commit_file() { mkdir -p "$(dirname "$1")"; printf '%s\n' "$2" > "$1"; git add -
   run "$TRIG" db main
   [ "$status" -eq 0 ]
 }
+
+@test "db: SELECT from a subquery or placeholder still triggers" {
+  commit_file web/a.py 'q = "SELECT a FROM (SELECT 1) t"'
+  commit_file web/b.py 'q = "SELECT a FROM ${tbl} x"'
+  run "$TRIG" db main
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"web/a.py"* ]] || false
+  [[ "$output" == *"web/b.py"* ]] || false
+}
+
+@test "db: forced git color does not hide added SQL" {
+  commit_file web/c.py 'x = 1'
+  git config color.diff always
+  echo 'q = "SELECT a FROM t"' >> web/c.py
+  run "$TRIG" db main
+  [ "$status" -eq 0 ]
+}
+
+@test "db: an added line that starts with ++ still counts" {
+  commit_file web/d.py 'x = 1'
+  echo '++ SELECT a FROM t' >> web/d.py
+  run "$TRIG" db main
+  [ "$status" -eq 0 ]
+}
+
+@test "db: invalid UTF-8 in an added line still triggers" {
+  mkdir -p web; printf 'q="SELECT \xe9 FROM t"\n' > web/l.py
+  git add -A; git commit -qm l
+  run "$TRIG" db main
+  [ "$status" -eq 0 ]
+}
+
+@test "usage: a ref that looks like an option exits 2" {
+  run "$TRIG" db --help
+  [ "$status" -eq 2 ]
+}
+
+@test "usage: inside .git (no work tree) exits 2" {
+  cd "$R/.git"
+  run "$TRIG" db main
+  [ "$status" -eq 2 ]
+}
