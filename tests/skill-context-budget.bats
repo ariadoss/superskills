@@ -9,8 +9,8 @@ setup() {
 @test "reports frontmatter, body and side-file bytes per skill, then totals" {
   run bash "$REPO_ROOT/scripts/skill-context-budget.sh" "$R"
   [ "$status" -eq 0 ]
-  [[ "$output" == *$'alpha\t'* ]]
-  [[ "$output" == *"TOTAL"* ]]
+  [[ "$output" == *$'alpha\t'* ]] || false
+  [[ "$output" == *"TOTAL"* ]] || false
   fm="$(printf -- '---\nname: alpha\ndescription: Does alpha.\n---\n' | wc -c | tr -d ' ')"
-  [[ "$output" == *$'alpha\t'"$fm"$'\t'* ]]
+  [[ "$output" == *$'alpha\t'"$fm"$'\t'* ]] || false
 }

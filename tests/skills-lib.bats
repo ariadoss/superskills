@@ -451,8 +451,8 @@ root"
 @test "skill_frontmatter_from: echoes the frontmatter block, not the body" {
   run skill_frontmatter_from "$FIX/alpha/SKILL.md"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"name: alpha-cmd"* ]]
-  [[ "$output" != *"body line 1"* ]]
+  [[ "$output" == *"name: alpha-cmd"* ]] || false
+  [[ "$output" != *"body line 1"* ]] || false
 }
 
 @test "skill_frontmatter_from: a file with no fence yields at most the file, and never errors" {
