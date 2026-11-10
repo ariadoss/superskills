@@ -36,14 +36,14 @@ pack is always on: no pack list excludes it.
 
 | Pack | Contents |
 |------|----------|
-| `coding` (default, always on) | The workflow spine — `/write-plan`, `/executing-plans`, `/subagent-driven-development`, `/worktrees`, `/tdd`, `/test-coverage`, `/debug`, `/verify`, `/clean-code`, `/basic-review`, `/diff-walkthrough`, `/qa-full`, `/finish-branch`, `/eval`, `/daily-qa`, `/quota-resilience`, `/handoff`, `/humanize`, `/cli-for-agent`, `/superskills-doctor`, `/superskills-upgrade` — plus the security skills (`/defense`, `/iac-scan`, `/pentest`, `/fuzz`), the database skills (`/dbmap`, `/dbmap-auto-off`, `/db-optimize`, `/cache-strategy`), the web/QA skills (`/web-perf`, `/perf-profile`, `/a11y`, `/playwright`), and the eight gstack skills the QA gate executes through (`/review`, `/qa`, `/cso`, `/design-review`, `/ship`, `/plan-eng-review`, `/browse`, `/setup-browser-cookies`) |
+| `coding` (default, always on) | The workflow spine — `/write-plan`, `/executing-plans`, `/subagent-driven-development`, `/worktrees`, `/tdd`, `/test-coverage`, `/debug`, `/verify`, `/clean-code`, `/basic-review`, `/diff-walkthrough`, `/qa-full`, `/finish-branch`, `/eval`, `/daily-qa`, `/quota-resilience`, `/handoff`, `/humanize`, `/cli-for-agent`, `/superskills-doctor`, `/superskills-upgrade` — plus the security skills (`/defense`, `/iac-scan`, `/pentest`, `/fuzz`), the database skills (`/dbmap`, `/dbmap-auto-off`, `/db-optimize`, `/cache-strategy`), the web/QA skills (`/web-perf`, `/perf-profile`, `/a11y`, `/playwright`), `/plan-eng-review`, and the seven gstack skills the QA gate executes through (`/review`, `/qa`, `/cso`, `/design-review`, `/ship`, `/browse`, `/setup-browser-cookies`) |
 | `content` | `/tapestry`, `/youtube`, `/article`, `/kb-advisor`, `/content-writer` |
 | `startup` | `/validate-idea`, `/pricing`, `/minimalist-review` |
 | `core` | legacy alias: every skill in the `skills/` tree (coding + content + startup) |
 | `design` | the 36 design skills (UX, typography, SwiftUI, Vercel) |
 | `marketing` | the 174 marketing skills (SEO, content, pages, ads) |
 | `media` | the video-editing subtree |
-| `gstack` | installs/promotes gstack itself and links **every** gstack skill; without it only the eight coding-pack gstack skills stay linked. The /qa-full closure (`/review`, `/qa`, `/cso`, `/design-review`, `/ship`, `/plan-eng-review`) plus the browse toolchain those checks execute through (`/browse`, `/setup-browser-cookies`). The rest of a pre-existing clone's links are pruned, the clone is never touched. Note: a roster skill's end-of-flow suggestions may still name gstack-pack skills (e.g. `/plan-design-review`). They resolve from the clone or are designed skips, but aren't one-keystroke available without this pack |
+| `gstack` | installs/promotes gstack itself and links **every** gstack skill; without it only the seven coding-pack gstack skills stay linked. The /qa-full closure (`/review`, `/qa`, `/cso`, `/design-review`, `/ship`) plus the browse toolchain those checks execute through (`/browse`, `/setup-browser-cookies`). The rest of a pre-existing clone's links are pruned, the clone is never touched. Note: a roster skill's end-of-flow suggestions may still name gstack-pack skills (e.g. `/plan-design-review`). They resolve from the clone or are designed skips, but aren't one-keystroke available without this pack |
 | `all` | everything (pre-packs behavior) |
 
 The optional packs are the slot where finer-grained packs land as the tree
@@ -115,7 +115,7 @@ The plugin `version` is driven by the repo's `VERSION` file via
 watch. The `./setup` install above remains the way to get a chosen pack
 selection across every supported tool.
 
-## Skills (41)
+## Skills (42)
 
 ### Dev Methodology (from [superpowers](https://github.com/obra/superpowers))
 | Command | Description |
@@ -134,6 +134,7 @@ selection across every supported tool.
 | `/verify` | Pre-merge validation |
 | `/eval` | Measure whether a change to AI behavior (prompt wording, skill body, agent loop, RAG pipeline) actually helped: grid-sampled synthetic eval set, hand-labeled answer key, an LLM judge written like code, calibrated with TPR/TNR/accuracy/precision and a harsh/lenient bias reading before gating |
 | `/write-plan` | Detailed implementation planning |
+| `/plan-eng-review` | Engineering review of a plan: architecture, edge cases, failure modes, test plan. A local copy, because gstack 1.97 stopped registering it (`/autoplan` still loads its method) |
 | `/subagent-driven-development` | Execute a plan in-session via fresh subagent per task + review loop |
 | `/executing-plans` | Execute a plan in a separate session with review checkpoints |
 

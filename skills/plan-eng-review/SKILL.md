@@ -4,7 +4,7 @@ preamble-tier: 3
 version: 1.0.0
 description: Eng manager-mode plan review. (gstack)
 metadata:
-  upstream: https://github.com/garrytan/gstack (plan-eng-review/SKILL.md, kept as a local copy: gstack 1.97 stopped registering it)
+  upstream: https://github.com/garrytan/gstack
 allowed-tools:
   - Read
   - Write
