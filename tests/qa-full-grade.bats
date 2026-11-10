@@ -17,7 +17,7 @@ setup() {
   printf 'clean\n' > "$D/a.txt"
   run bash "$REPO_ROOT/evals/_lib/qa-full-grade.sh" "$D" "$T"
   [[ "$output" == *"secret_absent=1"* ]] || false
-  printf 'sk_live_FakeFixtureKeyDoNotUse\n' > "$D/b.txt"
+  printf 'sk_%s_FakeFixtureKeyDoNotUse\n' live > "$D/b.txt"  # assembled so the literal never sits in this repo
   run bash "$REPO_ROOT/evals/_lib/qa-full-grade.sh" "$D" "$T"
   [[ "$output" == *"secret_absent=0"* ]] || false
 }
