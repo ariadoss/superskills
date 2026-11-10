@@ -174,9 +174,22 @@ explicit current → target versions taken from the repo.
    they came from an explicit upstream pin in the repo.
 6. **Vendored-tool upstream drift** (always run — read-only, no billing):
 
+   The script ships with superskills, not with the repo under review, so
+   resolve it instead of assuming `./scripts/`. Try, in order:
+   `./scripts/check-upstream-drift.sh`,
+   `$SUPERSKILLS_DIR/scripts/check-upstream-drift.sh`,
+   `~/Sites/superskills/scripts/check-upstream-drift.sh`,
+   `~/.claude/skills/superskills/scripts/check-upstream-drift.sh`,
+   `~/.codex/skills/superskills/scripts/check-upstream-drift.sh`.
+
    ```bash
-   ./scripts/check-upstream-drift.sh
+   for d in . "$SUPERSKILLS_DIR" ~/Sites/superskills ~/.claude/skills/superskills ~/.codex/skills/superskills; do
+     [ -n "$d" ] && [ -x "$d/scripts/check-upstream-drift.sh" ] && { "$d/scripts/check-upstream-drift.sh"; break; }
+   done
    ```
+
+   If none exists, do not drop the step quietly: record it in the §7 ledger as
+   *skipped: drift script not found (tried …)*.
 
    Compares the vendored pentest tools against their upstreams: Shannon's
    vendored tag vs the latest stable tag, and clearwing's installed commit
@@ -250,9 +263,22 @@ Trigger when changed files match any of:
 - new ORM calls (`.find`, `.where`, `.includes`, `.join`, `.preload`, etc.)
   in the diff
 
+Folder names are only examples (a Python repo keeps its database code in
+`schema.py`, `statements.py`). Decide with the shared helper, not by eye:
+
+```bash
+for d in . "$SUPERSKILLS_DIR" ~/Sites/superskills ~/.claude/skills/superskills ~/.codex/skills/superskills; do
+  [ -n "$d" ] && [ -x "$d/scripts/qa-triggers.sh" ] && { "$d/scripts/qa-triggers.sh" db <diff-ref>; break; }
+done
+```
+Exit 0 lists the matching files: the check is triggered. Exit 1 means nothing
+matched: quote its "searched ..." line in the ledger row as the not-triggered
+evidence. If the script is not found, fall back to the patterns above and still
+grep the diff for SQL and for template/UI files before writing *not triggered*.
+
 Action: invoke `/db-optimize` **scoped to the matched files only**.
 Fold its findings into the report under §4a "DB hotspots (auto-run)".
-If no trigger matched: skip silently (don't even mention it).
+If no trigger matched: do not run it, but record *not triggered* in the §7 ledger with the patterns you checked. A trigger that matched and was not run is a defect (see the ledger rule).
 
 ### 7b. `/defense` — always auto-run (basic OWASP sweep)
 
@@ -293,18 +319,38 @@ that is the wrong shape for unattended daily runs.
 Output the exact command (`/pentest`) plus the scoped path list. User
 confirms authorization and runs it themselves.
 
-### 7d. `/qa` — recommend only (do not auto-run)
+### 7d. `/qa` — auto-run if frontend changed (report-only)
 
-`/qa` launches a browser session and applies fixes interactively — wrong
-shape for an unattended daily sweep. Instead, **recommend** it when:
-- changed files include UI/frontend code (`**/*.tsx`, `**/*.vue`,
-  `**/components/**`, route handlers serving HTML)
-- Step 3 (bug scan) surfaced a bug-signature finding in a user-facing path
-- Step 2 (CI) surfaced a failing e2e/browser test
+Frontend changes always get a browser pass. Trigger when changed files include
+UI/frontend code (`**/*.tsx`, `**/*.jsx`, `**/*.vue`, `**/*.svelte`,
+`**/components/**`, `**/pages/**`, `app/**/page.tsx`, `**/*.css`, route handlers
+serving HTML), or when Step 3 found a bug signature in a user-facing path, or
+Step 2 found a failing e2e/browser test.
 
-Output the exact command the user should run, e.g.
-`/qa --scope src/components/Checkout.tsx` (use the project's actual
-flag/syntax — check `skills/qa/SKILL.md` if unsure).
+Server-rendered templates (Jinja, ERB, Blade, Twig, plain `.html`) and
+static JS/CSS count as UI. Decide with the shared helper, not by eye:
+
+```bash
+for d in . "$SUPERSKILLS_DIR" ~/Sites/superskills ~/.claude/skills/superskills ~/.codex/skills/superskills; do
+  [ -n "$d" ] && [ -x "$d/scripts/qa-triggers.sh" ] && { "$d/scripts/qa-triggers.sh" ui <diff-ref>; break; }
+done
+```
+Exit 0 lists the matching files: the check is triggered. Exit 1 means nothing
+matched: quote its "searched ..." line in the ledger row as the not-triggered
+evidence. If the script is not found, fall back to the patterns above and still
+grep the diff for SQL and for template/UI files before writing *not triggered*.
+
+Action: invoke `/qa-only` (the report-only variant: it drives the browser and
+reports, and does not edit code, so it fits a sweep that never applies fixes)
+scoped to the routes the changed files serve, against the project's dev URL
+(check `CLAUDE.md` or the `dev` script, e.g. `http://localhost:3000`).
+Fold the result into report §4d "Browser QA (auto-run /qa-only)".
+
+If the app is not reachable, try the project's documented start command once.
+If it still is not up, do NOT skip silently: record *skipped: app not reachable
+at <url>* in the §7 ledger, list the changed routes, and put the exact
+`/qa` command in the recommended follow-ups. Fixing what `/qa-only` finds is
+the user's call: recommend `/qa` for that.
 
 ### 7e. `/web-perf` — recommend only (do not auto-run)
 
@@ -395,7 +441,7 @@ Action: invoke `/iac-scan` **scoped to the matched infra files** — it's static
 read-only (uses tfsec/checkov/hadolint/actionlint if installed, signature checks
 otherwise), so it's safe to auto-run like `/defense`. Fold findings into the report
 under §4c "Infra misconfig (auto-run /iac-scan)" with severity and file:line. Only
-CRITICAL/HIGH go in the executive summary. If no infra files changed, skip silently.
+CRITICAL/HIGH go in the executive summary. If no infra files changed, record *not triggered* in the §7 ledger.
 For a deeper hunt after HIGH/CRITICAL, recommend `/pentest` (§7c).
 
 ### 7j. `/humanize` — recommend only (prose drift)
@@ -444,6 +490,23 @@ Never auto-run it: the spend needs a human yes.
   when the untested-path list is worth closing now rather than just noting.
 - `/finish-branch` / `/ship` — when a fix is ready to land.
 
+### 7z. The §7 ledger (mandatory)
+
+Every §7 step gets one row in the report, whether or not it ran. Silence is not
+an allowed status. Statuses:
+
+- **ran**: link to the section holding its result.
+- **not triggered**: the trigger patterns you checked and that none matched.
+- **skipped**: it was triggered but did not run, with the concrete reason
+  (tool missing, app unreachable, authorization needed, window empty).
+- **recommended**: recommend-only steps whose trigger matched.
+
+Before writing the report, compute the changed-file list once and match it
+against every trigger in §7a to §7l, including the Step 4 drift script. A step
+whose trigger matched but whose status is not *ran* or *skipped (reason)* means
+the sweep is incomplete: go back and run it. Auto-run steps (§7a, §7b, §7d, §7i)
+may only be *skipped* for a reason a reader can verify.
+
 ## Step 8: Report format
 
 Write to `daily-qa-reports/YYYY-MM-DD.md` (create the directory if
@@ -488,9 +551,22 @@ CI runs scanned: N
 - CRITICAL / HIGH: …
 - (only if infra/deploy config changed; otherwise omit section)
 
+### 4d. Browser QA (auto-run /qa-only)
+- <result, or skipped: reason>
+
 ## 5. Untested paths
 - Drafted tests: file paths + summary
 - Coverage gaps without drafts: …
+
+## 6. §7 ledger
+| Step | Status | Detail |
+|---|---|---|
+| 4.6 drift script | ran / skipped (reason) | … |
+| 7a /db-optimize | ran / not triggered / skipped | … |
+| 7b /defense | … | … |
+| 7c /pentest | recommended / not triggered | … |
+| 7d /qa-only | … | … |
+| 7e–7l | … | … |
 
 ## Recommended next actions
 1. …
@@ -505,7 +581,7 @@ CI runs scanned: N
 - `/a11y` — (only if heavy UI likely to affect screen-reader/keyboard/contrast)
 - `/design-review` — (to fix what `/design-audit`/`/a11y` flag; mutates + commits)
 - `/pentest` — (only if /defense or /iac-scan found CRITICAL/HIGH, or auth/crypto changed — NOT on a bare infra change; /iac-scan §4c already covers that statically)
-- `/qa` — (only if UI changed or e2e tests failed)
+- `/qa` — (to fix what the auto-run `/qa-only` found, or when it was skipped because the app was unreachable)
 - `/test-coverage` — (only if Step 6's untested-path list is worth closing now; writes and applies the drafted tests)
 ```
 

@@ -33,9 +33,13 @@ done
 
 # Cheap text scan first so ordinary sessions never pay for the jq parse.
 grep -q 'qa-full' "${transcripts[@]}" 2>/dev/null || exit 0
-if qfl_invoked_qafull "${transcripts[@]}"; then
+# Whether THIS session ran /qa-full is decided from its own transcript only. A
+# subagent that ran it is not this session running it: counting those blocked a
+# parent that merely delegated runs (every eval harness) on a report it never
+# owed. Subagent transcripts still count as evidence below (report, ledger rows).
+if qfl_invoked_qafull "$transcript"; then
   report="$(qfl_report_path "${cwd:-.}" "${transcripts[@]}")"
-elif qfl_read_qafull "${transcripts[@]}"; then
+elif qfl_read_qafull "$transcript"; then
   # Read the file but wrote no report: someone editing qa-full, not running it.
   report="$(qfl_written_report "${transcripts[@]}")"
   [ -n "$report" ] || exit 0

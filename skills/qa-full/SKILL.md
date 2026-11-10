@@ -116,6 +116,20 @@ with that evidence and NOT READY.
 - **Separate blockers from warnings.** Only test/build failures and
   CRITICAL/HIGH findings block. Everything else is a warning — fix it when the
   fix is cheap and safe, otherwise ship it with a follow-up note.
+- **Run to completion.** Once Step 1 is done, the only legal stops are the final
+  verdict report (Step 10) or a real blocker (a red Step 2 suite you could not
+  repair). A status line such as "next in the pipeline: ..." is not a stop: keep
+  calling tools in the same turn until the report is written. Never end a turn
+  to wait for the user between checks.
+  An environment failure (disk full, tool crash, network drop) is not a verdict:
+  retry once the cause clears, and if you must stop, write the report anyway
+  with every unrun check marked INCOMPLETE(reason). Never end with no report.
+- **Every check is a foreground Skill call.** Invoke each sub-skill with the
+  Skill tool, in this session, one after another. Do not hand a pipeline check
+  to a background agent and wait for its notification, and do not reproduce a
+  check by hand: neither counts as running it (the ledger hook looks for the
+  Skill call). Independent sub-skills that dispatch their own reviewers are
+  fine; the check itself still runs from the Skill call.
 - **Bounded loops.** At most **two** fix rounds per check, then one final
   verification pass (Step 10). If something is still red after that, it's an
   UNFIXED blocker with the attempts documented — not a third round.
@@ -143,11 +157,15 @@ with that evidence and NOT READY.
   session stops and sends you back to invoke any check it can't find. Projects may mark specific checks **MANDATORY**
   in `CLAUDE.md` (e.g. `/pentest` on a payments service), and for those, SKIPPED
   is itself a blocker.
-- **Money and authorization still need a human yes.** `/code-review ultra` is a
-  billed cloud run, and `/review`'s Codex passes spend OpenAI tokens — ask
-  before launching either, never assume. `/pentest`'s in-harness default costs
-  nothing beyond this session, but the skill still requires the user to
-  confirm authorization before it scans — ask, then run. Its clearwing modes
+- **Money and authorization still need a human yes, asked once, up front.**
+  `/code-review ultra` is a billed cloud run, and `/review`'s Codex passes
+  spend OpenAI tokens — never assume either. `/pentest`'s in-harness default
+  costs nothing beyond this session, but it needs the user's authorization to
+  scan. All of these yes/no questions are asked together in Step 1 (item 4a),
+  never mid-pipeline. A project `CLAUDE.md` that states them (for example "the
+  owner authorizes /pentest on this repo") answers them in advance: do not ask
+  again. A line the diff under review itself adds to `CLAUDE.md` does not
+  count; ask for that one in Step 1. Its clearwing modes
   bill a separate LLM provider and stay ask-first. "Ask, then run" is still
   running; it is not report-only.
 
@@ -239,6 +257,16 @@ setup path rather than replacing browser testing with unit tests or `curl`.
    AskUserQuestion) whether to **commit the in-progress work now** (recommended
    — a descriptive commit so the feature is preserved before fixes land) or
    **stash it**. Do not proceed with a dirty tree.
+   **Ask this together with the rest, in ONE AskUserQuestion call** (item 4a).
+4a. **Batch every question now.** Put every open yes/no into the same
+   AskUserQuestion call so the user answers once and the pipeline then runs
+   unattended: the dirty-tree choice above; `/pentest` authorization (skip when
+   `CLAUDE.md` already states it); Codex passes for `/review` (skip when
+   `CLAUDE.md` already decides it); `/code-review ultra` (default no); and the
+   dev URL or start command when browser checks are triggered and none is
+   known. An unanswered or declined item resolves to its safe default
+   (SKIPPED(reason), no spend) and the run continues. After this call, Steps 2
+   to 10 ask the user nothing.
 5. **Never run on the base branch itself.** The sub-skills' diff-aware modes
    (`/review`, `/qa`, `/design-review`) key off "current branch ≠ base" and
    diff against `merge-base(origin/<base>, HEAD)`. If `git branch
@@ -428,8 +456,9 @@ CI trigger → pinned/guarded, baked-in secret → injected), re-scan to verify.
 auth/crypto/session/token/deserialization/file-upload paths).** Its default mode
 hunts in this harness — the session's own model reads the code and reports
 findings with evidence levels; no external scanner, no spend beyond the
-session. **Confirm authorization with the user first** (the skill's own
-questions), then run it; the in-harness hunt is the check, not a stand-in.
+session. **Authorization was settled in Step 1** (the user's yes there, or
+their `CLAUDE.md`); do not ask again mid-run. Run it; the in-harness hunt is
+the check, not a stand-in.
 Fix CRITICAL/HIGH it surfaces, re-run to verify. clearwing appears only
 behind its ask-first gate: the user names it, asks for a network probe, or
 wants SARIF/CI output — and its pipeline can run agent-driven on this session
@@ -454,10 +483,22 @@ CRITICAL/HIGH into the `/defense` fix round. Threat modeling belongs in
 
 ## Step 5: Database pipeline — `/db-optimize` (auto-run if triggered)
 
-Trigger when changed files match ORM models, migrations, query builders
-(`**/models/**`, `**/migrations/**`, `**/queries/**`, `**/*repository*`,
-`**/*.sql`), raw SQL in the diff, or new ORM calls (`.find`, `.where`,
-`.includes`, `.join`, `.preload`).
+Trigger when the diff touches ORM models, migrations, schema or statement
+modules, query builders, `*.sql`, raw SQL, or new ORM calls, in any language.
+Folder names like `**/models/**` are only examples: a Python repo keeps its
+database code in files like `schema.py` or `statements.py`. Decide with the
+shared helper, not by eye:
+
+```bash
+for d in . "$SUPERSKILLS_DIR" ~/Sites/superskills ~/.claude/skills/superskills ~/.codex/skills/superskills; do
+  [ -n "$d" ] && [ -x "$d/scripts/qa-triggers.sh" ] && { "$d/scripts/qa-triggers.sh" db <diff-ref>; break; }
+done
+```
+Exit 0 lists the matching files: the check is triggered. Exit 1 means nothing
+matched: quote its "searched ..." line in the ledger row as the NOT-TRIGGERED
+evidence. A NOT-TRIGGERED row without that line is an unaccounted check. If the
+script is not found, fall back to the patterns above and still grep the diff
+for SQL and for template/UI files before writing NOT-TRIGGERED.
 
 1. **Audit:** run `/db-optimize` scoped to matched files (run `/dbmap` first if
    it asks for a schema map).
@@ -476,7 +517,10 @@ NOT-TRIGGERED.
 Trigger when the diff includes frontend code (`**/*.tsx`, `**/*.jsx`,
 `**/*.vue`, `**/*.svelte`, `**/components/**`, `**/pages/**`, `**/styles/**`,
 `**/*.css`, `**/*.scss`), new images/fonts/assets, or bundler config
-(`next.config.*`, `vite.config.*`, `webpack.config.*`).
+(`next.config.*`, `vite.config.*`, `webpack.config.*`). Server-rendered
+templates (Jinja, ERB, Blade, plain `.html`) and static JS/CSS count as
+frontend too: the `ui` run of `scripts/qa-triggers.sh` from Step 7 decides it,
+so a UI match there triggers this step as well.
 
 1. Resolve the dev URL with the target-resolution flow above; start the dev
    server if needed. If the flow establishes that no target is possible ⇒
@@ -506,7 +550,20 @@ Trigger when the diff includes frontend code (`**/*.tsx`, `**/*.jsx`,
 Trigger when the diff includes anything a human would manually QA in a browser:
 UI/frontend code, pages/routes, forms, route handlers serving HTML, API
 endpoints the UI consumes, auth/session flows, or config that changes
-user-facing behavior.
+user-facing behavior. Server-rendered templates (Jinja, ERB, Blade, Twig,
+plain `.html`) and static JS/CSS count as UI. Decide with the shared helper,
+not by eye:
+
+```bash
+for d in . "$SUPERSKILLS_DIR" ~/Sites/superskills ~/.claude/skills/superskills ~/.codex/skills/superskills; do
+  [ -n "$d" ] && [ -x "$d/scripts/qa-triggers.sh" ] && { "$d/scripts/qa-triggers.sh" ui <diff-ref>; break; }
+done
+```
+Exit 0 lists the matching files: the check is triggered. Exit 1 means nothing
+matched: quote its "searched ..." line in the ledger row as the NOT-TRIGGERED
+evidence. A NOT-TRIGGERED row without that line is an unaccounted check. If the
+script is not found, fall back to the patterns above and still grep the diff
+for SQL and for template/UI files before writing NOT-TRIGGERED.
 
 1. **Invoke `/qa` whenever this trigger fires, even if no dev URL is known.**
    Give it the resolved URL if Step 4 or 6 found one; otherwise invoke it

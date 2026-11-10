@@ -134,6 +134,25 @@ hook_input() {
   [ "$status" -eq 0 ]
 }
 
+@test "hook: a session that only delegated /qa-full to subagents is not blocked for their missing report" {
+  skill_call "tdd"
+  printf '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Agent","input":{"prompt":"Run /qa-full on this branch"}}]}}\n' >> "$T"
+  mkdir -p "${T%.jsonl}/subagents"
+  printf '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Skill","input":{"skill":"qa-full"}}]}}\n' > "${T%.jsonl}/subagents/agent-1.jsonl"
+  run bash -c "$(printf '%q' "$HOOK") <<< '$(hook_input)' 2>&1"
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+}
+
+@test "hook: a session that invoked /qa-full itself is still blocked when it wrote no report, even with subagents" {
+  skill_call "qa-full"
+  mkdir -p "${T%.jsonl}/subagents"
+  printf '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Skill","input":{"skill":"review"}}]}}\n' > "${T%.jsonl}/subagents/agent-1.jsonl"
+  run bash -c "$(printf '%q' "$HOOK") <<< '$(hook_input)' 2>&1"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"qa-full-reports"* ]] || false
+}
+
 @test "hook: a session that only read qa-full's SKILL.md (editing it, not running it) is left alone" {
   report
   printf '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Read","input":{"file_path":"/x/skills/qa-full/SKILL.md"}}]}}\n' >> "$T"

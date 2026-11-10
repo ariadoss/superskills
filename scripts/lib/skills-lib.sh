@@ -30,19 +30,19 @@
 # across the maintainer's logged sessions; a future desktop or mobile pack
 # lands beside them). The coding pack also claims a gstack slice by name
 # (closure note below).
-PACK_CODING_REPO="write-plan worktrees tdd debug verify eval quota-resilience handoff test-coverage qa-full finish-branch daily-qa superskills-doctor superskills-upgrade clean-code basic-review humanize cli-for-agent executing-plans subagent-driven-development diff-walkthrough defense iac-scan pentest fuzz dbmap dbmap-auto-off db-optimize cache-strategy web-perf perf-profile a11y playwright"
+PACK_CODING_REPO="write-plan plan-eng-review worktrees tdd debug verify eval quota-resilience handoff test-coverage qa-full finish-branch daily-qa superskills-doctor superskills-upgrade clean-code basic-review humanize cli-for-agent executing-plans subagent-driven-development diff-walkthrough defense iac-scan pentest fuzz dbmap dbmap-auto-off db-optimize cache-strategy web-perf perf-profile a11y playwright"
 PACK_CONTENT="tapestry youtube article kb-advisor content-writer"
 PACK_STARTUP="validate-idea pricing minimalist-review"
 # The gstack slice is the /qa-full closure, not every gstack skill: its four
 # gstack checks (review, qa, cso, design-review), the /ship hand-off the gate
-# names as its successor, plan-eng-review (the /write-plan chain), and the
+# names as its successor, and the
 # browse toolchain /qa and /design-review execute through (their script
 # cookbook and command reference live IN browse/SKILL.md — a hard, file-level
 # dependency; setup-browser-cookies is its authenticated-page path). Anything
 # else a roster skill executes resolves inside the clone itself (absolute
 # clone paths) or degrades to a designed skip; no other gstack skill needs a
 # link.
-PACK_CODING_GSTACK="review qa cso design-review ship plan-eng-review browse setup-browser-cookies"
+PACK_CODING_GSTACK="review qa cso design-review ship browse setup-browser-cookies"
 PACK_CODING="$PACK_CODING_REPO $PACK_CODING_GSTACK"
 
 packs_conf_path() {

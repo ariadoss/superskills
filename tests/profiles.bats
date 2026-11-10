@@ -9,18 +9,16 @@ setup() {
   mkdir -p "$FIX"
 }
 
-@test "the write-plan chain member plan-eng-review is pinned on the gstack slice by name" {
-  # /write-plan auto-runs /plan-eng-review ("don't ask permission, just run
-  # it"), so the default coding install is broken without it. Named pin, not
-  # just loop coverage: removing it from the slice must fail THIS test.
-  case " $PACK_CODING_GSTACK " in
+@test "the write-plan chain member plan-eng-review is pinned on the repo roster by name" {
+  # gstack 1.97 stopped registering /plan-eng-review, so superskills ships the
+  # entry point itself (skills/plan-eng-review). /write-plan points at it, so the
+  # default coding install is broken without it.
+  case " $PACK_CODING_REPO " in
     *" plan-eng-review "*) : ;;
     *) false ;;
   esac
   SS_PACKS=coding
-  skill_selected plan-eng-review gstack
-  SS_PACKS=all
-  skill_selected plan-eng-review gstack
+  skill_selected plan-eng-review core
 }
 
 @test "the quota-resilience companion handoff is pinned on the repo roster by name" {
