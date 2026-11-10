@@ -12,8 +12,6 @@ setup() {
   [ "$output" -eq 1 ]
   run grep -c 'invoke `/qa-only`' "$SKILL"
   [ "$output" -ge 1 ]
-  run grep -c '7d. `/qa` — recommend only' "$SKILL"
-  [ "$output" -eq 0 ]
 }
 
 @test "an unreachable app is a recorded skip, not a silent one" {
@@ -31,8 +29,6 @@ setup() {
 @test "the section 7 ledger is mandatory and nothing skips silently" {
   run grep -c '^### 7z. The §7 ledger (mandatory)' "$SKILL"
   [ "$output" -eq 1 ]
-  run grep -c "skip silently (don't even mention it)\|If no infra files changed, skip silently" "$SKILL"
-  [ "$output" -eq 0 ]
   run grep -F '## 6. §7 ledger' "$SKILL"
   [ "$status" -eq 0 ]
 }

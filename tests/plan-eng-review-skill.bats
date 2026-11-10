@@ -17,3 +17,7 @@ SKILL="$BATS_TEST_DIRNAME/../skills/plan-eng-review/SKILL.md"
   source "$BATS_TEST_DIRNAME/../scripts/lib/skills-lib.sh"
   [[ " $PACK_CODING_REPO " == *" plan-eng-review "* ]] || false
 }
+
+@test "the review-sections file plan-eng-review loads exists in the vendored snapshot" {
+  [ -s "$BATS_TEST_DIRNAME/../vendor/gstack/plan-eng-review/sections/review-sections.md" ]
+}

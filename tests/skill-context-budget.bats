@@ -13,4 +13,6 @@ setup() {
   [[ "$output" == *"TOTAL"* ]] || false
   fm="$(printf -- '---\nname: alpha\ndescription: Does alpha.\n---\n' | wc -c | tr -d ' ')"
   [[ "$output" == *$'alpha\t'"$fm"$'\t'* ]] || false
+  [[ "$output" == *$'alpha\t'"$fm"$'\t9\t10'* ]] || false
+  [[ "$output" == *$'TOTAL\t'"$fm"$'\t9\t10'* ]] || false
 }
