@@ -21,21 +21,24 @@ case "$kind" in
   db | ui) ;;
   *) echo "usage: qa-triggers.sh <db|ui> [base-ref]" >&2; exit 2 ;;
 esac
+cd "$(git rev-parse --show-toplevel 2>/dev/null)" || { echo "qa-triggers: not in a git repo" >&2; exit 2; }
 base="$(git merge-base "$ref" HEAD 2>/dev/null)" || { echo "qa-triggers: unknown ref '$ref'" >&2; exit 2; }
 
 IGNORED_PATH='(^|/)(docs?|tests?|__tests__|spec|node_modules|vendor|dist|build|__pycache__|\.git)/|\.pyc$|(^|/)test_[^/]*$|_test\.[a-z]+$|\.(md|txt|rst)$'
 
 DB_PATH_DIR='(^|/)(models?|migrations?|queries|dao|repositor(y|ies))/'
 DB_PATH_NAME='(^|/)[^/]*(schema|migrat|statements?|queries|query|repositor|dao)[^/]*\.[a-z]+$|\.sql$'
-DB_CONTENT='(^|[^A-Za-z])(SELECT[[:space:]].*[[:space:]]FROM[[:space:]]|INSERT[[:space:]]+INTO|UPDATE[[:space:]]+[A-Za-z_."]+[[:space:]]+SET|DELETE[[:space:]]+FROM|(CREATE|DROP)[[:space:]]+(UNIQUE[[:space:]]+)?(TABLE|INDEX)|ALTER[[:space:]]+TABLE)|\.(execute|executemany|executescript)\(|\.(preload|includes|select_related|prefetch_related)\('
+# Matched case-insensitively (grep -i): lowercase SQL and ORM calls count too.
+DB_CONTENT='(^|[^A-Za-z])(SELECT[[:space:]].*[[:space:]]FROM[[:space:]]+[A-Za-z_"`]|INSERT[[:space:]]+INTO|UPDATE[[:space:]]+[A-Za-z_."]+[[:space:]]+SET|DELETE[[:space:]]+FROM|(CREATE|DROP)[[:space:]]+(UNIQUE[[:space:]]+)?(TABLE|INDEX)|ALTER[[:space:]]+TABLE)|\.(execute|executemany|executescript)\(|\.(preload|includes|select_related|prefetch_related)\(|\.objects\.|session\.query\(|\.find(Many|All|One|ByPk)\(|\.raw\('
 
 UI_PATH_EXT='\.(tsx|jsx|vue|svelte|astro|css|scss|sass|less|html?|jinja2?|j2|erb|haml|hbs|ejs|liquid|twig)$'
 UI_PATH_DIR='(^|/)(components|pages|views|templates|static|public|assets)/'
 
-files="$({ git diff --name-only "$base"; git ls-files --others --exclude-standard; } | sort -u | grep -Ev "$IGNORED_PATH")"
+files="$({ git -c core.quotePath=false diff --name-only "$base"; git -c core.quotePath=false ls-files --others --exclude-standard; } | sort -u | grep -Ev "$IGNORED_PATH")"
 n="$(printf '%s' "$files" | grep -c .)"
 
 added_lines() { # path -> lines this branch adds (all of an untracked file)
+  [ -f "$1" ] && [ ! -L "$1" ] || return 0
   if git ls-files --error-unmatch -- "$1" >/dev/null 2>&1; then
     git diff -U0 "$base" -- "$1" | grep '^+' | grep -v '^+++'
   else
@@ -49,7 +52,7 @@ while IFS= read -r f; do
   if [ "$kind" = db ]; then
     if printf '%s' "$f" | grep -Eiq "$DB_PATH_DIR|$DB_PATH_NAME"; then
       evidence+="$f: database file name"$'\n'
-    elif added_lines "$f" | grep -Eq "$DB_CONTENT"; then
+    elif added="$(added_lines "$f")"; grep -Eiq "$DB_CONTENT" <<<"$added"; then # here-string, not a pipe: grep -q would SIGPIPE the producer and pipefail would hide the match
       evidence+="$f: adds SQL or a database call"$'\n'
     fi
   else

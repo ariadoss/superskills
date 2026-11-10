@@ -459,4 +459,5 @@ root"
   printf '# plain\nno fence\n' > "$BATS_TEST_TMPDIR/plain.md"
   run skill_frontmatter_from "$BATS_TEST_TMPDIR/plain.md"
   [ "$status" -eq 0 ]
+  [ -z "$output" ]
 }

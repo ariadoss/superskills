@@ -22,7 +22,7 @@ def read_log(d):
     rows = []
     for line in (p.read_text().splitlines() if p.exists() else []):
         parts = line.split()
-        if parts[1].startswith("end-"):
+        if len(parts) < 3 or parts[1].startswith("end-"):
             continue
         rows.append((int(parts[0]), parts[1], parts[2]))
     return sorted(rows)
@@ -59,7 +59,7 @@ def fixbug(d, rows):
     after = [t for ms, t, _ in rows if ms > last_commit_ms]
     both_final = "unit" in after and "slow" in after
     original = Path(d, ".git", "fixture-head").read_text().strip()
-    test_unchanged = not git(d, "diff", original, "HEAD", "--", "tests/unit/discount.test.js")
+    test_unchanged = not git(d, "diff", original, "--", "tests/unit/discount.test.js")
     fixed = unit_green(d) and test_unchanged
     g = green_ms(d)
     no_slow_on_red = True if g == "n/a" else (g is not None and all(ms >= g for ms, t, _ in rows if t == "slow"))

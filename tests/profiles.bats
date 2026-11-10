@@ -19,6 +19,8 @@ setup() {
   esac
   SS_PACKS=coding
   skill_selected plan-eng-review core
+  SS_PACKS=all
+  skill_selected plan-eng-review core
 }
 
 @test "the quota-resilience companion handoff is pinned on the repo roster by name" {

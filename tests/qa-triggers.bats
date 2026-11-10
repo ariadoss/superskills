@@ -52,7 +52,7 @@ commit_file() { mkdir -p "$(dirname "$1")"; printf '%s\n' "$2" > "$1"; git add -
 }
 
 @test "db: prose that mentions SELECT does not trigger" {
-  commit_file docs/notes.md 'We SELECT the best option FROM the list.'
+  commit_file notes/pick.py '# we select the best option, nothing else'
   run "$TRIG" db main
   [ "$status" -eq 1 ]
 }
@@ -122,4 +122,37 @@ commit_file() { mkdir -p "$(dirname "$1")"; printf '%s\n' "$2" > "$1"; git add -
 @test "usage: bad ref exits 2" {
   run "$TRIG" db no-such-ref
   [ "$status" -eq 2 ]
+}
+
+@test "db: SQL on the first line of a large file still triggers (no SIGPIPE false negative)" {
+  mkdir -p app
+  { echo 'SELECT id FROM users;'; head -c 400000 /dev/zero | tr '\0' x; echo; } > app/big.py
+  git add -A; git commit -qm big
+  run "$TRIG" db main
+  [ "$status" -eq 0 ]
+}
+
+@test "db: lowercase SQL triggers" {
+  commit_file web/report.py 'cur = q("select id from jobs where open = 1")'
+  run "$TRIG" db main
+  [ "$status" -eq 0 ]
+}
+
+@test "db: an ORM query in an innocently named file triggers" {
+  commit_file web/views_home.py 'rows = User.objects.filter(active=True)'
+  run "$TRIG" db main
+  [ "$status" -eq 0 ]
+}
+
+@test "ui: a non-ASCII file name triggers" {
+  commit_file "web/templates/café.html" '<p>x</p>'
+  run "$TRIG" ui main
+  [ "$status" -eq 0 ]
+}
+
+@test "runs from a subdirectory of the repo" {
+  commit_file web/report.py 'cur.execute("SELECT 1 FROM t")'
+  cd web
+  run "$TRIG" db main
+  [ "$status" -eq 0 ]
 }
