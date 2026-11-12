@@ -44,10 +44,11 @@ setup() {
 
 @test "db and ui triggers are decided by the shared qa-triggers.sh helper in both skills" {
   QF="$(cd "$BATS_TEST_DIRNAME/.." && pwd)/skills/qa-full/SKILL.md"
-  for f in "$SKILL" "$QF"; do
-    run grep -c 'qa-triggers.sh" db' "$f"
-    [ "$output" -ge 1 ]
-    run grep -c 'qa-triggers.sh" ui' "$f"
-    [ "$output" -ge 1 ]
-  done
+  run grep -c 'qa-triggers.sh" db' "$SKILL"
+  [ "$output" -ge 1 ]
+  run grep -c 'qa-triggers.sh" ui' "$SKILL"
+  [ "$output" -ge 1 ]
+  # qa-full keeps one helper block in its core; the db and ui kinds are named in it.
+  run grep -c 'qa-triggers.sh" <db|ui>' "$QF"
+  [ "$output" -ge 1 ]
 }

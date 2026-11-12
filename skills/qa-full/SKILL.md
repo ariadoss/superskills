@@ -74,6 +74,37 @@ available setup step, and retry the Skill call. Ask the user for any setup
 detail only they can provide. If `/qa` remains unavailable, record SKIPPED
 with that evidence and NOT READY.
 
+## Where the steps live, and how to resume
+
+This file is short on purpose: the full instructions for each step sit in
+`steps/` beside it. Resolve those paths against this skill's folder (the "Base
+directory for this skill" line the host printed when it loaded this file).
+Before you run a step, Read its file in full and follow it. Never run a step
+from the memory of its title. Read the step file before you invoke any sub-skill
+for that step: the file holds the commit format and the ledger evidence rules,
+and a sub-skill run without it is an unaccounted step.
+
+If your context was compacted, or you are unsure where the run stands: Read
+this file again in full, then work it out from `git log <base>..HEAD` (every
+pipeline commit names its check), the sub-skills already invoked in this
+session, and `qa-full-reports/` if a report exists. Resume at the first step
+not yet accounted for and keep going to Step 10. A stop between steps is a bug;
+the only legal stops are the two in "Run to completion" below.
+
+**Trigger helper.** Steps 5, 6 and 7 are decided by the shared script, not by
+eye. Pick the kind (`db` for Step 5, `ui` for Steps 6 and 7):
+
+```bash
+for d in . "$SUPERSKILLS_DIR" ~/Sites/superskills ~/.claude/skills/superskills ~/.codex/skills/superskills; do
+  [ -n "$d" ] && [ -x "$d/scripts/qa-triggers.sh" ] && { "$d/scripts/qa-triggers.sh" <db|ui> <diff-ref>; break; }
+done
+```
+Exit 0 lists the matching files: the check is triggered. Exit 1 means nothing
+matched: quote its "searched ..." line in the ledger row as the NOT-TRIGGERED
+evidence. A NOT-TRIGGERED row without that line is an unaccounted check. If the
+script is not found, fall back to the patterns in the step file and still grep
+the diff for SQL and for template/UI files before writing NOT-TRIGGERED.
+
 ## Hard rules
 
 - **The bar is the superskills quality standard** — TDD/DRY/SOLID/YAGNI
@@ -93,8 +124,8 @@ with that evidence and NOT READY.
      write the failing test first when it's a logic bug (`/tdd`), apply the
      smallest correct fix, and commit it atomically with a message naming the
      check and finding.
-  3. **Verify** — re-run the *same* sub-skill on the diff and re-run the fast
-     test tier (Step 2; the slow tier runs in Steps 9 and 10). A fix is only
+  3. **Verify** — re-run the *same* sub-skill on the diff and re-run the related
+     tests (Step 2); the whole suite runs once, in Step 10. A fix is only
      "fixed" when the re-audit no longer reports it and tests are green. Never claim a fix without this fresh evidence (`/verify`
      discipline).
   A finding you could not fix (needs a product decision, external service,
@@ -138,7 +169,7 @@ with that evidence and NOT READY.
   re-verified, and what was skipped (and why).
 - **An unknown dev URL is a question, not a reason to refuse browser QA.**
   When `/qa` is triggered, invoke it even if no URL is known. Follow the
-  target-resolution flow below, including local setup or a question to the
+  target-resolution flow in `steps/00-config-and-dev-target.md`, including local setup or a question to the
   user, and resume the same run when the target is available. A triggered
   `/qa` check that cannot run is NOT READY, never SHIP-READY.
 - **No silent skips — mandatory accounting.** Every check must resolve to
@@ -169,644 +200,71 @@ with that evidence and NOT READY.
   bill a separate LLM provider and stay ask-first. "Ask, then run" is still
   running; it is not report-only.
 
-## Project configuration (`CLAUDE.md`)
+## Project configuration (`CLAUDE.md`) and resolving a dev target
 
-This pipeline reads the project's root `CLAUDE.md` for a few optional settings.
-They are plain prose (CLAUDE.md is agent instructions, not a config file) — look
-for a `## qa-full` section and honor whatever it states. Example:
-
-```markdown
-## qa-full
-
-- Mandatory checks (must RUN with evidence — a skip is a blocker): `/pentest`, `/defense`
-- Hard perf gate: LCP ≤ 2.5s and INP ≤ 200ms on `/` and `/checkout` (breach blocks)
-- Design: skip `/design-review` (design is owned by the design team, do not auto-fix visuals)
-- Dev URL: http://localhost:3000   (for `/web-perf`, `/qa`, `/a11y`, `/fuzz`)
-- Test/build: `pnpm test` and `pnpm build`
-- Fast tests: `pnpm test:unit`   (unit-only gate; Step 2 runs it first)
-- QA tier: exhaustive
-```
-
-Recognized settings (all optional; absence = the defaults in the steps below):
-- **Mandatory checks** — listed commands must read RAN-CLEAN or FIXED in the
-  ledger; SKIPPED is a blocker (any step; Step 10 enforces it). MANDATORY
-  overrides the check's own diff trigger: run it on the diff even when the
-  trigger didn't fire, so NOT-TRIGGERED is not an acceptable state either. Use
-  for compliance-critical surfaces (payments, auth, PII).
-- **Hard perf gate** — turns a `/web-perf` budget breach that survives the fix
-  round from a warning into a blocker (Step 6).
-- **Design: skip `/design-review`** — opt *out* of the visual-fix pass (Step 8)
-  entirely; by default it runs on any UI change. This skips the check (ledger:
-  SKIPPED("project opt-out")) — it does not turn it into a report-only run.
-- **Test/build commands** — feed Steps 2 and 10. **Fast tests** — the
-  unit-only command Step 2 gates on and later verify phases re-run; absent, it
-  is inferred. **Dev URL** — feeds Steps 4
-  (`/fuzz`), 6, 7 and 8. **QA tier** — feeds Step 7; defaults to `standard`.
-
-If there is no `## qa-full` section, run with the built-in defaults — nothing here
-is required.
-
-## Resolve a dev target for browser checks
-
-Use this flow when a triggered `/fuzz`, `/web-perf`, `/qa`, `/design-review`, or
-dynamic `/a11y` check needs a running app. Resolve the target once and reuse it;
-keep any server you start alive through the final browser check.
-
-1. Read the project's `CLAUDE.md` `Dev URL`, `AGENTS.md`, `README.md`, and
-   development/setup docs. Check the project's declared `dev`/`start` script or
-   equivalent and probe documented local ports. A responding localhost port is
-   usable only after you verify it serves this project, not another app.
-2. If the app is not running, follow the project's setup instructions. Install
-   its declared dependencies when needed, start its documented dev command,
-   and wait for a reachable URL. Record the command, URL, and startup result in
-   the ledger. Do not invent a port, command, credential, or external service.
-3. If the URL or startup command is still unknown, or startup needs user-owned
-   configuration, **ask the user** for the dev/preview URL or the missing setup
-   detail. Tell them what you already checked. Let the user configure secrets
-   locally; never request credentials in chat. Pause the affected check and
-   resume it after their answer. An unanswered question is pending context,
-   not a SKIPPED check or a final refusal.
-4. If a documented start fails, inspect its error and attempt a bounded fix to
-   the local setup. If it still cannot run, ask for the missing information or
-   user action. Only record SKIPPED after documenting discovery and startup
-   attempts and the user confirms there is no runnable target or declines the
-   needed setup. For a triggered `/qa`, that SKIPPED result is a NOT READY
-   blocker: the feature has not been browser-tested.
-
-`/qa` has its own diff-aware target discovery and browser setup. Invoke it
-without a URL when this flow has not resolved one; follow its question or
-setup path rather than replacing browser testing with unit tests or `curl`.
+Read `steps/00-config-and-dev-target.md` before Step 1 and whenever a browser check
+needs a running app. It lists the `## qa-full` settings `CLAUDE.md` may state and the
+target-resolution flow.
 
 ## Step 1: Establish the diff scope and a clean tree
 
-1. Detect the base branch: `gh repo view --json defaultBranchRef -q .defaultBranchRef.name`,
-   else `git symbolic-ref refs/remotes/origin/HEAD`, else fall back to `main`/`master`.
-2. If `$ARGUMENTS` names a base branch or `--scope <paths>`, use it.
-3. Resolve the **diff ref**: `git fetch origin <base>` and use `origin/<base>`
-   when that ref exists, else local `<base>`. This is what `/review` and `/qa`
-   diff against too, and it stays correct after Step 1.5 creates a working
-   branch (local `<base>` would then equal HEAD and the set would be empty).
-   Compute the changed-file set: `git diff --name-only <diff-ref>...HEAD -- <scope paths>`
-   (drop the `--` part when no `--scope` was given) plus
-   uncommitted changes (`git status --porcelain`). This set drives every
-   trigger below. **Fix commits made by this pipeline extend the set** — later
-   steps and the final pass (Step 10) audit the fixes too.
-4. **Clean-tree precondition.** The fixers (`/qa`, `/design-review`) need each
-   fix to be its own atomic commit, so they stop on a dirty tree. Handle it
-   once, here: if `git status --porcelain` is non-empty, ask the user (via
-   AskUserQuestion) whether to **commit the in-progress work now** (recommended
-   — a descriptive commit so the feature is preserved before fixes land) or
-   **stash it**. Do not proceed with a dirty tree.
-   **Ask this together with the rest, in ONE AskUserQuestion call** (item 4a).
-4a. **Batch every question now.** Put every open yes/no into the same
-   AskUserQuestion call so the user answers once and the pipeline then runs
-   unattended: the dirty-tree choice above; `/pentest` authorization (skip when
-   `CLAUDE.md` already states it); Codex passes for `/review` (skip when
-   `CLAUDE.md` already decides it); `/code-review ultra` (default no); and the
-   dev URL or start command when browser checks are triggered and none is
-   known. An unanswered or declined item resolves to its safe default
-   (SKIPPED(reason), no spend) and the run continues. After this call, Steps 2
-   to 10 ask the user nothing.
-5. **Never run on the base branch itself.** The sub-skills' diff-aware modes
-   (`/review`, `/qa`, `/design-review`) key off "current branch ≠ base" and
-   diff against `merge-base(origin/<base>, HEAD)`. If `git branch
-   --show-current` equals the base and there are unpushed commits, create a
-   working branch at HEAD first — `git switch -c qa-full/<base>-<YYYY-MM-DD>`
-   (reuse it if a same-day branch already exists from an aborted run) — and
-   run the whole pipeline there. Step 10 folds it back: fast-forward the
-   base to the working branch (`git switch <base> && git merge --ff-only
-   qa-full/...`) and delete the working branch. No history is rewritten; the
-   base just gains the fix commits. If there are no unpushed commits either,
-   there is nothing to QA.
-6. Record at the top of the report: base branch, diff ref, working branch (if
-   created), commit range, changed-file count, and the HEAD SHA before any fixes.
-
-If there is no diff against base, stop and say so — there is nothing to QA.
+Always.
+Read `steps/01-diff-scope.md` and follow it in full.
 
 ## Step 2: Tests & build (always — audit → fix → verify)
 
-1. Find the project's test/build commands from `CLAUDE.md`; if absent, infer
-   from `package.json` scripts, `Makefile`, `pyproject.toml`, etc. If you
-   cannot determine them, **ask** rather than guess.
-2. **Split the suite into two tiers.** The **fast tier** is the build plus the
-   unit tests: no network, browser, or database server, and it finishes in
-   seconds to a couple of minutes. Use the `Fast tests` command from
-   `CLAUDE.md`, else the project's own unit-only script or marker (`test:unit`,
-   `pytest -m "not slow"`, `go test -short`). Where the runner can select tests
-   from the diff (`jest --changedSince`, `pytest --testmon`), add that, but
-   never as the only gate. The **slow tier** is everything else (integration,
-   e2e, the full suite). If the project has no separable fast tier, the whole
-   suite is the fast tier and nothing below changes.
-3. **Audit:** run the fast tier and the build first. Fail fast: stop at the
-   first red tier. Capture exact failures (test name + verbatim error in a code
-   block). Run the slow tier only once the fast tier is green, and no later
-   than Step 9. While the fast tier is red, never run the full suite (`npm
-   test`, `make test`, or any chained command that falls through to it); run
-   the unit-only command, and re-run one failing test by name.
-4. **Flaky check:** before treating a failure as real, re-run just that test
-   once on its own. Passes on re-run ⇒ record it as FLAKY (a warning, with the
-   test name), not as a fix target. Fails again ⇒ a real failure. Never
-   re-run the whole suite until it goes green.
-5. **Fix:** for each real failing test or build error, follow `/debug` —
-   reproduce, root-cause, then fix the cause (not the assertion). Commit each
-   fix.
-6. **Verify:** re-run the fast tier and the build. Green ⇒ FIXED(n). Still red
-   after two rounds ⇒ UNFIXED blocker with the failing test and what was tried.
-   Every later step's verify phase re-runs the fast tier only; the slow tier
-   runs in Step 9 and again in Step 10, on the final HEAD.
-
-If this step ends UNFIXED after two rounds, **stop here** and report NOT READY
-with the failing test. Every later step's verify phase depends on a green
-suite — running fixers on a red suite is fix → hope, not fix → verify. Mark
-every downstream ledger row `SKIPPED("pipeline halted at Step 2")`. A working
-branch from Step 1.5 stays as-is (base untouched) so the fix commits are there
-for the user.
+Always.
+Read `steps/02-tests-build.md` and follow it in full.
 
 ## Step 3: Correctness + quality — `/review` then `/clean-code` (always)
 
-Two halves. Both sub-skills are in-tree, so they are invocable from inside any
-session or tool, and Step 1.5 guarantees you are on a non-base branch, which
-`/review`'s own branch guard requires.
-
-**Correctness — `/review`.** `/review` is not a report-only audit: one
-invocation reads the diff, auto-applies its mechanical (AUTO-FIX) findings to
-the working tree, asks you about the rest (ASK items) via its own
-AskUserQuestion, and never commits. Treat one call as one atomic
-audit + fix + ask unit:
-1. **Run `/review`** against the base this pipeline resolved in Step 1. It has
-   no argument channel, so it always diffs `merge-base(origin/<base>, HEAD)` —
-   if Step 1 resolved a non-default base or a `--scope`, say so in the ledger
-   evidence: `/review` reviewed the full default-base diff.
-2. **Commit what it changed** as one commit attributed to `/review` (e.g.
-   `review: apply AUTO-FIX + approved ASK findings`), so the tree is clean
-   before `/clean-code` and nothing `/review` fixed can be lost by a later
-   revert. If `--scope` was given, stage and commit only files under scope;
-   any out-of-scope edits `/review` made stay uncommitted (stash them so the
-   tree is clean, noting the stash ref) and are flagged in the ledger with that
-   ref for the user — never silently committed. For any CRITICAL it reported but could not fix, root-cause
-   (`/debug`), write the failing test first (`/tdd`), fix, commit atomically.
-3. **Verify:** run `/review` once more. It re-scans the full base diff
-   including the fix commits — that's the point. A CRITICAL still present ⇒
-   UNFIXED blocker. Commit anything this second pass auto-fixed the same way.
-   Do not run it a third time in this step.
-
-`/review`'s adversarial section runs a free Claude subagent **and**, when the
-Codex CLI is installed and enabled, `codex exec` / `codex review` passes that
-spend OpenAI tokens. Those Codex passes are **ask-first** under the money rule.
-You are the one executing `/review`'s instructions, so no config change is
-needed: when its Codex preflight says Codex would run — `CODEX_MODE: ready`
-in current gstack, `CODEX_AVAILABLE` with `OLD_CFG` not `disabled` in older
-versions — ask the user once whether to spend on Codex for this run; if
-declined, do not run the `codex exec` / `codex review` commands and proceed
-exactly as the section's disabled/unavailable branch describes (Claude
-adversarial subagent still runs). Record
-the Codex state and the user's answer in the ledger. Never flip the global
-`codex_reviews` config on the user's behalf.
-
-`CODEX_MODE: not_authed` can be a false negative: gstack's preflight only
-recognises a Codex login, so a Codex CLI configured for a custom provider
-(e.g. `model_provider = "azure"` with an API key in the environment) reads as
-unauthenticated while working fine. When the preflight says `not_authed` but
-`${CODEX_HOME:-$HOME/.codex}/config.toml` sets a `model_provider`:
-
-1. **Ask first** — fold it into the one Codex question above: the probe is
-   itself a billed call on the user's provider. Declined ⇒ skip the probe and
-   the passes.
-2. **Probe the model the passes will use**, bounded, so a working default
-   model cannot hide an unusable review model and a stalled endpoint cannot
-   hang the pipeline:
-
-   ```bash
-   source ~/.claude/skills/gstack/bin/gstack-codex-probe 2>/dev/null
-   if ! command -v _gstack_codex_timeout_wrapper >/dev/null 2>&1 \
-      || ! command -v _gstack_codex_select_model >/dev/null 2>&1; then
-     echo "CODEX_PROBE: broken_install (gstack-codex-probe helper not found)"
-   elif _gstack_codex_select_model exec; then
-     # gstack's own resolver: GSTACK_CODEX_MODEL, then the model in config.toml,
-     # then gstack's default, so the probe tests the model the passes will use.
-     echo "CODEX_MODEL: $_GSTACK_CODEX_SEL ($_GSTACK_CODEX_SEL_SRC)"
-     _gstack_codex_timeout_wrapper 120 codex exec -s read-only \
-       -c "model=\"$_GSTACK_CODEX_SEL\"" "Reply with exactly: PONG" < /dev/null
-   fi
-   ```
-
-3. Answers `PONG` ⇒ treat Codex as `ready` and run the passes with that
-   provider and model. `CODEX_PROBE: broken_install`, or exit code 126/127 ⇒
-   treat it as `broken_install` (gstack's branch: reinstall advice, no model
-   advice). Any other error, timeout or text ⇒ `model_unusable`: skip the
-   passes, tell the user to set `GSTACK_CODEX_MODEL` (or `model` in config.toml)
-   to a deployment their provider serves. A `CODEX_MODEL: invalid` line from the
-   resolver means the same: no call was made.
-
-Record the probe command, model and result in the ledger either way.
-
-**If `/review` is unavailable** (gstack is not installed, the Skill tool cannot
-load `review`, or its preamble fails), do not skip the correctness step. Run the
-in-tree fallback, `/basic-review <diff-ref>...HEAD`, instead:
-1. **Audit:** invoke `/basic-review` with the diff ref Step 1 resolved. It is
-   read-only and reports findings as `file:line` with severity.
-2. **Fix:** for each CRITICAL/HIGH (and cheap MEDIUM) finding, root-cause it
-   (`/debug`), write the failing test first (`/tdd`), apply the smallest fix,
-   and commit it atomically, naming `basic-review` and the finding.
-3. **Verify:** run `/basic-review` once more on the same range; a CRITICAL
-   still reported is an UNFIXED blocker.
-
-Name both in the ledger row's first cell, `/review (fallback: /basic-review)`,
-and put the reason `/review` was unavailable in its evidence. The row's status
-is the fallback's result (RAN-CLEAN, FIXED(n) or UNFIXED), never SKIPPED: the
-correctness check ran.
-
-**Quality — `/clean-code`.** After correctness is green and committed, run
-`/clean-code <diff-ref> [--scope <paths>]` with the diff ref and scope this
-pipeline resolved. It audits KISS / DRY / SOLID / YAGNI against `ENGINEERING_STANDARDS.md`,
-applies the smallest safe refactor per finding under a green suite
-(characterization test first where none exists), commits each atomically,
-re-audits, and reverts a failed refactor with `git checkout` on only the files
-it touched. Its findings left UNFIXED are warnings here, not blockers — quality
-debt ships with a note; bugs don't.
-
-`/code-review ultra` (deep multi-agent cloud review) is **billed** — when a
-`/review` finding is high-stakes (payments, auth, data loss, concurrency), ask
-the user whether to launch it. Do not launch it unasked. Claude Code's
-built-in `/code-review` and `/simplify` are not part of this step: `/review`
-already covers correctness here, and an optional extra pass would have no
-ledger row.
+Always: `/review`, then `/clean-code`.
+Read `steps/03-correctness-quality.md` and follow it in full.
 
 ## Step 4: Security pipeline — `/defense`, `/iac-scan`, `/pentest`, `/fuzz`
 
-**`/defense` (always).**
-1. **Audit:** run `/defense` scoped to the changed files (OWASP Top 10 /
-   secrets / auth / crypto / data-protection).
-2. **Fix:** remediate every CRITICAL/HIGH (and cheap MEDIUMs): remove or
-   rotate-and-externalize hardcoded secrets, add the missing authz check,
-   parameterize the query, escape the output, switch the weak primitive, add
-   the validation. Each fix gets a regression test where a test can express it
-   (e.g. "unauthenticated request to X returns 401"). Commit atomically.
-3. **Verify:** re-run `/defense` on the same files; the finding must be gone.
-
-**`/iac-scan` (when infra/deploy config changed).** Trigger on `Dockerfile`,
-`docker-compose*`, `*.tf`/`*.tfvars`, k8s/Helm manifests, `.github/workflows/**`,
-`.gitlab-ci.yml`, `Jenkinsfile`, nginx/cloud config (see `/iac-scan`'s trigger
-section for the authoritative list). Audit with the local static linters, **fix**
-CRITICAL/HIGH misconfigs (root container → non-root user, `0.0.0.0/0` ingress →
-scoped CIDR, wildcard IAM → least privilege, privileged pod → dropped, untrusted
-CI trigger → pinned/guarded, baked-in secret → injected), re-scan to verify.
-
-**`/pentest` (triggered when `/defense` found CRITICAL/HIGH, or the diff touches
-auth/crypto/session/token/deserialization/file-upload paths).** Its default mode
-hunts in this harness — the session's own model reads the code and reports
-findings with evidence levels; no external scanner, no spend beyond the
-session. **Authorization was settled in Step 1** (the user's yes there, or
-their `CLAUDE.md`); do not ask again mid-run. Run it; the in-harness hunt is
-the check, not a stand-in.
-Fix CRITICAL/HIGH it surfaces, re-run to verify. clearwing appears only
-behind its ask-first gate: the user names it, asks for a network probe, or
-wants SARIF/CI output — and its pipeline can run agent-driven on this session
-via the bundled bridge (no provider, no spend) instead of provider-driven.
-Provider-driven runs configure their own LLM provider and bill it per run —
-declining clearwing means run the in-harness mode, not skip the check.
-If the user declines the check itself (no authorization) ⇒ SKIPPED(reason). If
-`CLAUDE.md` marks `/pentest` MANDATORY, SKIPPED is a blocker.
-
-**`/fuzz` (triggered when the diff adds or changes endpoints, input parsing,
-file-upload handling, or deserialization).** Needs a running target: find the dev
-URL with the target-resolution flow, then run `/fuzz` against the new surface;
-**fix** crashes, injections, and auth bypasses it surfaces (with a regression
-test); re-fuzz to verify. If no target is possible after that flow ⇒
-SKIPPED(reason). If `CLAUDE.md` marks `/fuzz` MANDATORY, SKIPPED is a blocker.
-
-**`/cso` backstop.** If the diff crosses a *new* trust boundary (new auth
-path/endpoint/external input/deserialization) and there's no evidence a threat
-model was done at plan time, run `/cso` on that boundary and fold any
-CRITICAL/HIGH into the `/defense` fix round. Threat modeling belongs in
-`/write-plan`; this is the late catch, not a substitute.
+Always (`/defense`). `/iac-scan`, `/pentest`, `/fuzz` and the `/cso` backstop each carry their own trigger inside the file.
+Read `steps/04-security.md` and follow it in full.
 
 ## Step 5: Database pipeline — `/db-optimize` (auto-run if triggered)
 
-Trigger when the diff touches ORM models, migrations, schema or statement
-modules, query builders, `*.sql`, raw SQL, or new ORM calls, in any language.
-Folder names like `**/models/**` are only examples: a Python repo keeps its
-database code in files like `schema.py` or `statements.py`. Decide with the
-shared helper, not by eye:
-
-```bash
-for d in . "$SUPERSKILLS_DIR" ~/Sites/superskills ~/.claude/skills/superskills ~/.codex/skills/superskills; do
-  [ -n "$d" ] && [ -x "$d/scripts/qa-triggers.sh" ] && { "$d/scripts/qa-triggers.sh" db <diff-ref>; break; }
-done
-```
-Exit 0 lists the matching files: the check is triggered. Exit 1 means nothing
-matched: quote its "searched ..." line in the ledger row as the NOT-TRIGGERED
-evidence. A NOT-TRIGGERED row without that line is an unaccounted check. If the
-script is not found, fall back to the patterns above and still grep the diff
-for SQL and for template/UI files before writing NOT-TRIGGERED.
-
-1. **Audit:** run `/db-optimize` scoped to matched files (run `/dbmap` first if
-   it asks for a schema map).
-2. **Fix:** N+1s on hot paths → eager-load/batch (`includes`/`preload`/
-   `select_related`/dataloader); missing indexes on hot paths → add a migration
-   for the index; obviously-redundant queries → dedupe. Add a test that asserts
-   the query count where the ORM supports it. Commit atomically.
-3. **Verify:** re-run `/db-optimize`; the hot-path findings must be gone and
-   the migration must apply cleanly in the test run.
-
-Non-hot-path suggestions are warnings (fix if trivial). No trigger ⇒
-NOT-TRIGGERED.
+Trigger: ORM models, migrations, schema or statement modules, query builders, `*.sql`, raw SQL or new ORM calls, in any language. Decide with the `db` trigger helper above. Not triggered ⇒ NOT-TRIGGERED, with the helper's "searched ..." line. Triggered ⇒ Read the file.
+Read `steps/05-database.md` and follow it in full.
 
 ## Step 6: Frontend perf pipeline — `/web-perf` (+ `/perf-profile`)
 
-Trigger when the diff includes frontend code (`**/*.tsx`, `**/*.jsx`,
-`**/*.vue`, `**/*.svelte`, `**/components/**`, `**/pages/**`, `**/styles/**`,
-`**/*.css`, `**/*.scss`), new images/fonts/assets, or bundler config
-(`next.config.*`, `vite.config.*`, `webpack.config.*`). Server-rendered
-templates (Jinja, ERB, Blade, plain `.html`) and static JS/CSS count as
-frontend too: the `ui` run of `scripts/qa-triggers.sh` from Step 7 decides it,
-so a UI match there triggers this step as well.
-
-1. Resolve the dev URL with the target-resolution flow above; start the dev
-   server if needed. If the flow establishes that no target is possible ⇒
-   SKIPPED with the startup error and the user's answer in the ledger.
-2. **Audit:** run `/web-perf` against the affected routes. Record Core Web
-   Vitals (LCP, INP, CLS) vs. any known budget.
-3. **Fix:** address the measured regressions attributable to the diff —
-   render-blocking imports → defer/lazy, oversized image/font → optimize or
-   preload, layout shift → reserve dimensions, long task → split/memoize.
-   Commit atomically.
-4. **Verify:** re-run `/web-perf` on the same routes; report before/after
-   numbers.
-
-- A budget breach that survives the fix round is a **warning** by default,
-  unless `CLAUDE.md` defines a hard perf gate — then it blocks.
-- **`/perf-profile`** (triggered when the diff touches hot server-side paths, the
-  change is pre-launch, or `/db-optimize`/`/web-perf` point at a server-side
-  bottleneck): run it against the affected endpoint/job, **fix** the localized
-  bottleneck (cache, batch, move off the request path), re-profile to verify.
-  Needs a representative workload — if none is available ⇒ SKIPPED(reason).
+Trigger: frontend code, new images/fonts/assets, bundler config; server-rendered templates and static JS/CSS count. The `ui` trigger helper decides. Not triggered ⇒ NOT-TRIGGERED, with its "searched ..." line. Triggered ⇒ Read the file.
+Read `steps/06-frontend-perf.md` and follow it in full.
 
 ## Step 7: Browser QA pipeline — `/qa` (auto-run if triggered)
 
-> Run **`/qa`** — the full test → fix → re-verify loop — not `/qa-only`. This is
-> the check that replaces manual click-through QA, and a human is present.
-
-Trigger when the diff includes anything a human would manually QA in a browser:
-UI/frontend code, pages/routes, forms, route handlers serving HTML, API
-endpoints the UI consumes, auth/session flows, or config that changes
-user-facing behavior. Server-rendered templates (Jinja, ERB, Blade, Twig,
-plain `.html`) and static JS/CSS count as UI. Decide with the shared helper,
-not by eye:
-
-```bash
-for d in . "$SUPERSKILLS_DIR" ~/Sites/superskills ~/.claude/skills/superskills ~/.codex/skills/superskills; do
-  [ -n "$d" ] && [ -x "$d/scripts/qa-triggers.sh" ] && { "$d/scripts/qa-triggers.sh" ui <diff-ref>; break; }
-done
-```
-Exit 0 lists the matching files: the check is triggered. Exit 1 means nothing
-matched: quote its "searched ..." line in the ledger row as the NOT-TRIGGERED
-evidence. A NOT-TRIGGERED row without that line is an unaccounted check. If the
-script is not found, fall back to the patterns above and still grep the diff
-for SQL and for template/UI files before writing NOT-TRIGGERED.
-
-1. **Invoke `/qa` whenever this trigger fires, even if no dev URL is known.**
-   Give it the resolved URL if Step 4 or 6 found one; otherwise invoke it
-   without a URL so its diff-aware mode can discover the app or ask. Scope it
-   to the affected surface at the project's **QA tier** (`CLAUDE.md`, default
-   `standard`: critical + high + medium). If it needs a server, follow the
-   target-resolution flow above and resume `/qa` after setup or the user's
-   answer. A missing URL alone never justifies SKIPPED, stopping the pipeline,
-   or declaring browser QA complete. Let `/qa` finish its audit → fix →
-   re-verify loop with atomic commits and before/after health scores.
-2. Fold its before/after health score, fixed-bug list (with commits), and any
-   bugs it could not fix into the ledger.
-
-- User-facing CRITICAL/HIGH bugs that `/qa` could not fix ⇒ UNFIXED blocker.
-- If the target-resolution flow ends without a runnable app, record
-  SKIPPED(reason) and a NOT READY blocker. Say what setup was attempted and
-  what the user needs to provide before browser QA can run.
+Trigger: anything a human would QA in a browser: UI/frontend code, pages/routes, forms, HTML-serving handlers, API endpoints the UI consumes, auth/session flows, user-facing config; server-rendered templates and static JS/CSS count. The `ui` trigger helper decides. Not triggered ⇒ NOT-TRIGGERED, with its "searched ..." line. Triggered ⇒ Read the file and invoke `/qa` (not `/qa-only`), even with no dev URL known.
+Read `steps/07-browser-qa.md` and follow it in full.
 
 ## Step 8: Design + accessibility pipeline — `/design-review`, `/a11y`
 
-**`/design-review` (when the diff includes UI changes, unless `CLAUDE.md` opts
-out).** Run `/design-review` against the changed screens — it audits visual
-consistency, hierarchy, spacing, AI-slop tells and slow interactions, then
-**fixes them with atomic commits and before/after screenshots**. Let it complete.
-Visual findings it can't fix are warnings, not blockers. If the project opted
-out in `CLAUDE.md`, record SKIPPED("project opt-out") and move on.
-
-**`/a11y` (when the UI change is heavy and likely to affect assistive tech —
-new/changed interactive components, forms, ARIA/`role`/`tabindex`,
-focus/keyboard handling, images, color/contrast, motion; see `/a11y`'s trigger
-section).**
-1. **Audit:** run the static pass on the diff, and the **dynamic axe pass** when
-   the dev URL is reachable (it is, if Step 6/7 ran).
-2. **Fix:** every CRITICAL/SERIOUS — native element over ARIA-on-a-div, missing
-   label/name, unreachable-by-keyboard control, focus trap, contrast below
-   ratio, missing reduced-motion guard. Commit atomically.
-3. **Verify:** re-run the same pass; CRITICAL that survive ⇒ UNFIXED blocker.
-
-Scope split: `/design-review` owns *visual* quality; `/a11y` owns WCAG /
-assistive-tech correctness. They overlap on contrast — `/a11y`'s measured
-contrast finding is authoritative.
+Trigger: `/design-review` when the diff includes UI changes (unless `CLAUDE.md` opts out); `/a11y` when the UI change is heavy and likely to affect assistive tech. Neither ⇒ NOT-TRIGGERED. Otherwise Read the file.
+Read `steps/08-design-a11y.md` and follow it in full.
 
 ## Step 9: Coverage pipeline — `/test-coverage` + `/playwright`
 
-1. **Audit:** for each changed file (including this pipeline's fix commits),
-   locate its test (sibling `*.test.*`, parallel `tests/`). Use coverage data if
-   present (`coverage/`, `lcov.info`, `.coverage`); else do a structural check
-   for new exported functions / branches / error paths without an assertion.
-2. **Fix:** run `/test-coverage` on the diff — it writes and applies the missing
-   unit tests (and integration tests where risk crosses a boundary), enforcing
-   Google's Testing-on-the-Toilet practices. For **user-facing flows** with no
-   e2e coverage, run `/playwright` to generate and run the e2e test so a
-   regression test is left behind. Commit atomically.
-3. **Verify:** run the full suite; the new tests must pass, and the structural
-   check must show no new **public** surface with zero tests.
-
-New public surface still untested after this step ⇒ UNFIXED blocker. Internal
-helpers without tests are warnings.
+Always.
+Read `steps/09-coverage.md` and follow it in full.
 
 ## Step 9b: Prose quality pipeline — `/humanize` (auto-run if triggered)
 
-**Trigger:** the diff adds or modifies user-facing copy: documentation, help
-prose, marketing pages, locale strings, or visible UI text, in any file type
-`python3 skills/humanize/toolkit/userfacing.py classify <path>` does not call
-`none`. NOT-TRIGGERED when no user-facing copy changed.
-Internal prompts, agent instructions, plans, and code comments are out of scope.
-Run the Markdown normalizer only on `markdown`/`text` files; other types get the
-scan on the extraction and surgical in-place edits (see `/humanize`).
-
-**Scope rules:**
-
-- Exclude prose the project does not own (vendored, mirrored, or generated
-  trees) and historical records (`CHANGELOG.md` and the like): that wording is
-  deliberate or upstream's, and rewriting it falsifies provenance.
-- **Warnings tier.** A prose-slop flag is style, not correctness: it never
-  enters the blocker set below. A flag that survives the fix rounds ships as a
-  warning with a follow-up note.
-
-1. **Audit:** run `/humanize`'s deterministic scan (its toolkit's
-   `slop_report.py`) over each in-scope changed prose file and read the report.
-2. **Fix:** invoke `/humanize` and apply it surgically to flagged spans only —
-   its own contract (deterministic fixes, subtractive edits, re-scan as the
-   gate; never a whole-document rewrite) is the fix policy here too. Commit
-   atomically like any other fix.
-3. **Verify:** re-scan the edited files and re-run the test suite. Repos often
-   pin exact doc strings in tests; a humanize edit that touched pinned prose
-   must break here, loudly, not silently ship.
-
-The ledger row resolves to RAN-CLEAN (no flags worth fixing), FIXED(n)
-(flags fixed and re-scanned), SKIPPED(reason), or NOT-TRIGGERED. Remaining
-flags are warnings, never UNFIXED blockers.
+Trigger: the diff adds or modifies user-facing copy (documentation, help prose, marketing pages, locale strings, visible UI text) in a file `python3 skills/humanize/toolkit/userfacing.py classify <path>` does not call `none`. None ⇒ NOT-TRIGGERED. Triggered ⇒ Read the file.
+Read `steps/09b-prose.md` and follow it in full.
 
 ## Step 9c: AI-behavior pipeline — `/eval` (ask-first if triggered)
 
-**Trigger:** the diff changes AI behavior. Judge it the way human eyes would:
-does the change alter what a model sees, how it is instructed, or how its
-output is judged or used? A prompt template edited inside source code counts,
-not just prompt files. The obvious file signals are prompts, agent or skill
-instructions (`**/SKILL.md`, `.claude/commands/**`, `AGENTS.md` /
-`CLAUDE.md` instruction files), and LLM/RAG pipeline code or configuration
-(retrieval parameters, judge rubrics, agent-loop logic). Pure formatting
-changes to the same files do not count. NOT-TRIGGERED means "no plausible
-behavior change," never "no matching filename."
-
-An eval run spends model calls (case runs plus judge votes), so it follows the
-money rule: ask the user first, name what it will cost, and run only on an
-explicit yes. A decline is SKIPPED(reason: not authorized) — a legal skip with
-reason, not a blocker.
-
-1. **Audit:** invoke `/eval`; it builds or reuses the project's synthetic eval
-   set for the changed behavior and reports the behavior's before/after
-   system metrics (pass rate per dimension), with the judge's calibration
-   (TPR, TNR, accuracy, precision, plus the bias reading) attached so the
-   numbers are trusted before they are read.
-2. **Fix:** wording first, structure second — the method's fix ladder.
-3. **Verify:** re-run the eval. The changed behavior must be no worse than the
-   baseline on every reported metric, and better on the dimension the change
-   targeted. "No degradation" is the floor, not the goal.
-
-A metric regression is a warning unless the project marks evals MANDATORY in
-`CLAUDE.md`; a MANDATORY eval that was declined or never ran is MANDATORY-FAIL.
+Trigger: the diff changes AI behavior: what a model sees, how it is instructed, or how its output is judged or used, including a prompt template inside source code. Judge it as a human would, not by filename. Not triggered ⇒ NOT-TRIGGERED. Triggered ⇒ Read the file (an eval that runs in-session is free; a metered or billed one needs the user's yes).
+Read `steps/09c-ai-behavior.md` and follow it in full.
 
 ## Step 10: Final verification pass, ledger, verdict
 
-The fix rounds changed the branch, so verify the *whole* result once more:
-
-1. **Fresh tests + build** on the final HEAD (Step 2 commands), **both tiers**:
-   the fast-only runs of the fix rounds do not count here. Stale results
-   ⇒ NOT READY.
-2. **Re-audit the fix commits:** run `/defense` scoped to the files the fix
-   commits touched, and read the fix commits themselves
-   (`git show original-HEAD..HEAD`) against `/review`'s checklist — `/review`
-   takes no commit range, and Step 3 already re-ran it twice. When `/review`
-   was unavailable, run `/basic-review original-HEAD..HEAD` for this re-audit. The fixes must not
-   introduce a CRITICAL/HIGH. If they did, one more fix + re-verify, then stop.
-3. **Diff sanity:** `git log --oneline <base>..HEAD` — every pipeline commit
-   should name its check/finding; nothing outside the diff scope was touched.
-4. **Fold back the working branch** if Step 1.5 created one: `git switch
-   <base> && git merge --ff-only qa-full/<...> && git branch -d qa-full/<...>`.
-   If the fast-forward fails, the base moved underneath you — stop and report;
-   never force.
-
-Then build the **accounting ledger** — a row per check, each resolved to
-RAN-CLEAN / FIXED(n) / UNFIXED / SKIPPED(reason) / NOT-TRIGGERED /
-MANDATORY-FAIL. **The verdict cannot be SHIP-READY while any triggered check is
-unaccounted or UNFIXED.**
-
-**Phase-5 accounting (honest scope):** `/qa-full` *is* the entry to Phase 5, so it
-can only enforce the **pre-ship** half. It **cannot** verify `/finish-branch`,
-`/ship`, or `/land-and-deploy` — those run *after* this pipeline, so do not claim
-they're done. A passing verdict is the **hard precondition** for ship: only on
-SHIP-READY do you hand off *"Proceed to `/finish-branch` then `/ship`."*
-
-Then the verdict:
-
-- **SHIP-READY** — zero blockers remaining **and** every triggered check
-  accounted for **and** the final pass is green. List what was fixed (commits),
-  warnings + follow-ups, then hand off to `/finish-branch` → `/ship`.
-- **NOT READY** — one or more blockers survived the fix rounds (or a check is
-  unaccounted / MANDATORY-FAIL). List each with its file:line/test-name
-  evidence, **what was tried**, and what the user needs to decide or provide.
-  Tell the user to resolve and re-run `/qa-full`.
-
-Blocker set (any one ⇒ NOT READY — this is the authoritative list for the
-verdict; it mirrors the superskills `ENGINEERING_STANDARDS.md` hard gates, kept
-in sync by the maintainer). Each is evaluated **after** the fix rounds:
-- failing test or broken build, or test/build not freshly run on final HEAD (Step 2/10)
-- `/review` CRITICAL correctness finding still present (Step 3)
-- `/defense` CRITICAL/HIGH security finding still present (Step 4)
-- `/fuzz` CRITICAL/HIGH — crash, injection, or auth bypass — still reproducible (Step 4)
-- `/pentest` CRITICAL/HIGH vulnerability still present, when it ran (Step 4)
-- `/iac-scan` CRITICAL/HIGH infra misconfig still present (Step 4)
-- N+1 / missing index on a hot path still present (Step 5)
-- CRITICAL/HIGH browser-QA bug in a user-facing flow `/qa` could not fix (Step 7)
-- triggered `/qa` SKIPPED because its skill could not be loaded or no runnable
-  app was available after target resolution (Step 7); browser QA remains
-  unverified
-- `/a11y` CRITICAL — a control unusable by screen-reader/keyboard — still present (Step 8)
-- new public surface with zero tests after `/test-coverage` (Step 9)
-- a hard perf gate breach after the fix round, only if `CLAUDE.md` defines one (Step 6)
-- **a triggered check left unaccounted** — neither run nor SKIPPED with a reason
-- **a `CLAUDE.md`-MANDATORY check that was SKIPPED** rather than run
-
-## Report format
-
-Write to `qa-full-reports/<branch>-<YYYY-MM-DD>.md` (create dir; add to
-`.gitignore`). Structure:
-
-```markdown
-# QA-Full — <branch> @ <YYYY-MM-DD>
-
-Base: <base>  Range: <base>..HEAD  Changed files: N (+M from fixes)
-HEAD before fixes: <sha>  HEAD after: <sha>  Fix commits: K
-
-## VERDICT: SHIP-READY ✅ | NOT READY ⛔
-
-### Fixed (audit → fix → verify, each with its commit)
-1. <check> — <file:line> — <finding> — fixed in <sha> — re-verified by <evidence>
-- (or) None needed.
-
-### Blockers remaining (must resolve before /finish-branch)
-1. <file:line> — <evidence> — <what was tried> — <what's needed from you>
-- (or) None.
-
-### Warnings (ship with a follow-up note)
-- …
-
-## Accounting ledger (RAN-CLEAN / FIXED(n) / UNFIXED / SKIPPED(reason) / NOT-TRIGGERED / MANDATORY-FAIL)
-| Check | Status | Evidence / fixes / reason |
-|-------|--------|---------------------------|
-| Tests & build (Step 2)   | RAN-CLEAN / FIXED(n) / UNFIXED | exact command + result, fix SHAs |
-| /review (Step 3)         | RAN-CLEAN / FIXED(n) / UNFIXED | N findings, fix SHAs, 2nd-run result, Codex passes on/off, base used, out-of-scope stash ref if any |
-| /clean-code (Step 3)     | RAN-CLEAN / FIXED(n) / UNFIXED | KISS/DRY/SOLID/YAGNI findings, fix SHAs, deferred-with-reason |
-| /defense (Step 4)        | RAN-CLEAN / FIXED(n) / UNFIXED | N findings, fix SHAs |
-| /iac-scan (Step 4)       | … / NOT-TRIGGERED | infra/deploy files changed? |
-| /pentest (Step 4)        | … / SKIPPED(reason) / NOT-TRIGGERED | authorized? findings? |
-| /fuzz (Step 4)           | … / SKIPPED(reason) / NOT-TRIGGERED | target URL, findings |
-| /cso (Step 4)            | … / NOT-TRIGGERED | new trust boundary? threat-model evidence |
-| /db-optimize (Step 5)    | … / NOT-TRIGGERED | N+1 / index fixes, migration |
-| /web-perf (Step 6)       | … / SKIPPED(reason) / NOT-TRIGGERED | before/after LCP/INP/CLS |
-| /perf-profile (Step 6)   | … / SKIPPED(reason) / NOT-TRIGGERED | bottleneck, before/after |
-| /qa (Step 7)             | … / SKIPPED(reason) / NOT-TRIGGERED | tier, health before/after, fix SHAs |
-| /design-review (Step 8)  | … / SKIPPED(reason) / NOT-TRIGGERED | screens, fix SHAs |
-| /a11y (Step 8)           | … / SKIPPED(reason) / NOT-TRIGGERED | static + dynamic, fix SHAs |
-| /test-coverage + /playwright (Step 9) | RAN-CLEAN / FIXED(n) / UNFIXED | tests added, suite result |
-| /humanize (Step 9b)      | … / SKIPPED(reason) / NOT-TRIGGERED | prose files in scope, flags fixed (SHAs), warnings carried |
-| /eval (Step 9c)          | … / SKIPPED(reason: not authorized) / NOT-TRIGGERED | behavior files in scope, before/after metrics or the ask-first outcome |
-| Final pass (Step 10)     | RAN-CLEAN / FIXED(n) / UNFIXED | fresh test/build + re-audit of fix commits |
-
-> No row may be blank or "recommend" for a check whose trigger fired — that is an
-> unaccounted-check blocker. `CLAUDE.md`-MANDATORY checks must read RAN-CLEAN or FIXED.
-
-## Ask-first / follow-up commands
-- `/code-review ultra` — (billed; offer when a high-stakes correctness concern remains)
-- `/review` Codex passes — (OpenAI tokens; ask before enabling them for a run)
-- `/pentest` — (if it was SKIPPED for authorization and the user now wants it)
-- `/fuzz` — (if SKIPPED for lack of a target and one is now available)
-- `/perf-profile` — (if SKIPPED for lack of a representative workload)
-- `/finish-branch` → `/ship` — (only if VERDICT is SHIP-READY)
-```
-
-Print the verdict, the fixed count, the remaining-blocker count, and a 5-line
-summary to the chat.
+Always, last. Holds the final verification pass, the blocker set, the verdict, the report format and the accounting ledger.
+Read `steps/10-final-verdict-report.md` and follow it in full.
 
 ## Anti-patterns (do not do)
 
@@ -834,38 +292,4 @@ summary to the chat.
 
 ## Related commands
 
-Reuses the trigger matrix from `/daily-qa` (see `skills/daily-qa/SKILL.md`
-Step 7 for the canonical globs). Differences: branch-scoped, present-human,
-and it **fixes and verifies** instead of recommending.
-
-Auto-run (diff-scoped; audit → fix → verify):
-- Tests & build — always; failures root-caused via `/debug`, proven via `/verify` (Step 2).
-- `/review` — staff-level correctness review; findings fixed by the pipeline (Step 3).
-- `/basic-review` — in-tree correctness review, run in `/review`'s place when gstack is unavailable (Step 3).
-- `/clean-code` — KISS/DRY/SOLID/YAGNI refactors on the diff, test-verified (Step 3).
-- `/defense` — OWASP/secrets/auth/crypto; findings fixed by the pipeline (Step 4).
-- `/iac-scan` — when infra/deploy config changed; misconfigs fixed (Step 4).
-- `/fuzz` — when the diff adds endpoints/input parsing and a target is reachable (Step 4).
-- `/cso` — backstop when a new trust boundary reached the pipeline unmodeled (Step 4).
-- `/db-optimize` — when DB/ORM/SQL changed; N+1/index fixes applied (Step 5).
-- `/web-perf` — when frontend changed; dev server started if needed; regressions fixed (Step 6).
-- `/perf-profile` — when hot server paths changed / pre-launch; bottleneck fixed (Step 6).
-- `/qa` — when anything user-facing changed; full test → fix → re-verify loop (Step 7).
-- `/design-review` — when UI changed; fixes + commits visual issues (Step 8).
-- `/a11y` — static + dynamic pass when heavy UI changed; findings fixed (Step 8).
-- `/test-coverage` + `/playwright` — write and apply the missing tests (Step 9).
-- `/tdd`, `/debug`, `/verify` — the discipline every fix in the pipeline follows.
-
-Ask-first (need the user's explicit yes):
-- `/code-review ultra` — billed multi-agent cloud review.
-- `/review`'s Codex passes — OpenAI tokens; per-run yes required (Step 3).
-- `/pentest` — authorization confirmation, then it runs; in-harness by
-  default, clearwing modes are the billed ask-first option (Step 4).
-
-Follow-up (outside the pipeline):
-- `/code-review` / `/simplify` — Claude Code built-ins overlapping Step 3; use
-  them by hand, the pipeline uses the in-tree `/review` + `/clean-code`.
-
-Hand-off (only when SHIP-READY):
-- `/finish-branch` — choose how to integrate the work.
-- `/ship` — sync, bump VERSION, changelog, PR.
+Reference only, never needed to finish a run: `steps/99-related-commands.md`.

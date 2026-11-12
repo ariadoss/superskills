@@ -49,7 +49,7 @@ qfl_invoked_qafull() {
 # SKILL.md directly (either following it by hand or just editing it).
 qfl_read_qafull() {
   _qfl_tool_uses "$@" | jq -r 'select(.name=="Read") | .input.file_path // empty' \
-    | grep -q '/qa-full/SKILL\.md$'
+    | grep -q '/qa-full/\(SKILL\.md\|steps/[^/]*\.md\)$'
 }
 
 # qfl_ran_qafull <transcript...> — invoked it, or read its SKILL.md.

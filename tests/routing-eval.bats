@@ -221,7 +221,10 @@ spec = importlib.util.spec_from_file_location("g", os.path.join(root, "evals/_li
 g = importlib.util.module_from_spec(spec); spec.loader.exec_module(g)
 bad = []
 for orch, subs in g.FANOUT.items():
-    body = open(os.path.join(root, "skills", orch, "SKILL.md")).read()
+    d = os.path.join(root, "skills", orch)
+    files = [os.path.join(d, "SKILL.md")] + sorted(
+        os.path.join(d, "steps", f) for f in os.listdir(os.path.join(d, "steps"))) if os.path.isdir(os.path.join(d, "steps")) else [os.path.join(d, "SKILL.md")]
+    body = "".join(open(f).read() for f in files)
     bad += [f"{orch}->{s}" for s in sorted(subs) if not re.search(rf"/{re.escape(s)}\b", body)]
 print(" ".join(bad))
 PY

@@ -38,6 +38,15 @@
       "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/humanize-prepush-hook.sh\""
      }
     ]
+   },
+   {
+    "matcher": "Skill",
+    "hooks": [
+     {
+      "type": "command",
+      "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/qa-full-step-hook.sh\""
+     }
+    ]
    }
   ]
  }
