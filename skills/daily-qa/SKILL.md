@@ -264,7 +264,10 @@ Trigger when changed files match any of:
   in the diff
 
 Folder names are only examples (a Python repo keeps its database code in
-`schema.py`, `statements.py`). Decide with the shared helper, not by eye:
+`schema.py`, `statements.py`). Decide with the shared helper, not by eye.
+(The helper loops in this file and in `/qa-full` are deliberately repeated
+per section instead of shared out: each section stays self-contained, and a
+shared reference would add one more read to every run.)
 
 ```bash
 for d in "$SUPERSKILLS_DIR" ~/Sites/superskills ~/.claude/skills/superskills ~/.codex/skills/superskills .; do

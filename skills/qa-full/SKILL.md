@@ -92,7 +92,10 @@ not yet accounted for and keep going to Step 10. A stop between steps is a bug;
 the only legal stops are the two in "Run to completion" below.
 
 **Trigger helper.** Steps 5, 6 and 7 are decided by the shared script, not by
-eye. Pick the kind (`db` for Step 5, `ui` for Steps 6 and 7):
+eye. (The loop below is deliberately repeated in `/daily-qa` instead of shared
+out: prompt files stay self-contained, and a shared reference would add one
+more read to every run.) Pick the kind (`db` for Step 5, `ui` for Steps 6
+and 7):
 
 ```bash
 for d in "$SUPERSKILLS_DIR" ~/Sites/superskills ~/.claude/skills/superskills ~/.codex/skills/superskills .; do
