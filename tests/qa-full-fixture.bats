@@ -42,6 +42,14 @@ setup() {
   printf '%s\n' "$output" | grep -qF "$REPO_ROOT/scripts/qa-full-ledger-hook.sh" || false
 }
 
+@test "installer: prints the PreToolUse Skill entry for the step hook" {
+  run "$REPO_ROOT/scripts/install-qa-full-ledger-hook.sh"
+  [ "$status" -eq 0 ]
+  printf '%s\n' "$output" | grep -q '"PreToolUse"' || false
+  printf '%s\n' "$output" | grep -q '"matcher": "Skill"' || false
+  printf '%s\n' "$output" | grep -qF "$REPO_ROOT/scripts/qa-full-step-hook.sh" || false
+}
+
 @test "hooks.json: valid JSON registering the ledger hook and the handoff trigger" {
   command -v jq >/dev/null || skip "jq not installed"
   run jq -r '.hooks | to_entries[] | "\(.key) \(.value[0].hooks[0].command)"' "$REPO_ROOT/hooks/hooks.json"

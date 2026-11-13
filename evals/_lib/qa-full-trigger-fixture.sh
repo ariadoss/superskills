@@ -1,5 +1,5 @@
 #!/bin/bash
-# qa-full-trigger-fixture.sh <dir> <py|docs>: a small Python/Jinja repo on a feature branch.
+# qa-full-trigger-fixture.sh <dir> <py|hard|docs>: a small Python/Jinja repo on a feature branch.
 # py   = branch adds a db schema module, a statements module and an HTML template
 #        (no folder name the old triggers knew), so db and ui should both trigger.
 # hard = like py, but no literal SQL and no form (only file names and a display-only template).

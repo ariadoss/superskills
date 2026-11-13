@@ -19,15 +19,15 @@ here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$here/lib/qa-full-step-lib.sh"
 
 input="$(cat)"
-field() { printf '%s' "$input" | jq -r "$1 // empty" 2>/dev/null; }
+# One jq read for every field the hook needs (each field() call was a spawn).
+IFS=$'\t' read -r tool_name skill transcript agent session < <(
+  printf '%s' "$input" | jq -r '[.tool_name, .tool_input.skill, .transcript_path, .agent_id, .session_id] | map(. // "") | @tsv' 2>/dev/null
+)
 
-[ "$(field .tool_name)" = "Skill" ] || exit 0
-step="$(qfs_step_for_skill "$(field .tool_input.skill)")"
+[ "$tool_name" = "Skill" ] || exit 0
+step="$(qfs_step_for_skill "$skill")"
 [ -n "$step" ] || exit 0
 
-transcript="$(field .transcript_path)"
-agent="$(field .agent_id)"
-session="$(field .session_id)"
 [ -f "$transcript" ] || exit 0
 own="$(qfs_agent_transcript "$transcript" "$agent")"
 
@@ -41,16 +41,25 @@ steps="$dir/steps"
 [ -f "$steps/$step" ] || steps="$here/../skills/qa-full/steps"
 [ -f "$steps/$step" ] || exit 0
 
-qfs_step_read "$own" "$step" && exit 0
+# The once-per-agent marker is O(1); check it before the transcript scan so
+# repeat calls of the same step exit on a stat, not a full jq pass.
 state="${QA_FULL_STEP_STATE:-${TMPDIR:-/tmp}/superskills-qa-full-steps}"
 marker="$(qfs_seen_marker "$state" "$session" "$agent" "$step")"
 [ -e "$marker" ] && exit 0
-mkdir -p "$(dirname "$marker")" 2>/dev/null && : >"$marker" 2>/dev/null
+qfs_step_read "$own" "$step" && exit 0
 
-jq -n --arg step "$step" --rawfile body "$steps/$step" '{
+out="$(jq -n --arg step "$step" --rawfile body "$steps/$step" '{
   hookSpecificOutput: {
     hookEventName: "PreToolUse",
     additionalContext: ("/qa-full step file steps/" + $step + ", supplied by the hook before this sub-skill runs. Follow it in full for this step (commit format, ledger evidence, fix and verify rules). You do not need to read it again.\n\n" + $body)
   }
-}'
+}' 2>/dev/null)" || exit 0
+# Mark delivered only after the JSON was built: a failed build must not
+# permanently suppress the step for this agent.
+marker_dir="$(dirname "$marker")"
+mkdir -p "$marker_dir" 2>/dev/null
+chmod 700 "$marker_dir" 2>/dev/null
+[ -L "$marker" ] && exit 0 # never write through a pre-planted symlink
+( set -C; : >"$marker" ) 2>/dev/null
+printf '%s\n' "$out"
 exit 0

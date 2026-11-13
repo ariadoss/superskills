@@ -1,8 +1,10 @@
 ## Related commands
 
-Reuses the trigger matrix from `/daily-qa` (see `skills/daily-qa/SKILL.md`
-Step 7 for the canonical globs). Differences: branch-scoped, present-human,
-and it **fixes and verifies** instead of recommending.
+Shares its db/ui trigger decisions with `/daily-qa`, both decided by the
+shared `scripts/qa-triggers.sh` helper (see the "Trigger helper" block in the
+core SKILL.md); the glob lists in `/daily-qa` Step 7 are only the
+script-not-found fallback. Differences from `/daily-qa`: branch-scoped,
+present-human, and it **fixes and verifies** instead of recommending.
 
 Auto-run (diff-scoped; audit → fix → verify):
 - Tests & build — always; failures root-caused via `/debug`, proven via `/verify` (Step 2).

@@ -11,9 +11,11 @@
 
 set -euo pipefail
 HOOK="$(cd "$(dirname "$0")" && pwd)/qa-full-ledger-hook.sh"
+STEP_HOOK="$(cd "$(dirname "$0")" && pwd)/qa-full-step-hook.sh"
 [ -f "$HOOK" ] || { echo "hook not found at $HOOK" >&2; exit 1; }
-chmod +x "$HOOK"
-command -v jq >/dev/null 2>&1 || echo "Note: the hook needs jq and does nothing without it (brew install jq)." >&2
+[ -f "$STEP_HOOK" ] || { echo "step hook not found at $STEP_HOOK" >&2; exit 1; }
+chmod +x "$HOOK" "$STEP_HOOK"
+command -v jq >/dev/null 2>&1 || echo "Note: the hooks need jq and do nothing without it (brew install jq)." >&2
 
 cat <<EOF
 Add these entries to the "hooks" object in ~/.claude/settings.json:
@@ -23,9 +25,14 @@ Add these entries to the "hooks" object in ~/.claude/settings.json:
   ],
   "SubagentStop": [
     { "hooks": [ { "type": "command", "command": "\"$HOOK\"" } ] }
+  ],
+  "PreToolUse": [
+    { "matcher": "Skill", "hooks": [ { "type": "command", "command": "\"$STEP_HOOK\"" } ] }
   ]
 
-It exits at once unless the session ran /qa-full. When it did, it blocks the
-stop if a ledger row says a check ran but that sub-skill was never invoked.
-Remove the two entries to uninstall.
+The Stop/SubagentStop hook exits at once unless the session ran /qa-full. When
+it did, it blocks the stop if a ledger row says a check ran but that sub-skill
+was never invoked. The PreToolUse entry runs qa-full-step-hook.sh, which hands
+/qa-full step files to an agent invoking a step's sub-skill; it exits at once
+outside /qa-full and never blocks a call. Remove the entries to uninstall.
 EOF

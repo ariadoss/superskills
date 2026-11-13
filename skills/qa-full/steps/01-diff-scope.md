@@ -23,11 +23,12 @@
    AskUserQuestion call so the user answers once and the pipeline then runs
    unattended: the dirty-tree choice above; `/pentest` authorization (skip when
    `CLAUDE.md` already states it); Codex passes for `/review` (skip when
-   `CLAUDE.md` already decides it); `/code-review ultra` (default no); and the
-   dev URL or start command when browser checks are triggered and none is
-   known. An unanswered or declined item resolves to its safe default
-   (SKIPPED(reason), no spend) and the run continues. After this call, Steps 2
-   to 10 ask the user nothing.
+   `CLAUDE.md` already decides it); `/code-review ultra` (default no); the dev
+   URL or start command when browser checks are triggered and none is known;
+   and the test/build commands when Step 2 cannot determine them from
+   `CLAUDE.md` or the project manifest. An unanswered or declined item resolves
+   to its safe default (SKIPPED(reason), no spend) and the run continues. After
+   this call, Steps 2 to 10 ask the user nothing.
 5. **Never run on the base branch itself.** The sub-skills' diff-aware modes
    (`/review`, `/qa`, `/design-review`) key off "current branch ≠ base" and
    diff against `merge-base(origin/<base>, HEAD)`. If `git branch

@@ -183,7 +183,7 @@ explicit current → target versions taken from the repo.
    `~/.codex/skills/superskills/scripts/check-upstream-drift.sh`.
 
    ```bash
-   for d in . "$SUPERSKILLS_DIR" ~/Sites/superskills ~/.claude/skills/superskills ~/.codex/skills/superskills; do
+   for d in "$SUPERSKILLS_DIR" ~/Sites/superskills ~/.claude/skills/superskills ~/.codex/skills/superskills .; do
      [ -n "$d" ] && [ -x "$d/scripts/check-upstream-drift.sh" ] && { "$d/scripts/check-upstream-drift.sh"; break; }
    done
    ```
@@ -267,7 +267,7 @@ Folder names are only examples (a Python repo keeps its database code in
 `schema.py`, `statements.py`). Decide with the shared helper, not by eye:
 
 ```bash
-for d in . "$SUPERSKILLS_DIR" ~/Sites/superskills ~/.claude/skills/superskills ~/.codex/skills/superskills; do
+for d in "$SUPERSKILLS_DIR" ~/Sites/superskills ~/.claude/skills/superskills ~/.codex/skills/superskills .; do
   [ -n "$d" ] && [ -x "$d/scripts/qa-triggers.sh" ] && { "$d/scripts/qa-triggers.sh" db <diff-ref>; break; }
 done
 ```
@@ -331,7 +331,7 @@ Server-rendered templates (Jinja, ERB, Blade, Twig, plain `.html`) and
 static JS/CSS count as UI. Decide with the shared helper, not by eye:
 
 ```bash
-for d in . "$SUPERSKILLS_DIR" ~/Sites/superskills ~/.claude/skills/superskills ~/.codex/skills/superskills; do
+for d in "$SUPERSKILLS_DIR" ~/Sites/superskills ~/.claude/skills/superskills ~/.codex/skills/superskills .; do
   [ -n "$d" ] && [ -x "$d/scripts/qa-triggers.sh" ] && { "$d/scripts/qa-triggers.sh" ui <diff-ref>; break; }
 done
 ```

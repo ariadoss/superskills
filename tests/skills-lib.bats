@@ -461,3 +461,10 @@ root"
   [ "$status" -eq 0 ]
   [ -z "$output" ]
 }
+
+@test "skill_frontmatter_from: a body '---' rule without a line-1 fence yields nothing" {
+  printf '# plain\n\nbody\n\n---\n\nrule section\n' > "$BATS_TEST_TMPDIR/hr.md"
+  run skill_frontmatter_from "$BATS_TEST_TMPDIR/hr.md"
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+}

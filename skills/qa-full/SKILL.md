@@ -95,15 +95,20 @@ the only legal stops are the two in "Run to completion" below.
 eye. Pick the kind (`db` for Step 5, `ui` for Steps 6 and 7):
 
 ```bash
-for d in . "$SUPERSKILLS_DIR" ~/Sites/superskills ~/.claude/skills/superskills ~/.codex/skills/superskills; do
+for d in "$SUPERSKILLS_DIR" ~/Sites/superskills ~/.claude/skills/superskills ~/.codex/skills/superskills .; do
   [ -n "$d" ] && [ -x "$d/scripts/qa-triggers.sh" ] && { "$d/scripts/qa-triggers.sh" <db|ui> <diff-ref>; break; }
 done
 ```
-Exit 0 lists the matching files: the check is triggered. Exit 1 means nothing
-matched: quote its "searched ..." line in the ledger row as the NOT-TRIGGERED
-evidence. A NOT-TRIGGERED row without that line is an unaccounted check. If the
-script is not found, fall back to the patterns in the step file and still grep
-the diff for SQL and for template/UI files before writing NOT-TRIGGERED.
+The trusted install is tried first; the repo under review (`.`) only when no
+install has the script, so a repo-planted copy never runs in place of the
+shipped one. Exit 0 lists the matching files: the check is triggered. Exit 1
+means nothing matched: quote its "searched ..." line in the ledger row as the
+NOT-TRIGGERED evidence. Exit 2 means it could not decide (usage error, unknown
+ref): never write NOT-TRIGGERED on exit 2 — quote its stderr, retry with the
+explicit diff ref from Step 1. A NOT-TRIGGERED row without that line is an
+unaccounted check. If the script is not found, fall back to the patterns in
+the step file and still grep the diff for SQL and for template/UI files
+before writing NOT-TRIGGERED.
 
 ## Hard rules
 

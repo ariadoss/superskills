@@ -2,7 +2,9 @@
 
 1. Find the project's test/build commands from `CLAUDE.md`; if absent, infer
    from `package.json` scripts, `Makefile`, `pyproject.toml`, etc. If you
-   cannot determine them, **ask** rather than guess.
+   cannot determine them, they were part of the Step 1 batch (item 4a); if
+   they went unanswered there, record SKIPPED("no test/build command known")
+   for this step rather than guessing and running an arbitrary command.
 2. **Run only the tests that cover the changed files (the related tests).**
    Map the changed source files from Step 1 to their tests: the test files in
    the diff, plus tests that import or name a changed module (grep the test

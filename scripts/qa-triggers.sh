@@ -27,7 +27,7 @@ top="$(git rev-parse --show-toplevel 2>/dev/null)"
 [ -n "$top" ] && cd "$top" || { echo "qa-triggers: not in a git work tree" >&2; exit 2; }
 base="$(git merge-base "$ref" HEAD 2>/dev/null)" || { echo "qa-triggers: unknown ref '$ref'" >&2; exit 2; }
 
-IGNORED_PATH='(^|/)(docs?|tests?|__tests__|spec|node_modules|vendor|dist|build|__pycache__|\.git)/|\.pyc$|(^|/)test_[^/]*$|_test\.[a-z]+$|\.(md|txt|rst)$'
+IGNORED_PATH='(^|/)(docs?|tests?|__tests__|spec|node_modules|vendor|dist|build|__pycache__|\.git)/|\.pyc$|(^|/)test_[^/]*$|_test\.[a-z]+$|\.(test|spec)\.[a-z]+$|\.(md|txt|rst)$'
 
 DB_PATH_DIR='(^|/)(models?|migrations?|queries|dao|repositor(y|ies))/'
 DB_PATH_NAME='(^|/)[^/]*(schema|migrat|statements?|queries|query|repositor|dao)[^/]*\.[a-z]+$|\.sql$'
