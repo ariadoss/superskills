@@ -198,3 +198,16 @@ commit_file() { mkdir -p "$(dirname "$1")"; printf '%s\n' "$2" > "$1"; git add -
   run "$TRIG" db main
   [ "$status" -eq 2 ]
 }
+
+@test "ui: colocated JS test and spec files never count as UI changes" {
+  commit_file src/components/Button.test.jsx 'render(<Button />)'
+  commit_file src/App.spec.tsx 'it works'
+  run "$TRIG" ui main
+  [ "$status" -eq 1 ]
+}
+
+@test "db: a colocated spec file adding SQL never counts as a db change" {
+  commit_file src/store.spec.ts 'const q = "SELECT id FROM t"'
+  run "$TRIG" db main
+  [ "$status" -eq 1 ]
+}
