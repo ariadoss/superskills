@@ -162,7 +162,16 @@ before writing NOT-TRIGGERED.
   to wait for the user between checks.
   An environment failure (disk full, tool crash, network drop) is not a verdict:
   retry once the cause clears, and if you must stop, write the report anyway
-  with every unrun check marked INCOMPLETE(reason). Never end with no report.
+  with `VERDICT: NOT READY` and every unrun check marked INCOMPLETE(reason).
+  Never end with no report. A report without a final VERDICT line is not a
+  report: the ledger hook blocks the stop, so an interim or "in progress"
+  report never buys a pause.
+- **Never wait by ending the turn.** "I'll pick up when they report back" is a
+  stop. Reviewers, specialists and long test runs are waited on inside the
+  turn: dispatch reviewer agents in one message as foreground calls (no
+  `run_in_background`), and poll a detached test run with a Bash loop until it
+  finishes. A hand-back or stop-hook message arriving later means you already
+  stopped: resume at the next step.
 - **Every check is a foreground Skill call.** Invoke each sub-skill with the
   Skill tool, in this session, one after another. Do not hand a pipeline check
   to a background agent and wait for its notification, and do not reproduce a
@@ -276,6 +285,7 @@ Read `steps/10-final-verdict-report.md` and follow it in full.
 
 ## Anti-patterns (do not do)
 
+- Ending a turn while steps remain, or writing an interim report to dodge the hook.
 - Stopping at the report. A triggered check that found something and did not
   attempt a fix has not run `/qa-full`.
 - Running `/qa-only` or `/design-audit` where `/qa` / `/design-review` are

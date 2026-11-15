@@ -51,6 +51,11 @@ if [ -z "$report" ] || [ ! -f "$report" ]; then
   exit 2
 fi
 
+if ! qfl_has_verdict "$report"; then
+  printf '%s\n' "The /qa-full report has no final VERDICT line (SHIP-READY or NOT READY), so the run is not finished. An interim or INCOMPLETE report does not end it. Keep running the remaining steps in this turn, then write the verdict (Step 10). If an environment failure truly stops you, finish the report with VERDICT: NOT READY and mark each unrun check INCOMPLETE(reason)." >&2
+  exit 2
+fi
+
 missing="$(qfl_missing "$report" "${transcripts[@]}")"
 [ -z "$missing" ] && exit 0
 

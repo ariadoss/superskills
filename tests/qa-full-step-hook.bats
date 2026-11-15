@@ -41,15 +41,15 @@ call() { # <skill> [agent_id]
   [ "$status" -eq 0 ]
   printf '%s' "$output" | jq -e '.hookSpecificOutput.hookEventName == "PreToolUse"' >/dev/null
   body="$(printf '%s' "$output" | jq -r '.hookSpecificOutput.additionalContext')"
-  [[ "$body" == *"steps/03-correctness-quality.md"* ]]
-  [[ "$body" == *"$(head -1 "$REPO_ROOT/skills/qa-full/steps/03-correctness-quality.md")"* ]]
+  [[ "$body" == *"steps/03-correctness-quality.md"* ]] || false
+  [[ "$body" == *"$(head -1 "$REPO_ROOT/skills/qa-full/steps/03-correctness-quality.md")"* ]] || false
 }
 
 @test "a plugin-prefixed skill name maps to its step" {
   tool_use Skill '{"skill":"qa-full"}'
   run call superskills:db-optimize
   body="$(printf '%s' "$output" | jq -r '.hookSpecificOutput.additionalContext')"
-  [[ "$body" == *"steps/05-database.md"* ]]
+  [[ "$body" == *"steps/05-database.md"* ]] || false
 }
 
 @test "a main session that only read qa-full/SKILL.md gets nothing" {
@@ -72,7 +72,7 @@ call() { # <skill> [agent_id]
     '{type:"assistant",message:{content:[{type:"tool_use",name:"Read",input:{file_path:$p}}]}}' >"$S"
   run call review a1
   [ "$status" -eq 0 ]
-  [[ "$(printf '%s' "$output" | jq -r '.hookSpecificOutput.additionalContext')" == *"ARM-SPECIFIC STEP TEXT"* ]]
+  [[ "$(printf '%s' "$output" | jq -r '.hookSpecificOutput.additionalContext')" == *"ARM-SPECIFIC STEP TEXT"* ]] || false
 }
 
 @test "the same agent gets a step file once" {
@@ -161,7 +161,7 @@ zfooter() { # <dir> — the skill-load footer ZCode leaves in request messages
   zfooter "$arm"
   run call db-optimize
   [ "$status" -eq 0 ]
-  [[ "$(printf '%s' "$output" | jq -r '.hookSpecificOutput.additionalContext')" == *"ZARM STEP TEXT"* ]]
+  [[ "$(printf '%s' "$output" | jq -r '.hookSpecificOutput.additionalContext')" == *"ZARM STEP TEXT"* ]] || false
 }
 
 @test "zcode transcript: a Read toolCall counts as a read, no injection" {
@@ -193,7 +193,7 @@ zfooter() { # <dir> — the skill-load footer ZCode leaves in request messages
   zline "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"Base directory for this skill: $arm  # /qa-full  Full per-feature QA pipeline\"}]}}"
   run call defense
   [ "$status" -eq 0 ]
-  [[ "$(printf '%s' "$output" | jq -r '.hookSpecificOutput.additionalContext')" == *"CARM STEP TEXT"* ]]
+  [[ "$(printf '%s' "$output" | jq -r '.hookSpecificOutput.additionalContext')" == *"CARM STEP TEXT"* ]] || false
 }
 
 @test "a planted qa-full dir quoted in tool_result content never wins" {

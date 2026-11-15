@@ -57,6 +57,15 @@ qfl_ran_qafull() {
   qfl_invoked_qafull "$@" || qfl_read_qafull "$@"
 }
 
+# qfl_has_verdict <report.md> — exit 0 when the report carries a final verdict
+# line naming exactly one of SHIP-READY or NOT READY. An interim report (or the
+# unfilled "SHIP-READY | NOT READY" template line) is not a finished run.
+qfl_has_verdict() {
+  grep -E '^#+[[:space:]]*VERDICT:' "$1" 2>/dev/null \
+    | grep -Eq 'SHIP-READY|NOT READY' || return 1
+  ! grep -E '^#+[[:space:]]*VERDICT:' "$1" | grep 'SHIP-READY' | grep -q 'NOT READY'
+}
+
 # qfl_ran_rows <report.md> — for each ledger row whose status says the check
 # ran (RAN-CLEAN, FIXED, UNFIXED), the /skill names in its first cell,
 # space-separated. Rows that name no skill (Tests & build, Final pass) are skipped.
