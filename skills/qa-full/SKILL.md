@@ -88,8 +88,7 @@ If your context was compacted, or you are unsure where the run stands: Read
 this file again in full, then work it out from `git log <base>..HEAD` (every
 pipeline commit names its check), the sub-skills already invoked in this
 session, and `qa-full-reports/` if a report exists. Resume at the first step
-not yet accounted for and keep going to Step 10. A stop between steps is a bug;
-the only legal stops are the two in "Run to completion" below.
+not yet accounted for and keep going to Step 10. A stop between steps is a bug; the legal stops are in "Run to completion".
 
 **Trigger helper.** Steps 5, 6 and 7 are decided by the shared script, not by
 eye. (The loop below is deliberately repeated in `/daily-qa` instead of shared
@@ -116,8 +115,7 @@ before writing NOT-TRIGGERED.
 ## Hard rules
 
 - **The bar is the superskills quality standard** — TDD/DRY/SOLID/YAGNI
-  (applied in every step's fix phase: test first, no duplicated logic, small
-  single-purpose units, nothing speculative) plus the hard-gate list, which is
+  (applied in every step's fix phase) plus the hard-gate list, which is
   spelled out in full in Step 10's Blocker set. The canonical written copy is
   `ENGINEERING_STANDARDS.md` in the superskills install (a plugin install exposes
   it at `${CLAUDE_PLUGIN_ROOT}/ENGINEERING_STANDARDS.md`); it is **not** expected
@@ -133,7 +131,7 @@ before writing NOT-TRIGGERED.
      smallest correct fix, and commit it atomically with a message naming the
      check and finding.
   3. **Verify** — re-run the *same* sub-skill on the diff and re-run the related
-     tests (Step 2); the whole suite runs once, in Step 10. A fix is only
+     tests (Step 2); the whole suite is offered once, as Step 10's last action. A fix is only
      "fixed" when the re-audit no longer reports it and tests are green. Never claim a fix without this fresh evidence (`/verify`
      discipline).
   A finding you could not fix (needs a product decision, external service,
@@ -157,9 +155,9 @@ before writing NOT-TRIGGERED.
   fix is cheap and safe, otherwise ship it with a follow-up note.
 - **Run to completion.** Once Step 1 is done, the only legal stops are the final
   verdict report (Step 10) or a real blocker (a red Step 2 suite you could not
-  repair). A status line such as "next in the pipeline: ..." is not a stop: keep
-  calling tools in the same turn until the report is written. Never end a turn
-  to wait for the user between checks.
+  repair), or Step 10's closing whole-suite question. A status line like "next
+  in the pipeline: ..." is not a stop: keep calling tools until the report is
+  written. Never end a turn to wait for the user between checks.
   An environment failure (disk full, tool crash, network drop) is not a verdict:
   retry once the cause clears, and if you must stop, write the report anyway
   with `VERDICT: NOT READY` and every unrun check marked INCOMPLETE(reason).

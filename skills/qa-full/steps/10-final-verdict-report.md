@@ -2,11 +2,11 @@
 
 The fix rounds changed the branch, so verify the *whole* result once more:
 
-1. **Fresh tests + build** on the final HEAD: the **whole suite**, run here
-   for the first time. The related-test runs of the fix rounds do not count.
-   Red ⇒ fix the cause, re-run the related tests, then run the whole suite
-   again; repeat until green or two rounds fail (UNFIXED ⇒ NOT READY). Stale
-   results ⇒ NOT READY.
+1. **Fresh related tests + build** on the final HEAD: every related test file
+   for the whole branch diff plus the build. Red ⇒ fix the cause and re-run
+   until green or two rounds fail (UNFIXED ⇒ NOT READY). Stale results ⇒ NOT
+   READY. The whole suite is not part of this pass: it is the last step,
+   after the report (see "Last step: the whole suite").
 2. **Re-audit the fix commits:** run `/defense` scoped to the files the fix
    commits touched, and read the fix commits themselves
    (`git show original-HEAD..HEAD`) against `/review`'s checklist — `/review`
@@ -33,8 +33,10 @@ SHIP-READY do you hand off *"Proceed to `/finish-branch` then `/ship`."*
 
 Then the verdict:
 
-- **SHIP-READY** — zero blockers remaining **and** every triggered check
-  accounted for **and** the final pass is green. List what was fixed (commits),
+- **SHIP-READY (pending whole suite)** — zero blockers remaining **and** every
+  triggered check accounted for **and** the final pass is green. Write the
+  verdict line as `## VERDICT: SHIP-READY ✅ (pending whole suite)` until the
+  suite has run. List what was fixed (commits),
   warnings + follow-ups, then hand off to `/finish-branch` → `/ship`.
 - **NOT READY** — one or more blockers survived the fix rounds (or a check is
   unaccounted / MANDATORY-FAIL). List each with its file:line/test-name
@@ -121,3 +123,17 @@ HEAD before fixes: <sha>  HEAD after: <sha>  Fix commits: K
 
 Print the verdict, the fixed count, the remaining-blocker count, and a 5-line
 summary to the chat.
+
+## Last step: the whole suite
+
+Only after the report is written with a SHIP-READY (pending whole suite)
+verdict, and as the very last action of the run, ask the user once with
+AskUserQuestion whether to run the project's whole test suite now. It can take
+minutes, so it is the user's call. On yes, run it in the foreground with a
+timeout (or detached, polled with a Bash loop until it ends) and do not end the
+turn until it finishes. Green ⇒ edit the verdict line to
+`## VERDICT: SHIP-READY ✅` and record the run in the Final pass row. Red ⇒ fix
+the cause, re-run the related tests, run the suite again (two rounds at most);
+still red ⇒ `## VERDICT: NOT READY ⛔`. On no, leave the pending verdict, and
+say that `/finish-branch` and `/ship` run the whole suite before anything
+merges. Skip the question when the verdict is NOT READY.
