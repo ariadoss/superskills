@@ -52,7 +52,7 @@ setup() {
     skill_selected "$name" gstack || false
   done
   skill_selected design-review design
-  [ "$count" -eq 41 ] || false
+  [ "$count" -eq 43 ] || false
   run skill_selected tapestry core
   [ "$status" -eq 1 ] || false
   run skill_selected retro gstack
@@ -171,7 +171,7 @@ setup() {
   # missing entry leaves the skill unselectable outside core/all.
   local names union dup
   names="$(find "$REPO_ROOT/skills" -mindepth 1 -maxdepth 1 -type d ! -name node_modules \
-    -exec sh -c 'sed -n "s/^name:[[:space:]]*//p" "$1/SKILL.md"' _ {} \; | sed 's/[[:space:]]*$//' | sort)"
+    -exec sh -c 'sed -n "2,/^---\$/s/^name:[[:space:]]*//p" "$1/SKILL.md"' _ {} \; | sed 's/[[:space:]]*$//' | sort)"
   union="$(printf '%s\n' $PACK_CODING_REPO $PACK_CONTENT $PACK_STARTUP | sort)"
   dup="$(printf '%s\n' $PACK_CODING_REPO $PACK_CONTENT $PACK_STARTUP | sort | uniq -d)"
   [ -z "$dup" ] || false

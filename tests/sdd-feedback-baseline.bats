@@ -34,7 +34,7 @@ ids() { # write each argument as an id file, print its path
   run bash "$SCRIPT" check --workspace "$WS" --from "$(ids a b)"
   [ "$status" -eq 0 ]
   echo "$output" | grep -q 'RESULT: PASS'
-  ! echo "$output" | grep -q '^NEW '
+  ! echo "$output" | grep -q '^NEW ' || false
 }
 
 @test "check passes with fewer failures than the baseline (fixes are not blockers)" {
@@ -92,10 +92,19 @@ ids() { # write each argument as an id file, print its path
   [ ! -f "$WS/feedback-baseline.tsv" ]
 }
 
-@test "check without a baseline reports it and passes (baseline is optional)" {
-  run bash "$SCRIPT" check --workspace "$WS" --from "$(ids a)"
+@test "check without a baseline passes when there are no failures" {
+  run bash "$SCRIPT" check --workspace "$WS" --from "$(ids)"
   [ "$status" -eq 0 ]
   echo "$output" | grep -qi 'no baseline'
+  echo "$output" | grep -q 'RESULT: PASS'
+}
+
+@test "check without a baseline blocks failures introduced after a green start" {
+  run bash "$SCRIPT" check --workspace "$WS" --from "$(ids a)"
+  [ "$status" -eq 1 ]
+  echo "$output" | grep -qi 'no baseline'
+  echo "$output" | grep -qx 'NEW a'
+  echo "$output" | grep -q 'RESULT: FAIL'
 }
 
 @test "a missing workspace or input file is an error, not a silent pass" {

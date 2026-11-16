@@ -14,7 +14,12 @@ case "$Q" in
     echo "baseline_exists=$has_bl baseline_has_id=$right_id mentioned=$said"
     [ $has_bl = 1 ] && [ $right_id = 1 ] && [ $said = 1 ] && echo pass=1 || echo pass=0 ;;
   dispatch)
-    DISP="$(ls "$WS"/*dispatch* "$WS"/task-2* 2>/dev/null | head -1)"
+    DISP=""
+    for candidate in "$WS"/*dispatch*; do
+      [ -f "$candidate" ] || continue
+      DISP="$candidate"
+      break
+    done
     refs_handoff=0; refs_report=0; mentions_assump=0
     if [ -n "$DISP" ]; then
       grep -q 'task-1-handoff' "$DISP" && refs_handoff=1

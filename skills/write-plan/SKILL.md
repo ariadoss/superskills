@@ -25,6 +25,10 @@ Rate the incoming requirements first: can the goal be stated in one sentence, an
 - **Both hold** → the spec is plan-worthy; continue below.
 - **Either fails** → the spec is too vague to plan from. Offer `/deep-interview` once, in one line ("the requirements are fuzzy on X — want an interview to sharpen them, or should I plan on stated assumptions?"). If the user declines — or no interactive user is available (a one-shot request that expects the plan in the reply, a scheduled run) — **proceed, never stall**, and record every guess in the plan's **Assumptions** line (header below): statement, basis, reversible or not. A plan built on unrecorded guesses is a plan nobody can audit.
 
+For a one-shot request that asks for the plan in the reply, repeat those
+recorded guesses in a clearly labeled **Assumptions:** section of the final
+reply, with each statement's basis and whether it is reversible.
+
 ## Scope Check
 
 If the spec covers multiple independent subsystems, it should have been broken into sub-project specs during brainstorming. If it wasn't, suggest breaking this into separate plans — one per subsystem. Each plan should produce working, testable software on its own.

@@ -15,8 +15,8 @@
 # whatever the runner's stable signature is). Blank lines are skipped; ids are
 # sorted and de-duplicated. The baseline lives at DIR/feedback-baseline.tsv.
 #
-# Exit codes (check): 0 = no new failures (or no baseline — it is optional,
-# recorded only when the repo was already red when the plan started);
+# Exit codes (check): 0 = no new failures (an absent baseline means the repo
+# started green, so any current failure is new);
 # 1 = NEW failures exist; 2 = usage/input error.
 set -u
 
@@ -77,9 +77,9 @@ check)
   read_ids | grep . > "$CURF" || true
   if [ ! -f "$BASELINE" ]; then
     echo "no baseline recorded — every current failure is new"
-    exit 0
+  else
+    grep -v '^#' "$BASELINE" | LC_ALL=C sort -u | grep . > "$BASEF" || true
   fi
-  grep -v '^#' "$BASELINE" | LC_ALL=C sort -u | grep . > "$BASEF" || true
   NEW="$(comm -23 "$CURF" "$BASEF")"
   GONE="$(comm -13 "$CURF" "$BASEF")"
   KEEP="$(comm -12 "$CURF" "$BASEF")"

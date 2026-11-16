@@ -63,12 +63,17 @@ Re-score after every answer. The table (dimension → score) is part of the spec
 3. **Repo before user.** If a question can be answered by reading the codebase
    (what library, what endpoint exists, what the current behavior is), answer it
    yourself with Read/Grep and state the finding — never spend a user question on it.
+   If the checkout lacks the relevant code, record its location as an open
+   implementation question unless it prevents framing a requirements question.
 4. **Every question is answerable.** No "what's your vision" — ask "should billing
    emails route to the billing queue even when the classifier is unsure, or go to
    the human queue?" Concrete forks, not essays.
-5. **Lock the topology first (multi-component work).** Before depth on any one
-   part, list the components (max 6) and get the user to confirm the list. One
-   well-described component must not hide two fuzzy siblings; score per component.
+5. **Lock the topology before depth (multi-component work).** If component
+   boundaries are unclear and prevent a question at the weakest dimension,
+   list the components (max 6) and get the user to confirm them. If the user
+   already named the boundaries, record that list provisionally and ask at the
+   weakest dimension; do not spend a turn reconfirming it. One well-described
+   component must not hide two fuzzy siblings; score per component.
 6. **Challenge modes, once each**, injected as the round's framing when the count
    hits: round 4 **Contrarian** ("what breaks this? what's the failure case?"),
    round 6 **Simplifier** ("what if we cut this entirely — what's actually
@@ -118,7 +123,8 @@ Status: pending approval
 
 Acceptance criteria are the contract `/write-plan` decomposes into tasks and
 `/qa-full` verifies at ship time — an uncheckable criterion is a defect in this
-spec, not a detail for later.
+spec, not a detail for later. Begin each checkbox with a concrete action verb
+(such as Run, Verify, Measure, or Check) and name the observable result.
 
 ## Approval and handoff
 
