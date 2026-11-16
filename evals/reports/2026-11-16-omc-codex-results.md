@@ -104,6 +104,36 @@ loader explicit and names Codex's user-level path; it passed its registered
 after-arm gate. All six human and literal-path labels agree, but an all-PASS
 set cannot calibrate failure detection.
 
+## `/skillify` setup-linking follow-up
+
+The final review found conflicting instructions: the location section said to
+run `./setup` for a new skill in a superskills checkout, while the final write
+step forbade it. Two preregistered two-turn cases tested the one-step wording
+repair with fresh Codex `gpt-6-sol` medium runs. Both used a scratch checkout
+whose `./setup` writes a marker, without touching a user installation.
+
+| Case | Before | After | Registered gate | Decision |
+|---|---:|---:|---|---|
+| Explicit request to finish linking | 3/3 | 3/3 | After ≥2/3 | Null control |
+| Natural confirmation, no linking cue | 0/3 | 3/3 | After ≥2/3 and no quality regression | Keep |
+
+Every run waited for the confirmation before writing, produced one substantive
+skill with the real 204 response, failed `networkidle` and route-stubbing
+attempts, and four-worker verification. The only natural-case difference was
+the setup call: no before run wrote the marker; all after runs did. All twelve
+final replies and artifacts were hand-reviewed, and the scratch repositories
+had no unrelated changes. The explicit case was already at ceiling because
+the user directly asked for linking. The natural case isolates the default
+instruction and shows the improvement. Its three after artifacts also meet
+the original hard-won quality gate; the earlier trivial-case gate is untouched
+because the wording applies only after creating a skill.
+
+For these twelve setup labels, a literal marker/content judge and human review
+agreed. `skills/eval/toolkit/calibrate.py` reports FAIL-positive TP=3, TN=9,
+FP=0, FN=0 (TPR, TNR, accuracy, precision all 1.000; no directional bias).
+This calibration covers the setup outcome, not natural skill routing or
+behavior in a non-scratch installation.
+
 ## Limits
 
 These are small synthetic samples with a directly supplied skill file, so

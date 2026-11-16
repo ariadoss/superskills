@@ -102,8 +102,10 @@ fire.
 
 1. Draft the SKILL.md and show it in full.
 2. Confirm name and location with the user (one question, once).
-3. Write the file. Report the path and the linking step. Do not run `./setup`,
-   installers, or anything mutating — the user links the skill themselves.
+3. Write the file. In a superskills checkout, run `./setup` after creation
+   and verify the new skill is linked. For another host, perform only its
+   required linking step when known; otherwise report that step to the user.
+   Do not run unrelated installers.
 
 ## Self-check
 
