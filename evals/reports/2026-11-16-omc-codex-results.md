@@ -100,3 +100,9 @@ live implementer handoff and the effect of the resulting plans on shipped
 software remain untested. The original, unmodified first-round scores and
 the wording-repair preregistrations are retained to make that iteration
 visible.
+
+After the registered runs, the final SDD text gained a pointer to
+`ENGINEERING_STANDARDS.md`, required for code-producing skills in this repo.
+One supplemental Codex red-fixture run on that exact file passed both the
+baseline and dispatch checks. It is a smoke check, excluded from the table and
+calibration counts above.

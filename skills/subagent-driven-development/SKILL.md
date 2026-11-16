@@ -13,6 +13,9 @@ Execute plan by dispatching a fresh implementer subagent per task, a task review
 
 **Core principle:** Fresh subagent per task + task review (spec + quality) + broad final review = high quality, fast iteration
 
+Use `ENGINEERING_STANDARDS.md` in the superskills install as the code quality
+standard for implementers and reviewers.
+
 **Narration:** between tool calls, narrate at most one short line — the
 ledger and the tool results carry the record.
 
