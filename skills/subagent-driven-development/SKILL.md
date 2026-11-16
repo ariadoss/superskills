@@ -141,6 +141,20 @@ a ledger file, not only in todos.
 - `git clean -fdx` will destroy the workspace (it's git-ignored scratch); if
   that happens, recover from `git log`.
 
+**Pre-existing failures (feedback baseline).** Real repos are sometimes
+already red when a plan starts, and "make the suite green" is then the wrong
+bar. Before Task 1, run the plan's primary verification command once. If it
+reports failures, record them as this plan's baseline — this skill's
+`scripts/feedback-baseline.sh record --workspace <workspace> --from <file>`
+with one stable failure id per line (the runner's `file::test` or
+equivalent) — and tell your human partner in one line what was already
+broken. From then on, "tests pass" for this plan means
+`feedback-baseline.sh check --workspace <workspace> --from <file>` reports
+no NEW failures: BASELINE failures are pre-existing warnings, GONE failures
+are fixes. A green repo gets no baseline file at all. Never re-record the
+baseline to make a round pass — re-baselining needs `--force` plus a reason,
+and your partner hears the reason.
+
 Read the plan once, note its context and Global Constraints, and create a
 todo per task.
 
@@ -218,8 +232,18 @@ and fix-round diffs need it.
   make a subagent read the whole plan file.
 - **Report file:** name the implementer's report file after the brief
   (brief `…/task-N-brief.md` → report `…/task-N-report.md`) and put it in
-  the dispatch prompt. The implementer writes the full report there and
-  returns only status, commits, a one-line test summary, and concerns.
+  the dispatch prompt. The implementer writes the full report there —
+  including an **Assumptions** section (every guess: statement, basis,
+  reversible or not) — and returns only status, commits, a one-line test
+  summary, its assumptions, and concerns. Park every hard-to-reverse
+  assumption in the ledger (`Task <N>: assumption (hard-to-reverse):
+  <one-liner>`) so the final report can lead with the vetoable list;
+  reversible ones just ride in the ledger's completion line.
+- **Handoff file:** the implementer also writes `…/task-N-handoff.md` —
+  ≤15 lines, Decided / Rejected / Risks / Files touched. When you compose a
+  later dispatch, point item (3)'s "interfaces and decisions from earlier
+  tasks" at the handoff files of exactly the tasks this one builds on — the
+  next implementer reads those, never a prior task's full report.
 - A dispatch prompt describes one task, not the session's history. Do not
   paste accumulated prior-task summaries ("state after Tasks 1-3") into
   later dispatches — a real session's dispatch hit 42k chars of which 99%
@@ -239,7 +263,7 @@ Implementer subagents report one of four statuses. Handle each appropriately:
 
 **DONE:** Generate the review package (`scripts/review-package PLAN_FILE BASE HEAD`, from this skill's directory — it prints the unique file path it wrote; BASE is the commit you recorded before dispatching the implementer — never `HEAD~1`, which silently drops all but the last commit of a multi-commit task), then dispatch the task reviewer with the printed path.
 
-**DONE_WITH_CONCERNS:** The implementer completed the work but flagged doubts. Read the concerns before proceeding. If the concerns are about correctness or scope, address them before review. If they're observations (e.g., "this file is getting large"), note them and proceed to review.
+**DONE_WITH_CONCERNS:** The implementer completed the work but flagged doubts. Read the concerns before proceeding. If the concerns are about correctness or scope, address them before review. If they're observations (e.g., "this file is getting large"), note them and proceed to review. A concern that names a hard-to-reverse assumption is a veto request: adjudicate it now (accept the assumption, or dispatch a fix), never carry it silently.
 
 **NEEDS_CONTEXT:** The implementer needs information that wasn't provided. Provide the missing context and re-dispatch.
 
@@ -420,6 +444,11 @@ When the final whole-branch review is clean and its fixes are merged,
 delete this plan's workspace (`rm -rf <workspace>`) — the git history is
 the record now. Sibling directories belong to other plans; leave them
 alone.
+
+Before `finish-branch`, lead the final report with the vetoable list: every
+assumption parked in the ledger as hard-to-reverse, one line each, so your
+human partner can veto while un-doing is still cheap. An autonomous run that
+made guesses nobody can find made decisions nobody authorized.
 
 Use `finish-branch`.
 

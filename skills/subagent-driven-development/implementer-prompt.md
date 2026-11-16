@@ -42,7 +42,15 @@ Subagent (general-purpose):
     Work from: [directory]
 
     **While you work:** If you encounter something unexpected or unclear, **ask questions**.
-    It's always OK to pause and clarify. Don't guess or make assumptions.
+    It's always OK to pause and clarify. Don't guess silently.
+
+    If no one answers (autonomous run) or the fork is too small to be worth a
+    stop: pick the **reversible** option, and record the guess in your report's
+    Assumptions section — one line each: statement, basis, reversible or not.
+    A guess you recorded is a decision your controller can veto; a guess you
+    didn't record is a defect nobody can see. Forks that are **hard to
+    reverse** (schema, public contract, deleting data, new dependency) are
+    never yours to guess: report DONE_WITH_CONCERNS with the fork spelled out.
 
     While iterating, run the focused test for what you're changing; run the
     full suite once before committing, not after every edit.
@@ -121,15 +129,23 @@ Subagent (general-purpose):
     - **TDD Evidence** (if TDD was required for this task):
       - RED: command run, relevant failing output before implementation, and why the failure was expected
       - GREEN: command run and relevant passing output after implementation
+    - **Assumptions:** every guess you made (or "none"): statement, basis,
+      reversible or not — so the controller can veto what matters
     - Files changed
     - Self-review findings (if any)
     - Any issues or concerns
+
+    Also write a ≤15-line handoff for the next implementer to
+    [HANDOFF_FILE] — Decided / Rejected / Risks / Files touched, one line
+    each, no prose. Later tasks build on yours through this file, not through
+    your report.
 
     Then report back with ONLY (under 15 lines — the detail lives in the
     report file):
     - **Status:** DONE | DONE_WITH_CONCERNS | BLOCKED | NEEDS_CONTEXT
     - Commits created (short SHA + subject)
     - One-line test summary (e.g. "14/14 passing, output pristine")
+    - Your assumptions, if any (one line each — hard-to-reverse ones first)
     - Your concerns, if any
     - The report file path
 
