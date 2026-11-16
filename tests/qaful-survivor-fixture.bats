@@ -41,3 +41,9 @@ setup() {
   git -C "$FIX" diff --quiet
   [ "$(git -C "$FIX" rev-list --count main..HEAD)" = "1" ]  # rebuilt, not stacked
 }
+
+@test "empty dir argument fails loudly with usage" {
+  run qaful_survivor_fixture ""
+  [ "$status" -eq 2 ]
+  echo "$output" | grep -q "usage"
+}

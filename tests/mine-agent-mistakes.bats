@@ -82,3 +82,23 @@ RES_SKILL_ERR='{"type":"user","message":{"content":[{"type":"tool_result","tool_
   echo "$output" | grep -q '"repeat_fail": 0'
   echo "$output" | grep -q '"skill_load_failures": 0'
 }
+
+@test "whitespace-normalized commands dedupe as one repeat-fail" {
+  local TU_A='{"type":"assistant","message":{"content":[{"type":"tool_use","id":"b1","name":"Bash","input":{"command":"npm   test"}}]}}'
+  local TU_B='{"type":"assistant","message":{"content":[{"type":"tool_use","id":"b2","name":"Bash","input":{"command":"npm test"}}]}}'
+  local RES_A='{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"b1","is_error":true,"content":"Exit code 1"}]}}'
+  local RES_B='{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"b2","is_error":true,"content":"Exit code 1"}]}}'
+  write_session s7.jsonl "$TU_A" "$RES_A" "$TU_B" "$RES_B"
+  run python3 -I "$MINER" --json
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q '"repeat_fail": 1'      # same command after normalization
+}
+
+@test "an error-text result without is_error still counts as a failure" {
+  local TU_C='{"type":"assistant","message":{"content":[{"type":"tool_use","id":"b3","name":"Bash","input":{"command":"make test"}}]}}'
+  local RES_C='{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"b3","content":"Error: make failed"}]}}'
+  write_session s8.jsonl "$TU_C" "$RES_C" "$TU_C" "$RES_C"
+  run python3 -I "$MINER" --json
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q '"repeat_fail": 1'
+}

@@ -38,3 +38,9 @@ setup() {
   [ "$PWD" = "$start_dir" ]
   [ "$(git -C "$FIX" status --porcelain | wc -l | tr -d ' ')" = "1" ]   # rebuilt, not appended
 }
+
+@test "empty dir argument fails loudly with usage" {
+  run review_crossfile_fixture ""
+  [ "$status" -eq 2 ]
+  echo "$output" | grep -q "usage"
+}

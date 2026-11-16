@@ -34,3 +34,9 @@ setup() {
   run bash -c "cd '$FIX' && python3 -m unittest discover -s tests -t . 2>&1 | tail -1"
   echo "$output" | grep -q "OK"
 }
+
+@test "empty dir argument fails loudly with usage" {
+  run writeplan_reuse_fixture ""
+  [ "$status" -eq 2 ]
+  echo "$output" | grep -q "usage"
+}
