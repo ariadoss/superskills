@@ -41,6 +41,7 @@ done
 [ -n "$WORKSPACE" ] || usage
 [ -d "$WORKSPACE" ] || die "workspace does not exist: $WORKSPACE"
 [ -z "$FROM" ] || [ -r "$FROM" ] || die "input file does not exist: $FROM"
+[ -z "$FROM" ] || [ ! -d "$FROM" ] || die "input file is a directory: $FROM"
 BASELINE="$WORKSPACE/$BASELINE_NAME"
 
 read_ids() { # -> sorted unique failure ids, one per line (validate --from first: this runs in a pipeline subshell, where exit codes die)

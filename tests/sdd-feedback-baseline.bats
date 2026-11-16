@@ -115,6 +115,12 @@ ids() { # write each argument as an id file, print its path
   [ "$status" -eq 2 ]
 }
 
+@test "check rejects a directory as its failure-id input" {
+  run bash "$SCRIPT" check --workspace "$WS" --from "$WS"
+  [ "$status" -eq 2 ]
+  echo "$output" | grep -q 'input file'
+}
+
 @test "the baseline carries a version and timestamp header" {
   bash "$SCRIPT" record --workspace "$WS" --from "$(ids a)"
   head -1 "$WS/feedback-baseline.tsv" | grep -q '^# feedback-baseline v1 recorded='
