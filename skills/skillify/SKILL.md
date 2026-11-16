@@ -64,14 +64,20 @@ do not rely on memory of the conversation alone):
 
 ## Where it lands
 
-Ask the user for scope if not obvious; propose a default:
+Propose a name and a location the active host loads; confirm both with the
+user before writing. If scope is unclear, propose the host's default:
 
 - **In a superskills checkout** → `skills/<name>/SKILL.md` (new skill: run
-  `./setup` to link it — tell the user, don't run it yourself) and follow the
+  `./setup` to link it after creation) and follow the
   skill-authoring conventions in `ENGINEERING_STANDARDS.md`.
-- **Other project** → `.claude/skills/<name>/SKILL.md` (shared with the team) or
-  `~/.claude/skills/<name>/SKILL.md` (user-level) — propose the project dir by
-  default.
+- **Codex CLI, user-level** → `~/.codex/skills/<name>/SKILL.md` (the Codex
+  install path used by this repo's `./setup`). For a team skill, check the
+  active Codex configuration for a supported project location before proposing
+  one.
+- **Claude Code** → `.claude/skills/<name>/SKILL.md` for the team or
+  `~/.claude/skills/<name>/SKILL.md` for one user; default to the project dir.
+- **Another host** → check its skill loader and existing repo conventions;
+  do not assume a Claude directory will load there.
 
 ## Format rules
 

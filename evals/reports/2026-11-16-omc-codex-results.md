@@ -91,6 +91,19 @@ assumptions at end of file; it now recognizes only a standalone “none” and
 accepts inline or next-line entries. The initial Q1 v2 script count was 2/3;
 inspection found the third reply valid, and the repaired script reports 3/3.
 
+## Codex host-path follow-up
+
+A later review found that `/skillify` named only Claude directories for an
+“other project” target. The separate
+`2026-11-16-omc-skillify-host-path-PREREG.md` registered a Codex user-level
+case before the wording repair. The old and revised skill each passed 3/3:
+every agent inferred `~/.codex/skills/<name>/SKILL.md` from the user's explicit
+Codex request, proposed a name, and waited for confirmation. This is a null
+behavior delta on that case. The revised text keeps the active host's skill
+loader explicit and names Codex's user-level path; it passed its registered
+after-arm gate. All six human and literal-path labels agree, but an all-PASS
+set cannot calibrate failure detection.
+
 ## Limits
 
 These are small synthetic samples with a directly supplied skill file, so
