@@ -10,10 +10,11 @@ writeplan_reuse_fixture() {
   local dir="$1"
   [ -n "$dir" ] || { echo "usage: writeplan_reuse_fixture <dir>" >&2; return 2; }
   (
+  set -e
   rm -rf "$dir"
   mkdir -p "$dir/acme" "$dir/tests"
   cd "$dir" || exit 1
-  git init -q
+  git init -q -b main
   git config user.email fixture@example.com
   git config user.name fixture
 
@@ -73,10 +74,10 @@ class TestHumanizeCount(unittest.TestCase):
     def test_millions(self):
         self.assertEqual(humanize_count(2_500_000), "2.5M")
 
-    def test_billions(self):
+    def test_millions_rounding(self):
         self.assertEqual(humanize_count(7_345_502), "7.3M")
 
-    def test_small_counts_verbatim(self):
+    def test_small_counts(self):
         self.assertEqual(humanize_count(4210), "4.2k")
         self.assertEqual(humanize_count(7), "7")
 

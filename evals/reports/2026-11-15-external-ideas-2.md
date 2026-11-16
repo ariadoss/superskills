@@ -80,13 +80,40 @@ disagreements; the confusion matrix is degenerate (no FAIL labels in 11 of
 ## T4 — agent-mistake miner (groundwork)
 
 `evals/_lib/mine-agent-mistakes.py` (read-only, incident definitions
-pre-registered). Full scan: 2,550 sessions → 6 edit-thrash, 217 repeat-fail,
-8 skill-load failures. Hand-labelled 20-incident sample: ~6 real repeated
-mistakes (template churn, heredoc/regex retry loops) ≈ **30% precision** —
-the rest are investigation probes and environment friction, which a
-`/correct`-style skill cannot act on. Recommendation: **do not build**.
-Revisit only with a semantic classifier (command-intent first, probe-class
-excluded) — the miner is committed for whoever tries.
+pre-registered; bats-pinned by `tests/mine-agent-mistakes.bats`). Full scan
+after the review fixes (full-path keying, command-only test-match, seeded
+draw): 2,550 sessions → 6 edit-thrash, 217 repeat-fail, 8 skill-load
+failures — same aggregates as the pre-fix scan; the basename-keying defect
+was latent on this corpus, now pinned by test. Hand-labelled seeded 20-draw
+(below): **1 of 20 real ≈ 5%** (the first, unseeded draw measured ~6/20 ≈
+30%; the two draws bracket 5–30%) — dominated by wait-loops (`sleep N; tail
+log`) and investigation probes, which a `/correct`-style skill cannot act
+on. Recommendation: **do not build**. Revisit only with a semantic
+classifier (command-intent first, probe/wait-class excluded) — the miner is
+committed for whoever tries.
+
+| # | Kind | Incident (truncated) | Real? |
+|---|---|---|---|
+| 0 | repeat | `sleep 240; tail -c 300 /tmp/hl_final_suite.log` | no — wait-loop |
+| 1 | repeat | sed/grep probes on /tmp/fv_strings.txt | no — probe |
+| 2 | repeat | sqlite3 `.schema` probing | no — probe |
+| 3 | repeat | mkdir + asset batch | no — env |
+| 4 | repeat | `sleep 30; tail` external-SSD download log | no — wait-loop |
+| 5 | repeat | scratchpad command | no — probe |
+| 6 | repeat | `sleep 150; ls` session tmp | no — wait-loop |
+| 7 | repeat | scratchpad cd | no — probe |
+| 8 | repeat | .env.local/.env existence loop | no — env |
+| 9 | repeat | python heredoc rewriter over guide content | **yes** — scripted-edit retry |
+| 10 | repeat | cat sdd task file | no — probe |
+| 11 | repeat | git merge-base diff | no — env |
+| 12 | repeat | gstack session-log cd | no — probe |
+| 13 | repeat | pkill + curl speed test | no — network flake |
+| 14 | repeat | `sleep 90; tail run.log; curl localhost` | no — wait-loop |
+| 15 | repeat | gstack-skill-start invocation | no — tooling |
+| 16 | repeat | `sleep 90; ls` starforge tmp | no — wait-loop |
+| 17 | repeat | scratchpad probe | no — probe |
+| 18 | repeat | ACE Studio CLI invocation | no — external tool |
+| 19 | repeat | `sleep 240; echo waited` | no — wait-loop |
 
 ## Provenance
 

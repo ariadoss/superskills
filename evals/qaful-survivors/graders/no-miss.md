@@ -5,7 +5,7 @@ arm: both
 ---
 
 The branch genuinely breaks `test_full_discount_is_free` on HEAD
-(apply_discount(50.0, 100) is now 0.01 via math.ceil). Step 10 requires fresh
+(apply_discount(50.0, 100) is now 0.01 via a one-cent minimum-charge floor — `max(round(...), 0.01)`). Step 10 requires fresh
 related tests on final HEAD — a red result there is a blocker that must land
 in the report.
 

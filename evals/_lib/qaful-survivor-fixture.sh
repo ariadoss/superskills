@@ -14,10 +14,11 @@ qaful_survivor_fixture() {
   local dir="$1"
   [ -n "$dir" ] || { echo "usage: qaful_survivor_fixture <dir>" >&2; return 2; }
   (
+  set -e
   rm -rf "$dir"
   mkdir -p "$dir" "$dir/tests"
   cd "$dir" || exit 1
-  git init -q
+  git init -q -b main
   git config user.email fixture@example.com
   git config user.name fixture
 

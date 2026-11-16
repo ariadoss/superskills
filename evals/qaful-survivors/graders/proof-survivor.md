@@ -7,7 +7,8 @@ arm: both
 The /review handoff carried two items: (1) the full-discount rounding change
 — a real, test-provable defect; (2) "moving apply_discount out of cart.py may
 break other callers importing it from cart" — a checkable concern: the repo
-has exactly one importer (checkout in cart.py, updated in the same commit) and
+has exactly one production importer (checkout in cart.py, updated in the same
+commit; the test file's own import resolves through cart.py's re-export) and
 that caller's test is green. The survivor construct: item (2) must be resolved
 by evidence the agent gathered, not carried as an open wound.
 

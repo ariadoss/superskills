@@ -21,6 +21,7 @@ import collections
 import glob
 import json
 import os
+import random
 import re
 import sys
 
@@ -31,17 +32,20 @@ TEST_BUILD = re.compile(
     r"tests?/run\.sh|claude\s+plugin\s+(validate|eval))\b", re.I)
 
 
+def content_text(content):
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        return " ".join(c.get("text", "") for c in content
+                        if isinstance(c, dict))
+    return ""
+
+
 def result_is_error(block):
     if block.get("is_error"):
         return True
-    content = block.get("content")
-    text = ""
-    if isinstance(content, str):
-        text = content
-    elif isinstance(content, list):
-        text = " ".join(c.get("text", "") for c in content
-                        if isinstance(c, dict))
-    return bool(re.match(r"^\s*(Exit code|Error|error:|Traceback)", text))
+    return bool(re.match(r"^\s*(Exit code|Error|error:|Traceback)",
+                         content_text(block.get("content"))))
 
 
 def normalize_command(cmd):
@@ -59,7 +63,8 @@ def mine(args):
         sessions += 1
         sid = os.path.basename(path)
         bash_calls = {}          # tool_use_id -> normalized command
-        edit_events = collections.defaultdict(list)  # file -> [event_no]
+        edit_events = collections.defaultdict(list)  # full path -> [event_no]
+        edit_ids = {}            # tool_use_id -> full path
         skill_calls = {}         # tool_use_id -> skill name
         failed_test_nos = []     # [event_no]
         failed_bash = collections.Counter()
@@ -90,7 +95,8 @@ def mine(args):
                             if name in ("Edit", "Write", "NotebookEdit"):
                                 fp = (inp.get("file_path")
                                       or inp.get("notebook_path") or "?")
-                                edit_events[os.path.basename(fp)].append(events)
+                                edit_ids[bid] = fp
+                                edit_events[fp].append(events)
                             elif name == "Bash":
                                 bash_calls[bid] = normalize_command(
                                     inp.get("command", ""))
@@ -98,31 +104,23 @@ def mine(args):
                                 skill_calls[bid] = inp.get("skill", "?")
                         elif btype == "tool_result" and result_is_error(block):
                             tu = block.get("tool_use_id")
-                            text = ""
-                            c = block.get("content")
-                            if isinstance(c, str):
-                                text = c
-                            elif isinstance(c, list):
-                                text = " ".join(x.get("text", "")
-                                                for x in c if isinstance(x, dict))
-                            if tu in edit_events or tu in skill_calls:
-                                if tu in skill_calls:
-                                    failed_skills.append(
-                                        {"session": sid,
-                                         "skill": skill_calls[tu]})
+                            if tu in skill_calls:
+                                failed_skills.append(
+                                    {"session": sid,
+                                     "skill": skill_calls[tu]})
                                 continue
                             if tu in bash_calls:
                                 cmd = bash_calls[tu]
                                 failed_bash[cmd] += 1
-                                if TEST_BUILD.search(cmd) or TEST_BUILD.search(text):
+                                if TEST_BUILD.search(cmd):
                                     failed_test_nos.append(events)
         except OSError:
             continue
-        for fname, nos in edit_events.items():
+        for fpath, nos in edit_events.items():
             if len(nos) >= 3:
                 lo, hi = nos[0], nos[-1]
                 if any(lo < f < hi for f in failed_test_nos):
-                    thrash.append({"session": sid, "file": fname,
+                    thrash.append({"session": sid, "file": fpath,
                                    "edits": len(nos)})
         for cmd, k in failed_bash.items():
             if k >= 2:
@@ -139,7 +137,9 @@ def main():
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args()
     sessions, thrash, repeat, skillf = mine(args)
-    sample = (thrash + repeat + skillf)[:args.sample]
+    rng = random.Random(20261115)
+    pool = thrash + repeat + skillf
+    sample = rng.sample(pool, min(args.sample, len(pool)))
     if args.json:
         json.dump({"sessions_scanned": sessions,
                    "edit_thrash": len(thrash),
