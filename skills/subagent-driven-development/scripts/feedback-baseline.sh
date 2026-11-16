@@ -64,7 +64,7 @@ record)
   fi
   IDS="$(read_ids)"
   [ -n "$IDS" ] || die "nothing to record: no failure ids in the input (a green repo needs no baseline)"
-  TMP="$BASELINE.tmp.$$"
+  TMP="$(mktemp "$BASELINE.tmp.XXXXXXXX")" || die "could not create temporary baseline file"
   printf '# feedback-baseline v1 recorded=%s reason=%s\n' \
     "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${REASON:-initial}" > "$TMP" || exit 2
   printf '%s\n' "$IDS" >> "$TMP"

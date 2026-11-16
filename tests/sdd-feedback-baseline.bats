@@ -121,6 +121,16 @@ ids() { # write each argument as an id file, print its path
   echo "$output" | grep -q 'input file'
 }
 
+@test "record does not follow a predictable temporary-file symlink" {
+  victim="$BATS_TEST_TMPDIR/victim"
+  printf 'keep me\n' > "$victim"
+  run bash -c 'ln -s "$4" "$1/feedback-baseline.tsv.tmp.$$"; exec bash "$2" record --workspace "$1" --from "$3"' \
+    bash "$WS" "$SCRIPT" "$(ids a)" "$victim"
+  [ "$status" -eq 0 ]
+  [ "$(cat "$victim")" = 'keep me' ]
+  grep -qx 'a' "$WS/feedback-baseline.tsv"
+}
+
 @test "the baseline carries a version and timestamp header" {
   bash "$SCRIPT" record --workspace "$WS" --from "$(ids a)"
   head -1 "$WS/feedback-baseline.tsv" | grep -q '^# feedback-baseline v1 recorded='
