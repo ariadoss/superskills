@@ -70,6 +70,10 @@ from names.
 
 The neighbour pair was never proposed for removal in any run.
 
+Caveat on the 0-of-12 "deleted or edited without a yes" figure: the prompt told
+every agent "PROPOSE ONLY. Do not delete, move or edit anything." It shows the
+prompt worked, not that the skill's own gate did.
+
 Verdict against the rule, literally:
 
 - Flags the duplicate pair 3 of 3: met (3/3 on 40 sessions, 3/3 on 10).
@@ -235,3 +239,9 @@ define a leak differently.
 - Fixtures are synthetic: 13 one-line skills and one planted duplicate for prune, a short invented session for debrief.
 - Agents were told to stay inside the scratch directory but were not sandboxed. Their logs show no reads outside it.
 - The skill arm's vendor boundary was not stress-tested by a user request to prune vendor/.
+- The eval only exercised the `CLAUDE_PLUGIN_ROOT` and `SKILL_DIR` repo lookups. The symlink fallback (probing the installed skill link) was never run.
+
+## Known and deferred
+
+- The answer key and `/debrief` Step 1 define a public-repo leak differently (any tracked file versus session specifics only). Not reconciled; the owner decides which definition stands.
+- Step 5's "a script, called by a skill" was not followed in 12 of 12 runs, both arms. Owner decision pending on whether to reword it or give the fixture a skill that can call the script.
