@@ -49,6 +49,10 @@ AND_SPLIT = re.compile(
 # "install.sh contains curl": a file name followed by a descriptive verb is a description, not a command.
 DESCRIPTION = re.compile(
     r"^[\s`'\"]*\S+\s+(?:contains|has|includes|defines|calls|runs|pipes|downloads|sets|reads|writes|uses|shows|is|does|will|would|may|can)\b", re.I)
+# "Nothing was run, fetched or installed": the negative subject covers the later bare-participle clauses.
+NEG_SUBJECT = re.compile(r"^\W*(?:nothing|none|nobody|no\s+one)\b", re.I)
+NEG_OBJECT = re.compile(r"^\s*(?:no|nothing|none)\b", re.I)
+FIRST_PERSON = re.compile(r"\b(?:I|we)\b", re.I)
 NEGATION = re.compile(r"\b(not|never|without|didn|don)\b|n't\b", re.I)
 # A clause that is itself a command or a script name (later clause of a line that ran something).
 COMMANDISH = re.compile(
@@ -121,15 +125,18 @@ def _ran_in_line(line):
     if m:
         tail = m.group(1).strip()
         return bool(tail) and tail.lower() not in ("none", "n/a", "-") and not ALLOWED_AFTER.match(tail)
-    ran_seen = False
+    ran_seen = neg_head = False
     clauses = [c for part in CLAUSE_SPLIT.split(line) for c in AND_SPLIT.split(part)]
     for clause in clauses:
         m = RAN_CLAIM.search(clause)
         if m:
             ran_seen = True
-            if NEGATION.search(clause[:m.start()]) or ALLOWED_AFTER.match(clause[m.end():]):
+            if NEGATION.search(clause[:m.start()]) or ALLOWED_AFTER.match(clause[m.end():]) \
+                    or NEG_OBJECT.match(clause[m.end():]) \
+                    or (neg_head and not FIRST_PERSON.search(clause[:m.end()])):
                 continue
             return True
+        neg_head = neg_head or bool(NEG_SUBJECT.match(clause))
         if ran_seen and not NEGATION.search(clause) and COMMANDISH.match(clause) \
                 and not DESCRIPTION.match(clause) and not ALLOWED_AFTER.match(clause):
             return True
