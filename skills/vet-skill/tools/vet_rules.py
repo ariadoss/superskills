@@ -223,20 +223,34 @@ def unpinned_rule(texts):
 _SENSITIVE = re.compile(
     r"~/\.(ssh|aws|claude|config/gcloud)|\.env\b|os\.environ(?!\.get\()|/\.claude/projects|id_rsa|credentials\.json",
     re.I)
-# The curl form is bounded so a long run of "curl" with no flag stays linear.
 _OUTBOUND = re.compile(
     r"\brequests\.(post|put)|urllib\.request\.urlopen|\bfetch\(|\bhttpx\.(post|put)"
-    r"|\bcurl\b[^\n]{0,300}?(-d|--data|-F|-T)|\bsocket\.connect|XMLHttpRequest", re.I)
+    r"|\bsocket\.connect|XMLHttpRequest", re.I)
+# curl is judged per line as two separate linear searches (the command, then a standalone data flag),
+# so no distance between them can be used as padding and nothing backtracks across the line.
+_CURL = re.compile(r"\bcurl\b", re.I)
+_CURL_FLAG = re.compile(r"(?<![\w-])(-d|--data[\w-]*|-F|-T|--form[\w-]*|--upload-file)(?![\w-])")
+
+
+def _outbound(text):
+    if _OUTBOUND.search(text):
+        return True
+    if not _CURL.search(text):
+        return False
+    return any(_CURL.search(l) and _CURL_FLAG.search(l) for l in split_lines(text))
 
 
 def exfil_rule(texts):
-    """VS007: one file that both reads a sensitive source and makes an outbound upload-style call."""
+    """VS007: one file that both reads a sensitive source and makes an outbound upload-style call.
+    Each half is looked for in the text as written and with separators read as spaces or deleted."""
     out = []
     for path, text in texts.items():
-        if not (_SENSITIVE.search(text) and _OUTBOUND.search(text)):
+        vs = variants(text)
+        if not (any(_SENSITIVE.search(v) for v in vs) and any(_outbound(v) for v in vs)):
             continue
         lines = split_lines(text)
-        n = next((i for i, l in enumerate(lines, 1) if _SENSITIVE.search(l)), 1)
+        n = next((i for i, l in enumerate(lines, 1)
+                  if any(_SENSITIVE.search(v) for v in variants(l))), 1)
         out.append(_finding("VS007", "high", path, n, lines[n - 1][:160],
                             "reads a sensitive source and makes an outbound call in the same file"))
     return out

