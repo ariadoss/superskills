@@ -2,7 +2,7 @@
 
 Curated AI skills pack for Claude Code, ZCode, OpenCode, Codex CLI, DSH (DeepSeek Harness), Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Integrates [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team; an opt-in pack) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
-44 in-repo skills + 54 gstack skills + 174 marketing skills + 36 design skills, selected by [packs](#packs-choose-what-gets-installed). gstack is vendored in this repo so its skills are available even if the upstream repo is removed.
+46 in-repo skills + 54 gstack skills + 174 marketing skills + 36 design skills, selected by [packs](#packs-choose-what-gets-installed). gstack is vendored in this repo so its skills are available even if the upstream repo is removed.
 
 > **[Full command reference →](COMMANDS.md)**: all skills with descriptions and overlap notes
 > **[10x+ Engineering Workflow →](DEVELOPER_WORKFLOW.md)**: run a fleet of 10+ parallel AI agents, 3-5 lanes at once, each with a full quality pipeline ([full write-up](https://hyperion360.com/blog/parallel-ai-agents-engineering-workflow/))
@@ -25,7 +25,7 @@ Setup will:
 ### Packs: choose what gets installed
 
 Every skill belongs to exactly one pack. `./setup` installs the **coding pack
-by default** (43 skills: 36 in-repo + 7 via gstack when a clone exists). It includes the
+by default** (45 skills: 38 in-repo + 7 via gstack when a clone exists). It includes the
 spec → plan → TDD → QA → ship spine **plus the security, database, and
 web/QA skills**, because most builds are web apps and a default install with
 `/qa-full`'s domain checks disarmed would be a trap, not a smaller install.
