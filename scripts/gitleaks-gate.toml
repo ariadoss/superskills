@@ -1,0 +1,6 @@
+# The only gitleaks config the secret gate trusts: defaults, no allowlists.
+# The pushed repo's own config is ignored because that repo is what is checked.
+title = "superskills secret gate"
+
+[extend]
+useDefault = true
