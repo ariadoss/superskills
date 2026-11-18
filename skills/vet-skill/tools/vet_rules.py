@@ -76,7 +76,10 @@ steering_rule = line_rule(
 
 _invisible = line_rule(
     "VS002", "high",
-    "[" + INVISIBLE + "]|(?<![^\\x00-\\x7f])\u200d|\u200d(?![^\\x00-\\x7f])",
+    "[" + INVISIBLE.replace("\ufe00-\ufe0f", "\ufe00-\ufe0e") + "]"
+    "|(?<![^\\x00-\\x7f])\u200d|\u200d(?![^\\x00-\\x7f])"
+    # One emoji variation selector (U+FE0F) is fine after a visible non-ASCII symbol.
+    "|(?<![^\\x00-\\x7f\u200d" + INVISIBLE + "])\ufe0f|\ufe0f(?=[\ufe00-\ufe0f\U000e0100-\U000e01ef])",
     "invisible or bidirectional-control character: the text a reviewer sees is not the text that runs")
 
 

