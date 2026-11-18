@@ -110,3 +110,32 @@ for s in skill_index.load_skills(sys.argv[2]):
   [ "$status" -eq 0 ]
   [ -z "$output" ]
 }
+
+@test "usage: counts Skill calls and typed commands per skill" {
+  run python3 -I "$CENSUS/skill_usage.py" "$REPO_ROOT/tests/fixtures/census/transcripts" --days 3650
+  [ "$status" -eq 0 ]
+  [[ "$output" == *$'review\t2'* ]] || false
+  [[ "$output" == *$'qa-full\t1'* ]] || false
+  [[ "$output" == *$'clean-code\t1'* ]] || false
+}
+
+@test "usage: reports how many sessions it scanned" {
+  run python3 -I "$CENSUS/skill_usage.py" "$REPO_ROOT/tests/fixtures/census/transcripts" --days 3650
+  [[ "$output" == *"# sessions=2"* ]] || false
+}
+
+@test "usage: never prints message content" {
+  run python3 -I "$CENSUS/skill_usage.py" "$REPO_ROOT/tests/fixtures/census/transcripts" --days 3650
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"hunter2"* ]] || false
+  [[ "$output" != *"password"* ]] || false
+}
+
+@test "usage: files older than the window are ignored" {
+  cp -r "$REPO_ROOT/tests/fixtures/census/transcripts" "$BATS_TEST_TMPDIR/t"
+  touch -t 202001010000 "$BATS_TEST_TMPDIR/t/s1.jsonl"
+  run python3 -I "$CENSUS/skill_usage.py" "$BATS_TEST_TMPDIR/t" --days 30
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"# sessions=1"* ]] || false
+  [[ "$output" != *$'review\t'* ]] || false
+}
