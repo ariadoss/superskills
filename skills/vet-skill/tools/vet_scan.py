@@ -2,7 +2,7 @@
 """Read-only scanner for a third-party skill, plugin or MCP server directory.
 
 Usage: vet_scan.py <dir>
-Prints JSON: {"findings": [...], "skipped": [...], "truncated": bool, "floor": "clean|caution|block"}
+Prints JSON: {"findings": [...], "skipped": [...], "skipped_overflow": int, "truncated": bool, "floor": "clean|caution|block"}
 Exit 0 nothing found, 1 findings, 2 bad input, 3 only skipped files (a coverage gap).
 Never imports, executes or follows anything in the target. No network, no subprocess.
 Files are read as bytes, capped, and decoded with errors replaced.
@@ -25,10 +25,12 @@ MAX_FILES = 5_000
 MAX_TOTAL = 50_000_000
 MAX_LINE = 4_096
 SNIPPET = 160
+MAX_SKIPPED = 200
 ARCHIVES = (".zip", ".tar", ".tgz", ".gz", ".bz2", ".xz", ".7z", ".whl", ".jar", ".rar")
 SKIP_DIRS = {".git"}
 CONTROL = re.compile(
-    "[\x00-\x08\x0b-\x1f\x7f​-‏‪-‮⁦-⁩﻿]|[\U000e0000-\U000e007f]"
+    "[\x00-\x08\x0b-\x1f\x7f-\x9f\u00ad\u061c\u180e\u200b-\u200f\u2028-\u202e\u2060-\u2064"
+    "\u2066-\u206f\ufe00-\ufe0f\ufeff]|[\U000e0000-\U000e007f\U000e0100-\U000e01ef]"
 )
 
 
@@ -37,37 +39,53 @@ def clean(text):
     return CONTROL.sub(lambda m: "\\u%04x" % ord(m.group()), text)[:SNIPPET]
 
 
+class Skipped(list):
+    """Skip records, capped at MAX_SKIPPED; the rest are only counted in .overflow."""
+    overflow = 0
+
+    def add(self, path, reason):
+        if len(self) < MAX_SKIPPED:
+            self.append({"path": path, "reason": reason})
+        else:
+            self.overflow += 1
+
+
 def walk(root):
-    """Return (files, skipped, truncated): regular files as (relative path, path) plus recorded skips."""
-    skipped, files, total, truncated = [], [], 0, False
+    """Return (files, skipped, truncated, overflow): regular files as (relative path, path) plus skips.
+    Stops walking as soon as a file or byte cap is hit."""
+    skipped, files, total, truncated = Skipped(), [], 0, False
     for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
         keep = []
         for d in sorted(dirnames):
             d_path = Path(dirpath) / d
             if d_path.is_symlink():  # os.walk lists a symlinked directory in dirnames and never descends it
-                skipped.append({"path": str(d_path.relative_to(root)), "reason": "symlink"})
+                skipped.add(str(d_path.relative_to(root)), "symlink")
             elif d not in SKIP_DIRS:
                 keep.append(d)
         dirnames[:] = keep
         for name in sorted(filenames):
             p = Path(dirpath) / name
             rel = str(p.relative_to(root))
-            st = p.lstat()  # lstat: never follow, and never open a FIFO or device (a read would hang)
+            try:
+                st = p.lstat()  # lstat: never follow, and never open a FIFO or device (a read would hang)
+            except OSError:
+                skipped.add(rel, "unreadable")
+                continue
             mode = st.st_mode
             if stat.S_ISLNK(mode):
-                skipped.append({"path": rel, "reason": "symlink"})
+                skipped.add(rel, "symlink")
             elif not stat.S_ISREG(mode):
-                skipped.append({"path": rel, "reason": "special file"})
+                skipped.add(rel, "special file")
             elif len(files) >= MAX_FILES or total >= MAX_TOTAL:
-                truncated = True
+                return files, skipped, True, skipped.overflow
             elif name.lower().endswith(ARCHIVES):
-                skipped.append({"path": rel, "reason": "archive"})
+                skipped.add(rel, "archive")
             elif st.st_size > MAX_FILE:
-                skipped.append({"path": rel, "reason": "too large"})
+                skipped.add(rel, "too large")
             else:
                 files.append((rel, p))
                 total += st.st_size
-    return files, skipped, truncated
+    return files, skipped, truncated, skipped.overflow
 
 
 def read_bytes(p):
@@ -83,7 +101,7 @@ def read_bytes(p):
 
 
 def scan(root):
-    files, skipped, truncated = walk(root)
+    files, skipped, truncated, _ = walk(root)
     findings, texts = [], {}
     for rel, p in files:
         try:
@@ -91,16 +109,16 @@ def scan(root):
         except OSError:
             raw = None
         if raw is None:
-            skipped.append({"path": rel, "reason": "special file"})
+            skipped.add(rel, "special file")
             continue
         if b"\x00" in raw[:4096]:
-            skipped.append({"path": rel, "reason": "binary"})
+            skipped.add(rel, "binary")
             continue
         texts[rel] = raw.decode("utf-8", "replace")
     for rule in RULES:
         findings.extend(rule(texts))
     findings.sort(key=lambda f: (f["path"], f["line"], f["rule"]))
-    return findings, skipped, truncated
+    return findings, skipped, truncated, skipped.overflow
 
 
 def floor(findings, skipped, truncated):
@@ -115,10 +133,10 @@ def main(argv):
     if len(argv) != 2 or not Path(argv[1]).is_dir():
         print(__doc__, file=sys.stderr)
         return 2
-    findings, skipped, truncated = scan(Path(argv[1]).resolve())
+    findings, skipped, truncated, overflow = scan(Path(argv[1]).resolve())
     for f in findings:
         f["snippet"] = clean(f["snippet"])
-    print(json.dumps({"findings": findings, "skipped": skipped, "truncated": truncated,
+    print(json.dumps({"findings": findings, "skipped": skipped, "skipped_overflow": overflow, "truncated": truncated,
                       "floor": floor(findings, skipped, truncated)}, indent=1))
     if findings:
         return 1

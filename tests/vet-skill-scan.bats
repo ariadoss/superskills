@@ -74,3 +74,54 @@ s = vet_scan.clean('a\x1b[31mb‮c​d')
 assert '\x1b' not in s and '‮' not in s and '​' not in s, s
 "
 }
+@test "clean() escapes C1, invisible format, variation-selector and line-separator characters" {
+  run python3 -I -c "
+import sys; sys.path.insert(0, '$BATS_TEST_DIRNAME/../skills/vet-skill/tools')
+import vet_scan
+bad = ['\u009b', '\u0085', '⁠', '⁤', '⁪', '⁯', '؜', '­', '᠎',
+       '︀', '️', '\U000e0100', '\U000e01ef', ' ', ' ']
+for ch in bad:
+    s = vet_scan.clean('a' + ch + 'b')
+    assert ch not in s, repr(ch)
+    assert '\\\\u' in s, repr(ch)
+"
+  [ "$status" -eq 0 ]
+}
+@test "clean() truncates to 160 characters" {
+  run python3 -I -c "
+import sys; sys.path.insert(0, '$BATS_TEST_DIRNAME/../skills/vet-skill/tools')
+import vet_scan
+assert len(vet_scan.clean('x' * 1000)) == 160
+"
+  [ "$status" -eq 0 ]
+}
+@test "the skipped list is bounded and the overflow is counted" {
+  for i in $(seq 1 300); do : > "$D/a$i.zip"; done
+  run scan
+  [ "$status" -eq 3 ]
+  [ "$(echo "$output" | jq -r '.skipped | length')" = "200" ]
+  [ "$(echo "$output" | jq -r '.skipped_overflow')" = "100" ]
+}
+@test "the walk stops at the file cap instead of visiting the whole tree" {
+  for i in $(seq 1 5100); do : > "$D/f$i.txt"; done
+  run scan
+  [ "$(echo "$output" | jq -r '.truncated')" = "true" ]
+  [ "$(echo "$output" | jq -r '.skipped_overflow')" = "0" ]
+}
+@test "a file that cannot be lstat'd is skipped as unreadable, not a crash" {
+  : > "$D/a.txt"
+  run python3 -I -c "
+import sys; sys.path.insert(0, '$BATS_TEST_DIRNAME/../skills/vet-skill/tools')
+import vet_scan
+from pathlib import Path
+orig = Path.lstat
+def boom(self):
+    if self.name == 'a.txt':
+        raise PermissionError('x')
+    return orig(self)
+Path.lstat = boom
+files, skipped, truncated, overflow = vet_scan.walk(Path('$D').resolve())
+assert files == [] and skipped == [{'path': 'a.txt', 'reason': 'unreadable'}], (files, skipped)
+"
+  [ "$status" -eq 0 ]
+}
