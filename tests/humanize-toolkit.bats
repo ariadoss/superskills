@@ -1735,3 +1735,45 @@ print("scan ok")' "$BATS_TEST_TMPDIR/site" "$SAMPLE"
   [ ! -e "$BATS_TEST_TMPDIR/pwned" ] || { echo "planted module ran"; return 1; }
   [ "$status" -eq 0 ] || { echo "$output"; return 1; }
 }
+
+@test "signposting: pointer, placeholder-noun, announced-intent and flag shapes are review signals" {
+  python3 - "$TK" <<'PY'
+import sys
+sys.dont_write_bytecode = True
+sys.path.insert(0, sys.argv[1])
+from slop_report import signposting
+for text in [
+    "Costs vary. Here is the truth about hiring.",
+    "Here's what happened: the build failed.",
+    "The real problem is that teams skip it.",
+    "The catch here is simple. Salaries rise.",
+    "Let me explain why the build failed.",
+    "In this post, we will look at costs.",
+    "As mentioned above, costs vary.",
+    "It is worth noting that costs vary.",
+    "Honestly, it works.",
+    "Pro tip: write it down.",
+    "Think about it.",
+]:
+    assert signposting(text), text
+PY
+}
+
+@test "signposting: literal uses, quotes and plain claims are not flagged" {
+  python3 - "$TK" <<'PY'
+import sys
+sys.dont_write_bytecode = True
+sys.path.insert(0, sys.argv[1])
+from slop_report import signposting
+for text in [
+    "Here is a copper key.",
+    "The thing is missing from the drawer.",
+    "The key point of the lock is its pin.",
+    "I answered honestly and put the letter away.",
+    "According to GitHub, 70% of teams use pull requests.",
+    "He said, \"Here is the truth.\"",
+    "Argentina pays developers $63,163 a year on average.",
+]:
+    assert not signposting(text), text
+PY
+}

@@ -294,6 +294,43 @@ def rhetorical_scaffolding(raw: str):
     return _review_hits(raw, [_RHETORICAL_SETUP])
 
 
+# Signposting (metadiscourse): sentences that point at what comes next, or at the
+# writing itself, instead of saying it. Shapes, not a phrase list: a pointer or
+# placeholder noun at a sentence start, with setup punctuation or a bare
+# "that/this" clause after it. Review signals only. "Here is a copper key" and
+# "The thing is missing" do not match: they need a placeholder noun plus a copula.
+_PLACEHOLDER_NOUN = (r"(?:thing|truth|catch|kicker|point|secret|key|trick|reality|fact|problem|twist|"
+                     r"upshot|irony|surprise|takeaway|lesson|rub|issue|difficulty|danger)")
+_SIGNPOST = re.compile(
+    _RHETORICAL_START + r"(?:\*\*|__)?(?P<setup>"
+    # "Here is the truth." / "Here's what happened:" / "Here are three reasons:"
+    r"(?:here['’]s|here is|here are)\s+(?:the|my|your|our|one|another)\s+(?:\w+\s+)?(?:" + _PLACEHOLDER_NOUN + r"|fix|answer|reason|difference|bottom line|short version|quick version)\b"
+    r"|(?:here['’]s|here is|here are)\s+(?:what|why|how|where|when|\d+|two|three|four|five)\b[^.!?\n]{0,40}:"
+    # "The truth is that" / "The real problem is" / "The catch here is simple"
+    r"|(?:the|my|your|one|another|a)\s+(?:\w+\s+)?" + _PLACEHOLDER_NOUN + r"(?:\s+here)?\s+(?:is|was)\s*(?:[:,—]|that\b|this\b|simple\b|simply\b|clear\b|obvious\b|plain\b)"
+    # "Let me explain." / "Let me be clear."
+    r"|let me\s+(?:\w+\s+){0,2}(?:explain|say|add|tell you|show you|share|be (?:clear|direct|honest|frank|real))\b"
+    # "In this post, we will look at" / "We'll walk through"
+    r"|(?:in|for)\s+(?:this|the next)\s+(?:post|section|article|paragraph|guide),?\s+(?:we|i)(?:['’]ll|\s+will)?\b"
+    r"|(?:we|i)(?:['’]ll|\s+will)\s+(?:look at|cover|explore|discuss|walk (?:you )?through|show you|explain)\b"
+    # "As mentioned above," / "As we saw earlier,"
+    r"|as\s+(?:mentioned|noted|discussed|stated)\s+(?:above|earlier|before|previously)\b"
+    # "It is worth noting that" / "Needless to say," / "Bear in mind"
+    r"|it(?:['’]s|\s+is)\s+(?:worth|important|useful|interesting)\s+(?:to\s+)?(?:noting|note|mention|mentioning|point out|keep in mind|remember)\b"
+    r"|(?:needless to say|it goes without saying|it should be noted|bear in mind)\b"
+    # Stance or label openers: "Honestly," "Basically," "Pro tip:" "Spoiler:"
+    r"|(?:honestly|frankly|candidly|truthfully|admittedly|basically|essentially|simply put|in short|in essence|"
+    r"pro tip|quick note|fun fact|spoiler|heads up|bottom line)\s*[:,—]"
+    # "Think about it." / "Let that sink in."
+    r"|think about (?:it|that)\s*[.!?:]"
+    r")", re.I)
+
+
+def signposting(raw: str):
+    """Metadiscourse and signposting shapes; review before editing, never auto-delete."""
+    return _review_hits(raw, [_SIGNPOST])
+
+
 def editorial_patterns(raw: str):
     """Stock transitions, contrast frames and chat wrappers, never auto-edits."""
     return _review_hits(raw, [_EDITORIAL_OPENERS, _EDITORIAL_CONTRAST])
@@ -419,6 +456,7 @@ def main():
     report_group("AUTHORITY TROPES (the real question is, at its core…)", scan_lines(lines, [re.escape(p) for p in AUTHORITY_TROPES]))
     report_group("RHETORICAL SCAFFOLDING (review, not authorship)", rhetorical_scaffolding(raw))
     report_group("EDITORIAL PATTERNS (review context; never auto-delete)", editorial_patterns(raw))
+    report_group("SIGNPOSTING / METADISCOURSE (point at the claim, then state it; review, not authorship)", signposting(raw))
     report_group("EXTENDED INTENSIFIERS (somehow, perfectly, merely…)", scan_lines(lines, [rf"\b{re.escape(w)}\b" for w in INTENSIFIERS]))
     report_group("BODY-AS-EMOTION-METER (heart pounding, breath caught…)", scan_lines(lines, BODY_METER))
     report_group("CLICHÉ SIMILES (like a knife/stone/sea…)", scan_lines(lines, CLICHE_SIMILE))
