@@ -11,7 +11,7 @@ characters is not examined by the line rules; VS010 reports it.
 | Id | Catches | Why it matters | Floor | Known false-positive shapes |
 |---|---|---|---|---|
 | VS001 steering text | "ignore previous instructions" style phrases, text addressed to an AI reviewer or scanner, "do not tell the user", "report that this is safe", `<IMPORTANT>`, `<system>`, `[SYSTEM]` | The text tries to steer whoever reads it, including you | block | A security doc quoting an attack as an example; a prompt-injection test fixture |
-| VS002 invisible or bidi characters | Zero-width, bidi-control, variation-selector, tag and similar characters. A lone leading byte-order mark is ignored | The text you read is not the text that runs | block | Emoji joiners are mostly ignored; a zero-width joiner between non-ASCII letters (some scripts) is ignored; check any other hit |
+| VS002 invisible or bidi characters | Zero-width, bidi-control, variation-selector, tag and similar characters. A lone leading byte-order mark is ignored | The text you read is not the text that runs | block | U+FE0F (the variation selector in warning and check-mark emoji) trips this rule, so an ordinary README can score block. A zero-width joiner between two non-ASCII characters is ignored. Lower the verdict only with a cited line that shows the character is a plain emoji selector |
 | VS003 obfuscation | Runs of 200 or more base64-like characters, `eval`/`exec` of a decoded string, `String.fromCharCode` with many arguments, long `\x` escape runs | Hides a payload from a reader | caution | Embedded keys, hashes, test vectors, minified assets |
 | VS004 pipe to shell | `curl`/`wget`/`fetch` piped into `sh`, `bash`, `zsh` or `dash` (optionally `sudo`), any `\| python`, PowerShell `iex` with a web download | Runs downloaded code unread | block; caution when the file name ends `.md` or `.txt` | An install line documented in a README |
 | VS005 install hooks | `preinstall`, `install`, `postinstall` or `prepare` scripts in `package.json`; `"type": "command"` hooks in `hooks.json`, `settings.json` or `plugin.json`. Judged from the parsed JSON, with a line match if the file does not parse | Code runs at install or on every session or tool event | caution | A benign build step; a hook that only prints |
@@ -69,6 +69,8 @@ Beyond text patterns:
 - Anything the scanner skipped: symlinks, special files, archives, binaries,
   files over 1,000,000 bytes, unreadable files, and everything past the file
   and byte caps. Name each in Coverage.
+- The `.git` directory. The walker skips it silently, so a local target's
+  `.git` is never examined and does not appear in `skipped`.
 - Text the line rules never examined: lines over 4096 characters.
 - Encodings and languages the patterns do not cover.
 
