@@ -36,7 +36,7 @@ pack is always on: no pack list excludes it.
 
 | Pack | Contents |
 |------|----------|
-| `coding` (default, always on) | The workflow spine — `/deep-interview`, `/write-plan`, `/skillify`, `/executing-plans`, `/subagent-driven-development`, `/worktrees`, `/tdd`, `/test-coverage`, `/debug`, `/verify`, `/clean-code`, `/basic-review`, `/diff-walkthrough`, `/qa-full`, `/finish-branch`, `/eval`, `/daily-qa`, `/quota-resilience`, `/handoff`, `/humanize`, `/cli-for-agent`, `/superskills-doctor`, `/superskills-upgrade` — plus the security skills (`/defense`, `/iac-scan`, `/pentest`, `/fuzz`), the database skills (`/dbmap`, `/dbmap-auto-off`, `/db-optimize`, `/cache-strategy`), the web/QA skills (`/web-perf`, `/perf-profile`, `/a11y`, `/playwright`), `/plan-eng-review`, and the seven gstack skills the QA gate executes through (`/review`, `/qa`, `/cso`, `/design-review`, `/ship`, `/browse`, `/setup-browser-cookies`) |
+| `coding` (default, always on) | The workflow spine — `/deep-interview`, `/write-plan`, `/skillify`, `/debrief`, `/prune-skills`, `/executing-plans`, `/subagent-driven-development`, `/worktrees`, `/tdd`, `/test-coverage`, `/debug`, `/verify`, `/clean-code`, `/basic-review`, `/diff-walkthrough`, `/qa-full`, `/finish-branch`, `/eval`, `/daily-qa`, `/quota-resilience`, `/handoff`, `/humanize`, `/cli-for-agent`, `/superskills-doctor`, `/superskills-upgrade` — plus the security skills (`/defense`, `/iac-scan`, `/pentest`, `/fuzz`), the database skills (`/dbmap`, `/dbmap-auto-off`, `/db-optimize`, `/cache-strategy`), the web/QA skills (`/web-perf`, `/perf-profile`, `/a11y`, `/playwright`), `/plan-eng-review`, and the seven gstack skills the QA gate executes through (`/review`, `/qa`, `/cso`, `/design-review`, `/ship`, `/browse`, `/setup-browser-cookies`) |
 | `content` | `/tapestry`, `/youtube`, `/article`, `/kb-advisor`, `/content-writer` |
 | `startup` | `/validate-idea`, `/pricing`, `/minimalist-review` |
 | `core` | legacy alias: every skill in the `skills/` tree (coding + content + startup) |
@@ -115,7 +115,7 @@ The plugin `version` is driven by the repo's `VERSION` file via
 watch. The `./setup` install above remains the way to get a chosen pack
 selection across every supported tool.
 
-## Skills (44)
+## Skills (46)
 
 ### Dev Methodology (from [superpowers](https://github.com/obra/superpowers))
 | Command | Description |
@@ -136,6 +136,8 @@ selection across every supported tool.
 | `/deep-interview` | Clarify vague requirements one question at a time and save a spec for approval before planning |
 | `/write-plan` | Detailed implementation planning |
 | `/skillify` | Turn a hard-won procedure from a finished session into a reusable skill after a quality gate |
+| `/debrief` | Take the current session apart and route each lesson to a skill edit, rule, memory, script or hook, after checking whether a skill already covers it. Proposes only. |
+| `/prune-skills` | Find redundant or superseded skills using overlap, real usage counts and context cost. Proposes only; never deletes without a yes. |
 | `/plan-eng-review` | Engineering review of a plan: architecture, edge cases, failure modes, test plan. A local copy, because gstack 1.97 stopped registering it (`/autoplan` still loads its method) |
 | `/subagent-driven-development` | Execute a plan in-session via fresh subagent per task + review loop |
 | `/executing-plans` | Execute a plan in a separate session with review checkpoints |
