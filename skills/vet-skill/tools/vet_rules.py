@@ -218,7 +218,68 @@ def unpinned_rule(texts):
     return out
 
 
+# --- VS007-VS009: what the code does with your machine ---
+
+_SENSITIVE = re.compile(
+    r"~/\.(ssh|aws|claude|config/gcloud)|\.env\b|os\.environ(?!\.get\()|/\.claude/projects|id_rsa|credentials\.json",
+    re.I)
+# The curl form is bounded so a long run of "curl" with no flag stays linear.
+_OUTBOUND = re.compile(
+    r"\brequests\.(post|put)|urllib\.request\.urlopen|\bfetch\(|\bhttpx\.(post|put)"
+    r"|\bcurl\b[^\n]{0,300}?(-d|--data|-F|-T)|\bsocket\.connect|XMLHttpRequest", re.I)
+
+
+def exfil_rule(texts):
+    """VS007: one file that both reads a sensitive source and makes an outbound upload-style call."""
+    out = []
+    for path, text in texts.items():
+        if not (_SENSITIVE.search(text) and _OUTBOUND.search(text)):
+            continue
+        lines = split_lines(text)
+        n = next((i for i, l in enumerate(lines, 1) if _SENSITIVE.search(l)), 1)
+        out.append(_finding("VS007", "high", path, n, lines[n - 1][:160],
+                            "reads a sensitive source and makes an outbound call in the same file"))
+    return out
+
+
+_WIDE_BIND = re.compile(
+    r"""(host\s*=|listen\()\s*["']?(0\.0\.0\.0\b|::(?![\w:]))|bind\(\s*\(?["']0\.0\.0\.0""", re.I)
+_AUTH_WORD = re.compile(r"token|api[_-]?key|authorization|bearer|password|auth", re.I)
+
+
+def wide_bind_rule(texts):
+    """VS008: binds to every interface. High when the file never mentions an auth word, else medium."""
+    out = []
+    for path, text in texts.items():
+        severity = None
+        for p, n, line in iter_lines({path: text}):
+            if any(_WIDE_BIND.search(v) for v in variants(line)):
+                severity = severity or ("medium" if _AUTH_WORD.search(text) else "high")
+                out.append(_finding("VS008", severity, p, n, line,
+                                    "listens on every network interface, not just this machine"))
+    return out
+
+
+_SHELL_ALWAYS = re.compile(r"shell\s*=\s*True|os\.popen\(|\beval\(", re.I)
+_SHELL_NEEDS_MARKER = re.compile(r"os\.system\(|child_process\.exec\(", re.I)
+_INTERPOLATION = re.compile(r"\b[rb]?f[\"']|\+|%s|\$\{|\.format\(", re.I)
+
+
+def shell_exec_rule(texts):
+    """VS009: shell execution. os.system and child_process.exec count only with an interpolated command."""
+    out = []
+    for path, n, line in iter_lines(texts):
+        for v in variants(line):
+            if _SHELL_ALWAYS.search(v) or (_SHELL_NEEDS_MARKER.search(v) and _INTERPOLATION.search(v)):
+                out.append(_finding("VS009", "medium", path, n, line,
+                                    "runs a shell command or evaluates a string: check what feeds it"))
+                break
+    return out
+
+
 RULES = [steering_rule, invisible_rule, obfuscation_rule, long_line_rule,
-         pipe_to_shell_rule, install_hook_rule, unpinned_rule]
+         pipe_to_shell_rule, install_hook_rule, unpinned_rule,
+         exfil_rule, wide_bind_rule, shell_exec_rule]
 FLOORS = {"VS001": "block", "VS002": "block", "VS003": "caution", "VS010": "caution",
-          "VS004": "block", "VS005": "caution", "VS006": "caution"}
+          "VS004": "block", "VS005": "caution", "VS006": "caution",
+          "VS007": "block", "VS008": "caution", "VS009": "caution"}

