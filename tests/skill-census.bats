@@ -86,3 +86,27 @@ for s in skill_index.load_skills(sys.argv[2]):
   run python3 -I "$CENSUS/skill_index.py" "$FIX"
   [[ "$output" == "body"$'\t'"skills/body"* ]] || false
 }
+
+@test "overlap pairs: a near-duplicate pair is reported, an unrelated one is not" {
+  _skill skills/a-review a-review "review pending code changes for correctness bugs and security risks before merge"
+  _skill skills/b-review b-review "review pending code changes for correctness bugs and security issues before merge"
+  _skill skills/c-pricing c-pricing "set subscription pricing tiers and packaging for a startup"
+  run python3 -I "$CENSUS/skill_overlap.py" pairs "$FIX" --threshold 0.5
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"a-review"*"b-review"* ]] || false
+  [[ "$output" != *"c-pricing"* ]] || false
+}
+
+@test "overlap query: a lesson ranks the skill that already covers it first" {
+  _skill skills/a-review a-review "review pending code changes for correctness bugs"
+  _skill skills/c-pricing c-pricing "set subscription pricing tiers"
+  run python3 -I "$CENSUS/skill_overlap.py" query "$FIX" "always review code changes for correctness bugs" --top 1
+  [ "$status" -eq 0 ]
+  [[ "$output" == a-review* ]] || false
+}
+
+@test "overlap: empty tree prints nothing and exits 0" {
+  run python3 -I "$CENSUS/skill_overlap.py" pairs "$FIX"
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+}
