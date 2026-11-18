@@ -41,8 +41,13 @@ def load_skills(root):
                 continue
             text = md.read_text(encoding="utf-8", errors="replace")
             fm = parse_frontmatter(text)
+            # Matches bash skill_name_from (whitespace removed, empty falls
+            # back to the directory). Accepted divergences: a quoted name is
+            # unquoted here (bash keeps the quotes), and a `name:` line outside
+            # the frontmatter is ignored here (bash greps the whole file).
+            name = "".join(fm.get("name", "").split()) or md.parent.name
             skills.append({
-                "name": fm.get("name", md.parent.name),
+                "name": name,
                 "dir": f"{tree}/{md.parent.name}",
                 "description": fm.get("description", ""),
                 "triggers": fm.get("triggers", ""),
