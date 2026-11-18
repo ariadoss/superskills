@@ -2,7 +2,7 @@
 
 Curated AI skills pack for Claude Code, ZCode, OpenCode, Codex CLI, DSH (DeepSeek Harness), Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Integrates [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team; an opt-in pack) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
-44 in-repo skills + 54 gstack skills + 174 marketing skills + 36 design skills, selected by [packs](#packs-choose-what-gets-installed). gstack is vendored in this repo so its skills are available even if the upstream repo is removed.
+45 in-repo skills + 54 gstack skills + 174 marketing skills + 36 design skills, selected by [packs](#packs-choose-what-gets-installed). gstack is vendored in this repo so its skills are available even if the upstream repo is removed.
 
 > **[Full command reference →](COMMANDS.md)**: all skills with descriptions and overlap notes
 > **[10x+ Engineering Workflow →](DEVELOPER_WORKFLOW.md)**: run a fleet of 10+ parallel AI agents, 3-5 lanes at once, each with a full quality pipeline ([full write-up](https://hyperion360.com/blog/parallel-ai-agents-engineering-workflow/))
@@ -36,7 +36,7 @@ pack is always on: no pack list excludes it.
 
 | Pack | Contents |
 |------|----------|
-| `coding` (default, always on) | The workflow spine — `/deep-interview`, `/write-plan`, `/skillify`, `/executing-plans`, `/subagent-driven-development`, `/worktrees`, `/tdd`, `/test-coverage`, `/debug`, `/verify`, `/clean-code`, `/basic-review`, `/diff-walkthrough`, `/qa-full`, `/finish-branch`, `/eval`, `/daily-qa`, `/quota-resilience`, `/handoff`, `/humanize`, `/cli-for-agent`, `/superskills-doctor`, `/superskills-upgrade` — plus the security skills (`/defense`, `/iac-scan`, `/pentest`, `/fuzz`), the database skills (`/dbmap`, `/dbmap-auto-off`, `/db-optimize`, `/cache-strategy`), the web/QA skills (`/web-perf`, `/perf-profile`, `/a11y`, `/playwright`), `/plan-eng-review`, and the seven gstack skills the QA gate executes through (`/review`, `/qa`, `/cso`, `/design-review`, `/ship`, `/browse`, `/setup-browser-cookies`) |
+| `coding` (default, always on) | The workflow spine — `/deep-interview`, `/write-plan`, `/skillify`, `/executing-plans`, `/subagent-driven-development`, `/worktrees`, `/tdd`, `/test-coverage`, `/debug`, `/verify`, `/clean-code`, `/basic-review`, `/diff-walkthrough`, `/qa-full`, `/finish-branch`, `/eval`, `/daily-qa`, `/quota-resilience`, `/handoff`, `/humanize`, `/cli-for-agent`, `/superskills-doctor`, `/superskills-upgrade` — plus the security skills (`/defense`, `/iac-scan`, `/pentest`, `/fuzz`, `/vet-skill`), the database skills (`/dbmap`, `/dbmap-auto-off`, `/db-optimize`, `/cache-strategy`), the web/QA skills (`/web-perf`, `/perf-profile`, `/a11y`, `/playwright`), `/plan-eng-review`, and the seven gstack skills the QA gate executes through (`/review`, `/qa`, `/cso`, `/design-review`, `/ship`, `/browse`, `/setup-browser-cookies`) |
 | `content` | `/tapestry`, `/youtube`, `/article`, `/kb-advisor`, `/content-writer` |
 | `startup` | `/validate-idea`, `/pricing`, `/minimalist-review` |
 | `core` | legacy alias: every skill in the `skills/` tree (coding + content + startup) |
@@ -115,7 +115,7 @@ The plugin `version` is driven by the repo's `VERSION` file via
 watch. The `./setup` install above remains the way to get a chosen pack
 selection across every supported tool.
 
-## Skills (44)
+## Skills (45)
 
 ### Dev Methodology (from [superpowers](https://github.com/obra/superpowers))
 | Command | Description |
@@ -152,6 +152,7 @@ selection across every supported tool.
 | Command | Description |
 |---------|-------------|
 | `/pentest` | Authorized security testing — in-harness pipeline by default (tiered hunt → adversarial verification → variant loop → patch oracle, on the session's model); with clearwing installed, its full pipeline can run agent-driven on the session via the bundled bridge (no provider spend — session tokens only) or its MCP network machinery; against a live authorized web app, vendored Shannon attacks it agent-driven on the session (Mode 5 — PoC-proven findings only); provider-driven runs bill its LLM provider, ask-first |
+| `/vet-skill` | Vets a third-party skill, plugin or MCP server before install: a read-only scanner plus a reviewer pass that ends in a block, caution or clean verdict with cited lines; not for your own diff (use `/defense` or `/code-review`) or a running app (use `/pentest`) |
 | `/fuzz` | Web fuzzing via [ffuf](https://github.com/ffuf/ffuf) |
 | `/defense` | Defense-in-depth: OWASP Top 10, secrets, auth, encryption |
 | `/iac-scan` | Infrastructure-as-Code security scan: Dockerfiles, Terraform, Kubernetes/Helm, CI/CD workflows |
