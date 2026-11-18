@@ -52,6 +52,14 @@ setup() { REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"; }
   [[ "$output" != *"neighbour"* ]] || false
 }
 
+@test "prune eval fixture: default threshold also reports only the planted duplicate" {
+  d="$BATS_TEST_TMPDIR/f"; bash "$REPO_ROOT/evals/prune-skills/make_tree.sh" "$d"
+  run python3 -I "$REPO_ROOT/scripts/skill-census/skill_overlap.py" pairs "$d"
+  [ "$status" -eq 0 ]
+  [ "$(printf '%s\n' "$output" | wc -l | tr -d ' ')" -eq 1 ]
+  [[ "$output" == *"dup-x"*"dup-y"* ]] || false
+}
+
 @test "prune eval fixture: usage tool sees 40 and 10 sessions with dup-y used far more than dup-x" {
   d="$BATS_TEST_TMPDIR/f"; bash "$REPO_ROOT/evals/prune-skills/make_tree.sh" "$d"
   run python3 -I "$REPO_ROOT/scripts/skill-census/skill_usage.py" "$d/projects"
@@ -96,6 +104,25 @@ print(" ".join(m[n] for l in sys.stdin.read().splitlines() for n in l.split("\t"
   [[ "$output" == *$'skill-02\t30'* ]] || false
   [[ "$output" == *$'skill-08\t2'* ]] || false
   [[ "$output" != *"skill-06"* ]] || false
+}
+
+@test "prune eval fixture: plain-names tree at the default threshold maps to the same pair" {
+  d="$BATS_TEST_TMPDIR/p"; bash "$REPO_ROOT/evals/prune-skills/make_tree.sh" --plain-names "$d"
+  key="$REPO_ROOT/evals/prune-skills/answer-key.json"
+  run python3 -I "$REPO_ROOT/scripts/skill-census/skill_overlap.py" pairs "$d"
+  [ "$status" -eq 0 ]
+  [ "$(printf '%s\n' "$output" | wc -l | tr -d ' ')" -eq 1 ]
+  run python3 -I -c 'import json,sys
+m=json.load(open(sys.argv[1]))["plain_names_map"]
+print(" ".join(m[n] for l in sys.stdin.read().splitlines() for n in l.split("\t")[1:]))' "$key" <<<"$output"
+  [ "$output" = "dup-y dup-x" ] || [ "$output" = "dup-x dup-y" ]
+}
+
+@test "debrief: lesson goes in on stdin, never inside double quotes" {
+  f="$REPO_ROOT/skills/debrief/SKILL.md"
+  grep -q -- '--stdin' "$f"
+  run grep -F '"<the lesson' "$f"
+  [ "$status" -eq 1 ]
 }
 
 @test "debrief eval: public variant swaps only the visibility line" {

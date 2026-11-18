@@ -70,12 +70,19 @@ Read the output with these limits in mind:
   skill descriptions yourself (`name` and `description` lines under `skills/`
   and `design-skills/`) and use your own judgment to spot pairs the score missed.
   Conversely, a listed pair can be noise.
-- **Usage is Claude Code only.** `skill_usage.py` prints `# sessions=N` and then
+- **Usage is Claude Code only.** `skill_usage.py` prints `# sessions=N subagent_files=M`
+  (sessions are top-level transcripts only; subagent transcripts are counted
+  separately, and skill calls inside them still count) and then
   `skill<TAB>count`: counts only, never message content. Use of a skill from
   Codex or Cursor is invisible, so say so in the report.
-- Only the flat trees `skills/` and `design-skills/` are scanned. `vendor/`,
+- Overlap and usage cover the flat trees `skills/` and `design-skills/`.
+  The context-cost script only walks `skills/`, so design skills get no
+  context-cost figures: say so plainly instead of guessing them. `vendor/`,
   `marketing-skills/` and generated shims are upstream-owned or generated and
   are never candidates.
+- **Ignore built-in slash commands** in the usage output (`compact`, `clear`,
+  `model`, `login`, `effort`, `resume`): they are not skills. The counter
+  already strips a `plugin:` prefix, so `plug:review` counts as `review`.
 
 ## Step 2: Judge each candidate pair
 

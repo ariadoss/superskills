@@ -4,6 +4,7 @@
 Usage:
   skill_overlap.py pairs <repo_root> [--threshold 0.15]
   skill_overlap.py query <repo_root> "<lesson text>" [--top 3]
+  skill_overlap.py query <repo_root> --stdin [--top 3]   (lesson text on stdin)
 Output is tab separated: score, then the names. Scores are token overlap on
 description plus triggers (a coarse signal; a human or the model judges the
 result). pairs uses Jaccard (default 0.15, calibrated on the 80-skill tree: 0.35 reports nothing there); query uses containment of the lesson's tokens.
@@ -60,6 +61,7 @@ def main(argv):
     p.add_argument("root")
     p.add_argument("text", nargs="?")
     p.add_argument("--threshold", type=float, default=0.15)
+    p.add_argument("--stdin", action="store_true", help="read the lesson text from stdin")
     p.add_argument("--top", type=int, default=3)
     a = p.parse_args(argv[1:])
     skills = load_skills(a.root)
@@ -67,6 +69,8 @@ def main(argv):
         for score, x, y in pairs(skills, a.threshold):
             print(f"{score:.2f}\t{x}\t{y}")
     else:
+        text = sys.stdin.read().strip() if a.stdin else a.text
+        a.text = text
         if not a.text:
             print("query needs the lesson text", file=sys.stderr)
             return 2

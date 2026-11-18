@@ -11,8 +11,20 @@ import time
 from pathlib import Path
 
 
-def session_files(projects_dir, days=None):
+def is_subagent_path(path, projects_dir):
+    """True when a transcript sits under a `subagents` directory inside projects_dir."""
+    try:
+        parts = Path(path).relative_to(projects_dir).parts
+    except ValueError:
+        parts = Path(path).parts
+    return "subagents" in parts[:-1]
+
+
+def session_files(projects_dir, days=None, top_level_only=False):
     """Sorted *.jsonl paths under projects_dir; with days, only files modified inside the window.
+
+    top_level_only skips subagent transcripts (any `subagents` path segment), so the
+    result counts real sessions. The default keeps them, as the mistake miner expects.
 
     Sorted as plain strings with glob semantics (hidden directories skipped), the
     order the mistake miner always used, so its event numbering stays stable.
@@ -22,14 +34,24 @@ def session_files(projects_dir, days=None):
     out = []
     for name in sorted(glob.glob(pattern, recursive=True)):
         p = Path(name)
-        if cutoff is None or p.stat().st_mtime >= cutoff:
-            out.append(p)
+        if top_level_only and is_subagent_path(p, projects_dir):
+            continue
+        if cutoff is not None:
+            try:
+                if p.stat().st_mtime < cutoff:
+                    continue
+            except OSError:
+                continue  # broken symlink or vanished file
+        out.append(p)
     return out
 
 
-def iter_entries(path):
-    """Yield each line of a transcript that decodes to a JSON object; skip the rest."""
-    with Path(path).open(encoding="utf-8", errors="replace") as fh:
+def iter_entries(path, errors="replace"):
+    """Yield each line of a transcript that decodes to a JSON object; skip the rest.
+
+    errors is the text decoding policy; the mistake miner passes "ignore".
+    """
+    with Path(path).open(encoding="utf-8", errors=errors) as fh:
         for line in fh:
             try:
                 entry = json.loads(line)

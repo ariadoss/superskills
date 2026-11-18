@@ -25,7 +25,11 @@ This skill separates them and says where each one goes. It proposes; you decide.
 
 ## Step 1: Classify the repo
 
-Run `git remote -v` and check visibility if a remote exists. For a **public repo**,
+Check visibility without printing remote URLs, which can embed credentials:
+run `gh repo view --json visibility -q .visibility 2>/dev/null`. If that fails,
+run `git remote get-url origin | sed -E 's#//[^@/]*@#//#'` to see the host and
+repo with any credentials removed, and judge from that. If visibility still
+cannot be determined, say "unknown, treat as public". For a **public repo**,
 session specifics (client names, plans, research, private paths) must
 never go into a tracked file. They go to private memory only. Say which case
 applies before proposing anything.
@@ -75,12 +79,20 @@ fi
 if [ -z "$ROOT" ]; then echo "CENSUS=missing"; else
   CENSUS="$ROOT/scripts/skill-census"
   echo "ROOT=$ROOT"
-  python3 -I "$CENSUS/skill_overlap.py" query "$ROOT" "<the lesson in one sentence>" --top 3
+  # One lesson per run. The lesson goes in on stdin through a quoted here-document,
+  # so quotes, $ and backticks in it are never interpreted by the shell.
+  python3 -I "$CENSUS/skill_overlap.py" query "$ROOT" --stdin --top 3 <<'LESSON'
+<the lesson in one sentence>
+LESSON
 fi
 ```
 
+For several lessons, repeat the last command inside the same Bash call, one
+here-document per lesson (a loop over fixed strings you write yourself works
+too). Never put lesson text inside double quotes on the command line.
+
 If it prints `CENSUS=missing`, say the lookup tool could not be found and
-continue with step 4's manual read only. Do not invent scores.
+continue with the manual read below. Do not invent scores.
 
 **Overlap has low recall.** It is a coarse word-match score, and real
 neighbours such as `qa-full` and `basic-review` score only about 0.09. An

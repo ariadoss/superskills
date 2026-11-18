@@ -77,7 +77,7 @@ def mine(args):
         failed_skills = []
         events = 0
         try:
-            for row in _transcripts.iter_entries(path):
+            for row in _transcripts.iter_entries(path, errors="ignore"):
                 msg = row.get("message")
                 if not isinstance(msg, dict):
                     continue

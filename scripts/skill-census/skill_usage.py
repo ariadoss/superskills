@@ -2,7 +2,8 @@
 """Count skill invocations in Claude Code transcripts.
 
 Usage: skill_usage.py <projects_dir> [--days 90]
-Prints "# sessions=N" then "<skill> TAB <count>" per skill. Reads each line as
+Prints "# sessions=N subagent_files=M" (sessions exclude subagent
+transcripts; skill calls inside them still count) then "<skill> TAB <count>" per skill. Reads each line as
 JSON and looks at two shapes only: a Skill tool call and a typed
 <command-name>/x</command-name>. It never prints message text, so a secret in
 a transcript cannot leak through this tool. Non-JSON lines are skipped.
@@ -24,6 +25,11 @@ _spec.loader.exec_module(_transcripts)
 COMMAND = re.compile(r"<command-name>/([A-Za-z0-9:_-]+)</command-name>")
 
 
+def _bare(name):
+    """Drop a `plugin:` prefix so plugin and local names match."""
+    return name.rpartition(":")[2] or name
+
+
 def _blocks(entry):
     msg = entry.get("message") or {}
     content = msg.get("content")
@@ -33,9 +39,12 @@ def _blocks(entry):
 
 
 def count_usage(projects_dir, days):
-    counts, sessions = Counter(), 0
+    counts, sessions, subagent_files = Counter(), 0, 0
     for path in _transcripts.session_files(projects_dir, days):
-        sessions += 1
+        if _transcripts.is_subagent_path(path, projects_dir):
+            subagent_files += 1
+        else:
+            sessions += 1
         for entry in _transcripts.iter_entries(path):
             for b in _blocks(entry):
                 if not isinstance(b, dict):
@@ -43,11 +52,11 @@ def count_usage(projects_dir, days):
                 if b.get("type") == "tool_use" and b.get("name") == "Skill":
                     name = (b.get("input") or {}).get("skill")
                     if isinstance(name, str) and name:
-                        counts[name] += 1
+                        counts[_bare(name)] += 1
                 elif b.get("type") == "text" and isinstance(b.get("text"), str):
                     for m in COMMAND.finditer(b["text"]):
-                        counts[m.group(1)] += 1
-    return sessions, counts
+                        counts[_bare(m.group(1))] += 1
+    return sessions, subagent_files, counts
 
 
 def main(argv):
@@ -55,8 +64,8 @@ def main(argv):
     p.add_argument("projects_dir")
     p.add_argument("--days", type=int, default=90)
     a = p.parse_args(argv[1:])
-    sessions, counts = count_usage(a.projects_dir, a.days)
-    print(f"# sessions={sessions}")
+    sessions, subagent_files, counts = count_usage(a.projects_dir, a.days)
+    print(f"# sessions={sessions} subagent_files={subagent_files}")
     for name, n in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0])):
         print(f"{name}\t{n}")
     return 0

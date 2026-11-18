@@ -20,7 +20,7 @@ _skill() { # <root-relative dir> <name> <description>
   run python3 -I "$CENSUS/skill_index.py" "$FIX"
   [ "$status" -eq 0 ]
   [[ "$output" == *"alpha"* ]] || false
-  [[ "$output" != *"vendored"* ]] || false
+  [ "$(printf '%s\n' "$output" | wc -l | tr -d ' ')" -eq 1 ]
   [[ "$output" != *"y"$'\t'"marketing-skills"* ]] || false
   [[ "$output" != *"qa"$'\t'"vendor"* ]] || false
 }
@@ -30,6 +30,8 @@ _skill() { # <root-relative dir> <name> <description>
   run python3 -I "$CENSUS/skill_index.py" "$FIX"
   [ "$status" -eq 0 ]
   [[ "$output" == *"skills/evil"* ]] || false
+  dircol="$(printf '%s\n' "$output" | cut -f2)"
+  [[ "$dircol" != *"../"* ]] || false
 }
 
 _raw() { # <root-relative dir> <full SKILL.md content>
@@ -105,6 +107,19 @@ for s in skill_index.load_skills(sys.argv[2]):
   [[ "$output" == a-review* ]] || false
 }
 
+@test "overlap query: --stdin reads the lesson, quotes and dollar signs included" {
+  _skill skills/a-review a-review "review pending code changes for correctness bugs"
+  run bash -c 'printf "%s\n" "always review \"code\" changes \$(x) for correctness bugs" | python3 -I "$0" query "$1" --stdin --top 1' "$CENSUS/skill_overlap.py" "$FIX"
+  [ "$status" -eq 0 ]
+  [[ "$output" == a-review* ]] || false
+}
+
+@test "overlap query: no lesson text exits 2 with a message" {
+  run python3 -I "$CENSUS/skill_overlap.py" query "$FIX"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"query needs the lesson text"* ]] || false
+}
+
 @test "overlap: empty tree prints nothing and exits 0" {
   run python3 -I "$CENSUS/skill_overlap.py" pairs "$FIX"
   [ "$status" -eq 0 ]
@@ -121,7 +136,37 @@ for s in skill_index.load_skills(sys.argv[2]):
 
 @test "usage: reports how many sessions it scanned" {
   run python3 -I "$CENSUS/skill_usage.py" "$REPO_ROOT/tests/fixtures/census/transcripts" --days 3650
-  [[ "$output" == *"# sessions=2"* ]] || false
+  [[ "$output" == *"# sessions=2 subagent_files=1"* ]] || false
+}
+
+@test "usage: a plugin prefix is stripped when counting" {
+  mkdir -p "$BATS_TEST_TMPDIR/pp"
+  printf '%s\n' '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Skill","input":{"skill":"plug:review"}}]}}' > "$BATS_TEST_TMPDIR/pp/s.jsonl"
+  run python3 -I "$CENSUS/skill_usage.py" "$BATS_TEST_TMPDIR/pp"
+  [[ "$output" == *$'review\t1'* ]] || false
+}
+
+@test "transcripts: top_level_only skips subagent files, default keeps them" {
+  run python3 -I -c 'import sys; sys.path.insert(0, sys.argv[1]); import transcripts as t
+d=sys.argv[2]
+print(len(t.session_files(d)), len(t.session_files(d, top_level_only=True)))' "$REPO_ROOT/scripts/lib" "$REPO_ROOT/tests/fixtures/census/transcripts"
+  [ "$output" = "3 2" ]
+}
+
+@test "transcripts: a broken symlink does not raise when a window is set" {
+  mkdir -p "$BATS_TEST_TMPDIR/bl"
+  ln -s "$BATS_TEST_TMPDIR/nowhere" "$BATS_TEST_TMPDIR/bl/dead.jsonl"
+  run python3 -I -c 'import sys; sys.path.insert(0, sys.argv[1]); import transcripts as t
+print(len(t.session_files(sys.argv[2], days=30)))' "$REPO_ROOT/scripts/lib" "$BATS_TEST_TMPDIR/bl"
+  [ "$status" -eq 0 ]
+  [ "$output" = "0" ]
+}
+
+@test "transcripts: errors policy is a parameter (replace by default, ignore for the miner)" {
+  printf '{"a":"x\xffy"}\n' > "$BATS_TEST_TMPDIR/bad.jsonl"
+  run python3 -I -c 'import sys; sys.path.insert(0, sys.argv[1]); import transcripts as t
+print(next(t.iter_entries(sys.argv[2]))["a"].encode("unicode_escape").decode(), next(t.iter_entries(sys.argv[2], errors="ignore"))["a"])' "$REPO_ROOT/scripts/lib" "$BATS_TEST_TMPDIR/bad.jsonl"
+  [ "$output" = 'x\ufffdy xy' ]
 }
 
 @test "usage: never prints message content" {
@@ -136,6 +181,6 @@ for s in skill_index.load_skills(sys.argv[2]):
   touch -t 202001010000 "$BATS_TEST_TMPDIR/t/s1.jsonl"
   run python3 -I "$CENSUS/skill_usage.py" "$BATS_TEST_TMPDIR/t" --days 30
   [ "$status" -eq 0 ]
-  [[ "$output" == *"# sessions=1"* ]] || false
+  [[ "$output" == *"# sessions=1 "* ]] || false
   [[ "$output" != *$'review\t'* ]] || false
 }
