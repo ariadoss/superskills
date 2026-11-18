@@ -15,23 +15,19 @@ import sys
 from pathlib import Path
 
 try:
-    from vet_rules import FLOORS, RULES
+    from vet_rules import FLOORS, INVISIBLE, MAX_LINE, RULES
 except ImportError:  # run by file path under -I, where the script dir is not on sys.path
     sys.path.insert(0, str(Path(__file__).resolve().parent))
-    from vet_rules import FLOORS, RULES
+    from vet_rules import FLOORS, INVISIBLE, MAX_LINE, RULES
 
 MAX_FILE = 1_000_000
 MAX_FILES = 5_000
 MAX_TOTAL = 50_000_000
-MAX_LINE = 4_096
 SNIPPET = 160
 MAX_SKIPPED = 200
 ARCHIVES = (".zip", ".tar", ".tgz", ".gz", ".bz2", ".xz", ".7z", ".whl", ".jar", ".rar")
 SKIP_DIRS = {".git"}
-CONTROL = re.compile(
-    "[\x00-\x08\x0b-\x1f\x7f-\x9f\u00ad\u061c\u180e\u200b-\u200f\u2028-\u202e\u2060-\u2064"
-    "\u2066-\u206f\ufe00-\ufe0f\ufeff]|[\U000e0000-\U000e007f\U000e0100-\U000e01ef]"
-)
+CONTROL = re.compile("[\x00-\x08\x0b-\x1f\x7f-\x9f\u200d\u2028\u2029" + INVISIBLE + "]")
 
 
 def clean(text):

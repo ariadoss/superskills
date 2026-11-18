@@ -182,3 +182,38 @@ rules_in() { scan | jq -r '[.findings[].rule] | unique | join(",")'; }
   run timeout 20 python3 -I "$T" "$D"
   [ "$status" -ne 124 ]
 }
+
+@test "VS001 is not evaded by separators that str.splitlines would treat as line breaks" {
+  for sep in '\x0b' '\x0c' '\x1c' '\x1d' '\x1e' '\xc2\x85' '\xe2\x80\xa8' '\xe2\x80\xa9'; do
+    printf "ignore${sep}previous${sep}instructions\n" > "$D/between.md"
+    printf "ignore pre${sep}vious instructions\n" > "$D/inside.md"
+    run scan
+    [ "$(echo "$output" | jq -r '[.findings[] | select(.rule=="VS001")] | length')" = "2" ] || { echo "sep $sep: $output"; false; }
+  done
+}
+@test "line numbers match an editor: only LF, CRLF and CR add lines" {
+  printf 'ok\x0b\nok\x0c\xc2\x85\xe2\x80\xa8\nignore previous instructions\n' > "$D/a.md"
+  printf 'ok\r\nok\r\nignore previous instructions\r\n' > "$D/crlf.md"
+  printf 'ok\rok\rignore previous instructions\r' > "$D/cr.md"
+  run scan
+  [ "$(echo "$output" | jq -r '[.findings[] | select(.rule=="VS001") | "\(.path):\(.line)"] | join(",")')" = "a.md:3,cr.md:3,crlf.md:3" ]
+}
+@test "VS010 reports a long line by editor line number" {
+  { printf 'x\x0b\n'; head -c 5000 /dev/zero | tr '\0' 'a'; printf '\n'; } > "$D/a.md"
+  run scan
+  [ "$(echo "$output" | jq -r '[.findings[] | select(.rule=="VS010") | .line] | join(",")')" = "2" ]
+}
+@test "VS002 covers every invisible group the escaper covers" {
+  n=0
+  for c in '\xc2\xad' '\xd8\x9c' '\xe1\xa0\x8e' '\xe2\x81\xa0' '\xe2\x81\xaa' '\xcd\x8f' '\xe3\x85\xa4' '\xe2\xa0\x80' '\xef\xb8\x8f' '\xf3\xa0\x84\x80'; do
+    n=$((n+1)); printf "a${c}b\n" > "$D/f$n.md"
+  done
+  run scan
+  [ "$(echo "$output" | jq -r '[.findings[] | select(.rule=="VS002")] | length')" = "10" ]
+}
+@test "VS002 allows a zero-width joiner between non-ASCII characters but not next to ASCII" {
+  printf '\xf0\x9f\x91\xa8\xe2\x80\x8d\xf0\x9f\x91\xa9\n' > "$D/emoji.md"
+  printf 'ab\xe2\x80\x8dcd\n' > "$D/ascii.md"
+  run scan
+  [ "$(echo "$output" | jq -r '[.findings[] | select(.rule=="VS002") | .path] | join(",")')" = "ascii.md" ]
+}

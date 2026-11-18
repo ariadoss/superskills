@@ -4,6 +4,31 @@ Rules only inspect text; they never execute or import it."""
 import re
 
 MAX_LINE = 4_096
+_EOL = re.compile(r"\r\n|\r|\n")
+
+# Invisible characters, as a regex character-class body (zero-width joiner U+200D handled apart).
+# vet_scan.py reuses this to escape the same characters in quoted snippets.
+INVISIBLE = (
+    "\u00ad\u034f\u061c\u180e\u200b\u200c\u200e\u200f\u202a-\u202e\u2060-\u2064\u2066-\u206f"
+    "\u2800\u3164\ufe00-\ufe0f\ufeff\U000e0000-\U000e007f\U000e0100-\U000e01ef"
+)
+
+
+# Characters str.splitlines treats as breaks but an editor and a reader treat as plain whitespace.
+_SEPARATORS = re.compile("[\x0b\x0c\x1c-\x1e\x85\u2028\u2029]")
+
+
+def variants(line):
+    """The line as written, with separators read as spaces, and with them deleted (a word split by one)."""
+    if not _SEPARATORS.search(line):
+        return (line,)
+    return (line, _SEPARATORS.sub(" ", line), _SEPARATORS.sub("", line))
+
+
+def split_lines(text):
+    """Split on LF, CRLF or CR only, as an editor numbers lines. str.splitlines also splits on
+    \\x0b, \\x0c, \\x1c-\\x1e, \\x85, U+2028 and U+2029, which a reader treats as plain spaces."""
+    return _EOL.split(text)
 
 
 def line_rule(rule_id, severity, pattern, note, globs=None):
@@ -15,10 +40,10 @@ def line_rule(rule_id, severity, pattern, note, globs=None):
         for path, text in texts.items():
             if globs and not any(path.endswith(g) for g in globs):
                 continue
-            for n, line in enumerate(text.splitlines(), 1):
+            for n, line in enumerate(split_lines(text), 1):
                 if len(line) > MAX_LINE:
                     continue  # reported once per line by long_line_rule (VS010), never silently
-                if rx.search(line):
+                if any(rx.search(v) for v in variants(line)):
                     out.append({"rule": rule_id, "severity": severity, "path": path, "line": n,
                                 "snippet": line.strip(), "note": note})
         return out
@@ -29,7 +54,7 @@ def long_line_rule(texts):
     """VS010: a line over 4 KB is not examined by the line rules, so a payload can hide there. Say so."""
     return [{"rule": "VS010", "severity": "medium", "path": p, "line": n, "snippet": l[:160],
              "note": "line over 4096 characters: not examined by the other rules, read it by hand"}
-            for p, t in texts.items() for n, l in enumerate(t.splitlines(), 1) if len(l) > MAX_LINE]
+            for p, t in texts.items() for n, l in enumerate(split_lines(t), 1) if len(l) > MAX_LINE]
 
 
 steering_rule = line_rule(
@@ -43,7 +68,7 @@ steering_rule = line_rule(
 
 _invisible = line_rule(
     "VS002", "high",
-    r"[​-‏‪-‮⁦-⁩﻿]|[\U000e0000-\U000e007f]",
+    "[" + INVISIBLE + "]|(?<![^\\x00-\\x7f])\u200d|\u200d(?![^\\x00-\\x7f])",
     "invisible or bidirectional-control character: the text a reviewer sees is not the text that runs")
 
 
