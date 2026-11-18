@@ -56,6 +56,7 @@ Core skills live in the default `coding` pack; `content` and `startup` are the o
 | `/fuzz` | Web fuzzing via ffuf |
 | `/defense` | Defense-in-depth: OWASP Top 10, secrets, auth, encryption |
 | `/iac-scan` | Infrastructure-as-Code security scan: Dockerfiles, docker-compose, Terraform, Kubernetes/Helm, CI/CD workflows; flags root containers, open ingress, wildcard IAM, exposed secrets |
+| `/vet-skill` | Vets a third-party skill, plugin or MCP server before install: a read-only scanner plus a reviewer pass that ends in a block, caution or clean verdict with cited lines |
 
 ### Startup
 

@@ -26,7 +26,6 @@ MAX_TOTAL = 50_000_000
 SNIPPET = 160
 MAX_SKIPPED = 200
 ARCHIVES = (".zip", ".tar", ".tgz", ".gz", ".bz2", ".xz", ".7z", ".whl", ".jar", ".rar")
-SKIP_DIRS = {".git"}
 CONTROL = re.compile("[\x00-\x08\x0b-\x1f\x7f-\x9f\u200d\u2028\u2029" + INVISIBLE + "]")
 
 
@@ -50,13 +49,23 @@ def walk(root):
     """Return (files, skipped, truncated, overflow): regular files as (relative path, path) plus skips.
     Stops walking as soon as a file or byte cap is hit."""
     skipped, files, total, truncated = Skipped(), [], 0, False
-    for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
+
+    def unreadable_dir(err):  # os.walk would otherwise drop a directory it cannot list without a trace
+        skipped.add(str(Path(err.filename).relative_to(root)), "unreadable")
+
+    for dirpath, dirnames, filenames in os.walk(root, followlinks=False, onerror=unreadable_dir):
         keep = []
         for d in sorted(dirnames):
             d_path = Path(dirpath) / d
-            if d_path.is_symlink():  # os.walk lists a symlinked directory in dirnames and never descends it
-                skipped.add(str(d_path.relative_to(root)), "symlink")
-            elif d not in SKIP_DIRS:
+            rel_dir = str(d_path.relative_to(root))
+            try:
+                is_link = d_path.is_symlink()  # os.walk lists a symlinked directory in dirnames and never descends it
+            except OSError:  # for example a path longer than PATH_MAX
+                skipped.add(rel_dir, "unreadable")
+                continue
+            if is_link:
+                skipped.add(rel_dir, "symlink")
+            elif not (rel_dir == ".git"):  # only the root .git is skipped; a nested one is scanned
                 keep.append(d)
         dirnames[:] = keep
         for name in sorted(filenames):

@@ -16,7 +16,7 @@ characters is not examined by the line rules; VS010 reports it.
 | VS004 pipe to shell | `curl`/`wget`/`fetch` piped into `sh`, `bash`, `zsh` or `dash` (optionally `sudo`), any `\| python`, PowerShell `iex` with a web download | Runs downloaded code unread | block; caution when the file name ends `.md` or `.txt` | An install line documented in a README |
 | VS005 install hooks | `preinstall`, `install`, `postinstall` or `prepare` scripts in `package.json`; `"type": "command"` hooks in `hooks.json`, `settings.json` or `plugin.json`. Judged from the parsed JSON, with a line match if the file does not parse | Code runs at install or on every session or tool event | caution | A benign build step; a hook that only prints |
 | VS006 unpinned launchers | `npx`, `uvx`, `pipx run`, `bunx` of a package with no version pin; a `git+https` dependency with no revision | Whatever is newest runs with your privileges, and it can change after the vet | caution | Prose in docs that mentions `npx`; a pinned package written in a form the scanner does not read as pinned |
-| VS007 sensitive read plus upload | One file that both reads a sensitive source (`~/.ssh`, `~/.aws`, `~/.claude`, `.env`, `os.environ`, `id_rsa`, `credentials.json`, Claude project history) and makes an outbound upload-style call (`requests.post/put`, `urlopen`, `fetch(`, `httpx.post/put`, `socket.connect`, `XMLHttpRequest`, `curl` with a data or form flag) | The shape of credential theft. It is judged per file, not per flow | block | A client that reads its own API key from `.env` and calls its own API. Decide by where the data goes |
+| VS007 sensitive read plus upload | One file that both reads a sensitive source (`~/.ssh`, `~/.aws`, `~/.claude`, `.env`, `os.environ` (any use except `os.environ.get(`), `id_rsa`, `credentials.json`, Claude project history) and makes an outbound upload-style call (`requests.post/put`, `urlopen`, `fetch(`, `httpx.post/put`, `socket.connect`, `XMLHttpRequest`, `curl` with a data or form flag) | The shape of credential theft. It is judged per file, not per flow | block | A client that reads its own API key from `.env` and calls its own API. Decide by where the data goes |
 | VS008 wide network bind | `host=` or `listen(` with `0.0.0.0` or `::`, or `bind(("0.0.0.0"` | The server is reachable from the network, not only from this machine | caution | A container entry point meant to bind widely behind a proxy |
 | VS009 shell execution | `shell=True`, `os.popen(`, `eval(`; `os.system(` and `child_process.exec(` only when the command is built by interpolation | Whatever feeds the string runs as a command | caution | `eval(` also matches `.eval(` and prose; a constant command |
 | VS010 line over 4096 characters | Any line longer than 4096 characters | The examination limit. Text past it is unscanned, so a payload can sit there | caution | Minified code, data files, lockfiles |
@@ -67,10 +67,11 @@ Beyond text patterns:
   is then a loader. Look for fetch-and-write-and-run, plugin loaders and
   update checks, and say you could not see the payload.
 - Anything the scanner skipped: symlinks, special files, archives, binaries,
-  files over 1,000,000 bytes, unreadable files, and everything past the file
+  files over 1,000,000 bytes, unreadable files and directories, and everything past the file
   and byte caps. Name each in Coverage.
-- The `.git` directory. The walker skips it silently, so a local target's
-  `.git` is never examined and does not appear in `skipped`.
+- The root `.git` directory. The walker skips it silently, so a local target's
+  own `.git` is never examined and does not appear in `skipped`. A `.git`
+  directory nested deeper in the tree is scanned like any other.
 - Text the line rules never examined: lines over 4096 characters.
 - Encodings and languages the patterns do not cover.
 

