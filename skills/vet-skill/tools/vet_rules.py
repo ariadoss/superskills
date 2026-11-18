@@ -1,6 +1,7 @@
 """Rule table for vet_scan. Each rule is a function: {relative path: text} -> list of findings.
 A finding is {"rule", "severity", "path", "line", "snippet", "note"}.
 Rules only inspect text; they never execute or import it."""
+import json
 import re
 
 MAX_LINE = 4_096
@@ -31,22 +32,29 @@ def split_lines(text):
     return _EOL.split(text)
 
 
+def iter_lines(texts, globs=None):
+    """Yield (path, line number, line) for each line to examine; lines over MAX_LINE are left to VS010."""
+    for path, text in texts.items():
+        if globs and not any(path.endswith(g) for g in globs):
+            continue
+        for n, line in enumerate(split_lines(text), 1):
+            if len(line) <= MAX_LINE:
+                yield path, n, line
+
+
+def _finding(rule_id, severity, path, n, line, note):
+    return {"rule": rule_id, "severity": severity, "path": path, "line": n,
+            "snippet": line.strip(), "note": note}
+
+
 def line_rule(rule_id, severity, pattern, note, globs=None):
     """Build a rule that flags each line matching `pattern` (case-insensitive) in files matching `globs`."""
     rx = re.compile(pattern, re.I)
 
     def run(texts):
-        out = []
-        for path, text in texts.items():
-            if globs and not any(path.endswith(g) for g in globs):
-                continue
-            for n, line in enumerate(split_lines(text), 1):
-                if len(line) > MAX_LINE:
-                    continue  # reported once per line by long_line_rule (VS010), never silently
-                if any(rx.search(v) for v in variants(line)):
-                    out.append({"rule": rule_id, "severity": severity, "path": path, "line": n,
-                                "snippet": line.strip(), "note": note})
-        return out
+        return [_finding(rule_id, severity, path, n, line, note)
+                for path, n, line in iter_lines(texts, globs)
+                if any(rx.search(v) for v in variants(line))]
     return run
 
 
@@ -85,5 +93,132 @@ obfuscation_rule = line_rule(
     r"|\\x[0-9a-f]{2}(\\x[0-9a-f]{2}){20,}",
     "encoded or obfuscated payload")
 
-RULES = [steering_rule, invisible_rule, obfuscation_rule, long_line_rule]
-FLOORS = {"VS001": "block", "VS002": "block", "VS003": "caution", "VS010": "caution"}
+pipe_to_shell_rule = line_rule(
+    "VS004", "high",
+    r"\b(curl|wget|fetch)\b[^|\n]*\|\s*(sudo\s+)?(ba|z|da)?sh\b|\|\s*python3?\b"
+    r"|\b(iex|Invoke-Expression)\b.{0,40}(iwr|Invoke-WebRequest|DownloadString)",
+    "downloads code and runs it unread")
+
+
+# --- VS005: install-time and session-start execution, judged from the file's structure ---
+
+_LIFECYCLE = {"preinstall", "install", "postinstall", "prepare"}
+_LIFECYCLE_LINE = re.compile(r'"(preinstall|install|postinstall|prepare)"\s*:', re.I)
+_HOOK_LINE = re.compile(r'"type"\s*:\s*"command"', re.I)
+_HOOK_FILES = {"hooks.json", "settings.json", "plugin.json"}
+
+
+class _Pairs(list):
+    """A JSON object kept as (key, value) pairs, so a duplicated key cannot hide the first one."""
+
+
+def _parse_json(text):
+    try:
+        return json.loads(text.lstrip("\ufeff"), object_pairs_hook=_Pairs)
+    except (ValueError, RecursionError):
+        return None
+
+
+def _json_pairs(root):
+    """Yield (parent key, key, value) for every object member, without recursion."""
+    stack = [(root, None)]
+    while stack:
+        node, parent = stack.pop()
+        if isinstance(node, _Pairs):
+            for key, value in node:
+                yield parent, key, value
+                stack.append((value, key))
+        elif isinstance(node, list):
+            stack.extend((item, parent) for item in node)
+
+
+def _install_hits(name, text):
+    """Count of structural hits when `text` parses as JSON, else None."""
+    root = _parse_json(text)
+    if root is None:
+        return None
+    hits = 0
+    for parent, key, value in _json_pairs(root):
+        k = str(key).lower()
+        if name == "package.json":
+            hits += parent is not None and parent.lower() == "scripts" and k in _LIFECYCLE
+        else:
+            hits += k == "type" and isinstance(value, str) and value.lower() == "command"
+    return hits
+
+
+def install_hook_rule(texts):
+    """VS005: npm lifecycle scripts in package.json, command hooks in hooks/settings/plugin json.
+    Parsed as text (never executed); a file that is not valid JSON falls back to a line match."""
+    out = []
+    for path, text in texts.items():
+        name = path.rsplit("/", 1)[-1].lower()
+        if name == "package.json":
+            rx, note = _LIFECYCLE_LINE, "npm lifecycle script: runs code when the package is installed"
+        elif name in _HOOK_FILES:
+            rx, note = _HOOK_LINE, "command hook: runs a shell command on a session or tool event"
+        else:
+            continue
+        lines = split_lines(text)
+        candidates = [(n, l) for n, l in enumerate(lines, 1) if any(rx.search(v) for v in variants(l))]
+        hits = _install_hits(name, text)
+        if hits is None:  # malformed JSON: judge by line, long lines are VS010's
+            found = [(n, l) for n, l in candidates if len(l) <= MAX_LINE]
+        else:
+            found = [candidates[min(i, len(candidates) - 1)] if candidates else (1, lines[0])
+                     for i in range(hits)]
+        out += [_finding("VS005", "medium", path, n, l, note) for n, l in found]
+    return out
+
+
+# --- VS006: launchers and dependencies that fetch whatever is newest ---
+
+_LAUNCHER = re.compile(r"\b(npx|uvx|pipx\s+run|bunx)\b", re.I)
+_JSON_KEY = re.compile(r'"[^"\\]{0,60}"\s*:')
+_TOKEN_SPLIT = re.compile(r"""[\s",\[\]'`]+""")
+_PINNED = re.compile(r".@v?\d|===?\d")
+_GIT_URL = re.compile(r"git\+https?://[^\s\"'<>,)]+", re.I)
+_GIT_PINNED = re.compile(r"@\S|#(?!egg=|subdirectory=)\S")
+
+
+def _unpinned_launcher(line):
+    """True when a launcher on the line is followed by a package without a version pin."""
+    for m in _LAUNCHER.finditer(line):
+        rest = _JSON_KEY.sub(" ", line[m.end():m.end() + 400])
+        for tok in _TOKEN_SPLIT.split(rest):
+            if not tok or tok.startswith("-") or tok == ":":
+                continue
+            if not tok.startswith((".", "/", "~")) and not _PINNED.search(tok):
+                return True
+            break
+    return False
+
+
+def _unpinned_git(line):
+    for m in _GIT_URL.finditer(line):
+        path = m.group(0).split("//", 1)[1].partition("/")[2]
+        if not _GIT_PINNED.search(path):
+            return True
+    return False
+
+
+def unpinned_rule(texts):
+    """VS006: npx/uvx/pipx run/bunx of an unpinned package, or a git+https dependency with no revision."""
+    out = []
+    for path, n, line in iter_lines(texts):
+        for v in variants(line):
+            if _unpinned_launcher(v):
+                note = "launcher runs an unpinned package: whatever is newest runs, with your privileges"
+            elif _unpinned_git(v):
+                note = "git dependency without a pinned revision: whatever is on the branch is installed"
+            else:
+                continue
+            out.append(_finding("VS006", "medium", path, n, line, note))
+            break
+    return out
+
+
+RULES = [steering_rule, invisible_rule, obfuscation_rule, long_line_rule,
+         pipe_to_shell_rule, install_hook_rule, unpinned_rule]
+FLOORS = {"VS001": "block", "VS002": "block", "VS003": "caution", "VS010": "caution",
+          "VS004": "block", "VS005": "caution", "VS006": "caution"}
