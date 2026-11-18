@@ -1,0 +1,4 @@
+{"type":"user","message":{"role":"user","content":"<command-message>qa-full</command-message>\n<command-name>/qa-full</command-name>"}}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","name":"Skill","input":{"skill":"review"}}]}}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","name":"Skill","input":{"skill":"review"}}]}}
+{"type":"user","message":{"role":"user","content":"my password is hunter2-SECRET-TOKEN, please use it"}}
