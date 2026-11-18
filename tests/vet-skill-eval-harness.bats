@@ -106,3 +106,47 @@ build() {
   [ "$output" = "$BATS_TEST_TMPDIR/final.txt 2 True" ]
   [ "$(cat "$BATS_TEST_TMPDIR/final.txt")" = "final report text" ]
 }
+
+@test "each seed's mechanism_re matches its own planted line and report sentence, and no other seed's" {
+  run python3 -I - "$SEEDS/seeds-dev.json" "$SEEDS/seeds-holdout.json" <<'PY'
+import json, re, sys
+bad = []
+for path in sys.argv[1:]:
+    seeds = json.load(open(path, encoding="utf-8"))
+    rx = {s["id"]: re.compile(s["mechanism_re"], re.I) for s in seeds if s.get("mechanism_re")}  # grader flags
+    text = {s["id"]: s["lines"][s["vuln_line_index"]] for s in seeds}
+    report = {s["id"]: s.get("report_line", "") for s in seeds}
+    whole = {s["id"]: "\n".join(s["lines"]) for s in seeds}
+    tree = {s["id"]: s["tree"] for s in seeds}  # a fixture is one tree, so only same-tree seeds can be confused
+    for sid, r in rx.items():
+        if not r.search(text[sid]):
+            bad.append(f"{path}: {sid} does not match its own planted line")
+        if not report[sid] or not r.search(report[sid]):
+            bad.append(f"{path}: {sid} does not match its own report sentence")
+        for other in text:
+            if other == sid or tree[other] != tree[sid]:
+                continue
+            for what, hay in (("planted line", text[other]), ("report sentence", report[other])):
+                if r.search(hay):
+                    bad.append(f"{path}: {sid} pattern also matches the {what} of {other}")
+            if other in rx and rx[other].search(whole[sid]) and sid.endswith("uncovered"):
+                bad.append(f"{path}: pattern of {other} matches the uncovered file")
+print("\n".join(bad))
+sys.exit(1 if bad else 0)
+PY
+  echo "$output"
+  [ "$status" -eq 0 ]
+}
+
+@test "extract_finals skips blocks without an id, non-object lines and a non-object input" {
+  printf '%s\n' \
+    '[1,2]' '"text"' 'null' \
+    '{"message":{"content":[{"type":"tool_use","name":"Read","input":{}}]}}' \
+    '{"message":{"content":[{"type":"tool_use","id":"t1","name":"SubagentHandback","input":"oops"}]}}' \
+    '{"message":{"content":["plain",{"type":"tool_use","id":"t2","name":"SubagentHandback","input":{"message":"kept"}}]}}' \
+    > "$BATS_TEST_TMPDIR/odd.jsonl"
+  run python3 -I "$EXTRACT" "$BATS_TEST_TMPDIR/odd.jsonl" "$BATS_TEST_TMPDIR/final.txt"
+  [ "$status" -eq 0 ]
+  [ "$(cat "$BATS_TEST_TMPDIR/final.txt")" = "kept" ]
+  [ "$output" = "$BATS_TEST_TMPDIR/final.txt 2 True" ]
+}

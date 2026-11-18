@@ -17,14 +17,17 @@ def final(path):
                 obj = json.loads(ln)
             except ValueError:
                 continue
-            content = (obj.get("message") or {}).get("content")
+            message = obj.get("message") if isinstance(obj, dict) else None
+            content = message.get("content") if isinstance(message, dict) else None
             if not isinstance(content, list):
                 continue
             for b in content:
-                if isinstance(b, dict) and b.get("type") == "tool_use":
-                    ids.add(b["id"])
-                    if b.get("name") == "SubagentHandback":
-                        msg = b["input"].get("message")
+                if not isinstance(b, dict) or b.get("type") != "tool_use" or "id" not in b:
+                    continue
+                ids.add(str(b["id"]))
+                args = b.get("input")
+                if b.get("name") == "SubagentHandback" and isinstance(args, dict):
+                    msg = args.get("message")
     return msg, len(ids)
 
 
