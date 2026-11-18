@@ -15,10 +15,10 @@ import sys
 from pathlib import Path
 
 try:
-    from vet_rules import FLOORS, INVISIBLE, MAX_LINE, RULES
+    from vet_rules import FLOORS, INVISIBLE, RULES
 except ImportError:  # run by file path under -I, where the script dir is not on sys.path
     sys.path.insert(0, str(Path(__file__).resolve().parent))
-    from vet_rules import FLOORS, INVISIBLE, MAX_LINE, RULES
+    from vet_rules import FLOORS, INVISIBLE, RULES
 
 MAX_FILE = 1_000_000
 MAX_FILES = 5_000
