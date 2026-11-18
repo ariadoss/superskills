@@ -16,3 +16,30 @@ setup() { REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"; }
   grep -qi 'never delete' "$f"
   grep -q '30 sessions' "$f"
 }
+
+@test "debrief: name equals directory and boundaries name the neighbours" {
+  f="$REPO_ROOT/skills/debrief/SKILL.md"
+  [ -f "$f" ]
+  grep -q '^name: debrief$' "$f"
+  grep -q '/skillify' "$f"
+  grep -q '/handoff' "$f"
+  grep -q '/prune-skills' "$f"
+}
+
+@test "debrief: proposes only and protects public repos" {
+  f="$REPO_ROOT/skills/debrief/SKILL.md"
+  grep -qi 'never write' "$f"
+  grep -qi 'public repo' "$f"
+}
+
+@test "debrief: checks existing coverage with the overlap tool" {
+  grep -q 'skill_overlap.py" query' "$REPO_ROOT/skills/debrief/SKILL.md"
+}
+
+@test "debrief: states the low-recall limit and the no-quoting rule" {
+  f="$REPO_ROOT/skills/debrief/SKILL.md"
+  grep -qi 'low recall' "$f"
+  grep -qi 'does NOT mean no skill covers' "$f"
+  grep -qi 'never quote' "$f"
+  grep -qi 'explicit yes' "$f"
+}
