@@ -18,7 +18,7 @@ Usage:
 """
 import argparse
 import collections
-import glob
+import importlib.util
 import json
 import os
 import random
@@ -26,6 +26,13 @@ import re
 import sys
 
 HOME = os.path.expanduser("~")
+
+# python3 -I adds no script directory to sys.path, so load the shared reader by path.
+_spec = importlib.util.spec_from_file_location(
+    "transcripts", os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                "..", "..", "scripts", "lib", "transcripts.py"))
+_transcripts = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_transcripts)
 TEST_BUILD = re.compile(
     r"\b(pytest|unittest|npm\s+test|yarn\s+test|pnpm\s+test|go\s+test|"
     r"cargo\s+test|bats|rspec|make\s+test|mvn\s+-q|gradle\s+test|"
@@ -55,13 +62,12 @@ def normalize_command(cmd):
 def mine(args):
     sessions = 0
     thrash, repeat_fail, skill_fail = [], [], []
-    files = sorted(glob.glob(HOME + "/.claude/projects/**/*.jsonl",
-                             recursive=True))
+    files = _transcripts.session_files(HOME + "/.claude/projects")
     if args.max_files:
         files = files[:args.max_files]
     for path in files:
         sessions += 1
-        sid = os.path.basename(path)
+        sid = os.path.basename(str(path))
         bash_calls = {}          # tool_use_id -> normalized command
         edit_events = collections.defaultdict(list)  # full path -> [event_no]
         edit_ids = {}            # tool_use_id -> full path
@@ -71,49 +77,44 @@ def mine(args):
         failed_skills = []
         events = 0
         try:
-            with open(path, errors="ignore") as fh:
-                for line in fh:
-                    try:
-                        row = json.loads(line)
-                    except ValueError:
+            for row in _transcripts.iter_entries(path):
+                msg = row.get("message")
+                if not isinstance(msg, dict):
+                    continue
+                content = msg.get("content")
+                if not isinstance(content, list):
+                    continue
+                for block in content:
+                    if not isinstance(block, dict):
                         continue
-                    msg = row.get("message")
-                    if not isinstance(msg, dict):
-                        continue
-                    content = msg.get("content")
-                    if not isinstance(content, list):
-                        continue
-                    for block in content:
-                        if not isinstance(block, dict):
+                    events += 1
+                    btype = block.get("type")
+                    if btype == "tool_use":
+                        name = block.get("name", "")
+                        inp = block.get("input") or {}
+                        bid = block.get("id")
+                        if name in ("Edit", "Write", "NotebookEdit"):
+                            fp = (inp.get("file_path")
+                                  or inp.get("notebook_path") or "?")
+                            edit_ids[bid] = fp
+                            edit_events[fp].append(events)
+                        elif name == "Bash":
+                            bash_calls[bid] = normalize_command(
+                                inp.get("command", ""))
+                        elif name == "Skill":
+                            skill_calls[bid] = inp.get("skill", "?")
+                    elif btype == "tool_result" and result_is_error(block):
+                        tu = block.get("tool_use_id")
+                        if tu in skill_calls:
+                            failed_skills.append(
+                                {"session": sid,
+                                 "skill": skill_calls[tu]})
                             continue
-                        events += 1
-                        btype = block.get("type")
-                        if btype == "tool_use":
-                            name = block.get("name", "")
-                            inp = block.get("input") or {}
-                            bid = block.get("id")
-                            if name in ("Edit", "Write", "NotebookEdit"):
-                                fp = (inp.get("file_path")
-                                      or inp.get("notebook_path") or "?")
-                                edit_ids[bid] = fp
-                                edit_events[fp].append(events)
-                            elif name == "Bash":
-                                bash_calls[bid] = normalize_command(
-                                    inp.get("command", ""))
-                            elif name == "Skill":
-                                skill_calls[bid] = inp.get("skill", "?")
-                        elif btype == "tool_result" and result_is_error(block):
-                            tu = block.get("tool_use_id")
-                            if tu in skill_calls:
-                                failed_skills.append(
-                                    {"session": sid,
-                                     "skill": skill_calls[tu]})
-                                continue
-                            if tu in bash_calls:
-                                cmd = bash_calls[tu]
-                                failed_bash[cmd] += 1
-                                if TEST_BUILD.search(cmd):
-                                    failed_test_nos.append(events)
+                        if tu in bash_calls:
+                            cmd = bash_calls[tu]
+                            failed_bash[cmd] += 1
+                            if TEST_BUILD.search(cmd):
+                                failed_test_nos.append(events)
         except OSError:
             continue
         for fpath, nos in edit_events.items():
