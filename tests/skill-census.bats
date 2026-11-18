@@ -29,7 +29,7 @@ _skill() { # <root-relative dir> <name> <description>
   _skill skills/evil "../../etc/x" "does evil things"
   run python3 -I "$CENSUS/skill_index.py" "$FIX"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"skills/evil"* ]]
+  [[ "$output" == *"skills/evil"* ]] || false
 }
 
 _raw() { # <root-relative dir> <full SKILL.md content>

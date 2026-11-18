@@ -60,7 +60,7 @@ setup() { REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"; }
   [[ "$output" == *$'dup-x\t2'* ]] || false
   e="$BATS_TEST_TMPDIR/g"; bash "$REPO_ROOT/evals/prune-skills/make_tree.sh" "$e" 10
   run python3 -I "$REPO_ROOT/scripts/skill-census/skill_usage.py" "$e/projects"
-  [[ "$output" == *"# sessions=10"* ]]
+  [[ "$output" == *"# sessions=10"* ]] || false
 }
 
 @test "prune eval fixture: builder refuses an empty target, root and a non-empty directory" {
@@ -95,7 +95,7 @@ print(" ".join(m[n] for l in sys.stdin.read().splitlines() for n in l.split("\t"
   run python3 -I "$REPO_ROOT/scripts/skill-census/skill_usage.py" "$d/projects"
   [[ "$output" == *$'skill-02\t30'* ]] || false
   [[ "$output" == *$'skill-08\t2'* ]] || false
-  [[ "$output" != *"skill-06"* ]]
+  [[ "$output" != *"skill-06"* ]] || false
 }
 
 @test "debrief eval: public variant swaps only the visibility line" {
