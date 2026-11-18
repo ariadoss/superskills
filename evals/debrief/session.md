@@ -1,6 +1,6 @@
 # Session summary (synthetic, for the debrief eval)
 
-Repo: acme-widgets. Visibility: PRIVATE (variant B of this fixture says PUBLIC).
+Repo: acme-widgets. Visibility: PRIVATE.
 Task: add CSV export to the widget report page.
 Length: about two hours, one branch, eleven commits.
 

@@ -65,11 +65,44 @@ setup() { REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"; }
 
 @test "prune eval fixture: builder refuses an empty target, root and a non-empty directory" {
   run bash "$REPO_ROOT/evals/prune-skills/make_tree.sh" ""
-  [ "$status" -ne 0 ]
+  [ "$status" -eq 2 ]
   run bash "$REPO_ROOT/evals/prune-skills/make_tree.sh" "/"
-  [ "$status" -ne 0 ]
+  [ "$status" -eq 2 ]
+  [[ "$output" == *usage* ]] || false
+  [ ! -e "/skills" ]
+  [ ! -e "/projects" ]
+  run bash "$REPO_ROOT/evals/prune-skills/make_tree.sh" --plain-names "/"
+  [ "$status" -eq 2 ]
   mkdir -p "$BATS_TEST_TMPDIR/full"; touch "$BATS_TEST_TMPDIR/full/x"
   run bash "$REPO_ROOT/evals/prune-skills/make_tree.sh" "$BATS_TEST_TMPDIR/full"
-  [ "$status" -ne 0 ]
+  [ "$status" -eq 2 ]
   [ ! -e "$BATS_TEST_TMPDIR/full/skills" ]
+}
+
+@test "prune eval fixture: plain-names tree hides roles and maps back to the same results" {
+  d="$BATS_TEST_TMPDIR/p"; bash "$REPO_ROOT/evals/prune-skills/make_tree.sh" --plain-names "$d"
+  run grep -rliE 'dup|filler|quiet|neighbour|vend-|synthetic' "$d"
+  [ "$status" -eq 1 ]
+  [ -f "$d/vendor/skill-05/SKILL.md" ]
+  key="$REPO_ROOT/evals/prune-skills/answer-key.json"
+  run python3 -I "$REPO_ROOT/scripts/skill-census/skill_overlap.py" pairs "$d" --threshold 0.35
+  [ "$status" -eq 0 ]
+  run python3 -I -c 'import json,sys
+m=json.load(open(sys.argv[1]))["plain_names_map"]
+print(" ".join(m[n] for l in sys.stdin.read().splitlines() for n in l.split("\t")[1:]))' "$key" <<<"$output"
+  [ "$output" = "dup-y dup-x" ] || [ "$output" = "dup-x dup-y" ]
+  [ "$(python3 -I -c 'import json,sys;print(json.load(open(sys.argv[1]))["plain_names_map"]["skill-05"])' "$key")" = "vend-logs" ]
+  run python3 -I "$REPO_ROOT/scripts/skill-census/skill_usage.py" "$d/projects"
+  [[ "$output" == *$'skill-02\t30'* ]] || false
+  [[ "$output" == *$'skill-08\t2'* ]] || false
+  [[ "$output" != *"skill-06"* ]]
+}
+
+@test "debrief eval: public variant swaps only the visibility line" {
+  d="$BATS_TEST_TMPDIR/v"; bash "$REPO_ROOT/evals/debrief/make_public_variant.sh" "$d"
+  grep -q 'Visibility: PUBLIC' "$d/session.md"
+  run diff "$REPO_ROOT/evals/debrief/session.md" "$d/session.md"
+  [ "$(printf '%s\n' "$output" | grep -c '^[<>]')" -eq 2 ]
+  run bash "$REPO_ROOT/evals/debrief/make_public_variant.sh" ""
+  [ "$status" -eq 2 ]
 }

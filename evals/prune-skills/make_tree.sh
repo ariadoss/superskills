@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # Build the synthetic prune-skills fixture under a directory you give it.
-# Usage: make_tree.sh <dir> [40|10]
+# Usage: make_tree.sh [--plain-names] <dir> [40|10]
+#   --plain-names  neutral skill-NN names and bodies (what the eval runner
+#                  uses, so names cannot give the answer away). The
+#                  role-to-name map is in answer-key.json (grader only).
 #   <dir>/skills/<name>/SKILL.md   12 flat skills (superskills layout)
 #   <dir>/vendor/<name>/SKILL.md   1 vendored skill (the tools never walk vendor/)
 #   <dir>/projects/proj/sNN.jsonl  N synthetic sessions (40 by default, or 10)
@@ -8,10 +11,12 @@
 # Every name and line is invented; nothing is copied from a real transcript.
 set -euo pipefail
 
+plain=0
+if [ "${1:-}" = "--plain-names" ]; then plain=1; shift; fi
 dir="${1:-}"
 sessions="${2:-40}"
 if [ -z "$dir" ] || [ "$dir" = "/" ]; then
-  echo "usage: make_tree.sh <dir> [40|10]  (dir must be non-empty and not /)" >&2
+  echo "usage: make_tree.sh [--plain-names] <dir> [40|10]  (dir must be non-empty and not /)" >&2
   exit 2
 fi
 case "$sessions" in 40 | 10) ;; *) echo "sessions must be 40 or 10" >&2; exit 2 ;; esac
@@ -20,10 +25,25 @@ if [ -e "$dir" ] && [ -n "$(ls -A "$dir" 2>/dev/null)" ]; then
   exit 2
 fi
 
-skill() { # tree name description
-  mkdir -p "$dir/$1/$2"
-  printf -- '---\nname: %s\ndescription: %s\n---\n\n# %s\n\nSynthetic fixture skill.\n' \
-    "$2" "$3" "$2" > "$dir/$1/$2/SKILL.md"
+# Role -> neutral name, scrambled so position gives nothing away.
+ROLES=(filler-chess dup-y neighbour-b filler-poetry vend-logs quiet-unique filler-garden dup-x
+  filler-music neighbour-a filler-travel filler-fitness filler-recipe)
+nm() { # role -> output name
+  if [ "$plain" = 0 ]; then printf '%s' "$1"; return; fi
+  local i
+  for i in "${!ROLES[@]}"; do
+    if [ "${ROLES[$i]}" = "$1" ]; then printf 'skill-%02d' $((i + 1)); return; fi
+  done
+  echo "unknown role $1" >&2; exit 1
+}
+skill() { # tree role description
+  local n; n="$(nm "$2")"
+  mkdir -p "$dir/$1/$n"
+  if [ "$plain" = 1 ]; then
+    printf -- '---\nname: %s\ndescription: %s\n---\n\n# %s\n\n%s\n' "$n" "$3" "$n" "$3" > "$dir/$1/$n/SKILL.md"
+  else
+    printf -- '---\nname: %s\ndescription: %s\n---\n\n# %s\n\nSynthetic fixture skill.\n' "$n" "$3" "$n" > "$dir/$1/$n/SKILL.md"
+  fi
 }
 
 # The planted duplicate: same job, near-identical wording.
@@ -47,15 +67,15 @@ skill vendor vend-logs "Rotate application log files: compress old logs, delete 
 
 proj="$dir/projects/proj"
 mkdir -p "$proj"
-call() { printf '{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","name":"Skill","input":{"skill":"%s"}}]}}\n' "$1"; }
-typed() { printf '{"type":"user","message":{"role":"user","content":"<command-message>%s</command-message>\\n<command-name>/%s</command-name>"}}\n' "$1" "$1"; }
+call() { printf '{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","name":"Skill","input":{"skill":"%s"}}]}}\n' "$(nm "$1")"; }
+typed() { local n; n="$(nm "$1")"; printf '{"type":"user","message":{"role":"user","content":"<command-message>%s</command-message>\\n<command-name>/%s</command-name>"}}\n' "$n" "$n"; }
 chat() { printf '{"type":"user","message":{"role":"user","content":"%s"}}\n' "$1"; }
 
 others=(filler-garden filler-recipe filler-chess filler-travel filler-music filler-fitness filler-poetry neighbour-a neighbour-b)
 for ((i = 1; i <= sessions; i++)); do
   f=$(printf '%s/s%02d.jsonl' "$proj" "$i")
   {
-    chat "synthetic request number $i"
+    if [ "$plain" = 1 ]; then chat "request $i"; else chat "synthetic request number $i"; fi
     # dup-y is used in most sessions; dup-x in only two. quiet-unique never.
     if ((i % 4 != 0)); then call dup-y; fi
     if ((i == 3 || i == 17)); then typed dup-x; fi
