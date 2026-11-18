@@ -24,10 +24,10 @@ commit_key() {  # commit_key [suffix]: add a key-shaped value to cfg.py and comm
 @test "blocks a push that carries a secret, and never prints it" {
   need_gitleaks; commit_key
   run run_hook "$WORK" "git push"
-  [[ "$output" == *'"decision": "block"'* ]]
-  [[ "$output" == *"found secrets"* ]]
-  [[ "$output" == *"cfg.py"* ]]
-  [[ "$output" != *"QYLPMST7ZXCVBNMA"* ]]
+  [[ "$output" == *'"decision": "block"'* ]] || false
+  [[ "$output" == *"found secrets"* ]] || false
+  [[ "$output" == *"cfg.py"* ]] || false
+  [[ "$output" != *"QYLPMST7ZXCVBNMA"* ]] || false
 }
 @test "allows a clean push silently" {
   need_gitleaks
@@ -51,34 +51,34 @@ commit_key() {  # commit_key [suffix]: add a key-shaped value to cfg.py and comm
   commit_key '  # gitleaks:allow'
   printf '%s\n' "*" > "$WORK/.gitleaksignore"
   run run_hook "$WORK" "git push"
-  [[ "$output" == *'"decision": "block"'* ]]
+  [[ "$output" == *'"decision": "block"'* ]] || false
 }
 @test "a new branch with no upstream is still scanned" {
   need_gitleaks
   git -C "$WORK" checkout -q -b feature; commit_key
   run run_hook "$WORK" "git push -u origin feature"
-  [[ "$output" == *'"decision": "block"'* ]]
+  [[ "$output" == *'"decision": "block"'* ]] || false
 }
 @test "a key on another local branch is caught when pushing that branch from elsewhere" {
   need_gitleaks
   git -C "$WORK" checkout -q -b other; commit_key; git -C "$WORK" checkout -q main
   run run_hook "$WORK" "git push origin other"
-  [[ "$output" == *'"decision": "block"'* ]]
+  [[ "$output" == *'"decision": "block"'* ]] || false
 }
 @test "git -C scans the repo it names, not the hook's directory" {
   need_gitleaks; commit_key
   run run_hook "$BATS_TEST_TMPDIR" "git -C $WORK push"
-  [[ "$output" == *'"decision": "block"'* ]]
+  [[ "$output" == *'"decision": "block"'* ]] || false
 }
 @test "cd into the repo then push scans that repo" {
   need_gitleaks; commit_key
   run run_hook "$BATS_TEST_TMPDIR" "cd $WORK && git push"
-  [[ "$output" == *'"decision": "block"'* ]]
+  [[ "$output" == *'"decision": "block"'* ]] || false
 }
 @test "a quoted subcommand is still scanned" {
   need_gitleaks; commit_key
   run run_hook "$WORK" 'git "push" origin main'
-  [[ "$output" == *'"decision": "block"'* ]]
+  [[ "$output" == *'"decision": "block"'* ]] || false
 }
 @test "a scanner error fails closed" {
   need_gitleaks
@@ -94,6 +94,6 @@ commit_key() {  # commit_key [suffix]: add a key-shaped value to cfg.py and comm
   ln -s "$(command -v jq)" "$STUB/jq"; ln -s "$(command -v git)" "$STUB/git"
   run bash -c "jq -n --arg c 'git push' --arg d '$WORK' '{tool_input:{command:\$c},cwd:\$d}' | PATH='$STUB:/usr/bin:/bin' '$HOOK'"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"gitleaks not installed"* ]]
-  [[ "$output" != *'"decision"'* ]]
+  [[ "$output" == *"gitleaks not installed"* ]] || false
+  [[ "$output" != *'"decision"'* ]] || false
 }
