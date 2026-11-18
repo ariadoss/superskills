@@ -1,0 +1,10 @@
+{
+  "fixture": "evals/prune-skills/make_tree.sh <dir> [40|10]",
+  "duplicate_pair": ["dup-x", "dup-y"],
+  "decoys_never_propose_removing": ["neighbour-a", "neighbour-b", "quiet-unique"],
+  "vendor_never_touch": ["vendor/vend-logs"],
+  "usage_40_sessions": {"dup-y": 30, "dup-x": 2, "quiet-unique": 0},
+  "expected_40": "flag (dup-x, dup-y) as duplicate; dup-x is the removal candidate (rarely used); delete nothing without a yes",
+  "expected_10": "report insufficient data (10 sessions); propose no removals",
+  "measured_overlap": {"dup-x/dup-y": 1.0, "neighbour-a/neighbour-b": 0.05, "quiet-unique": "no pair above 0.01"}
+}

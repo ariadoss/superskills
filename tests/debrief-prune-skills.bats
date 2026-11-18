@@ -43,3 +43,33 @@ setup() { REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"; }
   grep -qi 'never quote' "$f"
   grep -qi 'explicit yes' "$f"
 }
+
+@test "prune eval fixture: overlap tool finds the planted duplicate and not the decoys" {
+  d="$BATS_TEST_TMPDIR/f"; bash "$REPO_ROOT/evals/prune-skills/make_tree.sh" "$d"
+  run python3 -I "$REPO_ROOT/scripts/skill-census/skill_overlap.py" pairs "$d" --threshold 0.35
+  [[ "$output" == *"dup-x"*"dup-y"* ]] || false
+  [[ "$output" != *"quiet-unique"* ]] || false
+  [[ "$output" != *"neighbour"* ]] || false
+}
+
+@test "prune eval fixture: usage tool sees 40 and 10 sessions with dup-y used far more than dup-x" {
+  d="$BATS_TEST_TMPDIR/f"; bash "$REPO_ROOT/evals/prune-skills/make_tree.sh" "$d"
+  run python3 -I "$REPO_ROOT/scripts/skill-census/skill_usage.py" "$d/projects"
+  [[ "$output" == *"# sessions=40"* ]] || false
+  [[ "$output" == *$'dup-y\t30'* ]] || false
+  [[ "$output" == *$'dup-x\t2'* ]] || false
+  e="$BATS_TEST_TMPDIR/g"; bash "$REPO_ROOT/evals/prune-skills/make_tree.sh" "$e" 10
+  run python3 -I "$REPO_ROOT/scripts/skill-census/skill_usage.py" "$e/projects"
+  [[ "$output" == *"# sessions=10"* ]]
+}
+
+@test "prune eval fixture: builder refuses an empty target, root and a non-empty directory" {
+  run bash "$REPO_ROOT/evals/prune-skills/make_tree.sh" ""
+  [ "$status" -ne 0 ]
+  run bash "$REPO_ROOT/evals/prune-skills/make_tree.sh" "/"
+  [ "$status" -ne 0 ]
+  mkdir -p "$BATS_TEST_TMPDIR/full"; touch "$BATS_TEST_TMPDIR/full/x"
+  run bash "$REPO_ROOT/evals/prune-skills/make_tree.sh" "$BATS_TEST_TMPDIR/full"
+  [ "$status" -ne 0 ]
+  [ ! -e "$BATS_TEST_TMPDIR/full/skills" ]
+}
