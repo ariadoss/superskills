@@ -117,11 +117,20 @@ def scan(root):
     return findings, skipped, truncated, skipped.overflow
 
 
+def _finding_floor(f):
+    """A documented install line in a prose file is the reviewer's call: caution.
+    Judged by the final extension of the basename only."""
+    level = FLOORS.get(f["rule"], "caution")
+    if f["rule"] == "VS004" and f["path"].rsplit("/", 1)[-1].lower().endswith((".md", ".txt")):
+        return "caution"
+    return level
+
+
 def floor(findings, skipped, truncated):
     order = ["clean", "caution", "block"]
     level = "caution" if (skipped or truncated) else "clean"
     for f in findings:
-        level = max(level, FLOORS.get(f["rule"], "caution"), key=order.index)
+        level = max(level, _finding_floor(f), key=order.index)
     return level
 
 
