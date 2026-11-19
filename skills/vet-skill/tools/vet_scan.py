@@ -101,7 +101,9 @@ def git_metadata(root, files):
     vetted clone, so those few regular files are scanned too."""
     out = list(files)
     git = Path(root) / ".git"
-    for p in [git / "config", *sorted((git / "hooks").glob("*") if (git / "hooks").is_dir() else [])]:
+    hooks = git / "hooks"
+    listed = sorted(hooks.glob("*")) if hooks.is_dir() and not hooks.is_symlink() else []
+    for p in [git / "config", *listed]:
         try:
             st = p.lstat()
         except OSError:

