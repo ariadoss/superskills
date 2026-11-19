@@ -681,3 +681,34 @@ has() { echo "$output" | jq -e --arg r "$1" '.findings[] | select(.rule==$r)' >/
   echo "$output" | jq -e '.findings[] | select(.path==".git/hooks/pre-commit" and .rule=="VS004")' >/dev/null
   [ "$(echo "$output" | jq '[.findings[] | select(.path|endswith(".sample"))] | length')" = "0" ]
 }
+
+# Direct tests of the scanner's helpers, imported by path so no target content is run.
+helper() { python3 -I -c "import sys; sys.path.insert(0, '$BATS_TEST_DIRNAME/../skills/vet-skill/tools'); import vet_scan as s; $1"; }
+
+@test "decode_text drops NULs and reads a UTF-16 BOM as the text a reader sees" {
+  run helper "print(s.decode_text(b'ig\x00nore').encode('unicode_escape').decode()); print(s.decode_text('hi'.encode('utf-16')))"
+  [ "$output" = $'ignore\nhi' ]
+}
+@test "read_bytes caps at MAX_FILE and refuses a symlink" {
+  head -c 1100000 /dev/zero | tr '\0' 'a' > "$D/big.txt"
+  ln -s "$D/big.txt" "$D/link.txt"
+  run helper "print(len(s.read_bytes('$D/big.txt')))"
+  [ "$output" = "1000000" ]
+  run helper "s.read_bytes('$D/link.txt')"
+  [ "$status" -ne 0 ]
+}
+@test "read_bytes returns None for a FIFO without blocking" {
+  mkfifo "$D/pipe"
+  run timeout 10 python3 -I -c "import sys; sys.path.insert(0, '$BATS_TEST_DIRNAME/../skills/vet-skill/tools'); import vet_scan as s; print(s.read_bytes('$D/pipe'))"
+  [ "$output" = "None" ]
+}
+@test "a finding floor is caution for VS004 in prose and block in code, judged by the final extension" {
+  run helper "
+f = lambda r, p: s._finding_floor({'rule': r, 'path': p})
+print(f('VS004', 'a/README.md'), f('VS004', 'a/x.TXT'), f('VS004', 'a/install.sh'), f('VS004', 'a/x.md.sh'), f('VS001', 'a/x.md'), f('VS999', 'a/x.md'))"
+  [ "$output" = "caution caution block block block caution" ]
+}
+@test "floor is caution when a file was skipped or the walk truncated, and clean otherwise" {
+  run helper "print(s.floor([], [], False), s.floor([], ['x'], False), s.floor([], [], True))"
+  [ "$output" = "clean caution caution" ]
+}
