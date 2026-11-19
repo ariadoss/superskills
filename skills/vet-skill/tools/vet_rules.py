@@ -5,6 +5,8 @@ import json
 import re
 
 MAX_LINE = 4_096
+WINDOW_OVERLAP = 512  # longer than any pattern's reach, so a match cannot hide on a window seam
+MAX_HITS_PER_FILE = 20
 _EOL = re.compile(r"\r\n|\r|\n")
 
 # Invisible characters, as a regex character-class body (zero-width joiner U+200D handled apart).
@@ -19,11 +21,24 @@ INVISIBLE = (
 _SEPARATORS = re.compile("[\x0b\x0c\x1c-\x1e\x85\u2028\u2029]")
 
 
-def variants(line):
-    """The line as written, with separators read as spaces, and with them deleted (a word split by one)."""
-    if not _SEPARATORS.search(line):
+def _windows(line):
+    """The line itself, or overlapping MAX_LINE windows of it, so every regex stays bounded."""
+    if len(line) <= MAX_LINE:
         return (line,)
-    return (line, _SEPARATORS.sub(" ", line), _SEPARATORS.sub("", line))
+    step = MAX_LINE - WINDOW_OVERLAP
+    return tuple(line[i:i + MAX_LINE] for i in range(0, len(line), step))
+
+
+def variants(line):
+    """Each window of the line as written, with separators read as spaces, and with them deleted
+    (a word split by one)."""
+    out = []
+    for w in _windows(line):
+        if _SEPARATORS.search(w):
+            out += [w, _SEPARATORS.sub(" ", w), _SEPARATORS.sub("", w)]
+        else:
+            out.append(w)
+    return tuple(out)
 
 
 def split_lines(text):
@@ -33,18 +48,17 @@ def split_lines(text):
 
 
 def iter_lines(texts, globs=None):
-    """Yield (path, line number, line) for each line to examine; lines over MAX_LINE are left to VS010."""
+    """Yield (path, line number, line) for each line; `variants` windows the long ones."""
     for path, text in texts.items():
         if globs and not any(path.endswith(g) for g in globs):
             continue
         for n, line in enumerate(split_lines(text), 1):
-            if len(line) <= MAX_LINE:
-                yield path, n, line
+            yield path, n, line
 
 
 def _finding(rule_id, severity, path, n, line, note):
     return {"rule": rule_id, "severity": severity, "path": path, "line": n,
-            "snippet": line.strip(), "note": note}
+            "snippet": line.strip()[:MAX_LINE], "note": note}
 
 
 def line_rule(rule_id, severity, pattern, note, globs=None):
@@ -59,9 +73,9 @@ def line_rule(rule_id, severity, pattern, note, globs=None):
 
 
 def long_line_rule(texts):
-    """VS010: a line over 4 KB is not examined by the line rules, so a payload can hide there. Say so."""
+    """VS010: a line over 4 KB is scanned in overlapping windows, but it is also where a payload hides. Say so."""
     return [{"rule": "VS010", "severity": "medium", "path": p, "line": n, "snippet": l[:160],
-             "note": "line over 4096 characters: not examined by the other rules, read it by hand"}
+             "note": "line over 4096 characters: scanned in windows by the other rules, but read it by hand"}
             for p, t in texts.items() for n, l in enumerate(split_lines(t), 1) if len(l) > MAX_LINE]
 
 
@@ -106,7 +120,7 @@ pipe_to_shell_rule = line_rule(
 # --- VS005: install-time and session-start execution, judged from the file's structure ---
 
 _LIFECYCLE = {"preinstall", "install", "postinstall", "prepare"}
-_LIFECYCLE_LINE = re.compile(r'"(preinstall|install|postinstall|prepare)"\s*:', re.I)
+_LIFECYCLE_LINE = re.compile(r'"(' + "|".join(sorted(_LIFECYCLE)) + r')"\s*:', re.I)
 _HOOK_LINE = re.compile(r'"type"\s*:\s*"command"', re.I)
 _HOOK_FILES = {"hooks.json", "settings.json", "plugin.json"}
 
@@ -165,12 +179,15 @@ def install_hook_rule(texts):
         lines = split_lines(text)
         candidates = [(n, l) for n, l in enumerate(lines, 1) if any(rx.search(v) for v in variants(l))]
         hits = _install_hits(name, text)
-        if hits is None:  # malformed JSON: judge by line, long lines are VS010's
-            found = [(n, l) for n, l in candidates if len(l) <= MAX_LINE]
+        if hits is None:  # malformed JSON: judge by line
+            found = candidates
         else:
             found = [candidates[min(i, len(candidates) - 1)] if candidates else (1, lines[0])
-                     for i in range(hits)]
-        out += [_finding("VS005", "medium", path, n, l, note) for n, l in found]
+                     for i in range(min(hits, MAX_HITS_PER_FILE))]
+        out += [_finding("VS005", "medium", path, n, l, note) for n, l in found[:MAX_HITS_PER_FILE]]
+        if len(found) > MAX_HITS_PER_FILE or (hits or 0) > MAX_HITS_PER_FILE:
+            out.append(_finding("VS005", "medium", path, 1, "", "more hits in this file, not listed: the first "
+                                + str(MAX_HITS_PER_FILE) + " are shown"))
     return out
 
 

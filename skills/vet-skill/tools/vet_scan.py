@@ -25,6 +25,8 @@ MAX_FILES = 5_000
 MAX_TOTAL = 50_000_000
 SNIPPET = 160
 MAX_SKIPPED = 200
+BINARY_SNIFF = 4_096
+TEXT_EXTS = (".md", ".txt", ".json", ".sh", ".py", ".js", ".ts", ".yaml", ".yml", ".toml", ".mdc")
 ARCHIVES = (".zip", ".tar", ".tgz", ".gz", ".bz2", ".xz", ".7z", ".whl", ".jar", ".rar")
 CONTROL = re.compile("[\x00-\x08\x0b-\x1f\x7f-\x9f\u200d\u2028\u2029" + INVISIBLE + "]")
 
@@ -46,7 +48,7 @@ class Skipped(list):
 
 
 def walk(root):
-    """Return (files, skipped, truncated, overflow): regular files as (relative path, path) plus skips.
+    """Return (files, skipped, truncated): regular files as (relative path, path) plus skips.
     Stops walking as soon as a file or byte cap is hit."""
     skipped, files, total, truncated = Skipped(), [], 0, False
 
@@ -65,7 +67,7 @@ def walk(root):
                 continue
             if is_link:
                 skipped.add(rel_dir, "symlink")
-            elif not (rel_dir == ".git"):  # only the root .git is skipped; a nested one is scanned
+            elif rel_dir != ".git":  # only the root .git is skipped; a nested one is scanned
                 keep.append(d)
         dirnames[:] = keep
         for name in sorted(filenames):
@@ -82,7 +84,7 @@ def walk(root):
             elif not stat.S_ISREG(mode):
                 skipped.add(rel, "special file")
             elif len(files) >= MAX_FILES or total >= MAX_TOTAL:
-                return files, skipped, True, skipped.overflow
+                return files, skipped, True
             elif name.lower().endswith(ARCHIVES):
                 skipped.add(rel, "archive")
             elif st.st_size > MAX_FILE:
@@ -90,7 +92,7 @@ def walk(root):
             else:
                 files.append((rel, p))
                 total += st.st_size
-    return files, skipped, truncated, skipped.overflow
+    return files, skipped, truncated
 
 
 def read_bytes(p):
@@ -105,8 +107,15 @@ def read_bytes(p):
         os.close(fd)
 
 
+def decode_text(raw):
+    """A reader sees text in a file with a NUL byte or a UTF-16 BOM, so scan what the reader sees."""
+    if raw[:2] in (b"\xff\xfe", b"\xfe\xff"):
+        return raw.decode("utf-16", "replace")
+    return raw.decode("utf-8", "replace").replace("\x00", "")
+
+
 def scan(root):
-    files, skipped, truncated, _ = walk(root)
+    files, skipped, truncated = walk(root)
     findings, texts = [], {}
     for rel, p in files:
         try:
@@ -116,10 +125,10 @@ def scan(root):
         if raw is None:
             skipped.add(rel, "special file")
             continue
-        if b"\x00" in raw[:4096]:
+        if b"\x00" in raw[:BINARY_SNIFF] and not rel.lower().endswith(TEXT_EXTS):
             skipped.add(rel, "binary")
             continue
-        texts[rel] = raw.decode("utf-8", "replace")
+        texts[rel] = decode_text(raw)
     for rule in RULES:
         findings.extend(rule(texts))
     findings.sort(key=lambda f: (f["path"], f["line"], f["rule"]))

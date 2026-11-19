@@ -6,7 +6,7 @@ rules in `tools/vet_rules.py`. It reads text only and never runs anything.
 ## The ten rules
 
 Every rule works on text lines, except where noted. A line over 4096
-characters is not examined by the line rules; VS010 reports it.
+characters is scanned in overlapping 4096-character windows; VS010 also reports it, because a long line is where payloads hide.
 
 | Id | Catches | Why it matters | Floor | Known false-positive shapes |
 |---|---|---|---|---|
@@ -19,7 +19,7 @@ characters is not examined by the line rules; VS010 reports it.
 | VS007 sensitive read plus upload | One file that both reads a sensitive source (`~/.ssh`, `~/.aws`, `~/.claude`, `.env`, `os.environ` (any use except `os.environ.get(`), `id_rsa`, `credentials.json`, Claude project history) and makes an outbound upload-style call (`requests.post/put`, `urlopen`, `fetch(`, `httpx.post/put`, `socket.connect`, `XMLHttpRequest`, `curl` with a data or form flag) | The shape of credential theft. It is judged per file, not per flow | block | A client that reads its own API key from `.env` and calls its own API. Decide by where the data goes |
 | VS008 wide network bind | `host=` or `listen(` with `0.0.0.0` or `::`, or `bind(("0.0.0.0"` | The server is reachable from the network, not only from this machine | caution | A container entry point meant to bind widely behind a proxy |
 | VS009 shell execution | `shell=True`, `os.popen(`, `eval(`; `os.system(` and `child_process.exec(` only when the command is built by interpolation | Whatever feeds the string runs as a command | caution | `eval(` also matches `.eval(` and prose; a constant command |
-| VS010 line over 4096 characters | Any line longer than 4096 characters | The examination limit. Text past it is unscanned, so a payload can sit there | caution | Minified code, data files, lockfiles |
+| VS010 line over 4096 characters | Any line longer than 4096 characters | Long lines are scanned in windows, but a payload can still sit in one, so read it | caution | Minified code, data files, lockfiles |
 
 Floors and caps beyond the table:
 
@@ -72,7 +72,6 @@ Beyond text patterns:
 - The root `.git` directory. The walker skips it silently, so a local target's
   own `.git` is never examined and does not appear in `skipped`. A `.git`
   directory nested deeper in the tree is scanned like any other.
-- Text the line rules never examined: lines over 4096 characters.
 - Encodings and languages the patterns do not cover.
 
 ## Prose that steers is a finding
