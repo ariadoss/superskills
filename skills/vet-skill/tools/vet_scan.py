@@ -26,6 +26,7 @@ MAX_TOTAL = 50_000_000
 SNIPPET = 160
 MAX_SKIPPED = 200
 BINARY_SNIFF = 4_096
+BOMS = (b"\xff\xfe", b"\xfe\xff")
 TEXT_EXTS = (".md", ".txt", ".json", ".sh", ".py", ".js", ".ts", ".yaml", ".yml", ".toml", ".mdc")
 ARCHIVES = (".zip", ".tar", ".tgz", ".gz", ".bz2", ".xz", ".7z", ".whl", ".jar", ".rar")
 CONTROL = re.compile("[\x00-\x08\x0b-\x1f\x7f-\x9f\u200d\u2028\u2029" + INVISIBLE + "]")
@@ -109,8 +110,8 @@ def read_bytes(p):
 
 def decode_text(raw):
     """A reader sees text in a file with a NUL byte or a UTF-16 BOM, so scan what the reader sees."""
-    if raw[:2] in (b"\xff\xfe", b"\xfe\xff"):
-        return raw.decode("utf-16", "replace")
+    if raw[:2] in BOMS:
+        return raw.decode("utf-16", "replace").replace("\x00", "")  # a UTF-32 BOM lands here too
     return raw.decode("utf-8", "replace").replace("\x00", "")
 
 
@@ -125,7 +126,7 @@ def scan(root):
         if raw is None:
             skipped.add(rel, "special file")
             continue
-        if b"\x00" in raw[:BINARY_SNIFF] and not rel.lower().endswith(TEXT_EXTS):
+        if b"\x00" in raw[:BINARY_SNIFF] and raw[:2] not in BOMS and not rel.lower().endswith(TEXT_EXTS):
             skipped.add(rel, "binary")
             continue
         texts[rel] = decode_text(raw)

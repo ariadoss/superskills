@@ -21,8 +21,16 @@ INVISIBLE = (
 _SEPARATORS = re.compile("[\x0b\x0c\x1c-\x1e\x85\u2028\u2029]")
 
 
+_WHITESPACE_RUN = re.compile(r"\s{2,}")
+
+
 def _windows(line):
-    """The line itself, or overlapping MAX_LINE windows of it, so every regex stays bounded."""
+    """The line itself, or overlapping MAX_LINE windows of it, so every regex stays bounded.
+    On a long line, whitespace runs shrink to one space first: padding between two tokens
+    cannot then push them out of a rule's reach."""
+    if len(line) <= MAX_LINE:
+        return (line,)
+    line = _WHITESPACE_RUN.sub(" ", line)
     if len(line) <= MAX_LINE:
         return (line,)
     step = MAX_LINE - WINDOW_OVERLAP
@@ -62,13 +70,14 @@ def _finding(rule_id, severity, path, n, line, note):
 
 
 def line_rule(rule_id, severity, pattern, note, globs=None):
-    """Build a rule that flags each line matching `pattern` (case-insensitive) in files matching `globs`."""
-    rx = re.compile(pattern, re.I)
+    """Build a rule that flags each line matching `pattern` (a regex string, or a predicate on one
+    string; regexes are case-insensitive) in files matching `globs`."""
+    matches = pattern if callable(pattern) else re.compile(pattern, re.I).search
 
     def run(texts):
         return [_finding(rule_id, severity, path, n, line, note)
                 for path, n, line in iter_lines(texts, globs)
-                if any(rx.search(v) for v in variants(line))]
+                if any(matches(v) for v in variants(line))]
     return run
 
 
@@ -110,11 +119,22 @@ obfuscation_rule = line_rule(
     r"|\\x[0-9a-f]{2}(\\x[0-9a-f]{2}){20,}",
     "encoded or obfuscated payload")
 
+_SHELL_TAIL = re.compile(r"\|\s*(?:sudo\s+)?(?:ba|z|da)?sh\b", re.I)
+_FETCHER = re.compile(r"\b(curl|wget|fetch)\b", re.I)
+_PIPE_OTHER = re.compile(
+    r"\|\s*python3?\b|\b(iex|Invoke-Expression)\b.{0,40}(iwr|Invoke-WebRequest|DownloadString)", re.I)
+
+
+def _pipes_download_to_shell(v):
+    """True when a fetcher feeds a shell in one pipeline segment. Each shell tail is checked against
+    the text since the previous pipe, so the cost stays linear however many fetchers a line repeats."""
+    if _PIPE_OTHER.search(v):
+        return True
+    return any(_FETCHER.search(v, v.rfind("|", 0, m.start()) + 1, m.start()) for m in _SHELL_TAIL.finditer(v))
+
+
 pipe_to_shell_rule = line_rule(
-    "VS004", "high",
-    r"\b(curl|wget|fetch)\b[^|\n]*\|\s*(sudo\s+)?(ba|z|da)?sh\b|\|\s*python3?\b"
-    r"|\b(iex|Invoke-Expression)\b.{0,40}(iwr|Invoke-WebRequest|DownloadString)",
-    "downloads code and runs it unread")
+    "VS004", "high", _pipes_download_to_shell, "downloads code and runs it unread")
 
 
 # --- VS005: install-time and session-start execution, judged from the file's structure ---
