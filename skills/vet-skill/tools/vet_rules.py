@@ -3,6 +3,7 @@ A finding is {"rule", "severity", "path", "line", "snippet", "note"}.
 Rules only inspect text; they never execute or import it."""
 import json
 import re
+import unicodedata
 
 MAX_LINE = 4_096
 WINDOW_OVERLAP = 512  # longer than any pattern's reach, so a match cannot hide on a window seam
@@ -21,7 +22,24 @@ INVISIBLE = (
 _SEPARATORS = re.compile("[\x0b\x0c\x1c-\x1e\x85\u2028\u2029]")
 
 
+_NEEDS_NORMALIZING = re.compile("[\x00-\x08\x0e-\x1f\x7f]|  ")
 _WHITESPACE_RUN = re.compile(r"\s{2,}")
+_ANSI = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]")
+_STRIP = re.compile("[\x00-\x08\x0e-\x1f\x7f" + INVISIBLE + "]")
+_ALL_SPACE = re.compile(r"\s+")
+# Lookalike letters a reader takes for Latin ones (Cyrillic, Greek) and curly quotes.
+_CONFUSABLES = str.maketrans({
+    **dict(zip("аеорсхуіјѕԁѵһԛԝ", "aeopcxyijsdvhqw")), **dict(zip("АЕОРСХУІЈЅ", "AEOPCXYIJS")),
+    **dict(zip("οτυνκρεαι", "otuvkpeai")), "\u2018": "'", "\u2019": "'", "\u201b": "'", "\u02bc": "'",
+    "\u201c": '"', "\u201d": '"'})
+
+
+def _normalize(line):
+    """The line as a reader takes it: compatibility forms folded, lookalikes and curly quotes folded,
+    escapes and invisible characters dropped, whitespace runs reduced to one space."""
+    line = _ANSI.sub("", line)
+    line = unicodedata.normalize("NFKC", line).translate(_CONFUSABLES)
+    return _ALL_SPACE.sub(" ", _STRIP.sub("", line))
 
 
 def _windows(text):
@@ -40,6 +58,10 @@ def variants(line, windowed=True):
     forms = [line]
     if _SEPARATORS.search(line):
         forms += [_SEPARATORS.sub(" ", line), _SEPARATORS.sub("", line)]
+    if not line.isascii() or _NEEDS_NORMALIZING.search(line):
+        folded = _normalize(line)
+        if folded != line:
+            forms.append(folded)
     if len(line) > MAX_LINE:
         forms = [_WHITESPACE_RUN.sub(" ", f) for f in forms]
     if not windowed:
@@ -62,22 +84,44 @@ def iter_lines(texts, globs=None):
             yield path, n, line
 
 
+def _joined(line, following):
+    """A short line and the next one as one line, the first's trailing backslash dropped; None when
+    either is too long to be worth joining."""
+    if not line.strip() or len(line) > MAX_LINE or len(following) > MAX_LINE:
+        return None
+    return line.rstrip("\\").rstrip() + " " + following.lstrip()
+
+
 def _finding(rule_id, severity, path, n, line, note):
     return {"rule": rule_id, "severity": severity, "path": path, "line": n,
             "snippet": line.strip()[:MAX_LINE], "note": note}
 
 
-def line_rule(rule_id, severity, pattern, note, globs=None):
+def line_rule(rule_id, severity, pattern, note, globs=None, joined=False):
     """Build a rule that flags each line matching `pattern` (a regex string, or a predicate on one
     string, which must run in linear time and so sees the whole line; regexes are case-insensitive
     and see bounded windows) in files matching `globs`."""
     matches = pattern if callable(pattern) else re.compile(pattern, re.I).search
     windowed = not callable(pattern)
 
+    def hit(line):
+        return any(matches(v) for v in variants(line, windowed))
+
     def run(texts):
-        return [_finding(rule_id, severity, path, n, line, note)
-                for path, n, line in iter_lines(texts, globs)
-                if any(matches(v) for v in variants(line, windowed))]
+        out = []
+        for path, text in texts.items():
+            if globs and not any(path.endswith(g) for g in globs):
+                continue
+            lines = split_lines(text)
+            hits = {n for n, line in enumerate(lines, 1) if hit(line)}
+            if joined:  # a phrase or pipe split over two lines, reported once at the first, when neither half hits alone
+                for n in range(1, len(lines)):
+                    if n not in hits and n + 1 not in hits:
+                        pair = _joined(lines[n - 1], lines[n])
+                        if pair is not None and hit(pair):
+                            hits.add(n)
+            out += [_finding(rule_id, severity, path, n, lines[n - 1], note) for n in sorted(hits)]
+        return out
     return run
 
 
@@ -95,11 +139,11 @@ steering_rule = line_rule(
     r"|(do not|don't|never)\s+(tell|mention|report|reveal|disclose).{0,30}(user|reviewer|this)"
     r"|report that (this|it) (is|has)\b.{0,30}(safe|no (issues|vulnerabilit))"
     r"|<IMPORTANT>|<system>|\[SYSTEM\]",
-    "text that addresses the reviewer or hides instructions from the user")
+    "text that addresses the reviewer or hides instructions from the user", joined=True)
 
 _invisible = line_rule(
     "VS002", "high",
-    "[" + INVISIBLE.replace("\ufe00-\ufe0f", "\ufe00-\ufe0e") + "]"
+    "[\x01-\x08\x0e-\x1b\x1f" + INVISIBLE.replace("\ufe00-\ufe0f", "\ufe00-\ufe0e") + "]"
     "|(?<![^\\x00-\\x7f])\u200d|\u200d(?![^\\x00-\\x7f])"
     # One emoji variation selector (U+FE0F) is fine after a visible non-ASCII symbol.
     "|(?<![^\\x00-\\x7f\u200d" + INVISIBLE + "])\ufe0f|\ufe0f(?=[\ufe00-\ufe0f\U000e0100-\U000e01ef])",
@@ -119,22 +163,27 @@ obfuscation_rule = line_rule(
     r"|\\x[0-9a-f]{2}(\\x[0-9a-f]{2}){20,}",
     "encoded or obfuscated payload")
 
-_SHELL_TAIL = re.compile(r"\|\s*(?:sudo\s+)?(?:ba|z|da)?sh\b", re.I)
+_SHELL_TAIL = re.compile(
+    r"\|\s*(?:(?:sudo|doas|env|exec|nohup|command)\s+(?:-\S+\s+|\w+=\S+\s+){0,4})*"
+    r"(?:[\w.-]*/)*(?:(?:ba|z|da|k|c|tc|fi|a)?sh|node|perl|ruby|php)\b", re.I)
 _FETCHER = re.compile(r"\b(curl|wget|fetch)\b", re.I)
 _PIPE_OTHER = re.compile(
     r"\|\s*python3?\b|\b(iex|Invoke-Expression)\b.{0,40}(iwr|Invoke-WebRequest|DownloadString)", re.I)
+# A shell, eval or source fed by a substitution that fetches: bash <(curl ...), sh -c "$(curl ...)".
+_SUBSTITUTED = re.compile(
+    r"\b(?:(?:ba|z|da|k)?sh|eval|source)\b[^|;&\n]{0,40}?(?:<\(|\$\(|`)\s*(?:curl|wget|fetch)\b", re.I)
 
 
 def _pipes_download_to_shell(v):
     """True when a fetcher feeds a shell in one pipeline segment. Each shell tail is checked against
     the text since the previous pipe, so the cost stays linear however many fetchers a line repeats."""
-    if _PIPE_OTHER.search(v):
+    if _PIPE_OTHER.search(v) or _SUBSTITUTED.search(v):
         return True
     return any(_FETCHER.search(v, v.rfind("|", 0, m.start()) + 1, m.start()) for m in _SHELL_TAIL.finditer(v))
 
 
 pipe_to_shell_rule = line_rule(
-    "VS004", "high", _pipes_download_to_shell, "downloads code and runs it unread")
+    "VS004", "high", _pipes_download_to_shell, "downloads code and runs it unread", joined=True)
 
 
 # --- VS005: install-time and session-start execution, judged from the file's structure ---
@@ -268,6 +317,7 @@ _OUTBOUND = re.compile(
     r"|\bsocket\.connect|XMLHttpRequest", re.I)
 # curl is judged per line as two separate linear searches (the command, then a standalone data flag),
 # so no distance between them can be used as padding and nothing backtracks across the line.
+_CONTINUATION = re.compile(r"\\\r?\n")
 _CURL = re.compile(r"\bcurl\b", re.I)
 _CURL_FLAG = re.compile(r"(?<![\w-])(-d|--data[\w-]*|-F|-T|--form[\w-]*|--upload-file)(?![\w-])")
 
@@ -277,7 +327,7 @@ def _outbound(text):
         return True
     if not _CURL.search(text):
         return False
-    return any(_CURL.search(l) and _CURL_FLAG.search(l) for l in split_lines(text))
+    return any(_CURL.search(l) and _CURL_FLAG.search(l) for l in split_lines(_CONTINUATION.sub(" ", text)))
 
 
 def exfil_rule(texts):

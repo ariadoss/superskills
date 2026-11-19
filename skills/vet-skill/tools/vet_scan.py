@@ -93,7 +93,22 @@ def walk(root):
             else:
                 files.append((rel, p))
                 total += st.st_size
-    return files, skipped, truncated
+    return git_metadata(root, files), skipped, truncated
+
+
+def git_metadata(root, files):
+    """The root .git is not walked, but its config and non-sample hooks run on later git commands in a
+    vetted clone, so those few regular files are scanned too."""
+    out = list(files)
+    git = Path(root) / ".git"
+    for p in [git / "config", *sorted((git / "hooks").glob("*") if (git / "hooks").is_dir() else [])]:
+        try:
+            st = p.lstat()
+        except OSError:
+            continue
+        if stat.S_ISREG(st.st_mode) and st.st_size <= MAX_FILE and not p.name.endswith(".sample"):
+            out.append((str(p.relative_to(root)), p))
+    return out
 
 
 def read_bytes(p):

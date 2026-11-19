@@ -69,9 +69,14 @@ Beyond text patterns:
 - Anything the scanner skipped: symlinks, special files, archives, binaries,
   files over 1,000,000 bytes, unreadable files and directories, and everything past the file
   and byte caps. Name each in Coverage.
-- The root `.git` directory. The walker skips it silently, so a local target's
-  own `.git` is never examined and does not appear in `skipped`. A `.git`
-  directory nested deeper in the tree is scanned like any other.
+- The rest of the root `.git` directory. The walker scans only its `config` and its
+  non-sample hooks (git runs those on later commands in a clone) and skips the
+  rest silently, so objects and refs are never examined and do not appear in
+  `skipped`. A `.git` directory nested deeper in the tree is scanned like any other.
+- Hooks declared in a SKILL.md front matter or an `.mcp.json` server `command`:
+  VS005 reads only package.json and hooks, settings and plugin JSON, so check
+  these by hand.
+- Phrases in languages or spellings the lookalike folding does not map.
 - Encodings and languages the patterns do not cover.
 
 ## Prose that steers is a finding
