@@ -3,18 +3,69 @@
 
 setup() { REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"; }
 
-@test "prune-skills: name equals directory and a boundary names the neighbours" {
-  f="$REPO_ROOT/skills/prune-skills/SKILL.md"
-  [ -f "$f" ]
-  grep -q '^name: prune-skills$' "$f"
-  grep -q '/skillify' "$f"
-  grep -q '/debrief' "$f"
+# Skill prose is pinned only where the phrase is the contract (a safety rule or
+# a gate number), and then on the shortest stable token. Everything else is
+# checked by structure or by running the command lines the skill shows.
+
+# run_block <skill> <HOME>: execute the skill's first bash block exactly as an
+# agent would (the block that locates the repo), from outside any checkout.
+run_block() {
+  awk '/^```bash$/{f=1; next} f && /^```$/{exit} f' "$REPO_ROOT/skills/$1/SKILL.md" \
+    | sed "s|^LESSON_FILE=[^ ]*|LESSON_FILE=$BATS_TEST_TMPDIR/lesson.txt|" > "$BATS_TEST_TMPDIR/block.sh"
+  (cd "$BATS_TEST_TMPDIR" && env -u CLAUDE_PLUGIN_ROOT HOME="$2" SKILL_DIR="$REPO_ROOT/skills/$1" \
+     bash "$BATS_TEST_TMPDIR/block.sh")
 }
 
-@test "prune-skills: refuses to delete without overlap evidence and a usage window" {
+@test "both skills: frontmatter name equals the directory and the step headings run in order" {
+  for s in prune-skills debrief; do
+    f="$REPO_ROOT/skills/$s/SKILL.md"
+    grep -qx "name: $s" "$f"
+    nums="$(grep -oE '^## Step [0-9]+' "$f" | grep -oE '[0-9]+' | paste -sd ' ' -)"
+    want=""; for ((i = 1; i <= $(grep -cE '^## Step [0-9]+' "$f"); i++)); do want="$want${want:+ }$i"; done
+    [ "$nums" = "$want" ] || { echo "$s: $nums"; return 1; }
+  done
+}
+
+@test "both skills name their neighbours with slash commands" {
+  for t in skillify debrief; do grep -q "/$t" "$REPO_ROOT/skills/prune-skills/SKILL.md"; done
+  for t in skillify handoff prune-skills; do grep -q "/$t" "$REPO_ROOT/skills/debrief/SKILL.md"; done
+}
+
+@test "prune-skills: the gate keeps its 30-session number and the never-delete rule" {
   f="$REPO_ROOT/skills/prune-skills/SKILL.md"
   grep -qi 'never delete' "$f"
   grep -q '30 sessions' "$f"
+}
+
+@test "prune-skills: the signal commands it shows run and print pairs, usage and budget" {
+  d="$BATS_TEST_TMPDIR/t"; bash "$REPO_ROOT/evals/prune-skills/make_tree.sh" "$d"
+  H="$BATS_TEST_TMPDIR/h"; mkdir -p "$H/.claude"; cp -R "$d/projects" "$H/.claude/projects"
+  run run_block prune-skills "$H"
+  [ "$status" -eq 0 ]
+  [ "${lines[0]}" = "ROOT=$REPO_ROOT" ]
+  [ "${#lines[@]}" -gt 3 ]
+  [[ "$output" == *"dup-y"* ]] || false
+}
+
+@test "debrief: the proposes-only and public-repo rules are present" {
+  f="$REPO_ROOT/skills/debrief/SKILL.md"
+  grep -qi 'never write' "$f"
+  grep -qi 'public repo' "$f"
+}
+
+@test "debrief: the lookup command it shows runs and prints name and score lines" {
+  printf 'write a failing test first before implementation code\n' > "$BATS_TEST_TMPDIR/lesson.txt"
+  run run_block debrief "$BATS_TEST_TMPDIR/emptyhome"
+  [ "$status" -eq 0 ]
+  [ "${lines[0]}" = "ROOT=$REPO_ROOT" ]
+  printf '%s\n' "${lines[@]:1}" | grep -qE '^[a-z0-9-]+'"$(printf '\t')"'[0-9.]+$'
+}
+
+@test "debrief: keeps the low-recall caveat, the no-quoting rule and the explicit-yes stop" {
+  f="$REPO_ROOT/skills/debrief/SKILL.md"
+  grep -qi 'low recall' "$f"
+  grep -qi 'never quote' "$f"
+  grep -qi 'explicit yes' "$f"
 }
 
 @test "debrief: name equals directory and boundaries name the neighbours" {
