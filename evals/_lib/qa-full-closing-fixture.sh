@@ -2,7 +2,8 @@
 # qa-full-closing-fixture.sh <dir>: builds the repo used by
 # evals/reports/2026-11-15-qa-full-closing-suite-PREREG.md. It is the test-tier
 # fixbug repo with the bug already fixed, so related tests are green and Step 10 is
-# reached with nothing left to repair (expected closing: plain SHIP-READY, no suite question). `.testlog` records which tier ran.
+# reached with nothing left to repair (expected closing: plain SHIP-READY, no
+# suite question). `.testlog` records which tier ran.
 set -e
 D="$1"
 "$(dirname "$0")/qa-full-testtier-fixture.sh" "$D" fixbug
