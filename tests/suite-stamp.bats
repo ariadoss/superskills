@@ -133,3 +133,19 @@ runs() { wc -l < "$COUNT" | tr -d ' '; }
   "$CLI" ensure
   [ "$(runs)" = 1 ] || false
 }
+
+@test "run then check: a suite command containing a backslash is compared literally" {
+  git config --local superskills.suiteCommand "printf '%s\\n' ok"
+  run "$CLI" run </dev/null
+  [ "$status" -eq 0 ] || false
+  run "$CLI" check </dev/null
+  [ "$status" -eq 0 ] || false
+}
+
+@test "run then check: a suite command with quotes and a dollar sign is compared literally" {
+  git config --local superskills.suiteCommand "echo \"a\$HOME\" 'b'"
+  run "$CLI" run </dev/null
+  [ "$status" -eq 0 ] || false
+  run "$CLI" check </dev/null
+  [ "$status" -eq 0 ] || false
+}

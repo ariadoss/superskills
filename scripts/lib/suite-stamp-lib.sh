@@ -30,7 +30,7 @@ ssl_record() {
 ssl_revoke() {
   local f tmp; f="$(ssl_stamp_file)" || return 1
   [ -f "$f" ] || return 0
-  tmp="$f.$$"; awk -F'\t' -v t="$1" '$1 != t' "$f" > "$tmp" && mv "$tmp" "$f"
+  tmp="$f.$$"; SSL_T="$1" awk -F'\t' '$1 != ENVIRON["SSL_T"]' "$f" > "$tmp" && mv "$tmp" "$f"
 }
 
 # ssl_has <tree> — true when a stamp for that tree AND the currently configured
@@ -40,9 +40,10 @@ ssl_has() {
   c="$(ssl_command)"
   [ -n "$c" ] || return 1   # no command configured: nothing can be trusted
   f="$(ssl_stamp_file)" || return 1
+  # Values go via ENVIRON, not -v (awk -v expands backslash escapes).
   # awk on the file directly: `cut | grep -q` under pipefail can SIGPIPE the
   # producer on a big file and report a false "no stamp" (qa-triggers.sh pitfall).
-  [ -f "$f" ] && awk -F'\t' -v t="$1" -v c="$c" '$1 == t && $3 == c { found = 1; exit } END { exit !found }' "$f"
+  [ -f "$f" ] && SSL_T="$1" SSL_C="$c" awk -F'\t' '$1 == ENVIRON["SSL_T"] && $3 == ENVIRON["SSL_C"] { found = 1; exit } END { exit !found }' "$f"
 }
 
 # ssl_install_hook — put a small forwarding pre-push hook where git will run
