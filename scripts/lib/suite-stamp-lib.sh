@@ -36,9 +36,11 @@ ssl_revoke() {
 # ssl_has <tree> — true when a stamp for that tree AND the currently configured
 # suite command exists (a stamp made by `true` or a narrower command does not count).
 ssl_has() {
-  local f
+  local f c
+  c="$(ssl_command)"
+  [ -n "$c" ] || return 1   # no command configured: nothing can be trusted
   f="$(ssl_stamp_file)" || return 1
   # awk on the file directly: `cut | grep -q` under pipefail can SIGPIPE the
   # producer on a big file and report a false "no stamp" (qa-triggers.sh pitfall).
-  [ -f "$f" ] && awk -F'\t' -v t="$1" -v c="$(ssl_command)" '$1 == t && $3 == c { found = 1; exit } END { exit !found }' "$f"
+  [ -f "$f" ] && awk -F'\t' -v t="$1" -v c="$c" '$1 == t && $3 == c { found = 1; exit } END { exit !found }' "$f"
 }
