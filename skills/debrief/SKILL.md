@@ -56,6 +56,7 @@ the way `/superskills-doctor` does and run the lookup in a **single Bash
 call**, since separate calls do not share shell variables.
 
 ```bash
+LESSON_FILE=/absolute/path/lesson.txt   # written with the file tool beforehand
 SKILL_DIR="${SKILL_DIR:-}"   # set to this skill's base directory when the host provides it
 case "$SKILL_DIR" in /*) : ;; *) SKILL_DIR="" ;; esac   # only an absolute path is trusted
 ROOT=""
@@ -79,17 +80,17 @@ fi
 if [ -z "$ROOT" ]; then echo "CENSUS=missing"; else
   CENSUS="$ROOT/scripts/skill-census"
   echo "ROOT=$ROOT"
-  # One lesson per run. The lesson goes in on stdin through a quoted here-document,
-  # so quotes, $ and backticks in it are never interpreted by the shell.
-  python3 -I "$CENSUS/skill_overlap.py" query "$ROOT" --stdin --top 3 <<'LESSON'
-<the lesson in one sentence>
-LESSON
+  # One lesson per run. The lesson is read from a file you wrote with the Write
+  # tool, so no shell ever parses its text.
+  python3 -I "$CENSUS/skill_overlap.py" query "$ROOT" --stdin --top 3 < "$LESSON_FILE"
 fi
 ```
 
-For several lessons, repeat the last command inside the same Bash call, one
-here-document per lesson (a loop over fixed strings you write yourself works
-too). Never put lesson text inside double quotes on the command line.
+Before the Bash call, write the lesson (one sentence) to a scratch file with the
+file-writing tool, not the shell, and put its absolute path on the first line of
+the block as `LESSON_FILE=/absolute/path/lesson.txt`. For several lessons, write
+one file each and repeat the `python3` line with each path. Never put lesson
+text on the command line or in a here-document.
 
 If it prints `CENSUS=missing`, say the lookup tool could not be found and
 continue with the manual read below. Do not invent scores.

@@ -125,6 +125,21 @@ print(" ".join(m[n] for l in sys.stdin.read().splitlines() for n in l.split("\t"
   [ "$status" -eq 1 ]
 }
 
+@test "debrief: the lesson reaches the tool through a file, with no here-document in the skill" {
+  run grep -nE '<<-?[[:space:]]*["'"'"']?[A-Za-z_]' "$REPO_ROOT/skills/debrief/SKILL.md"
+  [ "$status" -eq 1 ]
+  grep -q -- '--stdin.*< "\$LESSON_FILE"' "$REPO_ROOT/skills/debrief/SKILL.md"
+}
+
+@test "overlap query --stdin reads hostile lesson text from a file without executing it" {
+  d="$BATS_TEST_TMPDIR/f"; bash "$REPO_ROOT/evals/prune-skills/make_tree.sh" "$d"
+  X="$BATS_TEST_TMPDIR/pwned"
+  printf '%s\n' 'first line' 'LESSON' "\$(touch $X)" "\`touch $X\`" "it's \"quoted\"" > "$BATS_TEST_TMPDIR/lesson.txt"
+  run python3 -I "$REPO_ROOT/scripts/skill-census/skill_overlap.py" query "$d" --stdin --top 3 < "$BATS_TEST_TMPDIR/lesson.txt"
+  [ "$status" -eq 0 ]
+  [ ! -e "$X" ]
+}
+
 @test "debrief eval: public variant swaps only the visibility line" {
   d="$BATS_TEST_TMPDIR/v"; bash "$REPO_ROOT/evals/debrief/make_public_variant.sh" "$d"
   grep -q 'Visibility: PUBLIC' "$d/session.md"
