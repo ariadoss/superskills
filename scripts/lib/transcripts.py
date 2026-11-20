@@ -51,7 +51,11 @@ def iter_entries(path, errors="replace"):
 
     errors is the text decoding policy; the mistake miner passes "ignore".
     """
-    with Path(path).open(encoding="utf-8", errors=errors) as fh:
+    try:
+        fh = Path(path).open(encoding="utf-8", errors=errors)
+    except OSError:
+        return  # a directory named *.jsonl, a broken link, a vanished file
+    with fh:
         for line in fh:
             try:
                 entry = json.loads(line)

@@ -169,6 +169,12 @@ print(next(t.iter_entries(sys.argv[2]))["a"].encode("unicode_escape").decode(), 
   [ "$output" = 'x\ufffdy xy' ]
 }
 
+@test "usage: an unreadable transcript (a directory named *.jsonl) is skipped, not fatal" {
+  mkdir -p "$FIX/projects/p/dir.jsonl"
+  run python3 -I "$CENSUS/skill_usage.py" "$FIX/projects" --days 90
+  [ "$status" -eq 0 ]
+}
+
 @test "usage: never prints message content" {
   run python3 -I "$CENSUS/skill_usage.py" "$REPO_ROOT/tests/fixtures/census/transcripts" --days 3650
   [ "$status" -eq 0 ]

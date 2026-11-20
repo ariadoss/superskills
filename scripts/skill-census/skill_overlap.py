@@ -5,7 +5,7 @@ Usage:
   skill_overlap.py pairs <repo_root> [--threshold 0.15]
   skill_overlap.py query <repo_root> "<lesson text>" [--top 3]
   skill_overlap.py query <repo_root> --stdin [--top 3]   (lesson text on stdin)
-Output is tab separated: score, then the names. Scores are token overlap on
+Output is tab separated. pairs prints score, then the two names; query prints name, then score. Scores are token overlap on
 description plus triggers (a coarse signal; a human or the model judges the
 result). pairs uses Jaccard (default 0.15, calibrated on the 80-skill tree: 0.35 reports nothing there); query uses containment of the lesson's tokens.
 """
