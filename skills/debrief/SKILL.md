@@ -30,9 +30,12 @@ run `gh repo view --json visibility -q .visibility 2>/dev/null`. If that fails,
 run `git remote get-url origin | sed -E 's#//[^@/]*@#//#'` to see the host and
 repo with any credentials removed, and judge from that. If visibility still
 cannot be determined, say "unknown, treat as public". For a **public repo**,
-session specifics (client names, plans, research, private paths) must
-never go into a tracked file. They go to private memory only. Say which case
-applies before proposing anything.
+nothing goes into a tracked file that is session-specific (ticket numbers,
+dates, outages, client names, plans, research, private paths) or that
+describes the project's own internals (how its code works, its private rules).
+Those lessons go to untracked local notes or private memory only. Only
+lessons true in any project may be proposed for a tracked file. Say which
+case applies before proposing anything.
 
 ## Step 2: List what went right and wrong
 
@@ -117,7 +120,7 @@ before deciding; the score is a hint, not proof.
 - **Repeatable procedure with no home:** hand off to `/skillify`.
 - **Project rule:** a line in `CLAUDE.md` or `AGENTS.md`.
 - **About the user or how they like to work:** a memory note.
-- **Same input always gives the same output:** a script, called by a skill.
+- **Same input always gives the same output:** a script (and, if a skill already runs that check, one line in that skill calling it).
 - **Must happen every time, with no judgment:** a hook. Describe it and hand
   off to `/update-config`. Do not edit `settings.json` here.
 
