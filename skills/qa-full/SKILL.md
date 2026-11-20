@@ -131,7 +131,7 @@ before writing NOT-TRIGGERED.
      smallest correct fix, and commit it atomically with a message naming the
      check and finding.
   3. **Verify** — re-run the *same* sub-skill on the diff and re-run the related
-     tests (Step 2); the whole suite is offered once, as Step 10's last action. A fix is only
+     tests (Step 2); the whole suite is not run by `/qa-full`; it runs once at the merge gate. A fix is only
      "fixed" when the re-audit no longer reports it and tests are green. Never claim a fix without this fresh evidence (`/verify`
      discipline).
   A finding you could not fix (needs a product decision, external service,
@@ -155,7 +155,7 @@ before writing NOT-TRIGGERED.
   fix is cheap and safe, otherwise ship it with a follow-up note.
 - **Run to completion.** Once Step 1 is done, the only legal stops are the final
   verdict report (Step 10) or a real blocker (a red Step 2 suite you could not
-  repair), or Step 10's closing whole-suite question. A status line like "next
+  repair). A status line like "next
   in the pipeline: ..." is not a stop: keep calling tools until the report is
   written. Never end a turn to wait for the user between checks.
   An environment failure (disk full, tool crash, network drop) is not a verdict:

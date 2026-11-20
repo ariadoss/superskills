@@ -31,9 +31,7 @@
 6. **Verify:** re-run the related tests and the build. Green ⇒ FIXED(n). Still
    red after two rounds ⇒ UNFIXED blocker with the failing test and what was
    tried. Every later step's verify phase re-runs the related tests for the
-   files it touched, never the whole suite. The whole suite runs once, in Step
-   10, on the final HEAD after every fix has landed. A failure there is fixed,
-   the related tests re-run, and the whole suite runs again, until green.
+   files it touched, never the whole suite. The whole suite never runs in `/qa-full`; it runs once at the merge gate.
 
 If this step ends UNFIXED after two rounds, **stop here** and report NOT READY
 with the failing test. Every later step's verify phase depends on a green
