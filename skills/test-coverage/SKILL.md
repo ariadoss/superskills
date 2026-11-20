@@ -182,9 +182,9 @@ the Step 6 `rules/` checklist:
 3. Apply the test file changes (this skill writes and commits to the working
    tree).
 
-## Step 8: Run the full suite and report
+## Step 8: Run the related tests and report
 
-Run the project's real test command. Then report:
+Run the tests that cover the files you changed and every test file you added or edited, by name. Do not run the whole suite: it runs once at the merge gate (`suite-stamp.sh ensure`). Put that command in `Runner:`. When `git config --local superskills.suiteCommand` is empty, end with one plain sentence: "No whole-suite gate is set up here. Run the whole suite once before merging, or run `suite-stamp.sh init '<command>'` so it runs once per tree." Then report:
 
 ```markdown
 # Test coverage — <scope> @ <date>
@@ -204,7 +204,7 @@ Runner: <command>   Files scoped: N   New tests added: M
 - <file:line> — <which rules/ file> — <what changed>
 
 ## Suite result
-<pass/fail summary from the real run>
+<pass/fail summary from the related-test run>
 ```
 
 ## Anti-patterns (do not do)
