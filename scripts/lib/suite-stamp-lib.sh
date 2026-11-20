@@ -44,3 +44,22 @@ ssl_has() {
   # producer on a big file and report a false "no stamp" (qa-triggers.sh pitfall).
   [ -f "$f" ] && awk -F'\t' -v t="$1" -v c="$c" '$1 == t && $3 == c { found = 1; exit } END { exit !found }' "$f"
 }
+
+# ssl_install_hook — put a small forwarding pre-push hook where git will run
+# it (honors core.hooksPath). Idempotent; never overwrites a hook that is not ours.
+ssl_install_hook() {
+  local dir hook here
+  dir="$(git rev-parse --path-format=absolute --git-path hooks)" || return 1
+  hook="$dir/pre-push"
+  here="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+  if [ -e "$hook" ] && ! grep -qF "superskills suite gate" "$hook"; then
+    echo "suite-stamp: $hook exists and is not ours, so the push gate is not installed." >&2
+    # shellcheck disable=SC2016  # literal text for the user to copy
+    echo 'suite-stamp: call "'"$here"'/suite-gate-prepush.sh" "$@" from it. If your hook also reads git'"'"'s stdin, save it once (in=$(cat)), replay it to each (printf '"'%s\n'"' "$in" | cmd), and stop on a non-zero exit.' >&2
+    return 0
+  fi
+  mkdir -p "$dir" || return 1
+  printf '#!/usr/bin/env bash\n# superskills suite gate (managed by suite-stamp.sh init)\ng=%q\n[ -x "$g" ] || { echo "suite-stamp gate: $g is missing, so this push is not gated (re-run suite-stamp.sh init)" >&2; exit 0; }\nexec "$g" "$@"\n' \
+    "$here/suite-gate-prepush.sh" > "$hook"
+  chmod +x "$hook"
+}

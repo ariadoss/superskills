@@ -5,6 +5,7 @@
 #   suite-stamp.sh check [ref]         exit 0 if ref's tree already passed, else 1
 #   suite-stamp.sh run                 run the suite on HEAD; stamp it only if it passes
 #   suite-stamp.sh ensure              check, and run only when not stamped
+#   suite-stamp.sh status              show the suite, HEAD stamp state, hook, recent stamps
 #
 # `run` refuses a dirty working tree: the stamp names HEAD's tree, so the tested
 # files must be exactly that tree. Stamps live in the git common dir (never committed).
@@ -38,9 +39,16 @@ do_run() {
 }
 
 case "$sub" in
-  init)   [ $# -ge 1 ] || die "usage: init <command...>"; git config --local superskills.suiteCommand "$*" ;;
+  init)   [ $# -ge 1 ] || die "usage: init <command...>"
+          git config --local superskills.suiteCommand "$*" && ssl_install_hook ;;
+  status) tree="$(ssl_tree HEAD)" || die "no HEAD commit"
+          echo "suite: $(ssl_command)"
+          if ssl_has "$tree"; then echo "HEAD tree $tree: stamped"; else echo "HEAD tree $tree: not stamped"; fi
+          hk="$(git rev-parse --path-format=absolute --git-path hooks)/pre-push"
+          if grep -qF "superskills suite gate" "$hk" 2>/dev/null; then echo "push gate: installed ($hk)"; else echo "push gate: NOT active (no superskills hook at $hk; run init, or call suite-gate-prepush.sh from your own pre-push hook)"; fi
+          f="$(ssl_stamp_file)"; [ -f "$f" ] && { echo "recent stamps (tree, time, command):"; tail -n 5 "$f"; } ;;
   check)  do_check "$@" ;;
   run)    do_run ;;
   ensure) do_check "${1:-HEAD}" >/dev/null 2>&1 && { echo "already passed on this tree; skipping"; exit 0; }; do_run ;;
-  *)      die "usage: suite-stamp.sh init|check|run|ensure" ;;
+  *)      die "usage: suite-stamp.sh init|check|run|ensure|status" ;;
 esac
