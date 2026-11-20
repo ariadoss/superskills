@@ -19,19 +19,22 @@ Guide completion of development work by presenting clear options and handling ch
 
 **Before presenting options, verify tests pass:**
 
-```bash
-# Run the whole suite once per distinct tree; skips when this exact code already passed.
-scripts/suite-stamp.sh ensure   # superskills repo path; elsewhere: the installed suite-stamp.sh
-```
-
-The script ships with superskills, not with the repo being finished, so
-resolve it instead of assuming `./scripts/`:
+Run the whole suite once per distinct tree; it skips when this exact code
+already passed. The script ships with superskills, not with the repo being
+finished, so resolve it instead of assuming `./scripts/`:
 
 ```bash
+rc=127
 for d in "$SUPERSKILLS_DIR" ~/Sites/superskills ~/.claude/skills/superskills ~/.codex/skills/superskills .; do
-  [ -n "$d" ] && [ -x "$d/scripts/suite-stamp.sh" ] && { "$d/scripts/suite-stamp.sh" ensure; break; }
+  [ -n "$d" ] && [ -x "$d/scripts/suite-stamp.sh" ] && { "$d/scripts/suite-stamp.sh" ensure; rc=$?; break; }
 done
+[ "$rc" = 127 ] && echo "suite-stamp.sh not found; run the project's test command"
+echo "suite-stamp exit: $rc"
 ```
+
+Exit 0 means the suite passed (or this tree already had). Any other exit is a
+failure: stop. `ensure` needs a clean working tree, and exit 2 means no suite
+command is set (not initialised) or the tree is dirty.
 
 If the repo has not run `suite-stamp.sh init`, run its normal test command
 (`npm test` / `cargo test` / `pytest` / `go test ./...`) instead and offer to run `init` so the
@@ -97,7 +100,7 @@ git pull
 git merge <feature-branch>
 
 suite-stamp.sh ensure   # fast-forward: same tree, skips; merge commit with new work from main: re-runs
-# (resolve the path as in Step 1; no init: run the test command)
+# (resolve the path as in Step 1; check the exit code; no init: run the test command)
 
 # If tests pass
 git branch -d <feature-branch>
