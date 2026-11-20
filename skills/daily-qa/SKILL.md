@@ -58,15 +58,18 @@ Determine the time window for "recent":
 
 Record the resolved window at the top of the report.
 
-If `git rev-parse HEAD` equals the stored sha and the user passed no explicit
-window, nothing landed since the last run. Still run Step 2 when `gh` is
-available (CI can change without new commits), skip Steps 3-7, and write a
-one-line report: "no new commits since <sha>; CI signals not re-checked" (or
-the Step 2 summary when it ran). Then stop.
+If `git rev-parse HEAD` equals the stored sha, the user passed no explicit
+window, and `git status --porcelain` is empty, nothing landed since the last
+run. Still run Step 2 when `gh` is available (CI can change without new
+commits), skip Steps 3-7, and write a one-line report: "no new commits since
+<sha>; CI signals not re-checked" (or the Step 2 summary when it ran). A dirty
+working tree means some later steps would read uncommitted changes, so run
+normally. The skip path also rewrites `.daily-qa-last-run`, which only
+refreshes the timestamp. Then stop.
 
 After the report is written, update `.daily-qa-last-run` to
-`<current timestamp> <git rev-parse HEAD>` so the next run picks up cleanly. (Add to `.gitignore` if not
-already present; do not commit it.)
+`<current timestamp> <git rev-parse HEAD>` so the next run picks up cleanly.
+(Add to `.gitignore` if not already present; do not commit it.)
 
 ## Step 2: CI failures and flaky tests
 
