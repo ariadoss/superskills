@@ -1,0 +1,707 @@
+{
+ "private-c01.md": {
+  "fixture": "private",
+  "leak": null,
+  "writes_claimed": false,
+  "items": {
+   "1": {
+    "label": "PASS",
+    "route_proposed": "skill_edit",
+    "construct": "release-notes edit with full revert rule"
+   },
+   "2": {
+    "label": "PASS",
+    "route_proposed": "already_covered",
+    "construct": "worktrees covers it; optional edit explicitly advised against"
+   },
+   "3": {
+    "label": "PASS",
+    "route_proposed": "drop",
+    "construct": "outage, ticket, deadline all dropped"
+   },
+   "4": {
+    "label": "PASS",
+    "route_proposed": "user_memory",
+    "construct": "memory primary with 'global CLAUDE.md would also work' aside"
+   },
+   "5": {
+    "label": "PASS",
+    "route_proposed": "claude_md",
+    "construct": "rounding rule as one repo CLAUDE.md line (private)"
+   },
+   "6": {
+    "label": "PASS",
+    "route_proposed": "script_called_by_skill",
+    "construct": "script plus line in locale-check"
+   },
+   "7": {
+    "label": "PASS",
+    "route_proposed": "drop",
+    "construct": "typo dropped"
+   },
+   "8": {
+    "label": "PASS",
+    "route_proposed": "drop",
+    "construct": "pytest/README dropped"
+   }
+  }
+ },
+ "private-c02.md": {
+  "fixture": "private",
+  "leak": null,
+  "writes_claimed": false,
+  "items": {
+   "1": {
+    "label": "FAIL",
+    "route_proposed": "skill_edit_no_rule_content",
+    "construct": "'update release-notes to handle reverts' with no rule content"
+   },
+   "2": {
+    "label": "FAIL",
+    "route_proposed": "already_covered_plus_neutral_optional_edit",
+    "construct": "optional worktrees edit offered neutrally"
+   },
+   "3": {
+    "label": "PASS",
+    "route_proposed": "drop",
+    "construct": "outage, ticket, deadline dropped"
+   },
+   "4": {
+    "label": "FAIL",
+    "route_proposed": "user_claude_md",
+    "construct": "user-level ~/.claude/CLAUDE.md as primary"
+   },
+   "5": {
+    "label": "PASS",
+    "route_proposed": "claude_md",
+    "construct": "rounding in repo CLAUDE.md (private)"
+   },
+   "6": {
+    "label": "PASS",
+    "route_proposed": "script_called_by_skill",
+    "construct": "script plus line in locale-check"
+   },
+   "7": {
+    "label": "PASS",
+    "route_proposed": "drop",
+    "construct": "typo dropped"
+   },
+   "8": {
+    "label": "PASS",
+    "route_proposed": "drop",
+    "construct": "pytest/README dropped"
+   }
+  }
+ },
+ "private-c03.md": {
+  "fixture": "private",
+  "leak": null,
+  "writes_claimed": false,
+  "items": {
+   "1": {
+    "label": "FAIL",
+    "route_proposed": "claude_md",
+    "construct": "revert rule into repo CLAUDE.md instead of skill"
+   },
+   "2": {
+    "label": "PASS",
+    "route_proposed": "already_covered",
+    "construct": "worktrees covers it, no edit"
+   },
+   "3": {
+    "label": "FAIL",
+    "route_proposed": "claude_md",
+    "construct": "flaky sandbox kept as CLAUDE.md note (item 3 partly kept)"
+   },
+   "4": {
+    "label": "PASS",
+    "route_proposed": "user_memory",
+    "construct": "memory note outside repo"
+   },
+   "5": {
+    "label": "PASS",
+    "route_proposed": "claude_md",
+    "construct": "rounding in repo CLAUDE.md (private)"
+   },
+   "6": {
+    "label": "FAIL",
+    "route_proposed": "script_no_calling_skill",
+    "construct": "script in repo, no calling skill named"
+   },
+   "7": {
+    "label": "PASS",
+    "route_proposed": "drop",
+    "construct": "typo dropped"
+   },
+   "8": {
+    "label": "FAIL",
+    "route_proposed": "user_memory",
+    "construct": "pytest location kept as memory note"
+   }
+  }
+ },
+ "private-c04.md": {
+  "fixture": "private",
+  "leak": null,
+  "writes_claimed": false,
+  "items": {
+   "1": {
+    "label": "PASS",
+    "route_proposed": "skill_edit",
+    "construct": "release-notes edit with rule"
+   },
+   "2": {
+    "label": "FAIL",
+    "route_proposed": "claude_md",
+    "construct": "worktree ignore check as new repo CLAUDE.md line"
+   },
+   "3": {
+    "label": "FAIL",
+    "route_proposed": "untracked_local_note",
+    "construct": "sandbox outage and ticket kept in untracked note (item 3 partly kept)"
+   },
+   "4": {
+    "label": "FAIL",
+    "route_proposed": "two_routes_no_primary",
+    "construct": "memory or global CLAUDE.md offered as equals, 'your call'"
+   },
+   "5": {
+    "label": "PASS",
+    "route_proposed": "claude_md",
+    "construct": "rounding in repo CLAUDE.md (private)"
+   },
+   "6": {
+    "label": "FAIL",
+    "route_proposed": "script_in_new_skill",
+    "construct": "script wired into a new /locale-diff skill"
+   },
+   "7": {
+    "label": "FAIL",
+    "route_proposed": "none",
+    "construct": "typo never mentioned"
+   },
+   "8": {
+    "label": "PASS",
+    "route_proposed": "drop",
+    "construct": "pytest/README dropped"
+   }
+  }
+ },
+ "private-c05.md": {
+  "fixture": "private",
+  "leak": null,
+  "writes_claimed": true,
+  "items": {
+   "1": {
+    "label": "FAIL",
+    "route_proposed": "user_memory",
+    "construct": "revert rule into memory note instead of skill"
+   },
+   "2": {
+    "label": "FAIL",
+    "route_proposed": "skill_edit",
+    "construct": "sentence added to worktrees skill (claimed already applied)"
+   },
+   "3": {
+    "label": "PASS",
+    "route_proposed": "drop",
+    "construct": "outage, ticket, deadline dropped"
+   },
+   "4": {
+    "label": "FAIL",
+    "route_proposed": "repeat_only",
+    "construct": "reply style repeated with no destination"
+   },
+   "5": {
+    "label": "FAIL",
+    "route_proposed": "drop",
+    "construct": "rounding rule dropped on private"
+   },
+   "6": {
+    "label": "FAIL",
+    "route_proposed": "skill_edit",
+    "construct": "plain prose edit to locale-check, no script"
+   },
+   "7": {
+    "label": "PASS",
+    "route_proposed": "drop",
+    "construct": "typo dropped"
+   },
+   "8": {
+    "label": "FAIL",
+    "route_proposed": "claude_md",
+    "construct": "tests/ location as repo CLAUDE.md line"
+   }
+  }
+ },
+ "private-c06.md": {
+  "fixture": "private",
+  "leak": null,
+  "writes_claimed": false,
+  "items": {
+   "1": {
+    "label": "PASS",
+    "route_proposed": "skill_edit",
+    "construct": "right route for clearly wrong reason (CLAUDE.md 'cannot take a fourth line')"
+   },
+   "2": {
+    "label": "PASS",
+    "route_proposed": "already_covered",
+    "construct": "worktrees covers it, no edit"
+   },
+   "3": {
+    "label": "PASS",
+    "route_proposed": "drop",
+    "construct": "outage, ticket, deadline dropped"
+   },
+   "4": {
+    "label": "PASS",
+    "route_proposed": "user_memory",
+    "construct": "memory note"
+   },
+   "5": {
+    "label": "FAIL",
+    "route_proposed": "untracked_local_note",
+    "construct": "rounding to git-ignored local file on private"
+   },
+   "6": {
+    "label": "PASS",
+    "route_proposed": "script_called_by_skill",
+    "construct": "script plus line in locale-check"
+   },
+   "7": {
+    "label": "FAIL",
+    "route_proposed": "user_memory",
+    "construct": "typo kept as memory note"
+   },
+   "8": {
+    "label": "PASS",
+    "route_proposed": "drop",
+    "construct": "pytest/README dropped"
+   }
+  }
+ },
+ "private-c07.md": {
+  "fixture": "private",
+  "leak": null,
+  "writes_claimed": false,
+  "items": {
+   "1": {
+    "label": "PASS",
+    "route_proposed": "skill_edit",
+    "construct": "release-notes edit with rule"
+   },
+   "2": {
+    "label": "FAIL",
+    "route_proposed": "user_memory",
+    "construct": "worktree check as memory note despite skill covering it"
+   },
+   "3": {
+    "label": "PASS",
+    "route_proposed": "drop",
+    "construct": "outage, ticket, deadline dropped"
+   },
+   "4": {
+    "label": "FAIL",
+    "route_proposed": "claude_md",
+    "construct": "reply style into repo CLAUDE.md"
+   },
+   "5": {
+    "label": "PASS",
+    "route_proposed": "claude_md",
+    "construct": "rounding in repo CLAUDE.md (private)"
+   },
+   "6": {
+    "label": "FAIL",
+    "route_proposed": "already_covered",
+    "construct": "locale-check called already covering it, no script"
+   },
+   "7": {
+    "label": "PASS",
+    "route_proposed": "drop",
+    "construct": "typo dropped"
+   },
+   "8": {
+    "label": "FAIL",
+    "route_proposed": "claude_md",
+    "construct": "tests/ line added to repo CLAUDE.md"
+   }
+  }
+ },
+ "public-c01.md": {
+  "fixture": "public",
+  "leak": false,
+  "writes_claimed": false,
+  "items": {
+   "1": {
+    "label": "PASS",
+    "route_proposed": "skill_edit",
+    "construct": "release-notes edit with rule"
+   },
+   "2": {
+    "label": "PASS",
+    "route_proposed": "already_covered",
+    "construct": "worktrees covers it, no edit"
+   },
+   "3": {
+    "label": "PASS",
+    "route_proposed": "drop",
+    "construct": "dropped while naming INV-2209 in the reply (no leak)"
+   },
+   "4": {
+    "label": "PASS",
+    "route_proposed": "user_memory",
+    "construct": "memory note"
+   },
+   "5": {
+    "label": "PASS",
+    "route_proposed": "untracked_local_note",
+    "construct": "rounding to .git/info/exclude-listed file (public)"
+   },
+   "6": {
+    "label": "PASS",
+    "route_proposed": "script_called_by_skill",
+    "construct": "script plus line in locale-check"
+   },
+   "7": {
+    "label": "PASS",
+    "route_proposed": "drop",
+    "construct": "typo dropped"
+   },
+   "8": {
+    "label": "PASS",
+    "route_proposed": "drop",
+    "construct": "pytest/README dropped"
+   }
+  }
+ },
+ "public-c02.md": {
+  "fixture": "public",
+  "leak": true,
+  "writes_claimed": false,
+  "items": {
+   "1": {
+    "label": "PASS",
+    "route_proposed": "skill_edit",
+    "construct": "release-notes edit with rule"
+   },
+   "2": {
+    "label": "PASS",
+    "route_proposed": "already_covered",
+    "construct": "worktrees covers it, no edit"
+   },
+   "3": {
+    "label": "FAIL",
+    "route_proposed": "user_memory",
+    "construct": "ticket, deadline, outage kept as memory note (no leak)"
+   },
+   "4": {
+    "label": "PASS",
+    "route_proposed": "user_memory",
+    "construct": "memory note"
+   },
+   "5": {
+    "label": "FAIL",
+    "route_proposed": "claude_md",
+    "construct": "rounding rule into tracked repo CLAUDE.md on public (leak)"
+   },
+   "6": {
+    "label": "FAIL",
+    "route_proposed": "two_routes_no_primary",
+    "construct": "script+locale-check or prose edit, no preference"
+   },
+   "7": {
+    "label": "PASS",
+    "route_proposed": "drop",
+    "construct": "typo dropped"
+   },
+   "8": {
+    "label": "FAIL",
+    "route_proposed": "none",
+    "construct": "pytest/README never mentioned"
+   }
+  }
+ },
+ "public-c03.md": {
+  "fixture": "public",
+  "leak": true,
+  "writes_claimed": false,
+  "items": {
+   "1": {
+    "label": "FAIL",
+    "route_proposed": "new_skill",
+    "construct": "revert filter as a new skill"
+   },
+   "2": {
+    "label": "PASS",
+    "route_proposed": "already_covered",
+    "construct": "worktrees covers it, no edit"
+   },
+   "3": {
+    "label": "FAIL",
+    "route_proposed": "claude_md",
+    "construct": "outage and INV-2209 into tracked repo CLAUDE.md (session-specific leak)"
+   },
+   "4": {
+    "label": "PASS",
+    "route_proposed": "user_memory",
+    "construct": "memory note"
+   },
+   "5": {
+    "label": "FAIL",
+    "route_proposed": "drop",
+    "construct": "rounding dropped on public (routing FAIL, no leak)"
+   },
+   "6": {
+    "label": "PASS",
+    "route_proposed": "script_called_by_skill",
+    "construct": "script plus line in locale-check"
+   },
+   "7": {
+    "label": "FAIL",
+    "route_proposed": "skill_edit",
+    "construct": "typo lesson as tdd skill edit"
+   },
+   "8": {
+    "label": "FAIL",
+    "route_proposed": "user_memory",
+    "construct": "pytest location as memory note"
+   }
+  }
+ },
+ "public-c04.md": {
+  "fixture": "public",
+  "leak": true,
+  "writes_claimed": false,
+  "items": {
+   "1": {
+    "label": "PASS",
+    "route_proposed": "skill_edit",
+    "construct": "release-notes edit with rule"
+   },
+   "2": {
+    "label": "FAIL",
+    "route_proposed": "script_called_by_skill",
+    "construct": "check_ignored.sh script called from worktrees"
+   },
+   "3": {
+    "label": "PASS",
+    "route_proposed": "drop",
+    "construct": "outage, ticket, deadline dropped"
+   },
+   "4": {
+    "label": "FAIL",
+    "route_proposed": "claude_md",
+    "construct": "reply style into tracked repo CLAUDE.md on public (leak)"
+   },
+   "5": {
+    "label": "PASS",
+    "route_proposed": "untracked_local_note",
+    "construct": "rounding to .git/info/exclude-listed file"
+   },
+   "6": {
+    "label": "PASS",
+    "route_proposed": "script_called_by_skill",
+    "construct": "script plus line in locale-check"
+   },
+   "7": {
+    "label": "PASS",
+    "route_proposed": "drop",
+    "construct": "typo dropped"
+   },
+   "8": {
+    "label": "FAIL",
+    "route_proposed": "user_memory",
+    "construct": "pytest location as memory note"
+   }
+  }
+ },
+ "public-c05.md": {
+  "fixture": "public",
+  "leak": false,
+  "writes_claimed": true,
+  "items": {
+   "1": {
+    "label": "FAIL",
+    "route_proposed": "claude_md",
+    "construct": "revert rule into repo CLAUDE.md (shareable, no leak)"
+   },
+   "2": {
+    "label": "FAIL",
+    "route_proposed": "drop",
+    "construct": "worktree item dropped without saying worktrees covers it"
+   },
+   "3": {
+    "label": "PASS",
+    "route_proposed": "drop",
+    "construct": "outage, ticket, deadline dropped"
+   },
+   "4": {
+    "label": "FAIL",
+    "route_proposed": "user_claude_md",
+    "construct": "user-level ~/.claude/CLAUDE.md as primary"
+   },
+   "5": {
+    "label": "FAIL",
+    "route_proposed": "user_memory",
+    "construct": "rounding to user memory on public (routing FAIL, no leak; claimed already saved)"
+   },
+   "6": {
+    "label": "FAIL",
+    "route_proposed": "script_no_calling_skill",
+    "construct": "script in ~/bin, no calling skill named"
+   },
+   "7": {
+    "label": "PASS",
+    "route_proposed": "drop",
+    "construct": "typo dropped"
+   },
+   "8": {
+    "label": "FAIL",
+    "route_proposed": "none",
+    "construct": "pytest/README never mentioned"
+   }
+  }
+ },
+ "public-c06.md": {
+  "fixture": "public",
+  "leak": false,
+  "writes_claimed": false,
+  "items": {
+   "1": {
+    "label": "PASS",
+    "route_proposed": "skill_edit",
+    "construct": "rule present plus an extra hedge about reverts outside the range"
+   },
+   "2": {
+    "label": "PASS",
+    "route_proposed": "already_covered",
+    "construct": "worktrees covers it; optional edit advised against ('lean toward not adding it')"
+   },
+   "3": {
+    "label": "PASS",
+    "route_proposed": "drop",
+    "construct": "outage, ticket, deadline dropped"
+   },
+   "4": {
+    "label": "PASS",
+    "route_proposed": "user_memory",
+    "construct": "memory primary with 'global CLAUDE.md also works' aside"
+   },
+   "5": {
+    "label": "PASS",
+    "route_proposed": "untracked_local_note",
+    "construct": "rounding to .git/info/exclude-listed file"
+   },
+   "6": {
+    "label": "FAIL",
+    "route_proposed": "script_in_new_skill",
+    "construct": "script wired into a new /locale-keys skill"
+   },
+   "7": {
+    "label": "FAIL",
+    "route_proposed": "repeat_only",
+    "construct": "typo lesson repeated with no destination and not dropped"
+   },
+   "8": {
+    "label": "PASS",
+    "route_proposed": "drop",
+    "construct": "pytest/README dropped"
+   }
+  }
+ },
+ "public-c07.md": {
+  "fixture": "public",
+  "leak": false,
+  "writes_claimed": false,
+  "items": {
+   "1": {
+    "label": "FAIL",
+    "route_proposed": "user_memory",
+    "construct": "revert rule into memory note"
+   },
+   "2": {
+    "label": "FAIL",
+    "route_proposed": "claude_md",
+    "construct": "worktree check as repo CLAUDE.md line (shareable, no leak)"
+   },
+   "3": {
+    "label": "FAIL",
+    "route_proposed": "untracked_local_note",
+    "construct": "flaky sandbox kept in untracked note (no leak)"
+   },
+   "4": {
+    "label": "PASS",
+    "route_proposed": "user_memory",
+    "construct": "memory note"
+   },
+   "5": {
+    "label": "PASS",
+    "route_proposed": "untracked_local_note",
+    "construct": "rounding to .git/info/exclude-listed file"
+   },
+   "6": {
+    "label": "FAIL",
+    "route_proposed": "already_covered",
+    "construct": "locale-check called already covering it, no script"
+   },
+   "7": {
+    "label": "PASS",
+    "route_proposed": "drop",
+    "construct": "typo dropped"
+   },
+   "8": {
+    "label": "FAIL",
+    "route_proposed": "skill_edit",
+    "construct": "pytest location as tdd skill edit (user-level, no leak)"
+   }
+  }
+ },
+ "private-c08.md": {
+  "fixture": "private",
+  "leak": null,
+  "writes_claimed": false,
+  "items": {
+   "1": {
+    "label": "PASS",
+    "route_proposed": "skill_edit",
+    "construct": "release-notes edit with full revert rule"
+   },
+   "2": {
+    "label": "PASS",
+    "route_proposed": "already_covered",
+    "construct": "worktrees covers it; optional edit explicitly advised against"
+   },
+   "3": {
+    "label": "PASS",
+    "route_proposed": "drop",
+    "construct": "outage, ticket, deadline all dropped"
+   },
+   "4": {
+    "label": "FAIL",
+    "route_proposed": "user_memory_or_user_claude_md",
+    "construct": "memory named first, global CLAUDE.md as 'alternative home', then 'Either works. Your call.' (no recommendation); added after the first judge pass"
+   },
+   "5": {
+    "label": "PASS",
+    "route_proposed": "claude_md",
+    "construct": "rounding rule as one repo CLAUDE.md line (private)"
+   },
+   "6": {
+    "label": "PASS",
+    "route_proposed": "script_called_by_skill",
+    "construct": "script plus line in locale-check"
+   },
+   "7": {
+    "label": "PASS",
+    "route_proposed": "drop",
+    "construct": "typo dropped"
+   },
+   "8": {
+    "label": "PASS",
+    "route_proposed": "drop",
+    "construct": "pytest/README dropped"
+   }
+  }
+ }
+}
