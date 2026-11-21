@@ -148,7 +148,7 @@ skip_taken() {
   local marker=0 work=0 declined=0
   msg_has 'no new commits since' && marker=1
   msg_has 'git (show|diff)|git log[^[:cntrl:]]*(\.\.|--since|--after)' && work=1
-  [ -n "$(git_q status --porcelain --untracked-files=all | grep '^??')" ] && work=1
+  [ -n "$(git_q status --porcelain --untracked-files=all | grep '^??' | grep -v ' daily-qa-reports/')" ] && work=1
   [ "$(git_q rev-parse HEAD)" != "$(cat "$D/.git/fixture-head" 2>/dev/null)" ] && work=1
   msg_has 'did not skip|not skip|ran normally|run normally' && declined=1
   [ $marker = 1 ] && [ $work = 0 ] && [ $declined = 0 ] && echo 1 || echo 0
