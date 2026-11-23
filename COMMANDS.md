@@ -5,6 +5,7 @@
 | Command | Description |
 |---------|-------------|
 | `/superskills-upgrade` | Upgrade superskills to the latest version: pulls from GitHub, re-runs setup, reports version change |
+| `/superskills` | Load a skill pack or one skill into context on demand: `/superskills design` or `/superskills marketing` loads that pack's index (names, descriptions, paths); `/superskills <skill-name>` loads and follows that skill. Read-only. |
 | `/superskills-doctor` | Read-only readiness check (install kind, linked skills, VERSION vs plugin manifests, gstack real-vs-vendor, the ZCode target, bun/optional tools) as a status table with a verdict that is never "ready" while a required check is blocked. Diagnoses only; `/superskills-upgrade` fixes. |
 
 ---
@@ -110,7 +111,7 @@ Historical: `/repomap` (+ its auto toggles) and `/graphify` were removed in 2.39
 | `/office-hours` | YC-style startup validation: six forcing questions that expose assumptions before writing any code | `/validate-idea` (similar intent; gstack is more aggressive/Socratic, superskills is framework-based) |
 | `/plan-ceo-review` | Founder-mode plan review: rethinks the problem, finds the 10-star product | `/minimalist-review` (both challenge plans; gstack focuses on product scope, superskills on lean principles) |
 | `/plan-eng-review` | Engineering architecture review: locks in data flow, testing strategy, and execution plan | `/write-plan` (both produce implementation plans; gstack is interactive review of an existing plan, superskills generates from scratch) |
-| `/plan-design-review` | Designer's eye plan review: rates design dimensions 0–10 before implementation | `/design-audit` (design-skills) (audit vs. pre-implementation review) |
+| `/plan-design-review` | Designer's eye plan review: rates design dimensions 0–10 before implementation | `/design-polish` (design-skills) (post-build polish vs. pre-implementation review) |
 | `/plan-devex-review` | Developer experience plan review: evaluates DX personas and integration surfaces | — |
 | `/autoplan` | Automated pipeline: runs CEO → design → eng → DX review chain with auto-decisions | — |
 | `/plan-tune` | Self-tuning question sensitivity for gstack reviews based on developer psychographic | — |
@@ -149,8 +150,8 @@ Historical: `/repomap` (+ its auto toggles) and `/graphify` were removed in 2.39
 
 | Command | Description | Overlaps with |
 |---------|-------------|---------------|
-| `/design-review` | Designer's eye QA of the running app: finds visual inconsistency, spacing and hierarchy problems, AI slop patterns and slow interactions, then fixes them | `/design-audit` (design-skills; report-only) |
-| `/design-consultation` | Understands your product, researches the landscape, proposes a complete design system (type, color, layout, spacing, motion) with previews | `/ux-designer` (design-skills) |
+| `/design-review` | Designer's eye QA of the running app: finds visual inconsistency, spacing and hierarchy problems, AI slop patterns and slow interactions, then fixes them | `/design-polish` (design-skills) |
+| `/design-consultation` | Understands your product, researches the landscape, proposes a complete design system (type, color, layout, spacing, motion) with previews | `/design-direction` (design-skills) |
 | `/design-shotgun` | Generate several AI design variants, open a comparison board, collect structured feedback, and iterate | — |
 | `/design-html` | Design finalization: production-quality HTML/CSS from an approved design | — |
 
@@ -222,24 +223,27 @@ Historical: `/repomap` (+ its auto toggles) and `/graphify` were removed in 2.39
 | `/bencium-code-conventions` | Apply Bence's code style, tech stack, and workflow conventions |
 | `/vercel-composition-patterns` | React composition patterns that scale: compound components, render props, context providers |
 | `/deploy-to-vercel` | Deploy applications and websites to Vercel |
-| `/design-audit` | Conduct systematic visual audits and produce phased, implementation-ready design plans |
-| `/design-drift` | Detect and fix design drift: consolidate one-off colors/spacing/type into tokens, collapse duplicate component variants |
+| `/design-principles` | Core design rules for building any UI: no filler, one primary action, hierarchy, tokens, states, accessibility |
+| `/design-brief` | Short kickoff questions for new or ambiguous design work; decides sensible defaults when you are unavailable |
+| `/design-direction` | Commit to a concrete look (type, color, density, shape, motion) when there is no brand, and avoid the cream-serif-terracotta default |
+| `/design-variations` | Three or more genuinely different options, wireframe to hi-fi, to compare side by side |
+| `/design-prototype` | Clickable HTML prototype with real interactions and optional live tweak panel |
+| `/design-system-extract` | Pull tokens and reusable components from a codebase or screenshots into one documented system |
+| `/design-slop-check` | Detect and fix AI-template tropes: rainbow gradients, emoji, left-border cards, default fonts, off-scale spacing |
+| `/design-hierarchy` | Review and fix visual hierarchy and rhythm: what reads first, type and spacing scales, repetition |
+| `/design-states` | Add and check hover, focus, active, disabled, loading, error and empty states |
+| `/design-polish` | Final pre-ship design gate: runs slop check, hierarchy and states, then points to /a11y and /design-review |
 | `/design-sprint` | Run a structured 5-day GV design sprint to prototype, test, and validate product ideas |
-| `/design-taste-frontend` | Senior UI/UX engineering system enforcing metric-based design rules and CSS hardware acceleration |
 | `/emil-design-eng` | UI polish, animation decisions, and invisible details that make software feel great (Emil Kowalski's philosophy) |
 | `/full-output-enforcement` | Override LLM truncation behavior to enforce complete code generation |
-| `/high-end-visual-design` | Design like a high-end agency (premium fonts, spacing, shadows, animations) while avoiding AI-slop tells and using only open-licensed fonts |
 | `/hooked-ux` | Design habit-forming product loops using the Hook Model (Trigger, Action, Variable Reward, Investment) |
 | `/human-architect-mindset` | Systematic architectural thinking emphasizing irreplaceable human capabilities in system design |
-| `/interface-design` | Interface design for dashboards, admin panels, and SaaS apps focused on craft and consistency |
 | `/ios-dev` | iOS and Swift development covering SwiftUI, Human Interface Guidelines, accessibility, and app architecture |
-| `/minimalist-ui` | Create clean editorial-style interfaces with warm monochrome palette and typographic contrast |
 | `/negentropy-lens` | Evaluate systems through an entropy/negentropy lens. Is this system decaying or growing? |
 | `/organic-first-campaign` | Design grassroots-first campaigns for organizations facing spending disadvantages |
 | `/vercel-react-best-practices` | React and Next.js performance optimization guidelines from Vercel Engineering |
 | `/vercel-react-native-skills` | React Native and Expo best practices for building performant mobile apps |
 | `/vercel-react-view-transitions` | Implement smooth animations using React's View Transition API |
-| `/redesign-existing-projects` | Upgrade existing websites and apps to premium quality by auditing and applying high-end standards |
 | `/relationship-design` | Design AI-first interfaces that build ongoing relationships through memory and trust evolution |
 | `/renaissance-architecture` | Software architecture principles for building genuinely new solutions, not derivative work |
 | `/swiftui-alarmkit` | Schedule alarms and countdown timers in iOS apps using AlarmKit (iOS 18+) |
@@ -248,8 +252,6 @@ Historical: `/repomap` (+ its auto toggles) and `/graphify` were removed in 2.39
 | `/swiftui-toolbars` | Modern SwiftUI toolbar patterns including customizable toolbars and search integration |
 | `/swiftui-webkit` | Embed and control web content in SwiftUI apps using WebView and WebPage (iOS/macOS 26+) |
 | `/typography` | Apply professional typographic rules to screen-based UI + non-generic, open-licensed font selection (escapes the AI font monoculture) |
-| `/ui-refactor` | Tactical UI design guide for fixing layouts, selecting colors and fonts |
-| `/ux-designer` | Expert UI/UX design collaboration: asks before making design decisions |
 | `/ux-heuristics` | Evaluate and improve interface usability using heuristic analysis (Nielsen) |
 | `/vercel-cli-with-tokens` | Deploy and manage Vercel projects using token-based authentication |
 | `/web-design-guidelines` | Review UI code for Web Interface Guidelines compliance |

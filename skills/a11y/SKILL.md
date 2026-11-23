@@ -132,7 +132,7 @@ A pure copy/spacing CSS change with none of the above does **not** need `/a11y`.
 
 ## Related commands
 
-- `/design-audit` — broader visual/UX audit; `/a11y` is the deeper accessibility
+- `/design-polish` — broader visual pass; `/a11y` is the deeper accessibility
   layer. Run them together on UI changes.
 - `/web-perf` — the performance counterpart for frontend changes.
 - `/design-review` — *fixes and commits* visual + a11y issues this audit finds.

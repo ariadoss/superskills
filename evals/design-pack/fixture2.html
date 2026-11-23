@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Account settings</title>
+<style>
+body{font-family:Inter,sans-serif;background:#000;color:#fff;margin:0;padding:13px}
+.hero{background:linear-gradient(135deg,#7b2ff7,#f107a3,#ff9500);padding:27px;text-align:center}
+.hero h2{font-size:15px;font-weight:400;margin:0}
+.card{border-left:6px solid #7b2ff7;background:#111;padding:17px;margin:11px 0}
+.card h3,.card p{font-size:14px;margin:3px 0}
+input{outline:none;border:1px solid #444;background:#fff;color:#000;padding:5px;width:190px}
+.btn{background:#7b2ff7;color:#fff;padding:7px 11px;border-radius:6px;display:inline-block}
+.danger{background:#f107a3;color:#fff;padding:7px 11px;display:inline-block}
+</style>
+</head>
+<body>
+<div class="hero"><h2>🚀 Account settings ✨</h2></div>
+<div class="card"><h3>👤 Profile</h3><p>Name</p><input placeholder="name"><p>Email</p><input placeholder="email"></div>
+<div class="card"><h3>🔔 Notifications</h3><p>Email me about everything</p><div onclick="x()">toggle</div></div>
+<div class="card"><h3>💳 Billing</h3><p>Plan: Pro</p><div class="btn" onclick="save()">Save</div> <div class="danger" onclick="del()">Delete account</div></div>
+<img src="avatar.png">
+</body>
+</html>

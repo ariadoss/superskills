@@ -401,21 +401,21 @@ Output the exact command and note: *"threat modeling belongs at plan time
 (`/write-plan` → `/cso`) — run it now if it was skipped."* Don't recommend it for
 changes that cross no trust boundary.
 
-### 7g. `/design-audit` — recommend only (visual + accessibility), alongside `/qa`
+### 7g. `/design-polish` — recommend only (visual pass), alongside `/qa`
 
 Visual consistency, hierarchy, AI-slop tells, and **accessibility** are an
 easily-forgotten layer. For any **frontend feature**, the design pass belongs
-*alongside* the functional pass: recommend **`/design-audit`** (read-only visual
-+ a11y audit → design plan) **together with `/qa`** (§7d, functional browser QA)
+*alongside* the functional pass: recommend **`/design-polish`** (trope, hierarchy and
+interaction-state pass on the changed UI) **together with `/qa`** (§7d, functional browser QA)
 — *does it look right* + *does it work*. Trigger when changed files include UI
 (`**/*.tsx`, `**/*.jsx`, `**/*.vue`, `**/*.svelte`, `**/components/**`,
 `**/pages/**`, `**/styles/**`, `**/*.css`). Output both commands scoped to the
 changed UI files, and pair with `/web-perf` (§7e) — together they cover
 work + perf + a11y + visual.
 
-`/design-audit` only *finds and plans* (read-only). To **fix** what it flags,
-recommend **`/design-review`** as the follow-up — it edits source and commits
-atomically, so the user runs it deliberately, not as part of the sweep.
+`/design-polish` edits the UI files it reviews, so the user runs it deliberately,
+not as part of the sweep. For the running app, recommend **`/design-review`** as
+the follow-up — it checks in a browser, edits source and commits atomically.
 
 ### 7h. `/a11y` — recommend only (screen reader + WCAG)
 
@@ -431,7 +431,7 @@ window's UI diff touches any of:
 - **motion / animation** (autoplay, transitions, parallax — reduced-motion)
 
 (See `/a11y`'s trigger section for the authoritative list.) Output `/a11y` scoped to
-the changed UI files, alongside the `/design-audit` + `/qa` recommendations
+the changed UI files, alongside the `/design-polish` + `/qa` recommendations
 (§7g, §7d). Skip it for pure spacing/copy CSS changes.
 
 ### 7i. `/iac-scan` — auto-run if triggered (infra misconfig)
@@ -580,9 +580,9 @@ CI runs scanned: N
 - `/review` — (only if a change is architecturally significant / critical-path)
 - `/cso` — (only if a trust-boundary change shipped without a threat model)
 - `/web-perf` — (only if frontend files changed; include affected routes and dev URL)
-- `/design-audit` + `/qa` — (only if UI changed; visual/a11y audit alongside functional QA)
+- `/design-polish` + `/qa` — (only if UI changed; visual pass alongside functional QA)
 - `/a11y` — (only if heavy UI likely to affect screen-reader/keyboard/contrast)
-- `/design-review` — (to fix what `/design-audit`/`/a11y` flag; mutates + commits)
+- `/design-review` — (to check and fix the running app after `/design-polish`/`/a11y`; mutates + commits)
 - `/pentest` — (only if /defense or /iac-scan found CRITICAL/HIGH, or auth/crypto changed — NOT on a bare infra change; /iac-scan §4c already covers that statically)
 - `/qa` — (to fix what the auto-run `/qa-only` found, or when it was skipped because the app was unreachable)
 - `/test-coverage` — (only if Step 6's untested-path list is worth closing now; writes and applies the drafted tests)
@@ -615,9 +615,9 @@ Recommend-only (never auto-run):
 - `/pentest` — authorization-gated security hunt (in-harness pipeline by default; its clearwing integration can run agent-driven on the session via the bundled bridge, with only provider-driven runs billing their own provider); recommend when `/defense` or `/iac-scan` finds HIGH/CRITICAL, or sensitive code paths changed (a bare infra change is handled statically by auto-run `/iac-scan` §7i — pentest is only the deeper hunt on HIGH/CRITICAL).
 - `/qa` — interactive browser QA; recommend when UI changed.
 - `/web-perf` — Core Web Vitals + render trace against a live app (Chrome DevTools MCP); recommend when frontend files, assets, or bundler config changed.
-- `/design-audit` — read-only visual/a11y audit → design plan; recommend alongside `/qa` when UI changed.
+- `/design-polish` — trope, hierarchy and interaction-state pass on the changed UI; recommend alongside `/qa` when UI changed.
 - `/a11y` — WCAG / screen-reader / keyboard audit; recommend on heavy UI changes likely to affect assistive tech (dynamic pass needs a dev URL).
-- `/design-review` — *fixes and commits* visual issues (mutates); recommend as the follow-up to apply what `/design-audit`/`/a11y` flags.
+- `/design-review` — *fixes and commits* visual issues (mutates); recommend as the follow-up to check the running app after `/design-polish`/`/a11y`.
 - `/debug` — root-cause investigation for a specific failure.
 - `/perf-profile` — drill into a perf regression flagged in Step 5.
 - `/verify` — confirm a proposed fix works in the running app.

@@ -286,7 +286,7 @@ Read `steps/10-final-verdict-report.md` and follow it in full.
 - Ending a turn while steps remain, or writing an interim report to dodge the hook.
 - Stopping at the report. A triggered check that found something and did not
   attempt a fix has not run `/qa-full`.
-- Running `/qa-only` or `/design-audit` where `/qa` / `/design-review` are
+- Running `/qa-only` where `/qa` / `/design-review` are
   specified. Report-only is for discovery inside a step, never the step's end.
 - Claiming a finding is fixed without re-running the check that found it and
   the fast test tier (fresh evidence, not assertion).

@@ -1,0 +1,77 @@
+{
+ "_notes": "Labelled by the session agent from screenshots plus source greps before any judge output. Rulings: striped placeholder boxes (repeating-linear-gradient) are not a gradient hero; serif-led pages (Georgia/Iowan) count as a chosen font; 'Sample' label makes B2-none testimonials PASS; B4 impact figures ('10 hot meals' for $50, '$4 per meal', '100%', 'age 84') are specific numbers not labelled placeholder so FAIL; F2-new FAIL hierarchy because filled red Delete competes with filled blue Save.",
+ "labels": {
+  "B2-none": {
+   "slop": "PASS",
+   "hierarchy": "PASS",
+   "states": "FAIL",
+   "honesty": "PASS"
+  },
+  "B2-new": {
+   "slop": "PASS",
+   "hierarchy": "PASS",
+   "states": "PASS",
+   "honesty": "PASS"
+  },
+  "B2-up": {
+   "slop": "PASS",
+   "hierarchy": "PASS",
+   "states": "PASS",
+   "honesty": "PASS"
+  },
+  "B3-none": {
+   "slop": "PASS",
+   "hierarchy": "PASS",
+   "states": "PASS",
+   "honesty": "PASS"
+  },
+  "B3-new": {
+   "slop": "PASS",
+   "hierarchy": "PASS",
+   "states": "PASS",
+   "honesty": "PASS"
+  },
+  "B3-up": {
+   "slop": "PASS",
+   "hierarchy": "PASS",
+   "states": "PASS",
+   "honesty": "PASS"
+  },
+  "B4-none": {
+   "slop": "FAIL",
+   "hierarchy": "PASS",
+   "states": "FAIL",
+   "honesty": "FAIL"
+  },
+  "B4-new": {
+   "slop": "PASS",
+   "hierarchy": "PASS",
+   "states": "PASS",
+   "honesty": "FAIL"
+  },
+  "B4-up": {
+   "slop": "PASS",
+   "hierarchy": "PASS",
+   "states": "PASS",
+   "honesty": "FAIL"
+  },
+  "F2-none": {
+   "slop": "FAIL",
+   "hierarchy": "PASS",
+   "states": "FAIL",
+   "honesty": "PASS"
+  },
+  "F2-new": {
+   "slop": "PASS",
+   "hierarchy": "FAIL",
+   "states": "PASS",
+   "honesty": "PASS"
+  },
+  "F2-up": {
+   "slop": "PASS",
+   "hierarchy": "PASS",
+   "states": "PASS",
+   "honesty": "PASS"
+  }
+ }
+}

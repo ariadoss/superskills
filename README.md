@@ -1,8 +1,8 @@
-# Superskills `v2.54.0`
+# Superskills `v2.55.0`
 
 Curated AI skills pack for Claude Code, ZCode, OpenCode, Codex CLI, DSH (DeepSeek Harness), Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Integrates [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team; an opt-in pack) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
-47 in-repo skills + 54 gstack skills + 174 marketing skills + 36 design skills, selected by [packs](#packs-choose-what-gets-installed). gstack is vendored in this repo so its skills are available even if the upstream repo is removed.
+48 in-repo skills + 54 gstack skills + 174 marketing skills + 37 design skills, selected by [packs](#packs-choose-what-gets-installed). gstack is vendored in this repo so its skills are available even if the upstream repo is removed.
 
 > **[Full command reference →](COMMANDS.md)**: all skills with descriptions and overlap notes
 > **[10x+ Engineering Workflow →](DEVELOPER_WORKFLOW.md)**: run a fleet of 10+ parallel AI agents, 3-5 lanes at once, each with a full quality pipeline ([full write-up](https://hyperion360.com/blog/parallel-ai-agents-engineering-workflow/))
@@ -25,7 +25,7 @@ Setup will:
 ### Packs: choose what gets installed
 
 Every skill belongs to exactly one pack. `./setup` installs the **coding pack
-by default** (45 skills: 38 in-repo + 7 via gstack when a clone exists). It includes the
+by default** (46 skills: 39 in-repo + 7 via gstack when a clone exists). It includes the
 spec → plan → TDD → QA → ship spine **plus the security, database, and
 web/QA skills**, because most builds are web apps and a default install with
 `/qa-full`'s domain checks disarmed would be a trap, not a smaller install.
@@ -36,11 +36,11 @@ pack is always on: no pack list excludes it.
 
 | Pack | Contents |
 |------|----------|
-| `coding` (default, always on) | The workflow spine — `/deep-interview`, `/write-plan`, `/skillify`, `/debrief`, `/prune-skills`, `/executing-plans`, `/subagent-driven-development`, `/worktrees`, `/tdd`, `/test-coverage`, `/debug`, `/verify`, `/clean-code`, `/basic-review`, `/diff-walkthrough`, `/qa-full`, `/finish-branch`, `/eval`, `/daily-qa`, `/quota-resilience`, `/handoff`, `/humanize`, `/cli-for-agent`, `/superskills-doctor`, `/superskills-upgrade` — plus the security skills (`/defense`, `/iac-scan`, `/pentest`, `/fuzz`, `/vet-skill`), the database skills (`/dbmap`, `/dbmap-auto-off`, `/db-optimize`, `/cache-strategy`), the web/QA skills (`/web-perf`, `/perf-profile`, `/a11y`, `/playwright`), `/plan-eng-review`, and the seven gstack skills the QA gate executes through (`/review`, `/qa`, `/cso`, `/design-review`, `/ship`, `/browse`, `/setup-browser-cookies`) |
+| `coding` (default, always on) | The workflow spine — `/deep-interview`, `/write-plan`, `/skillify`, `/debrief`, `/prune-skills`, `/executing-plans`, `/subagent-driven-development`, `/worktrees`, `/tdd`, `/test-coverage`, `/debug`, `/verify`, `/clean-code`, `/basic-review`, `/diff-walkthrough`, `/qa-full`, `/finish-branch`, `/eval`, `/daily-qa`, `/quota-resilience`, `/handoff`, `/humanize`, `/cli-for-agent`, `/superskills-doctor`, `/superskills-upgrade`, `/superskills` — plus the security skills (`/defense`, `/iac-scan`, `/pentest`, `/fuzz`, `/vet-skill`), the database skills (`/dbmap`, `/dbmap-auto-off`, `/db-optimize`, `/cache-strategy`), the web/QA skills (`/web-perf`, `/perf-profile`, `/a11y`, `/playwright`), `/plan-eng-review`, and the seven gstack skills the QA gate executes through (`/review`, `/qa`, `/cso`, `/design-review`, `/ship`, `/browse`, `/setup-browser-cookies`) |
 | `content` | `/tapestry`, `/youtube`, `/article`, `/kb-advisor`, `/content-writer` |
 | `startup` | `/validate-idea`, `/pricing`, `/minimalist-review` |
 | `core` | legacy alias: every skill in the `skills/` tree (coding + content + startup) |
-| `design` | the 36 design skills (UX, typography, SwiftUI, Vercel) |
+| `design` | the 37 design skills (UX, typography, SwiftUI, Vercel) |
 | `marketing` | the 174 marketing skills (SEO, content, pages, ads) |
 | `media` | the video-editing subtree |
 | `gstack` | installs/promotes gstack itself and links **every** gstack skill; without it only the seven coding-pack gstack skills stay linked. The /qa-full closure (`/review`, `/qa`, `/cso`, `/design-review`, `/ship`) plus the browse toolchain those checks execute through (`/browse`, `/setup-browser-cookies`). The rest of a pre-existing clone's links are pruned, the clone is never touched. Note: a roster skill's end-of-flow suggestions may still name gstack-pack skills (e.g. `/plan-design-review`). They resolve from the clone or are designed skips, but aren't one-keystroke available without this pack |
@@ -81,7 +81,7 @@ gives you a native "updated" notification when a new version ships, no manual
 `git pull` needed.
 
 **Claude Code**: three plugins from one marketplace: `superskills` (the coding
-skills), `superskills-design` (the 36 design skills) and `superskills-marketing`
+skills), `superskills-design` (the 37 design skills) and `superskills-marketing`
 (the 174 marketing skills under their usual names, e.g.
 `/superskills-marketing:meta-description`):
 ```bash
@@ -115,7 +115,7 @@ The plugin `version` is driven by the repo's `VERSION` file via
 watch. The `./setup` install above remains the way to get a chosen pack
 selection across every supported tool.
 
-## Skills (47)
+## Skills (48)
 
 ### Dev Methodology (from [superpowers](https://github.com/obra/superpowers))
 | Command | Description |
@@ -195,6 +195,7 @@ selection across every supported tool.
 |---------|-------------|
 | `/superskills-doctor` | Read-only health check of the install: linked skills, versions vs manifests, gstack, optional tools |
 | `/superskills-upgrade` | Pull the latest superskills, re-run setup, show the version change |
+| `/superskills` | Load a pack index (`design`, `marketing`) or one skill's full text into context on demand; read-only |
 
 ## Knowledge Bases
 
@@ -423,14 +424,14 @@ From [kostja94/marketing-skills](https://github.com/kostja94/marketing-skills), 
 | **Platforms** | `/linkedin-posts`, `/twitter-x-posts`, `/reddit-posts`, `/tiktok-captions`, `/youtube-seo` |
 | **Analytics** | `/google-search-console`, `/seo-monitoring`, `/traffic-analysis`, `/analytics-tracking` |
 
-## Design Skills (36)
+## Design Skills (37)
 
 
 | Category | Skills |
 |----------|--------|
 | **UX Frameworks** | `/ux-heuristics`, `/hooked-ux`, `/design-sprint` |
-| **Visual Design** | `/high-end-visual-design`, `/minimalist-ui`, `/design-taste-frontend`, `/redesign-existing-projects`, `/ui-refactor`, `/interface-design` |
-| **Design Process** | `/design-audit`, `/design-drift`, `/ux-designer`, `/emil-design-eng` |
+| **Design Build** | `/design-principles`, `/design-brief`, `/design-direction`, `/design-variations`, `/design-prototype`, `/design-system-extract` |
+| **Design Review** | `/design-slop-check`, `/design-hierarchy`, `/design-states`, `/design-polish`, `/emil-design-eng` |
 | **Typography** | `/typography` |
 | **React / Next.js** | `/vercel-react-best-practices`, `/vercel-react-view-transitions`, `/vercel-composition-patterns`, `/vercel-react-native-skills` |
 | **Vercel** | `/deploy-to-vercel`, `/vercel-cli-with-tokens`, `/web-design-guidelines` |
@@ -461,10 +462,7 @@ Skills curated from:
 - [emilkowalski/skill](https://github.com/emilkowalski/skill): design engineering philosophy
 - [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills): React, Next.js, Vercel deployment
 - [rshankras/claude-code-apple-skills](https://github.com/rshankras/claude-code-apple-skills): Swift/iOS/SwiftUI
-- [bencium/bencium-marketplace](https://github.com/bencium/bencium-marketplace): design audit, typography, architecture
-- [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill): premium UI design systems
-- [LovroPodobnik/refactoring-ui-skill](https://github.com/LovroPodobnik/refactoring-ui-skill): UI refactoring
-- [Dammyjay93/interface-design](https://github.com/Dammyjay93/interface-design): interface design craft
+- [bencium/bencium-marketplace](https://github.com/bencium/bencium-marketplace): typography, architecture
 - [ParthJadhav/app-store-screenshots](https://github.com/ParthJadhav/app-store-screenshots): app store screenshot generator
 - [browser-use/video-use](https://github.com/browser-use/video-use): conversation-driven video editor (cut, grade, subtitle, animate)
 

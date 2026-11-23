@@ -143,7 +143,7 @@ setup() {
   run bash "$REPO_ROOT/setup" --list-skills --packs coding,design
   [ "$status" -eq 0 ] || false
   [[ "$output" == *"/skills/tdd/SKILL.md"* ]] || false
-  [[ "$output" == *"/design-skills/ux-designer/SKILL.md"* ]] || false
+  [[ "$output" == *"/design-skills/design-principles/SKILL.md"* ]] || false
   [[ "$output" == *"/skills/cache-strategy/SKILL.md"* ]] || false
   [[ "$output" != *"/skills/article/SKILL.md"* ]] || false
   [[ "$output" != *"marketing-skills/"* ]] || false
@@ -165,7 +165,7 @@ setup() {
   grep -q '^packs=coding,design$' "$HOME/.superskills/packs.conf" || false
   run bash "$REPO_ROOT/setup" --list-skills
   [ "$status" -eq 0 ] || false
-  [[ "$output" == *"/design-skills/ux-designer/SKILL.md"* ]] || false
+  [[ "$output" == *"/design-skills/design-principles/SKILL.md"* ]] || false
   grep -q '^packs=coding,design$' "$HOME/.superskills/packs.conf" || false
   # Every FULL run must persist the effective selection (not only --packs
   # runs): without it, a fresh default install has no packs.conf and the

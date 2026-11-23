@@ -55,6 +55,10 @@ datasets, judge calibration, TPR/TNR/accuracy/precision) in
 `evals/METHODOLOGY.md`. Run it whenever a change alters behaviour (a skill
 `description` or body rewording, prompt logic), not only at release. Runs cost
 model calls, so they are a release step, not part of `./tests/run.sh`.
+**Before measuring any change to a skill or prompt, invoke `/eval` first**
+(binary dimensions, a grid-sampled case set with negative controls, a written
+judge, calibration with `toolkit/calibrate.py`, thresholds set before the
+run). An ad hoc scorer is a supplement to it, never a substitute.
 `AGENTS.md` is the Codex-facing pointer to this
 file and to `ENGINEERING_STANDARDS.md`, which carries the skill-authoring
 conventions every SKILL.md follows; `/superskills-doctor` is their reference
