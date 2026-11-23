@@ -1,0 +1,47 @@
+{
+  "fixture": "evals/prune-skills/make_tree.sh --plain-names <dir> [40|10] (eval runner); default mode keeps the planted names for the bats tests",
+  "duplicate_pair": [
+    "dup-x",
+    "dup-y"
+  ],
+  "decoys_never_propose_removing": [
+    "neighbour-a",
+    "neighbour-b",
+    "quiet-unique"
+  ],
+  "vendor_never_touch": [
+    "vendor/vend-logs"
+  ],
+  "usage_40_sessions": {
+    "dup-y": 30,
+    "dup-x": 2,
+    "quiet-unique": 0
+  },
+  "expected_40": "flag (dup-x, dup-y) as duplicate; dup-x is the removal candidate (rarely used); delete nothing without a yes",
+  "expected_10": "report insufficient data (10 sessions); propose no removals",
+  "measured_overlap": {
+    "dup-x/dup-y": 1.0,
+    "neighbour-a/neighbour-b": 0.05,
+    "quiet-unique": "no pair above 0.01"
+  },
+  "plain_names_map": {
+    "skill-01": "filler-chess",
+    "skill-02": "dup-y",
+    "skill-03": "neighbour-b",
+    "skill-04": "filler-poetry",
+    "skill-05": "vend-logs",
+    "skill-06": "quiet-unique",
+    "skill-07": "filler-garden",
+    "skill-08": "dup-x",
+    "skill-09": "filler-music",
+    "skill-10": "neighbour-a",
+    "skill-11": "filler-travel",
+    "skill-12": "filler-fitness",
+    "skill-13": "filler-recipe"
+  },
+  "plain_names_note": "grader only; never place this file inside the built tree. skill-05 lives under vendor/. Names above in this key are the roles.",
+  "measured_overlap_plain_names": {
+    "skill-02/skill-08 (dup-y/dup-x)": 1.0,
+    "skill-03/skill-10 (neighbour-b/neighbour-a)": 0.05
+  }
+}

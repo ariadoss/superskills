@@ -2,7 +2,7 @@
 
 Curated AI skills pack for Claude Code, ZCode, OpenCode, Codex CLI, DSH (DeepSeek Harness), Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Integrates [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team; an opt-in pack) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
-45 in-repo skills + 54 gstack skills + 174 marketing skills + 36 design skills, selected by [packs](#packs-choose-what-gets-installed). gstack is vendored in this repo so its skills are available even if the upstream repo is removed.
+47 in-repo skills + 54 gstack skills + 174 marketing skills + 36 design skills, selected by [packs](#packs-choose-what-gets-installed). gstack is vendored in this repo so its skills are available even if the upstream repo is removed.
 
 > **[Full command reference →](COMMANDS.md)**: all skills with descriptions and overlap notes
 > **[10x+ Engineering Workflow →](DEVELOPER_WORKFLOW.md)**: run a fleet of 10+ parallel AI agents, 3-5 lanes at once, each with a full quality pipeline ([full write-up](https://hyperion360.com/blog/parallel-ai-agents-engineering-workflow/))
@@ -25,7 +25,7 @@ Setup will:
 ### Packs: choose what gets installed
 
 Every skill belongs to exactly one pack. `./setup` installs the **coding pack
-by default** (43 skills: 36 in-repo + 7 via gstack when a clone exists). It includes the
+by default** (45 skills: 38 in-repo + 7 via gstack when a clone exists). It includes the
 spec → plan → TDD → QA → ship spine **plus the security, database, and
 web/QA skills**, because most builds are web apps and a default install with
 `/qa-full`'s domain checks disarmed would be a trap, not a smaller install.
@@ -36,7 +36,7 @@ pack is always on: no pack list excludes it.
 
 | Pack | Contents |
 |------|----------|
-| `coding` (default, always on) | The workflow spine — `/deep-interview`, `/write-plan`, `/skillify`, `/executing-plans`, `/subagent-driven-development`, `/worktrees`, `/tdd`, `/test-coverage`, `/debug`, `/verify`, `/clean-code`, `/basic-review`, `/diff-walkthrough`, `/qa-full`, `/finish-branch`, `/eval`, `/daily-qa`, `/quota-resilience`, `/handoff`, `/humanize`, `/cli-for-agent`, `/superskills-doctor`, `/superskills-upgrade` — plus the security skills (`/defense`, `/iac-scan`, `/pentest`, `/fuzz`, `/vet-skill`), the database skills (`/dbmap`, `/dbmap-auto-off`, `/db-optimize`, `/cache-strategy`), the web/QA skills (`/web-perf`, `/perf-profile`, `/a11y`, `/playwright`), `/plan-eng-review`, and the seven gstack skills the QA gate executes through (`/review`, `/qa`, `/cso`, `/design-review`, `/ship`, `/browse`, `/setup-browser-cookies`) |
+| `coding` (default, always on) | The workflow spine — `/deep-interview`, `/write-plan`, `/skillify`, `/debrief`, `/prune-skills`, `/executing-plans`, `/subagent-driven-development`, `/worktrees`, `/tdd`, `/test-coverage`, `/debug`, `/verify`, `/clean-code`, `/basic-review`, `/diff-walkthrough`, `/qa-full`, `/finish-branch`, `/eval`, `/daily-qa`, `/quota-resilience`, `/handoff`, `/humanize`, `/cli-for-agent`, `/superskills-doctor`, `/superskills-upgrade` — plus the security skills (`/defense`, `/iac-scan`, `/pentest`, `/fuzz`, `/vet-skill`), the database skills (`/dbmap`, `/dbmap-auto-off`, `/db-optimize`, `/cache-strategy`), the web/QA skills (`/web-perf`, `/perf-profile`, `/a11y`, `/playwright`), `/plan-eng-review`, and the seven gstack skills the QA gate executes through (`/review`, `/qa`, `/cso`, `/design-review`, `/ship`, `/browse`, `/setup-browser-cookies`) |
 | `content` | `/tapestry`, `/youtube`, `/article`, `/kb-advisor`, `/content-writer` |
 | `startup` | `/validate-idea`, `/pricing`, `/minimalist-review` |
 | `core` | legacy alias: every skill in the `skills/` tree (coding + content + startup) |
@@ -115,7 +115,7 @@ The plugin `version` is driven by the repo's `VERSION` file via
 watch. The `./setup` install above remains the way to get a chosen pack
 selection across every supported tool.
 
-## Skills (45)
+## Skills (47)
 
 ### Dev Methodology (from [superpowers](https://github.com/obra/superpowers))
 | Command | Description |
@@ -136,6 +136,8 @@ selection across every supported tool.
 | `/deep-interview` | Clarify vague requirements one question at a time and save a spec for approval before planning |
 | `/write-plan` | Detailed implementation planning |
 | `/skillify` | Turn a hard-won procedure from a finished session into a reusable skill after a quality gate |
+| `/debrief` | Take the current session apart and route each lesson to a skill edit, rule, memory, script or hook, after checking whether a skill already covers it. Proposes only. |
+| `/prune-skills` | Find redundant or superseded skills using overlap, real usage counts and context cost. Proposes only; never deletes without a yes. |
 | `/plan-eng-review` | Engineering review of a plan: architecture, edge cases, failure modes, test plan. A local copy, because gstack 1.97 stopped registering it (`/autoplan` still loads its method) |
 | `/subagent-driven-development` | Execute a plan in-session via fresh subagent per task + review loop |
 | `/executing-plans` | Execute a plan in a separate session with review checkpoints |
