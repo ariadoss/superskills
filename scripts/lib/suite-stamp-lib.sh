@@ -46,17 +46,41 @@ ssl_has() {
   [ -f "$f" ] && SSL_T="$1" SSL_C="$c" awk -F'\t' '$1 == ENVIRON["SSL_T"] && $3 == ENVIRON["SSL_C"] { found = 1; exit } END { exit !found }' "$f"
 }
 
+# ssl_hook_active <hook> — true when the hook is ours or calls our gate script.
+ssl_hook_active() { grep -qE "superskills suite gate|suite-gate-prepush\.sh" "$1" 2>/dev/null; }
+
+# ssl_hook_advice <hook> <why> <here> — tell the user how to wire the gate by hand.
+ssl_hook_advice() {
+  echo "suite-stamp: $1 $2, so the push gate is not installed." >&2
+  # shellcheck disable=SC2016  # literal text for the user to copy
+  echo 'suite-stamp: call "'"$3"'/suite-gate-prepush.sh" "$@" from your pre-push hook. If your hook also reads git'"'"'s stdin, save it once (in=$(cat)), replay it to each (printf '"'%s\n'"' "$in" | cmd), and stop on a non-zero exit.' >&2
+}
+
+# ssl_in_worktree <dir> — true when dir is inside the work tree but not inside
+# the git dir (a hook there, like .husky/, would show up as an untracked file).
+ssl_in_worktree() {
+  local top common
+  top="$(git rev-parse --show-toplevel 2>/dev/null)" || return 1
+  common="$(git rev-parse --path-format=absolute --git-common-dir)"
+  case "$1/" in "$common"/*) return 1 ;; "$top"/*) return 0 ;; esac
+  return 1
+}
+
 # ssl_install_hook — put a small forwarding pre-push hook where git will run
-# it (honors core.hooksPath). Idempotent; never overwrites a hook that is not ours.
+# it (honors core.hooksPath). Idempotent; never overwrites a hook that is not
+# ours, and never writes into the work tree (it would dirty the tree and run
+# would refuse; a committed hook would carry a machine-specific path).
 ssl_install_hook() {
   local dir hook here
   dir="$(git rev-parse --path-format=absolute --git-path hooks)" || return 1
   hook="$dir/pre-push"
   here="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+  if ssl_in_worktree "$dir"; then
+    ssl_hook_advice "$dir" "is inside the work tree" "$here"
+    return 0
+  fi
   if [ -e "$hook" ] && ! grep -qF "superskills suite gate" "$hook"; then
-    echo "suite-stamp: $hook exists and is not ours, so the push gate is not installed." >&2
-    # shellcheck disable=SC2016  # literal text for the user to copy
-    echo 'suite-stamp: call "'"$here"'/suite-gate-prepush.sh" "$@" from it. If your hook also reads git'"'"'s stdin, save it once (in=$(cat)), replay it to each (printf '"'%s\n'"' "$in" | cmd), and stop on a non-zero exit.' >&2
+    ssl_hook_advice "$hook" "exists and is not ours" "$here"
     return 0
   fi
   mkdir -p "$dir" || return 1

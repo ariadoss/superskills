@@ -130,4 +130,4 @@ Repos that never ran `suite-stamp.sh init` have no gate, so the closing line mus
 
 Print the verdict. Do not offer or run the whole suite: `/finish-branch` runs
 `scripts/suite-stamp.sh ensure` after merging the base, and the git pre-push gate blocks
-a push to main whose exact code has not passed. Say that in one sentence.
+a push to main whose exact code has not passed. When a suite command is set, say that in one sentence; otherwise use the no-gate sentence above.

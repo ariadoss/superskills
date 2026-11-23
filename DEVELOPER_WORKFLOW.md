@@ -308,7 +308,7 @@ skips the run, while a merge commit that pulled in new work from `main` is a
 new tree and runs again.
 
 ```bash
-scripts/suite-stamp.sh init <command>   # once per repo: set the suite command, install the pre-push gate if no other pre-push hook exists
+scripts/suite-stamp.sh init '<command>' # once per repo: one quoted argument, no tab or newline; installs the pre-push gate unless a pre-push hook or an in-repo hooks dir (husky) is already in use
 scripts/suite-stamp.sh ensure           # run the suite unless this tree already passed
 scripts/suite-stamp.sh status           # show the command, HEAD's stamp, and whether the gate is live
 scripts/suite-stamp.sh check <commit>   # exit 0 if that commit's tree has passed
@@ -319,7 +319,8 @@ scripts/suite-stamp.sh check <commit>   # exit 0 if that commit's tree has passe
 - Deploy scripts should call `suite-stamp.sh check <commit>` and skip their own
   full-suite run when it exits 0 (build once, promote).
 - `/qa-full` never runs the whole suite. It runs the checks scoped to the diff.
-- If a non-superskills pre-push hook already exists, `init` leaves it alone and only prints how to call the gate from it. `status` says whether the gate is live.
+- Exit codes: 0 ok, 1 not stamped (`check`), 3 the script itself refused (not set up, dirty tree, bad arguments); anything else is the suite's own code.
+- If a non-superskills pre-push hook already exists, or the hooks dir is inside the work tree (husky, `.githooks`), `init` leaves it alone and only prints how to call the gate from it. `status` says whether the gate is live.
 - `SUITE_GATE=0 git push` bypasses the gate. The block message does not mention it, on purpose.
 
 Limits, stated plainly:

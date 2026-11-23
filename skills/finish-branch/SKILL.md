@@ -24,17 +24,20 @@ already passed. The script ships with superskills, not with the repo being
 finished, so resolve it instead of assuming `./scripts/`:
 
 ```bash
-rc=127
+found=0
 for d in "$SUPERSKILLS_DIR" ~/Sites/superskills ~/.claude/skills/superskills ~/.codex/skills/superskills .; do
-  [ -n "$d" ] && [ -x "$d/scripts/suite-stamp.sh" ] && { "$d/scripts/suite-stamp.sh" ensure; rc=$?; break; }
+  if [ -n "$d" ] && [ -x "$d/scripts/suite-stamp.sh" ]; then
+    found=1; "$d/scripts/suite-stamp.sh" ensure; rc=$?; break
+  fi
 done
-[ "$rc" = 127 ] && echo "suite-stamp.sh not found; run the project's test command"
+[ "$found" = 1 ] || { rc=none; echo "suite-stamp.sh not found; run the project's test command"; }
 echo "suite-stamp exit: $rc"
 ```
 
-Exit 0 means the suite passed (or this tree already had). Any other exit is a
-failure: stop. `ensure` needs a clean working tree, and exit 2 means no suite
-command is set (not initialised) or the tree is dirty.
+Exit 0 means the suite passed (or this tree already had). Exit 3 is the script
+refusing: no suite command is set (not initialised) or the working tree is
+dirty; read its `suite-stamp:` message. Any other exit is the suite's own
+failure: stop.
 
 If the repo has not run `suite-stamp.sh init`, run its normal test command
 (`npm test` / `cargo test` / `pytest` / `go test ./...`) instead and offer to run `init` so the

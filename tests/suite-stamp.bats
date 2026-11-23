@@ -89,9 +89,9 @@ runs() { wc -l < "$COUNT" | tr -d ' '; }
 }
 
 @test "run: a failing suite does not stamp and returns its status" {
-  "$CLI" init "exit 3"
+  "$CLI" init "exit 4"
   run "$CLI" run
-  [ "$status" -eq 3 ] || false
+  [ "$status" -eq 4 ] || false
   run "$CLI" check
   [ "$status" -eq 1 ] || false
 }
@@ -148,4 +148,64 @@ runs() { wc -l < "$COUNT" | tr -d ' '; }
   [ "$status" -eq 0 ] || false
   run "$CLI" check </dev/null
   [ "$status" -eq 0 ] || false
+}
+
+@test "init: a hooks dir inside the work tree gets no hook, and the advice is printed" {
+  git config core.hooksPath .husky
+  run "$CLI" init true
+  [ "$status" -eq 0 ] || false
+  [ ! -e .husky/pre-push ] || false
+  [[ "$output" == *"suite-gate-prepush.sh"* ]] || false
+  [ -z "$(git status --porcelain)" ] || false
+}
+
+@test "init: rejects a command containing a tab" {
+  run "$CLI" init "$(printf 'true\t# x')"
+  [ "$status" -ne 0 ] || false
+  [[ "$output" == *"tab or newline"* ]] || false
+  [ -z "$(git config --local --get superskills.suiteCommand)" ] || false
+}
+
+@test "init: rejects a command containing a newline" {
+  run "$CLI" init "$(printf 'true\nfalse')"
+  [ "$status" -ne 0 ] || false
+  [[ "$output" == *"tab or newline"* ]] || false
+}
+
+@test "init: takes exactly one argument, the whole command string" {
+  run "$CLI" init printf '%s\n' "a b"
+  [ "$status" -ne 0 ] || false
+  [[ "$output" == *"one argument"* ]] || false
+  [ -z "$(git config --local --get superskills.suiteCommand)" ] || false
+}
+
+@test "ensure: takes no ref" {
+  init_counting
+  run "$CLI" ensure HEAD
+  [ "$status" -ne 0 ] || false
+  [ "$(runs)" = 0 ] || false
+}
+
+@test "the script's own refusals exit 3, apart from a suite's own codes" {
+  run "$CLI" run
+  [ "$status" -eq 3 ] || false
+  init_counting
+  echo dirty >> a.txt
+  run "$CLI" run
+  [ "$status" -eq 3 ] || false
+}
+
+@test "status: exits 0 on a healthy repo with no stamps yet" {
+  "$CLI" init true
+  run "$CLI" status
+  [ "$status" -eq 0 ] || false
+}
+
+@test "status: a user hook that calls suite-gate-prepush.sh counts as an active gate" {
+  mkdir -p .git/hooks
+  printf '#!/bin/sh\nexec /x/scripts/suite-gate-prepush.sh "$@"\n' > .git/hooks/pre-push
+  chmod +x .git/hooks/pre-push
+  "$CLI" init true
+  run "$CLI" status
+  [[ "$output" == *"push gate: installed"* ]] || false
 }
