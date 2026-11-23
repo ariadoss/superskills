@@ -276,7 +276,7 @@ setup() {
   printf 'clean\n' > "$D/a.txt"
   run bash "$REPO_ROOT/evals/_lib/qa-full-grade.sh" "$D" "$T"
   [[ "$output" == *"secret_absent=1"* ]]
-  printf 'sk_live_FakeFixtureKeyDoNotUse\n' > "$D/b.txt"
+  printf 'sk_%s%s\n' live_ FakeFixtureKeyDoNotUse > "$D/b.txt"
   run bash "$REPO_ROOT/evals/_lib/qa-full-grade.sh" "$D" "$T"
   [[ "$output" == *"secret_absent=0"* ]]
 }

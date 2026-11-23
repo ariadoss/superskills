@@ -170,6 +170,17 @@ Python detects the wording; you decide whether it serves the passage. Resolve
 each finding by editing it or explaining the hold. Do not impose Wikipedia's
 markup or neutral-register conventions on marketing, documentation, or fiction.
 
+The **signposting / metadiscourse** group flags sentences that point at what
+comes next, or at the writing itself, instead of saying it: a pointer or
+placeholder noun ("Here is the truth", "The real problem is that", "The catch
+is"), announced intent ("Let me explain", "In this post we will"), cross-references
+("As mentioned above"), flags ("It is worth noting that", "Needless to say"), and
+stance or label openers ("Honestly,", "Pro tip:", "Spoiler:"). The test is
+deletion: if the sentence loses nothing when the pointer is cut, state the claim
+and drop the pointer. Keep a pointer that carries information, such as a real
+roadmap in a long document, a named source ("According to X,"), or a character's
+voice in dialogue.
+
 **3. Apply the edits to `<dir>/<name>_humanized.md` with the Edit tool.**
 
 Work through the flags from step 2 and fix each one in place, without stopping

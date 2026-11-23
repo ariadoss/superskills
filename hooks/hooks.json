@@ -40,6 +40,14 @@
     ]
    },
    {
+    "hooks": [
+     {
+      "type": "command",
+      "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/secrets-prepush-hook.sh\""
+     }
+    ]
+   },
+   {
     "matcher": "Skill",
     "hooks": [
      {

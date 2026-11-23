@@ -261,6 +261,8 @@ Each agent works independently and spawns subagents. Exponentially faster than p
 | `/pentest` | Scan source code and network for vulnerabilities |
 | `/fuzz` | Web fuzzing to surface unexpected attack surfaces before shipping |
 
+A PreToolUse hook also scans every `git push` Claude runs. It blocks the push when an unpushed local commit holds a secret, using its own gitleaks config so a repo's allowlist cannot hide a key. It needs `gitleaks` installed and skips with a note when it is missing. Bypass once with `SECRETS_PREPUSH=0`. It covers pushes Claude runs; terminal pushes stay with the git pre-push hook.
+
 ### 6. Ship
 
 > **Gate the feature before you ship it.** The commands in steps 3–5 are run
