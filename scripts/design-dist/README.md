@@ -25,36 +25,20 @@ A typical new page: `/design-principles`, then `/design-direction`, build, then 
 
 ## Install
 
-Claude Code, for every project:
-
-```bash
-git clone https://github.com/ariadoss/design-skills.git
-mkdir -p ~/.claude/skills
-cp -R design-skills/design-* ~/.claude/skills/
-```
-
-For one project only, copy the folders into that project's `.claude/skills/` instead.
-
-Start a new session, then type `/design-principles`, or ask for a design and name the skill ("use the design-direction skill").
-
-To update, `git pull` and copy again.
-
-For other agents (Codex, Cursor, OpenCode), copy the same folders into that tool's skills directory, or point the agent at the `SKILL.md` file you want it to follow.
-
-### With superskills
-
-These skills also ship in [superskills](https://github.com/ariadoss/superskills), which keeps them up to date and adds the review skills they mention. In Claude Code:
+These skills install through [superskills](https://github.com/ariadoss/superskills), which keeps them up to date and brings the review skills they hand off to. In Claude Code:
 
 ```
 /plugin marketplace add ariadoss/superskills
 /plugin install superskills-design@superskills
 ```
 
-From a superskills checkout: `./setup --packs coding,design`.
+From a superskills checkout, which also covers Codex, Cursor and OpenCode: `./setup --packs coding,design`.
+
+Start a new session, then type `/design-principles`, or ask for a design and name the skill ("use the design-direction skill").
 
 ## Skills they point to
 
-Some steps hand off to skills that are not in this repo: `/design-review` (checks the running app in a browser) and `/a11y` (accessibility audit). Both come with superskills. Without them, the handoff is a suggestion you can skip.
+Some steps hand off to `/design-review` (checks the running app in a browser) and `/a11y` (accessibility audit). Both come with superskills.
 
 ## How they were tested
 
@@ -66,4 +50,4 @@ Known gaps: agents often pick the same display font across unrelated briefs, and
 
 Canonical source: [ariadoss/superskills](https://github.com/ariadoss/superskills) (`design-skills/`). This repo is its export, so file issues and changes there. A direct edit here is overwritten by the next export.
 
-MIT licensed.
+Written by [Danilo Stern-Sapad](https://danilosapad.com). MIT licensed.

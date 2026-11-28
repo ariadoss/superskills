@@ -465,7 +465,9 @@ From [kostja94/marketing-skills](https://github.com/kostja94/marketing-skills), 
 Written by [Danilo Stern-Sapad](https://danilosapad.com):
 - [`/dbmap`](https://github.com/ariadoss/dbmap) and its auto-off toggle (also a standalone repo; `/dbmap-auto-on` was folded into `/dbmap`'s final step in 2.49.0). `/repomap` was removed in 2.39.0: five eval-gated experiments (2026-10) measured no agent-context utility for static repo maps against tool-using agents; the tool itself lives on in the standalone repo.
 - [`/humanize`](https://github.com/ariadoss/humanize) (also a standalone repo)
-- `/qa-full`, `/daily-qa`, `/clean-code`, `/test-coverage`, `/a11y`, `/iac-scan`, `/db-optimize`, `/perf-profile`, `/cache-strategy`, `/superskills-doctor`, `/superskills-upgrade`
+- [`/eval`](https://github.com/ariadoss/eval) (also a standalone repo)
+- the ten [`design-*` skills](https://github.com/ariadoss/design-skills) (also a standalone repo): `/design-principles`, `/design-brief`, `/design-direction`, `/design-variations`, `/design-prototype`, `/design-system-extract`, `/design-slop-check`, `/design-hierarchy`, `/design-states`, `/design-polish`
+- `/qa-full`, `/daily-qa`, `/clean-code`, `/test-coverage`, `/a11y`, `/iac-scan`, `/db-optimize`, `/perf-profile`, `/cache-strategy`, `/basic-review`, `/handoff`, `/quota-resilience`, `/debrief`, `/prune-skills`, `/vet-skill`, `/superskills`, `/superskills-doctor`, `/superskills-upgrade`
 - the statusline (`scripts/statusline.sh`)
 
 Skills curated from:
