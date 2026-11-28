@@ -467,7 +467,7 @@ Written by [Danilo Stern-Sapad](https://danilosapad.com):
 - [`/humanize`](https://github.com/ariadoss/humanize) (also a standalone repo)
 - [`/eval`](https://github.com/ariadoss/eval) (also a standalone repo)
 - the ten [`design-*` skills](https://github.com/ariadoss/design-skills) (also a standalone repo): `/design-principles`, `/design-brief`, `/design-direction`, `/design-variations`, `/design-prototype`, `/design-system-extract`, `/design-slop-check`, `/design-hierarchy`, `/design-states`, `/design-polish`
-- `/qa-full`, `/daily-qa`, `/clean-code`, `/test-coverage`, `/a11y`, `/iac-scan`, `/db-optimize`, `/perf-profile`, `/cache-strategy`, `/basic-review`, `/handoff`, `/quota-resilience`, `/debrief`, `/prune-skills`, `/vet-skill`, `/superskills`, `/superskills-doctor`, `/superskills-upgrade`
+- `/qa-full`, `/daily-qa`, `/clean-code`, `/test-coverage`, `/a11y`, `/iac-scan`, `/db-optimize`, `/perf-profile`, `/cache-strategy`, `/basic-review`, `/handoff`, `/quota-resilience`, `/debrief`, `/prune-skills`, `/vet-skill`, `/pentest`, `/defense`, `/fuzz`, `/playwright`, `/kb-advisor`, `/content-writer`, `/superskills`, `/superskills-doctor`, `/superskills-upgrade`
 - the statusline (`scripts/statusline.sh`)
 
 Skills curated from:
