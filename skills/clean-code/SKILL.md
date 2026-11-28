@@ -159,7 +159,7 @@ themselves beyond what a refactor needs.
 1. Re-run the audit signals on the changed files (now including your fix
    commits). Each fixed finding must no longer appear; the fixes must not have
    introduced a new duplicate or a new one-use abstraction.
-2. Run the full test suite one final time on HEAD.
+2. Run the tests that cover the files you changed, by name. Do not run the whole suite: it runs once at the merge gate (`suite-stamp.sh ensure`). Report that command and its result in the `Suite:` field. When `git config --local superskills.suiteCommand` is empty, end with one plain sentence: "No whole-suite gate is set up here. Run the whole suite once before merging, or run `suite-stamp.sh init '<command>'` so it runs once per tree."
 3. Print:
 
 ```markdown

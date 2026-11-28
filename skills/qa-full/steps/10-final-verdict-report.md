@@ -5,8 +5,8 @@ The fix rounds changed the branch, so verify the *whole* result once more:
 1. **Fresh related tests + build** on the final HEAD: every related test file
    for the whole branch diff plus the build. Red ⇒ fix the cause and re-run
    until green or two rounds fail (UNFIXED ⇒ NOT READY). Stale results ⇒ NOT
-   READY. The whole suite is not part of this pass: it is the last step,
-   after the report (see "Last step: the whole suite").
+   READY. The whole suite is not part of `/qa-full`: it runs once at the
+   merge gate (`scripts/suite-stamp.sh ensure`, run by `/finish-branch`).
 2. **Re-audit the fix commits:** run `/defense` scoped to the files the fix
    commits touched, and read the fix commits themselves
    (`git show original-HEAD..HEAD`) against `/review`'s checklist — `/review`
@@ -33,11 +33,11 @@ SHIP-READY do you hand off *"Proceed to `/finish-branch` then `/ship`."*
 
 Then the verdict:
 
-- **SHIP-READY (pending whole suite)** — zero blockers remaining **and** every
+- **SHIP-READY** — zero blockers remaining **and** every
   triggered check accounted for **and** the final pass is green. Write the
-  verdict line as `## VERDICT: SHIP-READY ✅ (pending whole suite)` until the
-  suite has run. List what was fixed (commits),
+  verdict line as `## VERDICT: SHIP-READY ✅`. List what was fixed (commits),
   warnings + follow-ups, then hand off to `/finish-branch` → `/ship`.
+  Whole suite: not run here; it runs once per distinct tree at the merge gate and is stamped, so the same code is never tested twice.
 - **NOT READY** — one or more blockers survived the fix rounds (or a check is
   unaccounted / MANDATORY-FAIL). List each with its file:line/test-name
   evidence, **what was tried**, and what the user needs to decide or provide.
@@ -124,16 +124,10 @@ HEAD before fixes: <sha>  HEAD after: <sha>  Fix commits: K
 Print the verdict, the fixed count, the remaining-blocker count, and a 5-line
 summary to the chat.
 
-## Last step: the whole suite
+## Closing line
 
-Only after the report is written with a SHIP-READY (pending whole suite)
-verdict, and as the very last action of the run, ask the user once with
-AskUserQuestion whether to run the project's whole test suite now. It can take
-minutes, so it is the user's call. On yes, run it in the foreground with a
-timeout (or detached, polled with a Bash loop until it ends) and do not end the
-turn until it finishes. Green ⇒ edit the verdict line to
-`## VERDICT: SHIP-READY ✅` and record the run in the Final pass row. Red ⇒ fix
-the cause, re-run the related tests, run the suite again (two rounds at most);
-still red ⇒ `## VERDICT: NOT READY ⛔`. On no, leave the pending verdict, and
-say that `/finish-branch` and `/ship` run the whole suite before anything
-merges. Skip the question when the verdict is NOT READY.
+Repos that never ran `suite-stamp.sh init` have no gate, so the closing line must not leave them with no whole-suite run at all. When `git config --local superskills.suiteCommand` is empty, the final message adds one plain sentence: "No whole-suite gate is set up here. Run the whole suite once before merging, or run `suite-stamp.sh init '<command>'` so it runs once per tree." The same sentence goes in `/clean-code` and `/test-coverage` closing notes.
+
+Print the verdict. Do not offer or run the whole suite: `/finish-branch` runs
+`scripts/suite-stamp.sh ensure` after merging the base, and the git pre-push gate blocks
+a push to main whose exact code has not passed. When a suite command is set, say that in one sentence; otherwise use the no-gate sentence above.

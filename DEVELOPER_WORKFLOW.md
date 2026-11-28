@@ -298,6 +298,44 @@ A PreToolUse hook also scans every `git push` Claude runs. It blocks the push wh
 | `/ship` | Sync tests, automate CI/CD, and submit the PR |
 | `/land-and-deploy` | Merge, deploy, and verify production |
 
+#### Run the whole suite once per tree
+
+A full suite run is expensive, so it should happen once per distinct code
+state, not once per step. `scripts/suite-stamp.sh` records a pass keyed on the
+git tree hash (the content of the code, not the commit). Anything that lands
+the same tree reuses the stamp: a fast-forward merge, or a squash onto an unchanged base,
+skips the run, while a merge commit that pulled in new work from `main` is a
+new tree and runs again.
+
+```bash
+scripts/suite-stamp.sh init '<command>' # once per repo: one quoted argument, no tab or newline; installs the pre-push gate unless a pre-push hook or an in-repo hooks dir (husky) is already in use
+scripts/suite-stamp.sh ensure           # run the suite unless this tree already passed
+scripts/suite-stamp.sh status           # show the command, HEAD's stamp, and whether the gate is live
+scripts/suite-stamp.sh check <commit>   # exit 0 if that commit's tree has passed
+```
+
+- `/finish-branch` calls `ensure`, so the suite runs once before the merge.
+- A pre-push hook blocks a push to `main` or `master` whose tip tree has no stamp.
+- Deploy scripts should call `suite-stamp.sh check <commit>` and skip their own
+  full-suite run when it exits 0 (build once, promote).
+- `/qa-full` never runs the whole suite. It runs the checks scoped to the diff.
+- Exit codes: 0 ok, 1 not stamped (`check`), 3 the script itself refused (not set up, dirty tree, bad arguments); anything else is the suite's own code.
+- If a non-superskills pre-push hook already exists, or the hooks dir is inside the work tree (husky, `.githooks`), `init` leaves it alone and only prints how to call the gate from it. `status` says whether the gate is live.
+- `SUITE_GATE=0 git push` bypasses the gate. The block message does not mention it, on purpose.
+
+Limits, stated plainly:
+
+- `git push --no-verify` skips the hook.
+- Merges made in a web UI or with `gh pr merge` never run the local hook, so they are not gated.
+- Stamps are local files and can be forged. They do not travel between clones, so in a multi-author repo CI should run the suite itself as the merge gate.
+- Only `main` and `master` are gated.
+- The gate fails open when git or its library is missing, and repos that never ran `init` are untouched.
+- Changing the configured suite command invalidates old stamps.
+- On a push of several commits, only the tip tree is checked.
+- The gate trusts the exit code. A suite that skips tests for a missing tool
+  still exits 0 and would stamp, so configure `init` with a wrapper that fails
+  on skips.
+
 ---
 
 ## Background cadence (runs independently of any feature branch)

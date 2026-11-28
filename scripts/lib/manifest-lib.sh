@@ -26,7 +26,8 @@ skill_entries() {
   local root="${1%/}"
   # One batch name lookup (skill_names_from_files) instead of three processes
   # per skill; rel is the path below <root> without /SKILL.md.
-  marketing_skill_files "$root" | skill_names_from_files | awk -F'\t' -v root="$root/" '
+  marketing_skill_files "$root" | skill_names_from_files | SKILL_ROOT="$root/" awk -F'\t' '
+    BEGIN { root = ENVIRON["SKILL_ROOT"] }   # ENVIRON, not -v: -v expands backslash escapes
     index($1, root) == 1 {
       rel = substr($1, length(root) + 1); sub(/\/SKILL\.md$/, "", rel)
       if (rel != "SKILL.md" && rel != "") print $2 "\t" rel

@@ -51,14 +51,25 @@ smallest viable fixes.
 Determine the time window for "recent":
 1. If the user passed `$ARGUMENTS`, use it (`24h`, `last-run`, ISO date, etc.).
 2. Else check `.daily-qa-last-run` at the repo root — if present, use its
-   timestamp as the lower bound.
+   timestamp (the first field) as the lower bound. The file holds
+   `<timestamp> <HEAD sha>`; an old file with only a timestamp has no sha,
+   which counts as no match.
 3. Else default to **last 24 hours**.
 
 Record the resolved window at the top of the report.
 
-After the report is written, update `.daily-qa-last-run` to the current
-timestamp so the next run picks up cleanly. (Add to `.gitignore` if not
-already present; do not commit it.)
+If `git rev-parse HEAD` equals the stored sha, the user passed no explicit
+window, and `git status --porcelain` is empty, nothing landed since the last
+run. Still run Step 2 when `gh` is available (CI can change without new
+commits), skip Steps 3-7, and write a one-line report: "no new commits since
+<sha>; CI signals not re-checked" (or the Step 2 summary when it ran). A dirty
+working tree means some later steps would read uncommitted changes, so run
+normally. The skip path also rewrites `.daily-qa-last-run`, which only
+refreshes the timestamp. Then stop.
+
+After the report is written, update `.daily-qa-last-run` to
+`<current timestamp> <git rev-parse HEAD>` so the next run picks up cleanly.
+(Add to `.gitignore` if not already present; do not commit it.)
 
 ## Step 2: CI failures and flaky tests
 
@@ -589,7 +600,7 @@ CI runs scanned: N
 ```
 
 Print the report path and a 5-line executive summary to the chat.
-Update `.daily-qa-last-run`.
+Update `.daily-qa-last-run` to `<current timestamp> <HEAD sha>`.
 
 ## Anti-patterns (do not do)
 

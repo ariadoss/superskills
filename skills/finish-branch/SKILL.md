@@ -19,10 +19,29 @@ Guide completion of development work by presenting clear options and handling ch
 
 **Before presenting options, verify tests pass:**
 
+Run the whole suite once per distinct tree; it skips when this exact code
+already passed. The script ships with superskills, not with the repo being
+finished, so resolve it instead of assuming `./scripts/`:
+
 ```bash
-# Run project's test suite
-npm test / cargo test / pytest / go test ./...
+found=0
+for d in "$SUPERSKILLS_DIR" ~/Sites/superskills ~/.claude/skills/superskills ~/.codex/skills/superskills .; do
+  if [ -n "$d" ] && [ -x "$d/scripts/suite-stamp.sh" ]; then
+    found=1; "$d/scripts/suite-stamp.sh" ensure; rc=$?; break
+  fi
+done
+[ "$found" = 1 ] || { rc=none; echo "suite-stamp.sh not found; run the project's test command"; }
+echo "suite-stamp exit: $rc"
 ```
+
+Exit 0 means the suite passed (or this tree already had). Exit 3 is the script
+refusing: no suite command is set (not initialised) or the working tree is
+dirty; read its `suite-stamp:` message. Any other exit is the suite's own
+failure: stop.
+
+If the repo has not run `suite-stamp.sh init`, run its normal test command
+(`npm test` / `cargo test` / `pytest` / `go test ./...`) instead and offer to run `init` so the
+push gate and deploy can reuse the result.
 
 **If tests fail:**
 ```
@@ -83,8 +102,8 @@ git pull
 # Merge feature branch
 git merge <feature-branch>
 
-# Verify tests on merged result
-<test command>
+suite-stamp.sh ensure   # fast-forward: same tree, skips; merge commit with new work from main: re-runs
+# (resolve the path as in Step 1; check the exit code; no init: run the test command)
 
 # If tests pass
 git branch -d <feature-branch>
