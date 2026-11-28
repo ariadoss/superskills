@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+<head>
+<title>Tally Hours</title>
+<style>
+body { font-family: Arial, sans-serif; background: #fff; color: #000; margin: 0; text-align: center; }
+.top { background: linear-gradient(90deg, #06b6d4, #6366f1, #d946ef); padding: 37px 13px; color: #fff; }
+.top h1 { font-size: 21px; margin: 0; }
+.top p { font-size: 19px; }
+.b { background: #6366f1; color: #fff; padding: 9px 17px; display: inline-block; margin: 5px; cursor: pointer; }
+.b2 { background: #d946ef; }
+.b3 { background: #06b6d4; }
+h2 { font-size: 20px; margin: 27px 0 11px; }
+.plans { display: flex; justify-content: center; gap: 13px; }
+.plan { border-left: 4px solid #6366f1; border-radius: 14px; box-shadow: 0 2px 7px rgba(0,0,0,.15); padding: 19px; width: 210px; }
+.plan b { font-size: 19px; }
+ul { list-style: none; padding: 0; }
+input, select { padding: 7px; outline: none; margin: 3px; }
+table { margin: 0 auto; font-size: 13px; }
+td, th { padding: 5px 15px; }
+</style>
+</head>
+<body>
+<div class="top"><h1>⏱️ Tally Hours</h1><p>Time tracking for small agencies that bill by the hour</p>
+<div class="b" onclick="start()">🚀 Start free</div><div class="b b2" onclick="demo()">Book a demo</div><div class="b b3" onclick="vid()">Watch video</div></div>
+<h2>✨ How it works</h2>
+<p>Your team starts a timer on a client project. Tally rounds entries to your billing increment. On the last day of the month it drafts one invoice per client, with every entry listed, ready for you to approve.</p>
+<h2>💰 Plans</h2>
+<div class="plans">
+<div class="plan"><b>Solo</b><p>For one person</p><ul><li>✅ Unlimited clients</li><li>✅ Monthly invoice drafts</li><li>✅ CSV export</li></ul><div class="b">Choose</div></div>
+<div class="plan"><b>Studio</b><p>For teams up to 15</p><ul><li>✅ Everything in Solo</li><li>✅ Approval before invoicing</li><li>✅ Per-client hourly rates</li></ul><div class="b">Choose</div></div>
+<div class="plan"><b>Agency</b><p>For larger teams</p><ul><li>✅ Everything in Studio</li><li>✅ Budgets with alerts</li><li>✅ Accounting sync</li></ul><div class="b">Choose</div></div>
+</div>
+<h2>📊 This week (sample)</h2>
+<table><tr><th>Client</th><th>Hours</th><th>Billable</th></tr><tr><td>Northwind Dental</td><td>12.5</td><td>12.5</td></tr><tr><td>Cask &amp; Barrel</td><td>8.25</td><td>7.0</td></tr><tr><td>Internal</td><td>4.0</td><td>0</td></tr></table>
+<h2>📬 Try it with your team</h2>
+<form><input placeholder="Work email"><select><option>Team size</option><option>1</option><option>2-15</option><option>16+</option></select><div class="b" onclick="go()">Send</div><button class="b b2" disabled>Please wait</button></form>
+<p style="font-size:11px;color:#999">Questions? We answer within one working day.</p>
+</body>
+</html>

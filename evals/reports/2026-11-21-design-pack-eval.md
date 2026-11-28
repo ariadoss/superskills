@@ -1,5 +1,7 @@
 # Design pack eval (2026-11-21)
 
+> **Withdrawn, 2026-11-27.** The repo owner looked at the rendered pages from this eval, blind, and ranked the `new` arm top on 0 of 3 build tasks and last on one. The judge here read source only and reported `new` equal to `up`. The system numbers below do not stand. See `2026-11-27-design-pack-recheck.md`.
+
 Question: do the concise `design-*` skills (arm `new`) work as well as Claude's originals (arm `up`) and better than no skill (arm `none`)? Method: `/eval`. Positive class everywhere: FAIL. Protocol and thresholds: `evals/design-pack/EVAL.md`, written before the runs.
 
 ## Eval set

@@ -169,6 +169,23 @@ directly. The in-repo prose method the skill operationalizes lives in
 changes.
 
 <!-- superskills-workflow-rule -->
+### The ten `design-*` skills are canonical here; their public repo is an export
+
+`design-skills/design-*` (principles, brief, direction, variations, prototype,
+system-extract, slop-check, hierarchy, states, polish) is the single source of
+truth for the public [`ariadoss/design-skills`](https://github.com/ariadoss/design-skills)
+repo. After changing any of them, regenerate and publish the standalone tree:
+
+```bash
+./scripts/export-design.sh            # -> dist/design-skills (git-ignored)
+```
+
+A pure copy: each skill lands as `<name>/SKILL.md`, byte-identical. The export
+owns those ten directories plus README.md (from `scripts/design-dist/`), LICENSE
+and .gitignore; `tests/export-design.bats` asserts byte-identity. Never edit
+the public repo directly. Measure a wording change on rendered pages first
+(`evals/design-pack/EVAL.md`).
+
 ## Superskills Developer Workflow
 
 Read DEVELOPER_WORKFLOW.md to understand how to use superskills commands together: parallel agents, vertical slices, quality pipeline, performance optimization, and shipping workflow.

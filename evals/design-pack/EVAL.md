@@ -27,7 +27,7 @@ Boundary rulings, fixed in advance:
   honesty; any specific number, name or price not labelled placeholder is FAIL.
 - A page with no form has no form-state requirement; links and buttons still
   need hover and focus.
-- Judge sees source only. Rendering is not judged.
+- Judge sees source only. Rendering is not judged. This proved the weak point: on 2026-11-27 a blind human look at the rendered pages contradicted the source-only judge. Judge rendered pages (1280px and 375px screenshots, blind human pick); protocol in `evals/reports/2026-11-27-design-pack-recheck-PREREG.md`, held-out fix fixture `fixture3.html`.
 
 ## Grid (cases)
 

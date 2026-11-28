@@ -1,4 +1,4 @@
-# Superskills `v2.55.0`
+# Superskills `v2.56.0`
 
 Curated AI skills pack for Claude Code, ZCode, OpenCode, Codex CLI, DSH (DeepSeek Harness), Continue.dev, Augment Code, Windsurf, Cursor, and Cline/Roo. Integrates [gstack](https://github.com/garrytan/gstack) (Garry Tan's virtual engineering team; an opt-in pack) and extends it with TDD, systematic debugging, security testing, spec workflows, knowledge base integration, and more.
 
@@ -67,6 +67,25 @@ actually shrinks your context; switching back re-links on the next run.
 ./setup --list-skills              # print what a selection installs (no changes)
 ./setup --packs all                # everything
 ```
+
+#### Install any pack
+
+Name the packs you want, separated by commas. The coding pack always comes along, and the choice is remembered for later upgrades.
+
+| You want | From a checkout | As a Claude Code plugin |
+|----------|-----------------|-------------------------|
+| Design | `./setup --packs design` | `/plugin install superskills-design@superskills` |
+| Marketing | `./setup --packs marketing` | `/plugin install superskills-marketing@superskills` |
+| Content | `./setup --packs content` | included in `superskills` |
+| Startup | `./setup --packs startup` | included in `superskills` |
+| Video editing | `./setup --packs media` | checkout only |
+| All of gstack | `./setup --packs gstack` | checkout only |
+| Several at once | `./setup --packs design,marketing,content` | install each plugin |
+| Everything | `./setup --packs all` | install all three plugins |
+
+To use the design or marketing skills without installing them, type `/superskills design` or `/superskills marketing` in a session. That loads the pack's index for that session only, and `/superskills <skill-name>` loads one skill.
+
+The ten `design-*` skills are also published on their own at [ariadoss/design-skills](https://github.com/ariadoss/design-skills), for people who want them without the rest.
 
 **Project-level installs** (run from your project root):
 ```bash

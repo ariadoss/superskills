@@ -7,6 +7,6 @@ description: Final pre-ship design gate for a built page or screen. Runs the tro
 
 1. Read the target file(s) and the design direction or system, if any.
 2. Run **/design-slop-check**, **/design-hierarchy** and **/design-states** on it, one after another, fixing as each reports. Do not stop at the first finding.
-3. Check against **/design-principles**: one primary action, no filler content, real content, tokens in use.
+3. Check against **/design-principles**: the whole page is there, the first screen shows the product working, copy is specific, one primary action, tokens in use. Look at a render at desktop width and 375px.
 4. Recommend **/a11y** for the deeper accessibility pass and **/design-review** to check the running app in a browser.
 5. Summarize: issues fixed by pass, judgment calls for the user, what remains. Say plainly if a pass found nothing.

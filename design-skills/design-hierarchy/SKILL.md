@@ -21,4 +21,8 @@ Read the file and styles; note the medium (page, slide, mobile, dashboard). Repo
 - 3-5 colors plus tints; flag 8+ or near-duplicate shades.
 - Sections are separated in one consistent way. Flag a few-pixel misalignment.
 
-**Fix:** snap to the scale (define one if missing); add contrast where flat; swap signals where reversed. When unsure, go stronger; it is easier to dial back. Summarize fixes and judgment calls.
+**Content**
+- Hierarchy needs something to rank. If the first read is vague, or the page is too thin to have a second and third read, write the missing content (/design-principles) instead of restyling what is there.
+- An empty or broken image box takes the eye for nothing: replace it with something real or remove it.
+
+**Fix:** snap to the scale (define one if missing); add contrast where flat; swap signals where reversed. When unsure, go stronger; it is easier to dial back. Then look at a render at desktop width and 375px and confirm the first read is the one you intended. Summarize fixes and judgment calls.
